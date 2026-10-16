@@ -470,5 +470,9 @@
   <script defer src="vendor/katex/katex.min.js"></script>
   <script defer src="js/common.js"></script>
   <script defer src="js/home.js"></script>
+  <script type="module">
+    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
+    injectSpeedInsights();
+  </script>
 </body>
 </html>
