@@ -8,6 +8,8 @@
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+    try { document.documentElement.classList.add(localStorage.getItem('emc.booted') ? 'boot-warm' : 'boot-cold'); } catch (e) { document.documentElement.classList.add('boot-cold'); }
+    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
   </script>
   <title>Topic 1 · Measurement &amp; vectors — EMC Lab</title>
   <link rel="canonical" href="https://emc-physics.vercel.app/topics/vectors.html">
@@ -38,9 +40,57 @@
   <!-- KaTeX: the LaTeX formatter for every equation on the page -->
   <link rel="stylesheet" href="../vendor/katex/katex.min.css">
   <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
+  <style id="bootShell">
+    /* Boot overlay shell: self-contained (paints even if site.css is slow),
+       flat tokens only, transform/opacity animation only. */
+    html.boot-warm #bootOverlay { display: none; }
+    #bootOverlay {
+      position: fixed; inset: 0; z-index: 200; background: #17181c;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; opacity: 1; transition: opacity .28s ease;
+      font-family: G8321, 'Hiragino Maru Gothic ProN', 'Segoe UI', system-ui, sans-serif;
+    }
+    #bootOverlay.hide { opacity: 0; pointer-events: none; }
+    #bootOverlay .mascot-bo { width: 84px; height: auto; animation: boBob 3.4s ease-in-out infinite; }
+    #bootOverlay .bo-brand { display: flex; align-items: baseline; gap: 1px; font-weight: 700; color: #e8eefb; font-size: 1.15rem; letter-spacing: .01em; }
+    #bootOverlay .bo-brand em { font-style: normal; color: #f8aebe; }
+    #bootOverlay .bo-sub { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #7b8db0; margin-top: -8px; }
+    #bootOverlay .bo-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    #bootOverlay .bo-chip { font-size: .66rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #a9bad6; background: #1b1d22; border: 1.5px solid #26282f; border-radius: 999px; padding: .2rem .62rem; }
+    #bootOverlay .bo-chip.done { color: #b5d777; border-color: rgba(181,215,119,.45); }
+    #bootOverlay .bo-chip.done::after { content: " \2713"; }
+    #bootOverlay .bo-bar { width: 180px; height: 4px; border-radius: 999px; background: #26282f; overflow: hidden; }
+    #bootOverlay .bo-bar i { display: block; width: 40%; height: 100%; background: #a8d3e0; border-radius: 999px; transform: translateX(-100%); animation: boSlide 1.15s ease-in-out infinite; }
+    @keyframes boSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(450%); } }
+    @keyframes boBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @media (prefers-reduced-motion: reduce) {
+      #bootOverlay .bo-bar i { animation: none; width: 100%; background: #2e3138; }
+      #bootOverlay .mascot-bo { animation: none; }
+      #bootOverlay { transition: none; }
+    }
+  </style>
 </head>
 
 <body class="emc">
+  <div id="bootOverlay" role="status" aria-label="Loading EMC Lab">
+    <svg class="mascot-bo" viewBox="0 0 120 112" aria-hidden="true">
+      <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
+      <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="60" cy="64" rx="42" ry="40" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3"/>
+      <circle cx="46" cy="58" r="3.6" fill="#2b2d33"/><circle cx="74" cy="58" r="3.6" fill="#2b2d33"/>
+      <path d="M55 68 q5 5 10 0" stroke="#2b2d33" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
+    </svg>
+    <span class="bo-brand">EMC<em>Lab</em></span>
+    <span class="bo-sub">interactive physics</span>
+    <span class="bo-chips" aria-hidden="true">
+      <span class="bo-chip" data-stage="shell">layout</span>
+      <span class="bo-chip" data-stage="equations">equations</span>
+      <span class="bo-chip" data-stage="sims">simulations</span>
+    </span>
+    <span class="bo-bar" aria-hidden="true"><i></i></span>
+  </div>
+  <noscript><!-- JavaScript is turned off: hide the boot shell (the tutorial text below still reads fine). --><style>#bootOverlay{display:none}</style></noscript>
   <a class="skip-link" href="#main">Skip to main content</a>
   <noscript>
     <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>

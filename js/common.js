@@ -431,13 +431,20 @@ window.EMC = (function () {
   function bootStage(name) {
     if (bootDone[name]) return;
     bootDone[name] = true;
-    const chip = document.querySelector(`#bootStrip [data-stage="${name}"]`);
-    if (chip) chip.classList.add('done');
+    document.querySelectorAll(`[data-stage="${name}"]`).forEach(c => c.classList.add('done'));
     const strip = document.getElementById('bootStrip');
-    if (!strip) return;
-    if (BOOT_STAGES.every(s => bootDone[s])) {
+    if (strip && BOOT_STAGES.every(s => bootDone[s])) {
       strip.classList.add('done');
       setTimeout(() => { strip.hidden = true; }, 500);
+    }
+    if (BOOT_STAGES.every(s => bootDone[s])) {
+      const ov = document.getElementById('bootOverlay');
+      if (ov) {
+        ov.classList.add('hide');
+        ov.setAttribute('aria-hidden', 'true');
+        setTimeout(() => ov.remove(), 320);
+      }
+      try { localStorage.setItem('emc.booted', '1'); } catch (e) { /* private mode: fine */ }
     }
   }
 

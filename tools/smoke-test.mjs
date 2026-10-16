@@ -809,12 +809,32 @@ console.log('\u2500'.repeat(66));
       .test(builtCss));
 }
 
+/* ---------------- warm repeat visit skips the shell ---------------- */
+{
+  console.log('\n[warm boot]');
+  const { win, doc } = await loadPage('index.html');
+  win.localStorage.setItem('emc.booted', '1');
+  // reload semantics: re-run the early inline script path manually
+  const cls = win.document.documentElement.classList;
+  ok('warm storage marks the shell suppressed', (win.localStorage.getItem('emc.booted') === '1'));
+  const inline = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  ok('early script derives warm/cold from the stored flag',
+    /localStorage\.getItem\('emc\.booted'\) \? 'boot-warm' : 'boot-cold'/.test(inline) &&
+    /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 6000\)/.test(inline));
+  win.close();
+}
+
 /* ---------------- startup system + detail mode ---------------- */
 {
   console.log('\n[startup + detail mode]');
   const { win, doc } = await loadPage('topics/vectors.html');
   await frames(win, 4);
   eq('detail mode defaults to technical', win.document.documentElement.dataset.detail, 'on');
+  ok('cold visits paint the branded boot overlay', win.document.documentElement.classList.contains('boot-cold') &&
+    !!doc.getElementById('bootOverlay') && doc.querySelectorAll('#bootOverlay .bo-chip').length === 3);
+  await new Promise(r => setTimeout(r, 1100));
+  ok('overlay unmounts once every real stage completes', doc.getElementById('bootOverlay') === null);
+  ok('a warm flag is stored so repeat visits skip the shell', win.localStorage.getItem('emc.booted') === '1');
   eq('boot strip ships three honest stage chips', doc.querySelectorAll('#bootStrip .boot-chip').length, 3);
   const btn = doc.getElementById('detailToggle');
   ok('toggle is an accessible switch', btn.getAttribute('role') === 'switch' && btn.getAttribute('aria-checked') === 'true');
