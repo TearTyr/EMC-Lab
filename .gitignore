@@ -33,3 +33,9 @@ public/
 # pushed to a public repo. See vendor/fonts/README.md.
 vendor/fonts/*.ttf
 vendor/fonts/*.otf
+
+web_report.md
+html.py
+PRESENTATION-NOTES.md
+SYNC.md
+TESTING.md
