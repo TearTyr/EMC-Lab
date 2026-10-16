@@ -13,7 +13,12 @@
 export default {
   content: ['./*.html', './topics/*.html', './js/quiz.js'],
   blocklist: ['container', 'collapse', 'resize', 'filter', 'transform',
-              'table', 'ring', 'summary', 'content', 'order', 'grow', 'shrink'],
+              'table', 'ring', 'summary', 'content', 'order', 'grow', 'shrink',
+              // '!btn' / '!card' were extracted out of a JS null-check
+              // (`if (!card) return`) and compiled to phantom important-variants
+              // of two hand-written component classes. The null checks are now
+              // explicit, and blocking the names keeps them out for good.
+              '!btn', '!card'],
   theme: {
     screens: { sm: '640px', md: '900px', lg: '1200px' },
     extend: {

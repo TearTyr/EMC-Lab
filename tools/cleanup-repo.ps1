@@ -343,8 +343,10 @@ $targets = @(
        Reason = 'subsetting was dropped when the paid faces left the design' }
     @{ Path = 'vendor/fonts/mochiy-pop-one-400.woff2'; Kind = 'File';
        Reason = 'unused face; not referenced by css/fonts.css' }
+    @{ Path = 'vendor/fonts/lilita-one-400.woff2'; Kind = 'File';
+       Reason = 'unused face; css/fonts.css declares G8321 only (100/400/700)' }
     @{ Path = 'vendor/fonts/m-plus-rounded-1c-400.woff2'; Kind = 'File';
-       Reason = 'unused weight; the site ships 700/800 only' }
+       Reason = 'unused face; css/fonts.css declares G8321 only' }
     @{ Path = 'bun.lockb'; Kind = 'File';
        Reason = 'binary lockfile; the committed text bun.lock is authoritative' }
 )
@@ -358,8 +360,9 @@ foreach ($t in $targets) {
 $strayPatterns = @(
     'vendor/fonts/mochi*.woff2',
     'vendor/fonts/mochiy*.woff2',
-    'vendor/fonts/m-plus-rounded-1c-400*.woff2',
-    'vendor/fonts/*-m-plus-400*.woff2',
+    'vendor/fonts/m-plus-rounded-1c*.woff2',
+    'vendor/fonts/*-m-plus-*.woff2',
+    'vendor/fonts/lilita*.woff2',
     'tools/subset_font*'
 )
 foreach ($pat in $strayPatterns) {
@@ -584,6 +587,28 @@ if (Test-Path -LiteralPath $vj) {
     }
 } else {
     Write-Problem 'vercel.json is missing - restore it from the sync pack (it pins install/build commands and outputDirectory).'
+}
+
+# 8h. Every asset must be same-origin. The site vendors KaTeX, Chart.js and
+#     p5.js under vendor/ precisely so it never depends on a CDN being up
+#     (and never needs Subresource Integrity hashes for one).
+$cdnHits = @()
+foreach ($pg in @('index.html', 'quiz.html', 'topics/charges.html', 'topics/current.html',
+                  'topics/magnetism.html', 'topics/induction.html')) {
+    $full = Join-Path $RepoPath $pg
+    if (-not (Test-Path -LiteralPath $full)) { continue }
+    $txt = [System.IO.File]::ReadAllText($full)
+    foreach ($m in [regex]::Matches($txt, '<(?:script|link)[^>]+(?:src|href)="(https?://[^"]+)"')) {
+        $cdnHits += "$pg -> $($m.Groups[1].Value)"
+    }
+}
+if ($cdnHits.Count -gt 0) {
+    Write-Problem "$($cdnHits.Count) third-party asset reference(s) in the shipped pages:"
+    foreach ($h in $cdnHits) { Write-Host "              $h" -ForegroundColor Yellow }
+    Write-Info    'Vendor the file under vendor/ (see vendor/katex, vendor/chart, vendor/p5) and'
+    Write-Info    'point the tag at the local copy - the site is meant to work with no network.'
+} else {
+    Write-Ok 'No third-party <script>/<link> in any page - all assets are same-origin.'
 }
 
 if ($script:GitOk) {

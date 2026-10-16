@@ -3,7 +3,7 @@
    EMC Lab - register OPTIONAL licensed font cuts in vendor/fonts/manifest.json
    File: tools/add-font.mjs         run:  bun run font:scan
 
-   The site's own fonts (G8321 Bold + Lilita One, both SIL OFL) are committed
+   The site's own font (G8321 in 100/400/700, SIL OFL) is committed
    woff2 files declared in css/fonts.css - they never go through the manifest.
    This scanner is only for PRIVATELY licensed faces you may not redistribute;
    they stay on your machine (.gitignore blocks vendor/fonts/*.ttf|otf):

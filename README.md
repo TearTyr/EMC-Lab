@@ -1,18 +1,20 @@
-# EMC Lab — Interactive Electromagnetics Tutorial
+# EMC Lab — Interactive Physics Tutorial
 
-A responsive, interactive educational website for **Calculus-based Physics II**, built for the
-**EMC (Electromagnetics) group**. It teaches electricity and magnetism through written
-tutorials, **eight live simulations**, and a **25-question auto-graded quiz** with Chart.js
-score analytics. Fully static: no backend, no build step, no required dependencies.
+A responsive, interactive educational website for **Calculus-based Physics**, built for the
+**EMC group**. It teaches measurement & vectors, fluids, temperature & heat, waves & sound
+and electricity through written tutorials, **nine live simulations**, and a
+**30-question auto-graded quiz** with Chart.js score analytics. Fully static: no backend,
+no build step, no required dependencies.
 
-> Every number on every screen is computed from the real equations (Coulomb's law, Ohm's law,
-> the dipole field, Faraday's law). Nothing is animated by hand.
+> Every number on every screen is computed from the real equations (the component rule,
+> Archimedes' principle, Bernoulli's equation, Q = mcΔT, v = fλ, Ohm's law). Nothing is
+> animated by hand.
 >
 > **Stack:** HTML + CSS + vanilla JavaScript, Tailwind CSS compiled locally
-> (`css/input.css` → `css/site.css` via the Tailwind CLI), native Canvas 2D for the core
-> sims, **p5.js** for the bonus AC-generator lab, and **Chart.js** for quiz analytics.
-> The website itself still opens straight from the
-> file system: every library has a tested offline fallback.
+> (`css/input.css` → `css/site.css` via the Tailwind CLI), native Canvas 2D for every
+> simulation, WebAudio for the playable tone bench, and **Chart.js** for quiz analytics —
+> **vendored under `vendor/`**, so the site makes zero third-party requests.
+> The website itself still opens straight from the file system.
 
 ---
 
@@ -50,10 +52,11 @@ emc-physics-tutorial/
 │                                  progress dashboard, animated dipole hero
 ├── quiz.html                      Quiz page: toolbar, question list, score card
 ├── topics/
-│   ├── charges.html               Topic 1 — charges, Coulomb's law, electric fields
-│   ├── current.html               Topic 2 — Ohm's law, series/parallel, R-equivalent
-│   ├── magnetism.html             Topic 3 — field lines, bar magnets, F = qv×B
-│   └── induction.html             Topic 4 — flux, Faraday, Lenz, magnet through a coil
+│   ├── vectors.html               Topic 1 — SI units, dimensional analysis, vector addition
+│   ├── fluids.html                Topic 2 — pressure, Archimedes, continuity + Bernoulli
+│   ├── heat.html                  Topic 3 — temperature scales, Q = mcΔT, heat transfer
+│   ├── waves.html                 Topic 4 — wave anatomy, v = fλ, sound and pitch
+│   └── current.html               Topic 5 — Ohm's law, series/parallel, R-equivalent
 ├── css/
 │   ├── input.css                  THE styling source: @layer base/components + @tailwind directives
 │   ├── site.css                   Committed build of input.css (bun run build:css)
@@ -61,16 +64,17 @@ emc-physics-tutorial/
 ├── js/
 │   ├── common.js                  Shared engine: constants, HiDPI canvas Stage, pointer input,
 │   │                              SI formatter, localStorage progress, nav/reveal/toasts
-│   ├── home.js                    Hero animation + progress dashboard (index.html)
-│   ├── sim-coulomb.js             Sim 1 — Coulomb force bench (draggable charges)
-│   ├── sim-efield.js              Sim 2 — electric field explorer (lines/vectors/probe)
-│   ├── sim-ohm.js                 Sim 3 — Ohm's law bench (auto-range meter + I–V chart)
-│   ├── sim-circuit.js             Sim 4 — circuit builder (series/parallel/combination)
-│   ├── sim-magnetfield.js         Sim 5 — bar magnet lab (lines/compass/vectors/filings)
-│   ├── sim-lorentz.js             Sim 6 — Lorentz force + right-hand-rule challenge
-│   ├── sim-induction.js           Sim 7 — magnet through a coil (exact dipole flux + charts)
-│   ├── sim-generator.js           Sim 8 — AC generator, rendered with p5.js (bonus lab)
-│   ├── quiz-data.js               25 questions with worked explanations
+│   ├── home.js                    Wave hero animation + progress dashboard (index.html)
+│   ├── sim-vector-add.js          Sim 1 — vector addition bench (drag arrows, live resultant)
+│   ├── sim-archimedes.js          Sim 2 — buoyancy tank (float/sink, to-scale force arrows)
+│   ├── sim-bernoulli.js           Sim 3 — aerofoil + venturi visualiser (lift, stall, manometer)
+│   ├── sim-thermometer.js         Sim 4 — draggable thermometer (°C / °F / K conversions)
+│   ├── sim-heat-transfer.js       Sim 5 — conduction / convection / radiation lab
+│   ├── sim-wave.js                Sim 6 — travelling wave bench (transverse + longitudinal)
+│   ├── sim-sound.js               Sim 7 — playable tone bench (WebAudio + oscilloscope)
+│   ├── sim-ohm.js                 Sim 8 — Ohm's law bench (auto-range meter + I–V chart)
+│   ├── sim-circuit.js             Sim 9 — circuit builder (series/parallel/combination)
+│   ├── quiz-data.js               30 questions with worked explanations (6 per topic)
 │   └── quiz.js                    Quiz engine: marking modes, scoring, Chart.js analytics
 ├── tools/
 │   ├── check-links.mjs            Static validator (links, ids, data-hooks, CSS coverage)
@@ -79,11 +83,16 @@ emc-physics-tutorial/
 │   ├── perf-audit.mjs             Transfer-size / blocking-script / font-payload budgets
 │   ├── add-font.mjs               Registers OPTIONAL licensed faces in vendor/fonts/manifest.json
 │   ├── switch-css.mjs             Swaps Tailwind delivery mode (cdn <-> built)
+│   ├── og-card.html               Source artwork for the 1200x630 social preview image
+│   ├── make-og-card.mjs           Renders that artwork to img/og-card.png (puppeteer, dev only)
 │   └── cleanup-repo.ps1           Windows repo-hygiene script: plan -> confirm -> clean (see §9)
+├── img/
+│   └── og-card.png                Committed Open Graph / Twitter card image (1200x630)
 ├── vercel.json                    Vercel config: install/build commands, outputDirectory + cache headers
 ├── tailwind.config.js             Tailwind pipeline config (bun run build:css)
 ├── vendor/
-│   ├── katex/                     Locally vendored KaTeX (js + css + woff2) — no CDN needed
+│   ├── katex/                     Locally vendored KaTeX (js + css + woff2 + LICENSE, MIT)
+│   ├── chart/                     Locally vendored Chart.js 4.4.3 (UMD + LICENSE, MIT)
 │   └── fonts/                     Committed OFL woff2 faces: G8321 Thin / Regular / Bold
 │                                  (+ optional licensed slot: vendor/fonts/README.md)
 ├── package.json                   Dev scripts: check / test / build:css / perf / font:scan
@@ -92,8 +101,8 @@ emc-physics-tutorial/
 └── PRESENTATION-NOTES.md          Physics + implementation notes for presenting the module
 ```
 
-Total: ~8,000 lines across 6 pages, the styling pipeline (source + build + font faces)
-and 12 scripts. No framework, no bundler, no backend.
+Total: ~9,500 lines across 7 pages, the styling pipeline (source + build + font faces)
+and 13 scripts. No framework, no bundler, no backend.
 
 ---
 
@@ -101,19 +110,25 @@ and 12 scripts. No framework, no bundler, no backend.
 
 | Requirement | Where it lives |
 |---|---|
-| Clean landing page with navigation to each topic | `index.html` — centred hero with mascot, 4 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
+| Clean landing page with navigation to each topic | `index.html` — centred hero with mascot and animated wave, 5 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
 | Responsive UI, desktop + mobile | Fluid `clamp()` type, `md:`/`lg:` grids, hamburger nav < 900 px, canvases resize via `ResizeObserver` |
-| Sim 1 — Ohm's law calculator | `js/sim-ohm.js`: V and R sliders (R on a log scale), live I, P, auto-ranging ammeter, bulb brightness ∝ P, I–V characteristic plot, power-rating safety warning |
-| Sim 2 — circuit builder (battery + bulb, series/parallel) | `js/sim-circuit.js`: add/remove/edit resistors, three topologies, exact per-element V/I/P table, animated charge flow whose density ∝ branch current, clickable resistors |
-| Sim 3 — induction: magnet through a coil | `js/sim-induction.js`: exact on-axis dipole flux, Faraday EMF, centre-zero galvanometer, ⊙/ current symbols, scrolling Φ and EMF strip charts, drag/push/oscillate modes |
-| Extra simulations (4 more) | Coulomb bench, field explorer, bar-magnet lab, Lorentz-force lab |
+| Sim 1 — vector addition bench | `js/sim-vector-add.js`: drag the arrowheads of A and B; R = A + B recomposes live by components, as a parallelogram diagonal or tip-to-tail; presets include an exact cancellation |
+| Sim 2 — buoyancy tank | `js/sim-archimedes.js`: object density/volume vs three fluids; floats at submerged fraction ρ_obj/ρ_f or sinks to a normal force; F_B = ρ_f V_sub g recomputed every frame, to-scale force arrows, drag-and-release settling |
+| Sim 3 — Bernoulli visualiser | `js/sim-bernoulli.js`: aerofoil scene (top/bottom speed-up, lift ∝ ΔP·A, stall past 15° AoA) and venturi scene (continuity A₁v₁ = A₂v₂, manometer Δh from ΔP = ½ρ(v₂²−v₁²)) |
+| Sim 4 — interactive thermometer | `js/sim-thermometer.js`: drag the column; °C/°F/K convert live with the arithmetic printed; landmark markers at −40°, 0°, 37°, 100° |
+| Sim 5 — heat transfer lab | `js/sim-heat-transfer.js`: conduction diffusion along four materials with q = kAΔT/L, a driven convection circulation, radiation with inverse-square intensity and matt-black vs shiny absorption |
+| Sim 6 — wave simulator | `js/sim-wave.js`: y = A sin(kx − ωt) drawn transverse or longitudinal, amplitude/frequency/wavelength sliders, v = fλ recomputed live, medium particles that visibly only oscillate |
+| Sim 7 — playable tone bench | `js/sim-sound.js`: WebAudio oscillator (sine/square/saw/triangle) with a live AnalyserNode scope, note ruler, λ = v_sound/f; degrades to a drawn scope where audio is unavailable |
+| Sim 8 — Ohm's law calculator | `js/sim-ohm.js`: V and R sliders (R on a log scale), live I, P, auto-ranging ammeter, bulb brightness ∝ P, I–V characteristic plot, power-rating safety warning |
+| Sim 9 — circuit builder (battery + bulb, series/parallel) | `js/sim-circuit.js`: add/remove/edit resistors, three topologies, exact per-element V/I/P table, animated charge flow whose density ∝ branch current, clickable resistors |
 | Tutorials with explanations, diagrams, formulas, real-world examples | Each topic page: objectives → theory → SVG figures → worked examples → applications → misconceptions → self-check reveals |
-| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 25 questions, exam *or* instant marking, per-question explanations, per-topic breakdown, grade bands, review-incorrect filter, shuffle, retake, **quiz clock with per-question splits, correct-streak counter with a pastel burst, keyboard flow (1–4/A–D, Enter, N)** and a reacting mascot in every graded feedback |
-| Predict-then-run challenges | The circuit builder and the induction lab ask you to predict an outcome; the **simulator itself computes the answer** from its live analysis, then a "Try it" button performs the change so the readouts confirm it |
-| Chart.js score visualisation | Doughnut (correct/incorrect), horizontal bars (score per topic), line (attempt history) on the score card; CSS-bar fallback when the CDN is unreachable |
-| p5.js simulation | Bonus AC-generator lab on Topic 4 (`js/sim-generator.js`, p5 instance mode); notice fallback offline |
-| Lazy bonus lab | the p5.js generator downloads only when scrolled near; blocked CDN shows a notice |
-| Progress tracking with localStorage | `EMC.Progress` in `js/common.js`: topics read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all four topics studied, exactly as the dashboard promises; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
+| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 30 questions (6 per topic across vectors · fluids · heat · waves · current), exam *or* instant marking, per-question explanations, per-topic breakdown, grade bands, review-incorrect filter, shuffle, retake, **quiz clock with per-question splits, correct-streak counter with a pastel burst, keyboard flow (1–4/A–D, Enter, N)**, `?topic=` deep links from each topic page, and a reacting mascot in every graded feedback |
+| Predict-then-run challenges | The circuit builder asks you to predict an outcome; the **simulator itself computes the answer** from its live analysis, then a "Try it" button performs the change so the readouts confirm it |
+| Chart.js score visualisation | Doughnut (correct/incorrect), horizontal bars (score per topic), line (attempt history) on the score card, drawn by the **vendored** `vendor/chart/chart.umd.min.js`; CSS-bar fallback if that file ever fails to load |
+| Progress tracking with localStorage | `EMC.Progress` in `js/common.js`: topics read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all five topics studied, exactly as the dashboard promises **and as the score card announces at the moment it happens**; **Export / Import** buttons move the snapshot between devices as JSON; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
+| Social preview + SEO | Every page carries `<link rel=canonical>`, `og:type/title/description/url/image(+w/h/alt)`, `twitter:card/title/description/image`, all pointing at one production origin and at `img/og-card.png` (committed, 1200×630, regenerated by `bun run og:card`) |
+| No-JavaScript notice | Each page ships a `<noscript>` banner (`.noscript-note`) that says the sims, dashboard and quiz need JavaScript while the tutorial text still reads |
+| theme-color honesty | `<meta name="theme-color">` is `#17181c`, the exact `--bg` the pages paint, so mobile browser chrome matches the site instead of an older navy |
 | Cross-browser design (Chrome tested; Edge / Firefox / Safari targeted, untested) | No exotic APIs; feature-guarded `ResizeObserver`, `IntersectionObserver`, Web Animations; vendor-prefixed range-input styling for both engines |
 
 ---
@@ -122,18 +137,20 @@ and 12 scripts. No framework, no bundler, no backend.
 
 | Sim | Governing equations implemented |
 |---|---|
-| Coulomb bench | F = k\|q₁q₂\|/r²; superposition for the midpoint field E = Σ kqᵢr̂/rᵢ² |
-| Field explorer | E(P) = Σ kqᵢ(P−rᵢ)/\|P−rᵢ\|³; field lines integrated along Ê with a fixed pixel step |
+| Vector bench | R = A + B by components (R<sub>x</sub> = A<sub>x</sub>+B<sub>x</sub>, R<sub>y</sub> = A<sub>y</sub>+B<sub>y</sub>); |R| = √(R<sub>x</sub>²+R<sub>y</sub>²); θ = tan⁻¹(R<sub>y</sub>/R<sub>x</sub>) with the quadrant fixed by the signs |
+| Buoyancy tank | W = ρ<sub>obj</sub>Vg; F<sub>B</sub> = ρ<sub>f</sub>V<sub>sub</sub>g; floats when ρ<sub>obj</sub> < ρ<sub>f</sub> at submerged fraction ρ<sub>obj</sub>/ρ<sub>f</sub>; N = W − F<sub>B</sub> on the floor; spring-damper settling |
+| Bernoulli visualiser | A₁v₁ = A₂v₂ (v₂ = v₁/ratio² in the throat); ΔP = ½ρ(v₂² − v₁²); lift = ΔP × wing area; separation model past 15° AoA |
+| Thermometer | °F = °C × 9/5 + 32; K = °C + 273.15; ΔT invariance between the degree scales |
+| Heat transfer lab | Fourier: q = k·A·ΔT/L with per-material k; convective circulation field driven by heater power; radiation I = P/(4πd²) with absorbed αI per surface |
+| Wave simulator | y = A sin(kx − ωt), k = 2π/λ, ω = 2πf; v = fλ; T = 1/f; longitudinal displacement field with compressions/rarefactions |
+| Tone bench | λ = v<sub>sound</sub>/f; MIDI-mapped note naming with cent deviation; oscillator frequency = f exactly |
 | Ohm bench | I = V/R; P = VI = I²R = V²/R; I–V line of gradient 1/R |
 | Circuit builder | R<sub>eq</sub> = ΣRᵢ (series), 1/R<sub>eq</sub> = Σ1/Rᵢ (parallel), R₁+(R₂R₃)/(R₂+R₃) (combo); Kirchhoff's laws; P = I²R per element |
-| Magnet lab | B(P) = (μ₀/4π) Σ q<sub>m,i</sub> r̂/r² two-pole dipole model (stated openly in the UI as a drawing model) |
-| Lorentz lab | F = qv×B; r = mv/(\|q\|B); T = 2πm/(\|q\|B); exact circular solution p(t) = c + Rot(Ωt)(p₀−c) with Ω = −qB<sub>z</sub>/m |
-| Induction | Φ(z) = μ₀ma²/[2(a²+z²)^{3/2}]; λ = NΦ; EMF = −N·dΦ/dz·v; I = EMF/R; P = EMF²/R |
 
-The induction simulation differentiates Φ **analytically** and integrates the magnet's motion in
-2 ms sub-steps, so the displayed EMF is exact and never undersamples the narrow peak at
-z = ±a/2. The double-peak, zero-crossing-at-centre signature of a real search coil falls out of
-the maths rather than being scripted.
+The conduction scene relaxes a 20-cell diffusion profile every frame (with reservoir ends),
+so the printed temperature profile is the numerical solution of the heat equation rather than
+a drawn line; the radiation scene's intensity follows the inverse square exactly, which the
+smoke test verifies by doubling d and expecting a quarter of the intensity.
 
 ---
 
@@ -143,9 +160,10 @@ the maths rather than being scripted.
 bun install          # installs the single dev dependency (tailwindcss) -> bun.lock
 bun run build:css    # css/input.css -> css/site.css (minified, ~36 kB)
 bun run check        # static validator (links, ids, utility coverage)
-bun run test         # 219-assertion jsdom + browser harness
+bun run test         # 292-assertion jsdom harness
 bun run perf         # gzip transfer / font payload / blocking-script budgets
 bun run font:scan    # re-scan vendor/fonts/ for OPTIONAL licensed cuts -> manifest.json
+bun run og:card      # regenerate img/og-card.png from tools/og-card.html (puppeteer)
 ```
 
 Everything else is plain static files; Bun and Node produce identical output, but the
@@ -211,7 +229,7 @@ There is no second stylesheet to fight with: the file is organised as
 Because CSS cascade layers order **base < components < utilities**, a utility class in the
 markup always wins over an element reset or a component rule of equal specificity — that is
 the whole specificity-conflict story, solved by architecture instead of `!important`.
-`bun run check` proves coverage: it lists every utility class used in the six pages and
+`bun run check` proves coverage: it lists every utility class used in the seven pages and
 verifies each one exists in the compiled `css/site.css`.
 
 ### Type system (one committed OFL family, three weights)
@@ -264,6 +282,11 @@ family, no licence risk. ~45 KB of fonts total.
   site was built, tested or deployed — no "Works everywhere" blurb, no dependency/build-step
   stats, no dev-doc links in footers. That material lives in this README, TESTING.md and
   PRESENTATION-NOTES.md, which the deployed site no longer links to or ships.
+* **Everything is same-origin, on purpose.** KaTeX and Chart.js 4.4.3 are
+  committed under `vendor/` with their MIT licence files, exactly like the fonts.
+  That removes the CDN outage risk, the privacy leak and the SRI-hash maintenance in one
+  move; `tools/smoke-test.mjs` asserts per page that no `http(s)://` asset reference exists,
+  and `tools/cleanup-repo.ps1` reports any that reappear.
 * **Equations are real LaTeX, with zero network risk.** **KaTeX is vendored locally**
   (`vendor/katex/`: js, css and woff2 fonts, ~600 kB), so typesetting works offline, on
   `file://`, and on any host including Vercel. Every displayed equation carries its source in a
@@ -272,7 +295,7 @@ family, no licence risk. ~45 KB of fonts total.
   table uses inline mode. Each element also keeps hand-readable plain text, so even a totally
   broken script degrades to legible equations, never raw TeX.
 * **Flat-art policy.** No gradient or glow exists anywhere in the codebase — not in the CSS and
-  not in the canvas code (charges, magnets, bulbs and particles are flat pastel stickers).
+  not in the canvas code (blocks, wings, bulbs and particles are flat pastel stickers).
   `tools/smoke-test.mjs` enforces this: it fails if `createLinearGradient`,
   `createRadialGradient`, `shadowBlur`, `backdrop-filter` or a CSS gradient ever reappear.
 * **Styling.** A single source file, `css/input.css`, holds `@layer base` (tokens, font stacks,
@@ -313,7 +336,7 @@ family, no licence risk. ~45 KB of fonts total.
 ```bash
 bun install          # dev deps only: jsdom (tests) + tailwindcss (CSS build)
 bun run check        # static validation: links, ids, data-hooks, CSS coverage
-bun run test         # 219 runtime assertions across all six pages (skips politely
+bun run test         # 292 runtime assertions across all seven pages (skips politely
                      # if jsdom is absent)
 bun run build:css    # recompile css/input.css -> css/site.css after markup changes
 bun run perf         # gzip transfer / font payload / blocking-script budgets
@@ -322,8 +345,11 @@ bun run switch:cdn   # optional: add the Play CDN tag (rubric demands "Tailwind 
 bun run switch:built # optional: back to the shipped default (compiled site.css)
 ```
 
-The website itself still has **zero required dependencies**: every CDN library
-(Chart.js, p5.js) has a tested fallback, and the compiled Tailwind CSS is committed.
+The website itself still has **zero required dependencies**: Chart.js and KaTeX are
+vendored under `vendor/` (with their licence files), every fallback path is tested, and the
+compiled Tailwind CSS is committed. Nothing on any page is fetched from a third-party host —
+`tools/cleanup-repo.ps1` health-check 8h fails the repo if a `<script>`/`<link>` ever points
+at `http(s)://` again.
 
 ### Repo hygiene (Windows)
 
@@ -369,9 +395,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tools/cleanup-repo.ps1
 Exit codes: `0` clean · `1` you aborted · `2` not the EMC Lab repo · `3` a step failed.
 
 ### Performance tooling
-* every `<script>` tag is `defer`; `preconnect` hints exist only on pages that use a CDN;
-* **p5.js lazy-injects** when the bonus generator lab approaches the viewport, so pages that
-  never scroll to it never pay for it;
+* every `<script>` tag is `defer` and same-origin — there are **no third-party requests at
+  all**, hence no `preconnect` hints and no Subresource Integrity hashes to maintain;
+* the vendored Chart.js (~68 KB gzip) loads only on the quiz page, so no other page pays
+  for it; the tone bench needs no library at all (WebAudio is a browser API);
 * KaTeX and all fonts are self-hosted (no third-party round trips);
 * `npm run perf` (`tools/perf-audit.mjs`) serves the site with gzip like a real host and
   enforces budgets: **0 render-blocking scripts**, **< 500 KB compressed transfer per page**

@@ -1,11 +1,13 @@
-/* Quiz engine: exam/instant marking, automatic scoring with per-topic breakdown and grade bands, timer + per-question splits, streak counter, keyboard flow, Chart.js analytics with a CSS-bar fallback when the CDN is absent, progress persisted through EMC.Progress. */
+/* Quiz engine: exam/instant marking, automatic scoring with per-topic breakdown and grade bands, timer + per-question splits, streak counter, keyboard flow, Chart.js analytics (vendored in vendor/chart/) with a CSS-bar fallback if the library fails to load, ?topic= deep links, progress persisted through EMC.Progress. */
 (function () {
   const host = document.getElementById('quiz-questions');
   if (!host || !window.EMC_QUIZ) return;
 
   const { Progress, toast } = EMC;
   const BANK = window.EMC_QUIZ.slice();
-  const KEYS = ['A', 'B', 'C', 'D', 'E'];
+  // Four options per question, so exactly four key labels. (A stray 'E' here used
+  // to print an empty fifth key chip on the keyboard hint row.)
+  const KEYS = ['A', 'B', 'C', 'D'];
 
   /* ---- state ---------------------------------------------------------- */
   let activeCharts = [];          // Chart.js instances (destroyed on re-grade)
@@ -44,7 +46,7 @@
     const chosen = S.answers.has(q.id) ? S.answers.get(q.id) : -1;
     const isMarked = S.marked.has(q.id);
     const correct = S.marked.get(q.id);
-    const topicClass = { charges: 'tag-rose', current: 'tag-amber', magnetism: 'tag-violet', induction: 'tag-cyan' }[q.topic] || '';
+    const topicClass = { vectors: 'tag-cyan', fluids: 'tag-emerald', heat: 'tag-rose', waves: 'tag-violet', current: 'tag-amber' }[q.topic] || '';
 
     const opts = q.options.map((text, i) => {
       let cls = 'opt';
@@ -173,7 +175,11 @@
       const t = e.target;
       if (t && /INPUT|TEXTAREA|SELECT|SUMMARY|BUTTON/.test(t.tagName)) return;
       const card = S.activeCard;
-      if (!card) return;
+      // NB: explicit null checks here and below, never bang-negation. Tailwind
+      // scans this file for class names, and a negated identifier reads as an
+      // "important" utility candidate, which compiles a phantom variant of the
+      // component class into css/site.css. tools/smoke-test.mjs guards this.
+      if (card === null || card === undefined) return;
       const key = e.key.toLowerCase();
       const idx = '1234'.indexOf(e.key) >= 0 ? '1234'.indexOf(e.key)
         : 'abcd'.indexOf(key) >= 0 ? 'abcd'.indexOf(key) : -1;
@@ -193,7 +199,7 @@
   /* ---- answering ------------------------------------------------------- */
   host.addEventListener('click', e => {
     const btn = e.target.closest('.opt');
-    if (!btn || btn.disabled) return;
+    if (btn === null || btn.disabled) return;
     const card = btn.closest('.q-card');
     const qid = Number(card.dataset.qid);
     const q = BANK.find(x => x.id === qid);
@@ -229,7 +235,7 @@
   host.addEventListener('keydown', e => {
     if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
     const btn = e.target.closest('.opt');
-    if (!btn) return;
+    if (btn === null) return;
     const group = Array.from(btn.parentElement.querySelectorAll('.opt:not([disabled])'));
     const i = group.indexOf(btn);
     const next = group[(i + (e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1) + group.length) % group.length];
@@ -302,7 +308,7 @@
     const prog = Progress.read();
 
     // per-topic breakdown
-    const topics = ['charges', 'current', 'magnetism', 'induction'];
+    const topics = ['vectors', 'fluids', 'heat', 'waves', 'current'];
     const rows = topics.map(t => {
       const qs = scored.filter(q => q.topic === t);
       if (!qs.length) return '';
@@ -317,6 +323,15 @@
     }).join('');
 
     box.hidden = false;
+    // The home dashboard promises that a pass (>= 70%) ticks all five topics.
+    // Say so out loud at the moment it happens instead of letting it be silent.
+    const passNote = pct >= 70
+      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all five topics
+           as studied on your dashboard \u2014 a pass means the whole course has been covered.
+           Un-tick any topic with the button at the end of its page if you would rather keep
+           working on it.</p>`
+      : '';
+
     box.innerHTML = `
       <div class="score-card">
         <div>
@@ -358,7 +373,8 @@
         <button class="btn" id="quiz-wrong" type="button">Review incorrect only</button>
         <a class="btn btn-ghost" href="index.html">Back to the home page</a>
         <span class="tiny faint self-center">Best score: ${prog.quizBest}% \u00B7 attempts: ${prog.quizAttempts}</span>
-      </div>`;
+      </div>
+      ${passNote}`;
 
     const wrongCount = scored.filter(q => S.marked.get(q.id) === false).length;
     const wrongBtn = el('quiz-wrong');
@@ -391,7 +407,7 @@
     EMC.scrollToEl(box);
   }
 
-  /* ---- Chart.js score visualisation (graceful fallback when CDN absent) -- */
+  /* ---- Chart.js score visualisation (CSS-bar fallback if it is missing) -- */
   function renderScoreCharts(right, total, scored) {
     // always tear down previous instances first (Chart.js refuses to reuse a canvas)
     activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
@@ -432,8 +448,8 @@
 
     // 2. horizontal bars: percentage per topic
     // short axis labels: the full names clip on narrow canvases
-    const SHORT_TOPIC = { charges: 'Charges', current: 'Current', magnetism: 'Magnetism', induction: 'Induction' };
-    const topics = ['charges', 'current', 'magnetism', 'induction'];
+    const SHORT_TOPIC = { vectors: 'Vectors', fluids: 'Fluids', heat: 'Heat', waves: 'Waves', current: 'Electricity' };
+    const topics = ['vectors', 'fluids', 'heat', 'waves', 'current'];
     const labels = [], vals = [];
     topics.forEach(t => {
       const qs = scored.filter(q => q.topic === t);
@@ -472,12 +488,41 @@
   }
 
   /* ---- toolbar --------------------------------------------------------- */
+  const TOPIC_IDS = ['vectors', 'fluids', 'heat', 'waves', 'current'];
+  const TOPIC_NAMES = {
+    vectors: 'Measurement & vectors', fluids: 'Fluids',
+    heat: 'Temperature & heat', waves: 'Waves & sound', current: 'Electricity'
+  };
+
+  /* Keep ?topic= in the address bar truthful: every topic page's "Quiz this
+     topic" button deep-links here, and changing the filter by hand updates the
+     URL too, so the view is always shareable/bookmarkable. */
+  function syncURL() {
+    if (!window.history || !window.history.replaceState) return;
+    try {
+      const u = new URL(window.location.href);
+      if (TOPIC_IDS.includes(S.filter)) u.searchParams.set('topic', S.filter);
+      else u.searchParams.delete('topic');
+      window.history.replaceState(null, '', u.toString());
+    } catch (err) { /* file:// or a locked-down history API: harmless */ }
+  }
+
+  /* Read the deep link once at boot. Anything unrecognised is ignored so a
+     hand-edited URL can never put the quiz in an impossible state. */
+  function topicFromURL() {
+    try {
+      const t = new URLSearchParams(window.location.search).get('topic');
+      return TOPIC_IDS.indexOf(t) >= 0 ? t : null;
+    } catch (err) { return null; }
+  }
+
   function syncFilterButtons() {
     document.querySelectorAll('[data-quiz-filter]').forEach(b => {
       const on = b.dataset.quizFilter === S.filter;
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', String(on));
     });
+    syncURL();
   }
 
   document.querySelectorAll('[data-quiz-filter]').forEach(btn => {
@@ -527,6 +572,11 @@
   if (el('quiz-total')) el('quiz-total').textContent = String(BANK.length);
 
   /* ---- boot ------------------------------------------------------------ */
+  const deepTopic = topicFromURL();
+  if (deepTopic) {
+    S.filter = deepTopic;
+    toast(`Filtered to ${TOPIC_NAMES[deepTopic]} \u2014 your score still covers all ${BANK.length} questions`);
+  }
   syncFilterButtons();
   render();
   initKeyboardAndFocus();

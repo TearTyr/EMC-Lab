@@ -28,7 +28,7 @@ public/
 
 # --- private font binaries (keep purchased faces OUT of the public repo) ---
 # The site runs entirely on the committed OFL woff2 faces in vendor/fonts/
-# (g8321-700, lilita-one-400, m-plus-rounded-1c-700/800). Locally dropped
+# (g8321-100/400/700). Locally dropped
 # .ttf/.otf files (e.g. a purchased FOT-Yuruka Std backup) must never be
 # pushed to a public repo. See vendor/fonts/README.md.
 vendor/fonts/*.ttf

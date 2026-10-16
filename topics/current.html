@@ -4,9 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
-  <meta name="theme-color" content="#060b16">
-  <title>Topic 2 · Current electricity — EMC Lab</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='14' fill='%2317181c'/%3E%3Cellipse cx='24' cy='27' rx='15' ry='14' fill='%23f6f1e5'/%3E%3Cpath d='M15 16 C13 8 19 6 21 12' fill='%23f6f1e5'/%3E%3Cpath d='M33 16 C35 8 29 6 27 12' fill='%23f6f1e5'/%3E%3Ccircle cx='19' cy='26' r='1.8' fill='%232b2d33'/%3E%3Ccircle cx='29' cy='26' r='1.8' fill='%232b2d33'/%3E%3Cpath d='M22 31 q2 2 4 0' stroke='%232b2d33' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#17181c">
+  <title>Topic 5 · Electricity — EMC Lab</title>
+  <link rel="canonical" href="https://emc-physics.vercel.app/topics/current.html">
+  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
+       production origin; if the deploy URL ever changes, update it in all pages
+       (tools/smoke-test.mjs asserts they all agree). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EMC Lab">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Topic 5 · Electricity">
+  <meta property="og:description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
+  <meta property="og:url" content="https://emc-physics.vercel.app/topics/current.html">
+  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="EMC Lab — an interactive physics tutorial">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Topic 5 · Electricity">
+  <meta name="twitter:description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
+  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Crect%20width='48'%20height='48'%20rx='14'%20fill='%2317181c'/%3E%3Cpath%20d='M15%2015%20C13%207%2019%205%2021%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cpath%20d='M33%2015%20C35%207%2029%205%2027%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cellipse%20cx='24'%20cy='27'%20rx='16'%20ry='15'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Ccircle%20cx='18.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Ccircle%20cx='29.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Cpath%20d='M22%2031%20q2%202%204%200'%20stroke='%232b2d33'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3Ccircle%20cx='13.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3Ccircle%20cx='34.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3C/svg%3E">
   <script>if (window.tailwind) { tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#22d3ee', deep: '#0e1a2e', line: '#1e2f4d' } } } } }; }</script>
   <link rel="stylesheet" href="../css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
@@ -20,6 +38,9 @@
 
 <body class="emc">
   <a class="skip-link" href="#main">Skip to main content</a>
+  <noscript>
+    <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>
+  </noscript>
 
   <header class="site-header">
     <div class="wrap nav-inner">
@@ -32,7 +53,7 @@
           <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
           <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
         </svg>
-        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electromagnetics</span></span>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
       </a>
       <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
@@ -43,10 +64,11 @@
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <a class="dd-link" href="charges.html"><b>1 · Charges &amp; Fields</b><small>Coulomb’s law · field lines · superposition</small></a>
-            <a class="dd-link" href="current.html"><b>2 · Current</b><small>Ohm’s law · series &amp; parallel</small></a>
-            <a class="dd-link" href="magnetism.html"><b>3 · Magnetism</b><small>field lines · F = qv × B</small></a>
-            <a class="dd-link" href="induction.html"><b>4 · Induction</b><small>Faraday · Lenz · generators</small></a>
+            <a class="dd-link" href="vectors.html"><b>1 · Measurement &amp; Vectors</b><small>SI units · dimensional analysis · resultants</small></a>
+            <a class="dd-link" href="fluids.html"><b>2 · Fluids</b><small>pressure · Archimedes · Bernoulli</small></a>
+            <a class="dd-link" href="heat.html"><b>3 · Temperature &amp; Heat</b><small>scales · Q = mcΔT · heat transfer</small></a>
+            <a class="dd-link" href="waves.html"><b>4 · Waves &amp; Sound</b><small>v = fλ · wave types · tone player</small></a>
+            <a class="dd-link" href="current.html"><b>5 · Electricity</b><small>Ohm’s law · series &amp; parallel</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
@@ -59,7 +81,7 @@
     <div class="wrap wrap-narrow section-tight topic-head">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span>Topic 2</span>
+        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span>Topic 5</span>
       </nav>
       <svg class="mascot mascot-sm" aria-hidden="true" viewBox="0 0 120 112">
   <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
@@ -70,10 +92,10 @@
   <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
-      <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 2 of 4</span>
-      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Current electricity</h1>
+      <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 5 of 5</span>
+      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Electricity</h1>
       <p class="lede">
-        Topic 1 dealt with charges at rest. Now let them move. A steady flow of charge is a
+        Set charges in motion and they do the work of the modern world. A steady flow of charge is a
         <strong>current</strong>, and the three quantities that describe any simple circuit —
         voltage, current and resistance — are tied together by the most useful equation in
         electrical engineering.
@@ -92,7 +114,7 @@
     </div>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec" id="quantities">2.1 · Current, voltage and resistance</h2>
+      <h2 class="h-sec" id="quantities">5.1 · Current, voltage and resistance</h2>
       <dl class="defs">
         <div><dt>Current I — the rate of flow of charge</dt><dd>I = ΔQ/Δt, measured in <strong>amperes</strong> (A). One ampere is one coulomb passing a point every second, about 6.24×10<sup>18</sup> electrons per second.</dd></div>
         <div><dt>Potential difference V — energy per unit charge</dt><dd>V = W/Q, measured in <strong>volts</strong> (V). One volt means one joule of energy transferred per coulomb that passes. A battery is a charge pump that gives each coulomb a fixed amount of energy.</dd></div>
@@ -114,7 +136,7 @@
         </div>
       </details>
 
-      <h2 class="h-sec" id="ohm">2.2 · Ohm’s law</h2>
+      <h2 class="h-sec" id="ohm">5.2 · Ohm’s law</h2>
       <div class="formula">
         <span class="eq" data-display data-tex="V = IR">V = I · R</span>
         <span class="eq" data-display data-tex="I = \dfrac{V}{R}, \quad R = \dfrac{V}{I}" style="font-size:1.05rem">I = V/R &nbsp;·&nbsp; R = V/I</span>
@@ -145,7 +167,7 @@
         <p class="mono small">R = V/I = 12/3 = <b>4 Ω</b> &nbsp;&nbsp; P = VI = 12 × 3 = <b>36 W</b> &nbsp;&nbsp; check: I<sup>2</sup>R = 9 × 4 = 36 W ✓</p>
       </div>
 
-      <h2 class="h-sec" id="networks">2.3 · Series and parallel circuits</h2>
+      <h2 class="h-sec" id="networks">5.3 · Series and parallel circuits</h2>
       <figure class="fig">
         <div class="fig-box">
           <svg viewBox="0 0 560 210" width="560" height="210" role="img"
@@ -252,7 +274,7 @@
         </div>
       </details>
 
-      <h2 class="h-sec" id="sim-ohm-panel" style="scroll-margin-top:5rem">2.4 · Simulation — Ohm’s law bench</h2>
+      <h2 class="h-sec" id="sim-ohm-panel" style="scroll-margin-top:5rem">5.4 · Simulation — Ohm’s law bench</h2>
       <p>
         Move the voltage and resistance sliders and watch the current respond. The ammeter
         auto-ranges like a real meter, the bulb brightens with dissipated power, and the chart
@@ -326,7 +348,7 @@
     </section>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec" id="sim-circuit-panel" style="scroll-margin-top:5rem">2.5 · Simulation — circuit builder</h2>
+      <h2 class="h-sec" id="sim-circuit-panel" style="scroll-margin-top:5rem">5.5 · Simulation — circuit builder</h2>
       <p>
         Build a real circuit. Choose a topology, add or delete resistors, and change any value.
         The simulator solves the network exactly, prints the equivalent-resistance working, and
@@ -434,7 +456,7 @@
     </section>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec" id="check">2.6 · Check your understanding</h2>
+      <h2 class="h-sec" id="check">5.6 · Check your understanding</h2>
 
       <details class="check">
         <summary>Three 9 Ω resistors are available. What is the largest and the smallest equivalent resistance you can make using all three?</summary>
@@ -460,19 +482,19 @@
       <div class="card mt-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 class="font-bold">Finished with Topic 2?</h3>
-            <p class="small muted" style="margin:.25rem 0 0">Next: magnetic fields and the force on a moving charge.</p>
+            <h3 class="font-bold">Finished with Topic 5?</h3>
+            <p class="small muted" style="margin:.25rem 0 0">That is the last topic — finish with the full quiz, or revisit any simulation.</p>
           </div>
           <div class="flex gap-2">
             <button class="btn btn-primary" type="button" data-complete-topic="current" aria-pressed="false">Mark topic as complete</button>
-            <a class="btn" href="../quiz.html">Quiz this topic</a>
+            <a class="btn" href="../quiz.html?topic=current">Quiz this topic</a>
           </div>
         </div>
       </div>
 
       <nav class="pager" aria-label="Topic navigation">
-        <a href="charges.html"><span class="dir">← Previous</span><span class="ttl">1 · Electric charges &amp; fields</span></a>
-        <a class="next" href="magnetism.html"><span class="dir">Next topic →</span><span class="ttl">3 · Magnetism</span></a>
+        <a href="waves.html"><span class="dir">← Previous</span><span class="ttl">4 · Waves &amp; sound</span></a>
+        <a class="next" href="../quiz.html"><span class="dir">Finish →</span><span class="ttl">Take the 30-question quiz</span></a>
       </nav>
     </section>
   </main>
@@ -491,27 +513,28 @@
         </svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
-        <p class="small muted" style="margin-top:.6rem">Topic 2 of 4.</p>
+        <p class="small muted" style="margin-top:.6rem">Topic 5 of 5.</p>
       </div>
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
         <ul class="footer-links">
-          <li><a href="charges.html">1 · Charges &amp; fields</a></li>
-          <li><a href="current.html">2 · Current electricity</a></li>
-          <li><a href="magnetism.html">3 · Magnetism</a></li>
-          <li><a href="induction.html">4 · Electromagnetic induction</a></li>
+          <li><a href="vectors.html">1 · Measurement &amp; vectors</a></li>
+          <li><a href="fluids.html">2 · Fluids</a></li>
+          <li><a href="heat.html">3 · Temperature &amp; heat</a></li>
+          <li><a href="waves.html">4 · Waves &amp; sound</a></li>
+          <li><a href="current.html">5 · Electricity</a></li>
           <li><a href="../quiz.html">Quiz</a></li>
         </ul>
       </div>
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">On this page</h3>
         <ul class="footer-links">
-          <li><a href="#quantities">2.1 Current, voltage, resistance</a></li>
-          <li><a href="#ohm">2.2 Ohm’s law and power</a></li>
-          <li><a href="#networks">2.3 Series and parallel</a></li>
-          <li><a href="#sim-ohm-panel">2.4 Ohm’s law simulator</a></li>
-          <li><a href="#sim-circuit-panel">2.5 Circuit builder</a></li>
-          <li><a href="#check">2.6 Check your understanding</a></li>
+          <li><a href="#quantities">5.1 Current, voltage, resistance</a></li>
+          <li><a href="#ohm">5.2 Ohm’s law and power</a></li>
+          <li><a href="#networks">5.3 Series and parallel</a></li>
+          <li><a href="#sim-ohm-panel">5.4 Ohm’s law simulator</a></li>
+          <li><a href="#sim-circuit-panel">5.5 Circuit builder</a></li>
+          <li><a href="#check">5.6 Check your understanding</a></li>
         </ul>
       </div>
     </div>

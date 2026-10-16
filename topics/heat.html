@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Temperature scales and conversions, specific heat with Q = mcΔT, and the three mechanisms of heat transfer — with an interactive thermometer and a heat-transfer lab.">
+  <meta name="theme-color" content="#17181c">
+  <title>Topic 3 · Temperature &amp; heat — EMC Lab</title>
+  <link rel="canonical" href="https://emc-physics.vercel.app/topics/heat.html">
+  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
+       production origin; if the deploy URL ever changes, update it in all pages
+       (tools/smoke-test.mjs asserts they all agree). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EMC Lab">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Topic 3 · Temperature &amp; heat">
+  <meta property="og:description" content="Temperature scales and conversions, specific heat with Q = mcΔT, and the three mechanisms of heat transfer — with an interactive thermometer and a heat-transfer lab.">
+  <meta property="og:url" content="https://emc-physics.vercel.app/topics/heat.html">
+  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="EMC Lab — an interactive physics tutorial">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Topic 3 · Temperature &amp; heat">
+  <meta name="twitter:description" content="Temperature scales and conversions, specific heat with Q = mcΔT, and the three mechanisms of heat transfer — with an interactive thermometer and a heat-transfer lab.">
+  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Crect%20width='48'%20height='48'%20rx='14'%20fill='%2317181c'/%3E%3Cpath%20d='M15%2015%20C13%207%2019%205%2021%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cpath%20d='M33%2015%20C35%207%2029%205%2027%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cellipse%20cx='24'%20cy='27'%20rx='16'%20ry='15'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Ccircle%20cx='18.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Ccircle%20cx='29.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Cpath%20d='M22%2031%20q2%202%204%200'%20stroke='%232b2d33'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3Ccircle%20cx='13.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3Ccircle%20cx='34.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3C/svg%3E">
+  <script>if (window.tailwind) { tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#22d3ee', deep: '#0e1a2e', line: '#1e2f4d' } } } } }; }</script>
+  <link rel="stylesheet" href="../css/site.css">
+  <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-700.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-400.woff2" crossorigin>
+  <!-- KaTeX: the LaTeX formatter for every equation on the page -->
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
+</head>
+
+<body class="emc">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <noscript>
+    <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>
+  </noscript>
+
+  <header class="site-header">
+    <div class="wrap nav-inner">
+      <a class="brand" href="../index.html" aria-label="EMC Lab — home">
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
+          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
+        </svg>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+      <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
+        <a class="nav-link" href="../index.html">Home</a>
+        <div class="nav-drop">
+          <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
+                  aria-expanded="false" aria-controls="topicsMenu">Topics
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="nav-drop-menu" id="topicsMenu">
+            <a class="dd-link" href="vectors.html"><b>1 · Measurement &amp; Vectors</b><small>SI units · dimensional analysis · resultants</small></a>
+            <a class="dd-link" href="fluids.html"><b>2 · Fluids</b><small>pressure · Archimedes · Bernoulli</small></a>
+            <a class="dd-link" href="heat.html"><b>3 · Temperature &amp; Heat</b><small>scales · Q = mcΔT · heat transfer</small></a>
+            <a class="dd-link" href="waves.html"><b>4 · Waves &amp; Sound</b><small>v = fλ · wave types · tone player</small></a>
+            <a class="dd-link" href="current.html"><b>5 · Electricity</b><small>Ohm’s law · series &amp; parallel</small></a>
+          </div>
+        </div>
+        <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
+      </nav>
+    </div>
+    <div class="scroll-progress"><i id="readingProgress"></i></div>
+  </header>
+
+  <main class="emc-main" id="main">
+    <div class="wrap wrap-narrow section-tight topic-head">
+      <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span>Topic 3</span>
+      </nav>
+      <svg class="mascot mascot-sm" aria-hidden="true" viewBox="0 0 120 112">
+  <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
+  <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="60" cy="64" rx="42" ry="40" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3"/>
+  <circle cx="46" cy="58" r="3.6" fill="#2b2d33"/><circle cx="74" cy="58" r="3.6" fill="#2b2d33"/>
+  <path d="M55 68 q5 5 10 0" stroke="#2b2d33" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
+  <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
+</svg>
+      <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 3 of 5</span>
+      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Temperature &amp; heat</h1>
+      <p class="lede">
+        <strong>Temperature</strong> says how fast the particles of a body are jittering on
+        average; <strong>heat</strong> is energy on the move from hot to cold. Keeping those two
+        apart — and knowing how energy travels — explains everything from sea breezes to
+        thermos flasks.
+      </p>
+
+      <div class="card mt-4">
+        <h2 class="h-sub" style="margin-top:0">Learning objectives</h2>
+        <ul class="objectives">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Convert confidently between °C, °F and K.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Distinguish temperature, heat and internal energy.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Solve specific-heat problems with Q = mcΔT, including phase changes.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Identify conduction, convection and radiation in real situations.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Explain why metals feel cold, why radiators sit under windows, and how a vacuum flask works.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec" id="scales">3.1 · Temperature and the three scales</h2>
+      <p>
+        A thermometer works by <strong>thermal equilibrium</strong>: put it in contact with
+        something and wait, and the reading stops moving when both share the same temperature
+        (the zeroth law of thermodynamics). Three scales describe that number:
+      </p>
+
+      <div class="table-scroll">
+        <table class="data">
+          <caption class="tiny faint" style="caption-side:top;text-align:left;padding:.4rem .2rem">Fixed points on the three scales</caption>
+          <thead><tr><th>Landmark</th><th>°C</th><th>°F</th><th>K</th></tr></thead>
+          <tbody>
+            <tr><td class="txt">absolute zero</td><td>−273.15</td><td>−459.67</td><td>0</td></tr>
+            <tr><td class="txt">scales agree</td><td>−40</td><td>−40</td><td>233.15</td></tr>
+            <tr><td class="txt">water freezes</td><td>0</td><td>32</td><td>273.15</td></tr>
+            <tr><td class="txt">human body</td><td>37</td><td>98.6</td><td>310.15</td></tr>
+            <tr><td class="txt">water boils (1 atm)</td><td>100</td><td>212</td><td>373.15</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="formula">
+        <span class="eq" data-display data-tex="T_F = \tfrac{9}{5}T_C + 32, \qquad T_K = T_C + 273.15">°F = °C × 9/5 + 32 &nbsp;·&nbsp; K = °C + 273.15</span>
+        <span class="where">and the reverse: °C = (°F − 32) × 5/9 · °C = K − 273.15</span>
+      </div>
+      <p>
+        Two habits prevent every conversion error: <strong>subtract the 32 before rescaling</strong>
+        (it is an offset between zero points), and remember that <strong>a kelvin and a Celsius
+        degree are the same size</strong> — only their zeroes differ. That is why temperature
+        <em>differences</em> never need converting: ΔT = 10 °C = 10 K (though = 18 °F).
+        Physics equations always want kelvin, because only kelvin starts at true zero motion.
+      </p>
+
+      <h2 class="h-sec" id="sim-thermo-panel" style="scroll-margin-top:5rem">3.2 · Simulation — the thermometer</h2>
+      <p>
+        Drag the mercury column or move the slider: all three scales update together, with the
+        conversion arithmetic printed live. The dashed markers show the landmarks — freezing,
+        body temperature, boiling — and the special crossing point at −40°.
+      </p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h3 class="panel-title"><span class="dot" style="background:#f8aebe"></span> Thermometer</h3>
+          <p class="panel-sub">°F = °C × 9/5 + 32 · K = °C + 273.15</p>
+          <div class="panel-actions">
+            <button class="btn btn-sm" type="button" data-thermo-preset="-40">−40°</button>
+            <button class="btn btn-sm" type="button" data-thermo-preset="0">Freezing</button>
+            <button class="btn btn-sm" type="button" data-thermo-preset="37">Body</button>
+            <button class="btn btn-sm" type="button" data-thermo-preset="100">Boiling</button>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <canvas id="sim-thermometer" class="sim-canvas" role="img"
+                    aria-label="A draggable thermometer showing the same temperature in Celsius, Fahrenheit and kelvin"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#f8aebe"></i> mercury column</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> landmark markers</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl-stack">
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">T</span> temperature</span>
+                <span class="ctl-value" id="thermo-Tv">20.0 °C</span>
+                <input class="range ctl-range" type="range" id="thermo-T" min="-80" max="250" step="0.5" value="20" aria-label="Temperature in degrees Celsius">
+                <span class="ctl-hint">or type an exact value:
+                  <input class="inp" type="number" id="thermo-Tnum" min="-80" max="250" step="0.5" value="20" style="width:7rem;display:inline-block;margin-left:.35rem" aria-label="Exact temperature in degrees Celsius"> °C
+                </span>
+              </div>
+            </div>
+
+            <div class="readouts mt-4">
+              <div class="stat"><span class="stat-label">Celsius</span><span class="stat-value hl-cyan" id="thermo-C">—</span></div>
+              <div class="stat"><span class="stat-label">Fahrenheit</span><span class="stat-value hl-amber" id="thermo-F">—</span></div>
+              <div class="stat"><span class="stat-label">Kelvin</span><span class="stat-value hl-emerald" id="thermo-K">—</span></div>
+            </div>
+            <p class="sim-note mt-3 mono" id="thermo-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-2" id="thermo-note">—</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec" id="heat">3.3 · Heat and specific heat capacity</h2>
+      <p>
+        <strong>Heat Q</strong> is energy transferred because of a temperature difference — it
+        flows spontaneously from hot to cold and is measured in joules. How much a body’s
+        temperature rises per joule depends on its mass and its material:
+      </p>
+      <div class="formula">
+        <span class="eq" data-display data-tex="Q = mc\,\Delta T">Q = m·c·ΔT</span>
+        <span class="where">m in kg · c = specific heat capacity in J/(kg·K) · ΔT in K (or °C — the step size is identical)</span>
+      </div>
+
+      <div class="table-scroll">
+        <table class="data">
+          <caption class="tiny faint" style="caption-side:top;text-align:left;padding:.4rem .2rem">Specific heat capacities you should recognise</caption>
+          <thead><tr><th>Material</th><th>c, J/(kg·K)</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td class="txt">water (liquid)</td><td>4186</td><td class="txt">huge — oceans store summer heat for winter</td></tr>
+            <tr><td class="txt">ice</td><td>2100</td><td class="txt">half of liquid water</td></tr>
+            <tr><td class="txt">aluminium</td><td>900</td><td class="txt">heats fast — good for pans</td></tr>
+            <tr><td class="txt">iron / steel</td><td>450</td><td class="txt">a frying pan handle’s problem</td></tr>
+            <tr><td class="txt">copper</td><td>385</td><td class="txt">even faster to heat</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        During a <strong>phase change</strong> the temperature stands still: every joule goes into
+        breaking bonds instead of speeding particles up. Water needs
+        <strong>L<sub>f</sub> = 334 kJ/kg</strong> to melt and a remarkable
+        <strong>L<sub>v</sub> = 2260 kJ/kg</strong> to boil — five times more energy to vaporise
+        water at 100 °C than to heat it from 20 to 100 °C. That is why steam burns so badly:
+        it dumps its latent heat into your skin <em>before</em> it even cools down.
+      </p>
+
+      <div class="callout callout-key">
+        <div class="callout-title">Worked example — the kettle</div>
+        <p>How much energy to boil 1 kg of water from 20 °C? And how long in a 2.2 kW kettle?</p>
+        <p class="mono small">Q = mcΔT = 1 × 4186 × 80 = <b>335 kJ</b> &nbsp;·&nbsp; t = Q/P = 335 000/2200 ≈ <b>152 s ≈ 2½ min</b> (real kettles take a little longer — losses).</p>
+      </div>
+
+      <h2 class="h-sec" id="transfer">3.4 · The three ways heat moves</h2>
+      <dl class="defs">
+        <div><dt>Conduction — contact, particle to particle</dt><dd>Vibrating atoms and (in metals) free electrons pass energy along a material without the material moving. Rate ∝ k·A·ΔT/L: k is the thermal conductivity — copper 401 W/(m·K), glass 1.0, wood 0.15, air 0.026. Still air is an <em>insulator</em>; that is what fleeces, double glazing and loft wool are really trapping.</dd></div>
+        <div><dt>Convection — the fluid itself travels</dt><dd>Heated fluid expands, becomes less dense and rises; cooler fluid sinks to replace it, setting up a circulation loop. Convection needs a fluid and gravity: radiators sit under windows to intercept sinking cold air, and there is no convection aboard the ISS.</dd></div>
+        <div><dt>Radiation — electromagnetic waves</dt><dd>Every body radiates; output grows as T⁴ (Stefan–Boltzmann, P = εσAT⁴), which is why a small temperature rise means much more radiation. It needs <strong>no medium at all</strong> — sunlight crosses 150 million km of vacuum. Matt black surfaces absorb and emit best (ε ≈ 0.95); shiny surfaces reflect (ε ≈ 0.05).</dd></div>
+      </dl>
+
+      <details class="dig dig-trap">
+        <summary>Common misconceptions</summary>
+        <div class="dig-body">
+        <p>1. “Heat rises.” Heat is not a substance. <em>Hot air</em> rises because it is less dense — that is convection. In a vacuum, nothing rises; radiation still travels in straight lines.</p>
+        <p>2. “Metal feels cold, so metal is colder.” On a table indoors, the metal and the wood are at exactly the same temperature — your skin is the thermometer, and metal conducts your heat away faster.</p>
+        <p>3. “A coat warms you up.” A coat generates nothing; it slows the loss of <em>your</em> heat. Wrap one around an ice cube and the ice melts <em>more slowly</em>.</p>
+        <p>4. “ΔT must be converted to kelvin before using Q = mcΔT.” No — a change of 1 °C equals a change of 1 K, so differences pass through untouched. Only <em>absolute</em> temperatures (as in gas laws or T⁴) need kelvin.</p>
+        </div>
+      </details>
+
+      <h2 class="h-sec" id="sim-heat-panel" style="scroll-margin-top:5rem">3.5 · Simulation — heat transfer lab</h2>
+      <p>
+        Three scenes, one canvas. <strong>Conduction:</strong> hold one end of a rod hot and watch
+        the temperature profile relax to steady state — then swap copper for wood and see the flux
+        collapse by a factor of thousands. <strong>Convection:</strong> a heater drives a visible
+        circulation loop; more power, faster plume. <strong>Radiation:</strong> move the plates
+        away from the source and watch intensity fall as 1/d² — and compare what matt black and
+        shiny surfaces absorb.
+      </p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h3 class="panel-title"><span class="dot" style="background:#f8aebe"></span> Heat transfer lab</h3>
+          <p class="panel-sub">conduction · convection · radiation</p>
+          <div class="panel-actions">
+            <div class="seg" id="ht-mode" role="group" aria-label="Heat transfer mechanism">
+              <button class="seg-btn" type="button" data-value="conduction" aria-pressed="true">Conduction</button>
+              <button class="seg-btn" type="button" data-value="convection" aria-pressed="false">Convection</button>
+              <button class="seg-btn" type="button" data-value="radiation" aria-pressed="false">Radiation</button>
+            </div>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <canvas id="sim-heat-transfer" class="sim-canvas" role="img"
+                    aria-label="Animated demonstration of heat conduction along a rod, convection in a heated pot, or radiation between plates"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#ef6f8e"></i> hot</span>
+              <span><i class="swatch" style="background:#f6d36b"></i> warm</span>
+              <span><i class="swatch" style="background:#b5d777"></i> mild</span>
+              <span><i class="swatch" style="background:#6f9db3"></i> cool</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl-stack">
+              <div id="ht-ctl-material">
+                <span class="ctl-label" style="margin-bottom:.4rem">Rod material</span>
+                <div class="seg" id="ht-material" role="group" aria-label="Rod material">
+                  <button class="seg-btn" type="button" data-value="copper" aria-pressed="true">Copper</button>
+                  <button class="seg-btn" type="button" data-value="iron" aria-pressed="false">Iron</button>
+                  <button class="seg-btn" type="button" data-value="glass" aria-pressed="false">Glass</button>
+                  <button class="seg-btn" type="button" data-value="wood" aria-pressed="false">Wood</button>
+                </div>
+              </div>
+              <div class="ctl" id="ht-ctl-hot">
+                <span class="ctl-label"><span class="sym">T<sub>hot</sub></span> hot end</span>
+                <span class="ctl-value" id="ht-hotv">300 °C</span>
+                <input class="range ctl-range" type="range" id="ht-hot" min="100" max="600" step="10" value="300" aria-label="Hot end temperature in degrees Celsius">
+              </div>
+              <div class="ctl" id="ht-ctl-power" style="display:none">
+                <span class="ctl-label"><span class="sym">P</span> heater / source power</span>
+                <span class="ctl-value" id="ht-powerv">800 W</span>
+                <input class="range ctl-range" type="range" id="ht-power" min="200" max="2000" step="50" value="800" aria-label="Heater power in watts">
+              </div>
+              <div class="ctl" id="ht-ctl-dist" style="display:none">
+                <span class="ctl-label"><span class="sym">d</span> distance from source</span>
+                <span class="ctl-value" id="ht-distv">1.00 m</span>
+                <input class="range ctl-range" type="range" id="ht-dist" min="0.5" max="3" step="0.05" value="1" aria-label="Distance from the radiation source in metres">
+              </div>
+            </div>
+
+            <div class="readouts mt-4">
+              <div class="stat"><span class="stat-label" id="ht-r1l">hot end</span><span class="stat-value hl-cyan" id="ht-r1">—</span></div>
+              <div class="stat"><span class="stat-label" id="ht-r2l">cold end</span><span class="stat-value" id="ht-r2">—</span></div>
+              <div class="stat"><span class="stat-label" id="ht-r3l">heat flux</span><span class="stat-value hl-amber" id="ht-r3">—</span></div>
+              <div class="stat"><span class="stat-label" id="ht-r4l">k</span><span class="stat-value" id="ht-r4">—</span></div>
+            </div>
+            <p class="sim-note mt-3 mono" id="ht-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-2" id="ht-note">—</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec" id="check">3.6 · Check your understanding</h2>
+
+      <details class="check">
+        <summary>Convert −196 °C (liquid nitrogen) to °F and K.</summary>
+        <div class="answer">K = −196 + 273.15 = <b>77.15 K</b>. °F = −196 × 9/5 + 32 = −352.8 + 32 = <b>−320.8 °F</b>.</div>
+      </details>
+      <details class="check">
+        <summary>How much heat raises 0.5 kg of aluminium from 20 °C to 180 °C? (c = 900 J/kg·K)</summary>
+        <div class="answer">Q = mcΔT = 0.5 × 900 × 160 = <b>72 kJ</b>. The same change in water would need 0.5 × 4186 × 160 = 335 kJ — nearly five times more, which is why pans are metal and their contents are wet.</div>
+      </details>
+      <details class="check">
+        <summary>A 0.5 kW heater radiates into a room. If you triple your distance from it, how much intensity reaches you?</summary>
+        <div class="answer">Intensity follows the inverse square law: I = P/(4πd²). Tripling d divides I by <b>9</b> — you feel one ninth of the warmth.</div>
+      </details>
+      <details class="check">
+        <summary>Name the dominant heat-transfer mechanism: (a) a spoon handle warming in soup, (b) a fridge coil cooling air at the top of the compartment, (c) feeling a fire on your face from 3 m away.</summary>
+        <div class="answer">(a) <b>Conduction</b> through the metal. (b) <b>Convection</b> — cooled air is denser and sinks, setting up the loop. (c) <b>Radiation</b> — the air between you and the fire is barely warmed; infrared crosses the gap (and would cross a vacuum).</div>
+      </details>
+      <details class="check">
+        <summary>Why does a vacuum flask keep coffee hot for hours?</summary>
+        <div class="answer">It attacks all three mechanisms at once: the <b>vacuum</b> between the walls kills conduction and convection (no particles to carry energy), the <b>silvered walls</b> reflect radiation back (low emissivity), and the <b>stopper</b> blocks convection and evaporation at the only remaining opening.</div>
+      </details>
+
+      <div class="card mt-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold">Finished with Topic 3?</h3>
+            <p class="small muted" style="margin:.25rem 0 0">Next: waves and sound — and a tone player you can hear.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" type="button" data-complete-topic="heat" aria-pressed="false">Mark topic as complete</button>
+            <a class="btn" href="../quiz.html?topic=heat">Quiz this topic</a>
+          </div>
+        </div>
+      </div>
+
+      <nav class="pager" aria-label="Topic navigation">
+        <a href="fluids.html"><span class="dir">← Previous</span><span class="ttl">2 · Fluids</span></a>
+        <a class="next" href="waves.html"><span class="dir">Next topic →</span><span class="ttl">4 · Waves &amp; sound</span></a>
+      </nav>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <span class="brand" style="pointer-events:none">
+          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
+          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
+        </svg>
+          <span class="brand-name">EMC<em>Lab</em></span>
+        </span>
+        <p class="small muted" style="margin-top:.6rem">Topic 3 of 5.</p>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
+        <ul class="footer-links">
+          <li><a href="vectors.html">1 · Measurement &amp; vectors</a></li>
+          <li><a href="fluids.html">2 · Fluids</a></li>
+          <li><a href="heat.html">3 · Temperature &amp; heat</a></li>
+          <li><a href="waves.html">4 · Waves &amp; sound</a></li>
+          <li><a href="current.html">5 · Electricity</a></li>
+          <li><a href="../quiz.html">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">On this page</h3>
+        <ul class="footer-links">
+          <li><a href="#scales">3.1 Temperature and the three scales</a></li>
+          <li><a href="#sim-thermo-panel">3.2 Thermometer</a></li>
+          <li><a href="#heat">3.3 Heat and specific heat</a></li>
+          <li><a href="#transfer">3.4 The three ways heat moves</a></li>
+          <li><a href="#sim-heat-panel">3.5 Heat transfer lab</a></li>
+          <li><a href="#check">3.6 Check your understanding</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top:1.6rem">
+      <hr class="hr">
+      <p class="tiny faint center" style="margin-top:1rem">© <span data-year>2026</span> EMC Lab</p>
+    </div>
+  </footer>
+
+  <script defer src="../vendor/katex/katex.min.js"></script>
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/sim-thermometer.js"></script>
+  <script defer src="../js/sim-heat-transfer.js"></script>
+</body>
+</html>

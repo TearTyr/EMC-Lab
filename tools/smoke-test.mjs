@@ -86,8 +86,9 @@ const drawCalls = (win, sel) => {
 const drawnText = (win, sel) => (win.document.querySelector(sel)?.__stats?.text || []);
 
 /* ---------- page loader -------------------------------------------------- */
-async function loadPage(relPath, globals = {}) {
-  const file = join(ROOT, relPath);
+async function loadPage(relPath, globals = {}, opts = {}) {
+  const file = join(ROOT, relPath.split('?')[0]);
+  const query = relPath.includes('?') ? relPath.slice(relPath.indexOf('?')) : '';
   let html = readFileSync(file, 'utf8')
     // never fetch the Tailwind CDN inside the test
     .replace(/<script src="https:\/\/cdn\.tailwindcss\.com"[^>]*><\/script>/g, '');
@@ -100,7 +101,7 @@ async function loadPage(relPath, globals = {}) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     pretendToBeVisual: true,          // provides requestAnimationFrame
-    url: 'http://localhost/',          // enables localStorage
+    url: 'http://localhost/' + query,  // enables localStorage + ?topic= links
     virtualConsole: vc
   });
   installMocks(dom.window);
@@ -108,7 +109,8 @@ async function loadPage(relPath, globals = {}) {
 
   // run the page's own local scripts, in document order
   const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/g)]
-    .map(m => m[1]).filter(s => !/^https?:/.test(s));
+    .map(m => m[1]).filter(s => !/^https?:/.test(s))
+    .filter(s => !(opts.skip && new RegExp(opts.skip).test(s)));
   for (const src of scripts) {
     const code = readFileSync(resolve(dirname(file), src), 'utf8');
     dom.window.eval(code);
@@ -158,72 +160,64 @@ console.log('\u2500'.repeat(66));
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('progress ring shows a percentage', /^\d+%$/.test(txt(win, 'ringPct') || ''), txt(win, 'ringPct'));
   eq('starts at 0% with empty storage', txt(win, 'ringPct'), '0%');
-  eq('topic counter text', txt(win, 'dashTopicsDone'), '0 of 4 topics studied');
-  eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 4 topics studied');
+  eq('topic counter text', txt(win, 'dashTopicsDone'), '0 of 5 topics studied');
+  eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 5 topics studied');
   ok('hero canvas rendered', drawCalls(win, '#heroCanvas') > 200, `${drawCalls(win, '#heroCanvas')} calls`);
-  ok('hero animation draws field-line labels', drawnText(win, '#heroCanvas').some(t => t.includes('E = k q')), '');
+  ok('hero animation draws the equation strip', drawnText(win, '#heroCanvas').some(t => t.includes('v = f\u03BB')), '');
   eq('storage status reported', txt(win, 'storageStatus'), 'enabled \u2014 your progress is saved in this browser');
   eq('year filled in', doc.querySelector('[data-year]').textContent, String(new Date().getFullYear()));
 
   // progress persistence: mark a topic, reload the same storage, re-render
-  win.EMC.Progress.markTopic('charges', true);
+  win.EMC.Progress.markTopic('vectors', true);
   win.EMC.Progress.recordQuiz(85);
-  eq('a passing score (70%+) counts all four topics as studied',
+  eq('a passing score (70%+) counts all five topics as studied',
      JSON.stringify(win.EMC.Progress.read().topics),
-     JSON.stringify({ charges: true, current: true, magnetism: true, induction: true }));
+     JSON.stringify({ vectors: true, fluids: true, heat: true, waves: true, current: true }));
   eq('percent weights topics (80%) + quiz (20%)', win.EMC.Progress.percent(), Math.round(1 * 80 + 0.85 * 20));
   win.window?.close?.(); win.close();
 }
 
-/* ---------------- topics/charges.html ---------------- */
+/* ---------------- topics/vectors.html ---------------- */
 {
-  console.log('\n[topics/charges.html]');
-  const { win, doc, problems } = await loadPage('topics/charges.html');
+  console.log('\n[topics/vectors.html]');
+  const { win, doc, problems } = await loadPage('topics/vectors.html');
   await frames(win, 4);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
-  ok('coulomb canvas rendered', drawCalls(win, '#sim-coulomb') > 100);
-  ok('field canvas rendered', drawCalls(win, '#sim-efield') > 300);
+  ok('vector bench canvas rendered', drawCalls(win, '#sim-vector-add') > 80);
 
-  // --- Coulomb physics: +2 uC / -2 uC at 0.30 m must give 0.399 N ---
-  setRange(win, 'coul-q1', 2);
-  setRange(win, 'coul-q2', -2);
-  setRange(win, 'coul-r', 0.3);
-  const K = 8.987551787e9;
-  numClose('Coulomb force 2 uC/-2 uC @ 0.30 m', parseSI(txt(win, 'coul-force')), K * 4e-12 / 0.09, 0.005);
-  ok('force reported as attractive', /Attractive/.test(txt(win, 'coul-nature')), txt(win, 'coul-nature'));
-  ok('substitution line shows the working with real <sup> markup',
-    /8\.99×10<sup>9<\/sup>/.test(doc.getElementById('coul-substitution').innerHTML),
-    doc.getElementById('coul-substitution').innerHTML);
+  // --- the 3-4-5 preset: A = (3,0), B = (0,4) -> R = (3,4), |R| = 5 ---
+  click(win, doc.querySelector('[data-vec-preset="3,0,0,4"]'));
+  eq('|A| of the 3-4-5 preset', txt(win, 'vec-Amag'), '3.00 u');
+  eq('|B| of the 3-4-5 preset', txt(win, 'vec-Bmag'), '4.00 u');
+  eq('Rx = Ax + Bx', txt(win, 'vec-Rx'), '3.0');
+  eq('Ry = Ay + By', txt(win, 'vec-Ry'), '4.0');
+  eq('resultant magnitude is 5', txt(win, 'vec-Rmag'), '5.00 u');
+  ok('substitution line shows the component sums', /Rx = Ax \+ Bx/.test(txt(win, 'vec-sub')), txt(win, 'vec-sub'));
 
-  // --- inverse square law: doubling r quarters F ---
-  const F1 = parseSI(txt(win, 'coul-force'));
-  setRange(win, 'coul-r', 0.6);
-  numClose('doubling r quarters the force', parseSI(txt(win, 'coul-force')), F1 / 4, 0.01);
+  // --- A = (3,4), B = (4,-2): R = (7,2), |R| = sqrt(53) ---
+  click(win, doc.querySelector('[data-vec-preset="3,4,4,-2"]'));
+  eq('|A| = 5 for the (3,4) preset', txt(win, 'vec-Amag'), '5.00 u');
+  eq('R = (7, 2)', txt(win, 'vec-Rx') + ',' + txt(win, 'vec-Ry'), '7.0,2.0');
+  numClose('|R| = sqrt(53)', parseFloat(txt(win, 'vec-Rmag')), Math.sqrt(53), 0.001);
 
-  setRange(win, 'coul-q2', 2);
-  ok('like charges repel', /Repulsive/.test(txt(win, 'coul-nature')), txt(win, 'coul-nature'));
+  // --- opposite vectors cancel exactly ---
+  click(win, doc.querySelector('[data-vec-preset="2,2,-2,-2"]'));
+  eq('opposite vectors cancel to zero', txt(win, 'vec-Rmag'), '0.00 u');
 
-  // --- preset buttons drive the sliders ---
-  click(win, doc.querySelector('[data-coul-preset="5,5,0.10"]'));
-  eq('preset sets q1', doc.getElementById('coul-q1').value, '5');
-  eq('preset sets r', doc.getElementById('coul-r').value, '0.1');
+  // --- drag the arrowhead: A=(3,4); canvas is 900x400 in jsdom,
+  //     scale = min(900, 400)/10 = 40 px/unit, origin (450, 200),
+  //     so A's tip sits at (570, 40). Drag it to (4, 4) at (610, 40). ---
+  click(win, doc.querySelector('[data-vec-preset="3,4,4,-2"]'));
+  pointer(win, doc.getElementById('sim-vector-add'), 'pointerdown', 570, 40);
+  pointer(win, doc.getElementById('sim-vector-add'), 'pointermove', 610, 40);
+  pointer(win, doc.getElementById('sim-vector-add'), 'pointerup', 610, 40);
+  eq('dragging the tip moves A to (4,4)', txt(win, 'vec-Amag'), '5.66 u');
+  eq('R follows the drag: (8,2)', txt(win, 'vec-Rx') + ',' + txt(win, 'vec-Ry'), '8.0,2.0');
 
-  // --- field explorer ---
-  click(win, doc.querySelector('[data-ef-preset="like"]'));
-  eq('two like charges counted', txt(win, 'ef-count'), '2');
-  eq('net charge of the preset', txt(win, 'ef-net'), '+8.0 µC');
-  click(win, doc.querySelector('[data-ef-preset="dipole"]'));
-  eq('dipole net charge is zero', txt(win, 'ef-net'), '0.0 µC');
-  pointer(win, doc.getElementById('sim-efield'), 'pointermove', 300, 200);
-  ok('probe reports a field magnitude', /N\/C/.test(txt(win, 'ef-emag') || ''), txt(win, 'ef-emag'));
-  ok('probe reports a force on +1 nC', /N/.test(txt(win, 'ef-force') || ''), txt(win, 'ef-force'));
-  // adding a charge with the + tool
-  const plus = doc.querySelector('#ef-brush [data-value="add+"]');
-  click(win, plus);
-  pointer(win, doc.getElementById('sim-efield'), 'pointerdown', 500, 250);
-  eq('clicking with the + tool adds a charge', txt(win, 'ef-count'), '3');
-  click(win, doc.getElementById('ef-clear'));
-  eq('clear empties the canvas', txt(win, 'ef-count'), '0');
+  // --- mode segment flips aria-pressed ---
+  const tipBtn = doc.querySelector('#vec-mode [data-value="tip"]');
+  click(win, tipBtn);
+  eq('tip-to-tail mode engages', tipBtn.getAttribute('aria-pressed'), 'true');
   win.close();
 }
 
@@ -301,143 +295,143 @@ console.log('\u2500'.repeat(66));
   win.close();
 }
 
-/* ---------------- topics/magnetism.html ---------------- */
+/* ---------------- topics/fluids.html ---------------- */
 {
-  console.log('\n[topics/magnetism.html]');
-  const { win, doc, problems } = await loadPage('topics/magnetism.html');
+  console.log('\n[topics/fluids.html]');
+  const { win, doc, problems } = await loadPage('topics/fluids.html');
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
-  ok('magnet canvas rendered', drawCalls(win, '#sim-magnet') > 300);
-  ok('lorentz canvas rendered', drawCalls(win, '#sim-lorentz') > 80);
+  ok('buoyancy tank rendered', drawCalls(win, '#sim-archimedes') > 60);
+  ok('bernoulli canvas rendered', drawCalls(win, '#sim-bernoulli') > 60);
 
-  eq('dipole moment readout', txt(win, 'mag-moment'), '0.60 A·m²');
-  ok('pole strength is m/l', /A·m/.test(txt(win, 'mag-pole')), txt(win, 'mag-pole'));
-  const filingsBtn = doc.querySelector('[data-toggle="filings"]');
-  click(win, filingsBtn);
-  eq('filings layer toggles on', filingsBtn.getAttribute('aria-pressed'), 'true');
-  setRange(win, 'mag-angle', 90);
-  eq('angle slider updates the readout', txt(win, 'mag-anglev'), '90°');
-  pointer(win, doc.getElementById('sim-magnet'), 'pointermove', 200, 120);
-  ok('probe reports |B| in tesla', /T/.test(txt(win, 'mag-bprobe') || ''), txt(win, 'mag-bprobe'));
-  ok('probe compares with Earth’s field', /Earth/.test(txt(win, 'mag-bprobe-uT') || ''), txt(win, 'mag-bprobe-uT'));
+  // --- Archimedes: rho_obj = 600 in water floats with 60% submerged ---
+  eq('verdict: floats', txt(win, 'arch-state'), 'floats');
+  eq('submerged fraction = rho ratio', txt(win, 'arch-subfr'), '60.0 %');
+  numClose('weight = rho_obj V g', parseSI(txt(win, 'arch-weight')), 600 * 0.002 * 9.80665, 0.005);
+  numClose('floating: F_B equals W', parseSI(txt(win, 'arch-buoy')), parseSI(txt(win, 'arch-weight')), 0.001);
+  eq('displaced volume in litres', txt(win, 'arch-vsub'), '1.20 L');
 
-  // --- Lorentz force: proton, 2e5 m/s, 0.5 T ---
-  // F = qvB = 1.602e-19*2e5*0.5 = 1.60e-14 N ; r = mv/qB = 4.18 mm ; T = 131 ns
-  const e = 1.602176634e-19, mp = 1.67262192369e-27, v0 = 2e5, B0 = 0.5;
-  numClose('|F| = qvB', parseSI(txt(win, 'lor-force')), e * v0 * B0, 0.01);
-  numClose('orbit radius r = mv/qB', parseSI(txt(win, 'lor-radius')), mp * v0 / (e * B0), 0.01);
-  numClose('period T = 2 pi m/qB', parseSI(txt(win, 'lor-period')), 2 * Math.PI * mp / (e * B0), 0.01);
-  numClose('kinetic energy = 1/2 mv^2 (in eV)', parseSI(txt(win, 'lor-ke')), 0.5 * mp * v0 * v0 / e, 0.01);
-  numClose('kinetic energy sub-line in joules', parseSI(txt(win, 'lor-kev')), 0.5 * mp * v0 * v0, 0.01);
-  ok('prefixes are never stacked', !/(m|µ|n|p|k)(m|µ|n|p|k)[A-Z]/.test(txt(win, 'lor-force')));
-  eq('force points down for v=right, B=out, q>0', txt(win, 'lor-dir'), 'down ↓');
+  // --- sink it: rho_obj = 2000 -> full submersion, floor normal force ---
+  setRange(win, 'arch-rho', 2000);
+  await frames(win, 150);
+  eq('verdict: sinks', txt(win, 'arch-state'), 'sinks');
+  eq('fully submerged', txt(win, 'arch-subfr'), '100.0 %');
+  numClose('F_B = rho_f V g', parseSI(txt(win, 'arch-buoy')), 1000 * 0.002 * 9.80665, 0.005);
+  ok('at rest the floor supplies the missing force', /floor holds/.test(txt(win, 'arch-net')), txt(win, 'arch-net'));
 
-  // flipping the field reverses the force
-  click(win, doc.querySelector('#lor-bdir [data-value="in"]'));
-  eq('reversing B reverses F', txt(win, 'lor-dir'), 'up ↑');
-  // an electron reverses it again
-  click(win, doc.querySelector('#lor-particle [data-value="electron"]'));
-  eq('electron curves the other way', txt(win, 'lor-dir'), 'down ↓');
-  ok('negative-charge rule is explained', /REVERSE/.test(txt(win, 'lor-rule')), txt(win, 'lor-rule'));
-  click(win, doc.querySelector('#lor-particle [data-value="proton"]'));
-  click(win, doc.querySelector('#lor-bdir [data-value="out"]'));
+  // --- seawater: 500/1025 = 48.8% submerged ---
+  click(win, doc.querySelector('#arch-fluid [data-value="1025"]'));
+  setRange(win, 'arch-rho', 500);
+  await frames(win, 150);
+  eq('seawater shifts the floating depth', txt(win, 'arch-subfr'), '48.8 %');
 
-  // doubling B halves the radius
-  const r0 = parseSI(txt(win, 'lor-radius'));
-  setRange(win, 'lor-B', 1.0);
-  numClose('doubling B halves r', parseSI(txt(win, 'lor-radius')), r0 / 2, 0.01);
-  setRange(win, 'lor-B', 0.5);
+  // --- Bernoulli, venturi mode: continuity and the pressure drop ---
+  click(win, doc.querySelector('#bern-mode [data-value="pipe"]'));
+  setRange(win, 'bern-flow', 1);
+  setRange(win, 'bern-ratio', 0.5);
+  numClose('throat speed = v1/ratio^2 = 4 m/s', parseFloat(txt(win, 'bern-v2')), 4, 0.005);
+  numClose('dP = 1/2 rho (v2^2 - v1^2) = 7.5 kPa', parseSI(txt(win, 'bern-dp')), 0.5 * 1000 * (16 - 1), 0.005);
+  ok('continuity is announced', /continuity/.test(txt(win, 'bern-state')), txt(win, 'bern-state'));
 
-  // --- right-hand-rule challenge ---
-  click(win, doc.querySelector('[data-lor-answer="down"]'));
-  ok('correct challenge answer is accepted', /Correct/.test(txt(win, 'lor-challenge-feedback')), txt(win, 'lor-challenge-feedback'));
-  ok('the correct button is highlighted', doc.querySelector('[data-lor-answer="down"]').classList.contains('correct'));
-  click(win, doc.getElementById('lor-challenge-new'));
-  ok('a new scenario re-enables the buttons', doc.querySelectorAll('[data-lor-answer]:not([disabled])').length === 4);
+  // --- wing mode: lift grows with AoA, stall past 15 deg ---
+  click(win, doc.querySelector('#bern-mode [data-value="wing"]'));
+  setRange(win, 'bern-aoa', 6);
+  const lift6 = parseSI(txt(win, 'bern-extra'));
+  ok('attached flow at 6 deg', /attached/.test(txt(win, 'bern-state')), txt(win, 'bern-state'));
+  setRange(win, 'bern-aoa', 12);
+  ok('more AoA, more lift', parseSI(txt(win, 'bern-extra')) > lift6);
+  setRange(win, 'bern-aoa', 18);
+  ok('stall is flagged past 15 deg', /STALL/.test(txt(win, 'bern-state')), txt(win, 'bern-state'));
   win.close();
 }
 
-/* ---------------- topics/induction.html ---------------- */
+/* ---------------- topics/heat.html ---------------- */
 {
-  console.log('\n[topics/induction.html]');
-  const { win, doc, problems } = await loadPage('topics/induction.html');
+  console.log('\n[topics/heat.html]');
+  const { win, doc, problems } = await loadPage('topics/heat.html');
   await frames(win, 4);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
-  ok('induction canvas rendered', drawCalls(win, '#sim-induction') > 150);
-  ok('p5.js lab lazy-loads (injects on approach, notice if blocked)',
-    /could not be loaded/.test(doc.getElementById('p5-gen-host').textContent) ||
-    doc.getElementById('p5-gen-host').dataset.p5 === 'loading');
-  ok('the 4.6 self-check anchor target exists', !!doc.getElementById('check'));
-  ok('no dead hash-only links remain on the page', doc.querySelectorAll('a[href="#"]').length === 0);
-  ok('the 4.6 energy answer no longer claims energy is unchanged',
-     !/energy per pass stays the same/i.test(doc.body.textContent));
+  ok('thermometer canvas rendered', drawCalls(win, '#sim-thermometer') > 60);
+  ok('heat-transfer canvas rendered', drawCalls(win, '#sim-heat-transfer') > 60);
 
-  // stationary magnet -> no EMF at all
-  eq('a stationary magnet induces nothing', parseSI(txt(win, 'ind-emf')), 0);
-  eq('galvanometer reads zero', parseSI(txt(win, 'ind-I')), 0);
-  eq('direction readout explains why', txt(win, 'ind-dir'), 'no induced current');
-  ok('flux is non-zero while the magnet sits off-centre', parseSI(txt(win, 'ind-phi')) > 0, txt(win, 'ind-phi'));
-  ok('Lenz panel explains the zero', /not changing/.test(txt(win, 'ind-lenz')), txt(win, 'ind-lenz'));
+  // --- thermometer: exact conversions at body temperature ---
+  setRange(win, 'thermo-T', 37);
+  eq('37.0 C', txt(win, 'thermo-C'), '37.0 \u00B0C');
+  eq('98.6 F', txt(win, 'thermo-F'), '98.6 \u00B0F');
+  eq('310.15 K', txt(win, 'thermo-K'), '310.15 K');
+  setRange(win, 'thermo-T', -40);
+  eq('-40 is where the scales agree', txt(win, 'thermo-F'), '-40.0 \u00B0F');
+  ok('the note explains the crossing point', /same number/.test(txt(win, 'thermo-note')), txt(win, 'thermo-note'));
+  click(win, doc.querySelector('[data-thermo-preset="100"]'));
+  eq('boiling preset: 212.0 F', txt(win, 'thermo-F'), '212.0 \u00B0F');
+  eq('boiling preset: 373.15 K', txt(win, 'thermo-K'), '373.15 K');
 
-  // exact dipole flux check: Phi = mu0*m*a^2 / (2*(a^2+z^2)^1.5)
-  const mu0 = 4 * Math.PI * 1e-7, m = 0.8, a = 0.02, z = -0.075;
-  const phiExpected = mu0 * m * a * a / (2 * Math.pow(a * a + z * z, 1.5));
-  numClose('Phi per turn matches the closed form', parseSI(txt(win, 'ind-phi')), phiExpected, 0.01);
-  numClose('lambda = N * Phi', parseSI(txt(win, 'ind-lambda')), 800 * phiExpected, 0.01);
-  ok('flux units are not double-prefixed', !/µm|mµ|nµ/.test(txt(win, 'ind-phi')), txt(win, 'ind-phi'));
+  // --- conduction: Fourier flux through the rod ends, q = k A dT / L ---
+  // (the ends are held reservoirs, so the printed flux is exact from frame 1)
+  await frames(win, 20);
+  const qCopper = 401 * 1e-4 * (300 - 20) / 0.4;          // 28.07 W
+  numClose('copper flux = kA\u0394T/L', parseSI(txt(win, 'ht-r3')), qCopper, 0.01);
+  eq('cold end held at ambient', txt(win, 'ht-r2'), '20 \u00B0C');
+  click(win, doc.querySelector('#ht-material [data-value="glass"]'));
+  await frames(win, 20);
+  numClose('glass flux scales with k (ratio 401)', parseSI(txt(win, 'ht-r3')), qCopper / 401, 0.02);
 
-  // push the magnet through: an EMF must appear and then change sign
-  click(win, doc.querySelector('[data-ind-mode="push"]'));
-  const emfs = [], dirs = [], currents = [];
-  for (let i = 0; i < 90; i++) {
-    await frames(win, 1);
-    emfs.push(parseSI(txt(win, 'ind-emf')));
-    dirs.push(txt(win, 'ind-dir') || '');
-    currents.push(parseSI(txt(win, 'ind-I')));
-  }
-  const peak = Math.max(...emfs.map(Math.abs));
-  ok('motion induces a measurable EMF', peak > 1e-3, `peak |EMF| = ${(peak * 1000).toFixed(1)} mV`);
-  ok('the EMF changes sign as the magnet passes the centre',
-    Math.min(...emfs) < 0 && Math.max(...emfs) > 0,
-    `min ${(Math.min(...emfs) * 1000).toFixed(1)} mV / max ${(Math.max(...emfs) * 1000).toFixed(1)} mV`);
-  ok('a current flows while the magnet moves', Math.max(...currents.map(Math.abs)) > 1e-5,
-    `${(Math.max(...currents.map(Math.abs)) * 1000).toFixed(2)} mA peak`);
-  ok('the strip chart recorded history', drawCalls(win, '#sim-induction-chart') > 40);
-  ok('Lenz direction is stated during the motion',
-    dirs.some(d => /\b(CW|CCW)\b/.test(d)), [...new Set(dirs)].join(' / '));
-  ok('the sense reverses as flux switches from rising to falling',
-    dirs.some(d => /\bCW\b/.test(d)) && dirs.some(d => /\bCCW\b/.test(d)),
-    [...new Set(dirs)].join(' / '));
-  ok('I = EMF/R at every sample', emfs.every((emf, i) => Math.abs(currents[i] - emf / 10) < 1e-9));
+  // --- radiation: inverse-square law ---
+  click(win, doc.querySelector('#ht-mode [data-value="radiation"]'));
+  setRange(win, 'ht-dist', 1);
+  const I1 = parseSI(txt(win, 'ht-r1'));
+  numClose('I = P/(4 pi d^2) at 1 m', I1, 800 / (4 * Math.PI), 0.01);
+  setRange(win, 'ht-dist', 2);
+  numClose('doubling d quarters I', parseSI(txt(win, 'ht-r1')), I1 / 4, 0.01);
+  ok('radiation note names the vacuum property', /vacuum/.test(txt(win, 'ht-note')), txt(win, 'ht-note'));
 
-  ok('induction challenge strip is live', (txt(win, 'ind-chal-text') || '').length > 20, txt(win, 'ind-chal-text'));
-  eq('three induction prediction choices', doc.querySelectorAll('#ind-chal-opts button').length, 3);
+  // --- convection scene runs clean and explains the loop ---
+  click(win, doc.querySelector('#ht-mode [data-value="convection"]'));
+  await frames(win, 24);
+  ok('no errors after switching scenes', problems.length === 0, problems.join(' | '));
+  ok('convection note explains rising hot fluid', /rises/.test(txt(win, 'ht-note')), txt(win, 'ht-note'));
+  win.close();
+}
 
-  // Faraday scaling: EMF is proportional to N. Use the deterministic
-  // oscillation so both runs sample exactly the same motion.
-  const runOscillation = async () => {
-    click(win, doc.getElementById('ind-reset'));
-    click(win, doc.querySelector('[data-ind-mode="oscillate"]'));
-    const seen = [];
-    for (let i = 0; i < 90; i++) { await frames(win, 1); seen.push(Math.abs(parseSI(txt(win, 'ind-emf')))); }
-    click(win, doc.querySelector('[data-ind-mode="manual"]'));
-    return Math.max(...seen);
-  };
-  setRange(win, 'ind-N', 800);
-  const peak800 = await runOscillation();
-  setRange(win, 'ind-N', 1600);
-  const peak1600 = await runOscillation();
-  numClose('EMF scales linearly with N (800 -> 1600 turns)', peak1600, peak800 * 2, 0.10);
-  ok('oscillating the magnet produces an alternating EMF', peak800 > 1e-3, `${(peak800 * 1000).toFixed(1)} mV peak`);
+/* ---------------- topics/waves.html ---------------- */
+{
+  console.log('\n[topics/waves.html]');
+  const { win, doc, problems } = await loadPage('topics/waves.html');
+  await frames(win, 6);
+  ok('no runtime errors', problems.length === 0, problems.join(' | '));
+  ok('wave canvas rendered', drawCalls(win, '#sim-wave') > 150);
+  ok('sound canvas rendered', drawCalls(win, '#sim-sound') > 100);
 
-  // R changes the current but not the EMF
-  click(win, doc.getElementById('ind-reset'));
-  click(win, doc.querySelector('[data-ind-mode="push"]'));
-  await frames(win, 12);
-  const emfR10 = parseSI(txt(win, 'ind-emf')), iR10 = parseSI(txt(win, 'ind-I'));
-  setRange(win, 'ind-R', 40);
-  numClose('quadrupling R leaves the EMF unchanged', parseSI(txt(win, 'ind-emf')), emfR10, 0.02);
-  numClose('quadrupling R quarters the current', parseSI(txt(win, 'ind-I')), iR10 / 4, 0.02);
+  // --- v = f lambda, live ---
+  setRange(win, 'wave-f', 2);
+  setRange(win, 'wave-lam', 1.5);
+  eq('v = 2 Hz x 1.5 m = 3 m/s', txt(win, 'wave-v'), '3.00 m/s');
+  eq('T = 1/f = 0.5 s', txt(win, 'wave-T'), '0.50 s');
+  ok('substitution line shows the product', /v = f \u00D7 \u03BB/.test(txt(win, 'wave-sub')), txt(win, 'wave-sub'));
+  setRange(win, 'wave-A', 12);
+  ok('amplitude readout follows', /12 cm/.test(txt(win, 'wave-Av')), txt(win, 'wave-Av'));
+
+  // --- longitudinal mode + pause ---
+  const longBtn = doc.querySelector('#wave-type [data-value="longitudinal"]');
+  click(win, longBtn);
+  eq('longitudinal mode engages', longBtn.getAttribute('aria-pressed'), 'true');
+  const pause = doc.getElementById('wave-pause');
+  click(win, pause);
+  eq('pause toggles aria-pressed', pause.getAttribute('aria-pressed'), 'true');
+  await frames(win, 6);
+  ok('still renders while paused', drawCalls(win, '#sim-wave') > 150);
+
+  // --- tone player: pitch maths without audio hardware ---
+  setRange(win, 'snd-f', 440);
+  eq('440 Hz is A4', txt(win, 'snd-note'), 'A4 (exact)');
+  numClose('lambda = 343/440', parseFloat(txt(win, 'snd-lambda')), 343 / 440, 0.01);
+  numClose('period = 2.27 ms', parseFloat(txt(win, 'snd-period')), 2.27, 0.02);
+  click(win, doc.getElementById('snd-play'));
+  ok('play is guarded without AudioContext: a status explains it',
+    /not available|playing/i.test(txt(win, 'snd-status')), txt(win, 'snd-status'));
+  ok('no runtime errors from the audio guard', problems.length === 0, problems.join(' | '));
+  click(win, doc.querySelector('[data-snd-preset="261.6"]'));
+  ok('C4 preset lands on the right note', /C4/.test(txt(win, 'snd-note')), txt(win, 'snd-note'));
   win.close();
 }
 
@@ -448,23 +442,22 @@ console.log('\u2500'.repeat(66));
   await frames(win, 2);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   const bank = win.EMC_QUIZ;
-  eq('question bank size', bank.length, 25);
+  eq('question bank size', bank.length, 30);
   ok('four-stat strip uses the 4-up layout class',
      doc.querySelector('.stat-strip').classList.contains('stat-strip-4'));
   ok('quiz copy is free of the word "module"',
      !/module/i.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8') +
                      readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')));
-  eq('every question rendered', doc.querySelectorAll('.q-card').length, 25);
+  eq('every question rendered', doc.querySelectorAll('.q-card').length, 30);
   eq('four options each', doc.querySelectorAll('.q-card').length * 4, doc.querySelectorAll('.opt').length);
   ok('every question has a valid answer index',
     bank.every(q => Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length));
   ok('every question has an explanation', bank.every(q => q.explain && q.explain.length > 20));
-  ok('all four topics are covered',
-    new Set(bank.map(q => q.topic)).size === 4, [...new Set(bank.map(q => q.topic))].join(','));
-  eq('topic filter counts — charges', bank.filter(q => q.topic === 'charges').length, 6);
-  eq('topic filter counts — current', bank.filter(q => q.topic === 'current').length, 7);
-  eq('topic filter counts — magnetism', bank.filter(q => q.topic === 'magnetism').length, 5);
-  eq('topic filter counts — induction', bank.filter(q => q.topic === 'induction').length, 7);
+  ok('all five topics are covered',
+    new Set(bank.map(q => q.topic)).size === 5, [...new Set(bank.map(q => q.topic))].join(','));
+  for (const t of ['vectors', 'fluids', 'heat', 'waves', 'current']) {
+    eq(`topic filter counts — ${t}`, bank.filter(q => q.topic === t).length, 6);
+  }
 
   const answerAll = (pickWrong) => {
     doc.querySelectorAll('.q-card').forEach(card => {
@@ -477,20 +470,20 @@ console.log('\u2500'.repeat(66));
   // blank guard: submitting with nothing answered must warn, not grade
   click(win, doc.getElementById('quiz-submit'));
   ok('submitting a blank quiz warns first', doc.getElementById('quiz-score').hidden === true);
-  ok('progress text counts answers', /0 of 25 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
+  ok('progress text counts answers', /0 of 30 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
 
   // all correct -> 100%
   answerAll(false);
-  eq('all 25 recorded', txt(win, 'quiz-progress-text'), '25 of 25 answered');
+  eq('all 30 recorded', txt(win, 'quiz-progress-text'), '30 of 30 answered');
   click(win, doc.getElementById('quiz-submit'));
   ok('score card is revealed', doc.getElementById('quiz-score').hidden === false);
-  ok('without the Chart.js CDN the CSS-bar fallback is used',
-    doc.getElementById('quiz-charts').hidden === true &&
-    doc.getElementById('quiz-fallback-bars').hidden === false);
+  ok('with the vendored Chart.js loaded the charts take over',
+    doc.getElementById('quiz-charts').hidden === false &&
+    doc.getElementById('quiz-fallback-bars').hidden === true);
   ok('perfect score is 100%', txt(win, 'quiz-score').includes('100%'), txt(win, 'quiz-score').slice(0, 80));
-  ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 25);
-  ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 25);
-  ok('options are locked after grading', doc.querySelectorAll('.opt:disabled').length === 100);
+  ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 30);
+  ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 30);
+  ok('options are locked after grading', doc.querySelectorAll('.opt:disabled').length === 120);
 
   // stored progress
   const stored = JSON.parse(win.localStorage.getItem('emc.progress.v1'));
@@ -503,17 +496,17 @@ console.log('\u2500'.repeat(66));
   answerAll(true);
   click(win, doc.getElementById('quiz-submit'));
   ok('all-wrong score is 0%', txt(win, 'quiz-score').includes('0%'), txt(win, 'quiz-score').slice(0, 60));
-  ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 25);
-  ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 25);
+  ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 30);
+  ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 30);
   const stored2 = JSON.parse(win.localStorage.getItem('emc.progress.v1'));
   eq('best score is kept across attempts', stored2.quizBest, 100);
   eq('attempts incremented', stored2.quizAttempts, 2);
 
   // review-incorrect filter
   click(win, doc.getElementById('quiz-wrong'));
-  eq('review mode shows only the wrong ones', doc.querySelectorAll('.q-card').length, 25);
+  eq('review mode shows only the wrong ones', doc.querySelectorAll('.q-card').length, 30);
 
-  // retake and check a partial score: 10 of 20 correct = 50%
+  // retake and check a partial score: 10 of 30 correct = 33%
   click(win, doc.getElementById('quiz-retake'));
   doc.querySelectorAll('.q-card').forEach((card, i) => {
     const q = bank.find(x => x.id === Number(card.dataset.qid));
@@ -521,8 +514,8 @@ console.log('\u2500'.repeat(66));
     card.querySelector(`.opt[data-opt="${idx}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   });
   click(win, doc.getElementById('quiz-submit'));
-  ok('10 of 25 correct scores 40%', txt(win, 'quiz-score').includes('40%'), txt(win, 'quiz-score').slice(0, 60));
-  ok('10 of 25 reported', /10 \/ 25 correct/.test(txt(win, 'quiz-score')), '');
+  ok('10 of 30 correct scores 33%', txt(win, 'quiz-score').includes('33%'), txt(win, 'quiz-score').slice(0, 60));
+  ok('10 of 30 reported', /10 \/ 30 correct/.test(txt(win, 'quiz-score')), '');
   ok('quiz clock was started by answering and frozen at submit',
     doc.getElementById('quiz-timer').hidden === false && /\d+:\d\d/.test(txt(win, 'quiz-timer')));
   ok('score card reports time and best-streak tags',
@@ -531,18 +524,18 @@ console.log('\u2500'.repeat(66));
   // attempt history is stored for the Chart.js line chart
   const hist = win.EMC.Progress.read().quizHistory;
   eq('three attempts recorded in history', hist.length, 3);
-  eq('history keeps the scores in order', hist.map(h => h.pct).join(','), '100,0,40');
+  eq('history keeps the scores in order', hist.map(h => h.pct).join(','), '100,0,33');
 
   // shuffle keeps the bank intact
   click(win, doc.getElementById('quiz-retake'));
   click(win, doc.getElementById('quiz-shuffle'));
-  eq('shuffle keeps all 25 questions', doc.querySelectorAll('.q-card').length, 25);
+  eq('shuffle keeps all 30 questions', doc.querySelectorAll('.q-card').length, 30);
 
   // topic filter
-  click(win, doc.querySelector('[data-quiz-filter="magnetism"]'));
-  eq('magnetism filter shows 5 questions', doc.querySelectorAll('.q-card').length, 5);
+  click(win, doc.querySelector('[data-quiz-filter="fluids"]'));
+  eq('fluids filter shows 6 questions', doc.querySelectorAll('.q-card').length, 6);
   click(win, doc.querySelector('[data-quiz-filter="all"]'));
-  eq('all filter restores 25', doc.querySelectorAll('.q-card').length, 25);
+  eq('all filter restores 30', doc.querySelectorAll('.q-card').length, 30);
 
   // instant mode marks as you go
   click(win, doc.querySelector('#quiz-mode [data-value="instant"]'));
@@ -560,9 +553,38 @@ console.log('\u2500'.repeat(66));
   win.close();
 }
 
+/* ---------------- quiz.html, deep link + missing chart lib ---------------- */
+{
+  console.log('\n[quiz.html?topic=fluids]');
+  const { win, doc, problems } = await loadPage('quiz.html?topic=fluids');
+  await frames(win, 2);
+  ok('deep link loads without runtime errors', problems.length === 0, problems.join(' | '));
+  eq('?topic= narrows the view to that topic', doc.querySelectorAll('.q-card').length, 6);
+  ok('the matching filter button is pressed',
+    doc.querySelector('[data-quiz-filter="fluids"]').getAttribute('aria-pressed') === 'true');
+  ok('the deep link is announced', /Filtered to Fluids/.test(doc.body.textContent));
+  win.close();
+
+  console.log('\n[quiz.html without the vendored chart lib]');
+  // The graceful-degradation path must survive: pretend the vendored file 404s.
+  const { win: w2, doc: d2 } = await loadPage('quiz.html', {}, { skip: 'chart\\.umd' });
+  w2.EMC_QUIZ.forEach(q => {
+    const card = d2.querySelector(`#q-${q.id}`);
+    card.querySelector(`.opt[data-opt="${q.answer}"]`).dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+  });
+  d2.getElementById('quiz-submit').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+  ok('without the chart lib the CSS-bar fallback is used',
+    d2.getElementById('quiz-charts').hidden === true &&
+    d2.getElementById('quiz-fallback-bars').hidden === false);
+  ok('the fallback still lists every topic',
+    /Measurement & vectors/.test(d2.getElementById('quiz-fallback-bars').textContent) &&
+    /Waves & sound/.test(d2.getElementById('quiz-fallback-bars').textContent));
+  w2.close();
+}
+
 /* ---------------- quiz.html with a stubbed Chart.js ---------------- */
 {
-  console.log('\n[quiz.html + stubbed Chart.js]');
+  console.log('\n[quiz.html + instrumented Chart.js]');
   class FakeChart {
     constructor(canvas, config) { FakeChart.made.push({ id: canvas && canvas.id, type: config.type }); }
     destroy() { FakeChart.destroyed++; }
@@ -570,6 +592,10 @@ console.log('\u2500'.repeat(66));
   FakeChart.made = []; FakeChart.destroyed = 0; FakeChart.defaults = {};
 
   const { win, doc } = await loadPage('quiz.html', { Chart: FakeChart });
+  // the page now vendors the REAL Chart.js, which overwrites the stub while
+  // loadPage runs the page's scripts; put the spy back before grading so its
+  // constructor calls stay observable.
+  win.Chart = FakeChart;
   doc.querySelectorAll('.q-card').forEach(card => {
     const q = win.EMC_QUIZ.find(x => x.id === Number(card.dataset.qid));
     card.querySelector(`.opt[data-opt="${q.answer}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
@@ -588,8 +614,8 @@ console.log('\u2500'.repeat(66));
 /* ---------------- cross-page checks ---------------- */
 {
   console.log('\n[cross-page]');
-  const pages = ['index.html', 'quiz.html', 'topics/charges.html', 'topics/current.html',
-    'topics/magnetism.html', 'topics/induction.html'];
+  const pages = ['index.html', 'quiz.html', 'topics/vectors.html', 'topics/fluids.html',
+    'topics/heat.html', 'topics/waves.html', 'topics/current.html'];
   for (const p of pages) {
     const html = readFileSync(join(ROOT, p), 'utf8');
     ok(`${p}: declares a viewport`, /name="viewport"/.test(html));
@@ -602,7 +628,99 @@ console.log('\u2500'.repeat(66));
     ok(`${p}: exactly one <h1>`, (html.match(/<h1[\s>]/g) || []).length === 1);
     ok(`${p}: every script tag is defer (no render-blocking)`,
       [...html.matchAll(/<script[^>]*src=/g)].every(m => m[0].includes('defer')));
+
+    // ---- audit guards: theme colour, noscript, social meta, same-origin ----
+    ok(`${p}: theme-color equals the real page background`,
+      /name="theme-color" content="#17181c"/.test(html));
+    ok(`${p}: noscript fallback explains what needs JavaScript`,
+      /<noscript>[\s\S]*?class="noscript-note"/.test(html) &&
+      /JavaScript/.test((html.match(/<noscript>[\s\S]*?<\/noscript>/) || [''])[0]));
+    ok(`${p}: canonical + Open Graph + Twitter card are declared`,
+      /rel="canonical" href="https:\/\/[^"]+"/.test(html) &&
+      ['og:type', 'og:title', 'og:description', 'og:url', 'og:image',
+       'twitter:card', 'twitter:title', 'twitter:image']
+        .every(k => new RegExp(`(property|name)="${k}"`).test(html)));
+    ok(`${p}: canonical/og:url point at the production origin and this page`,
+      [...html.matchAll(/(?:rel="canonical"|property="og:url")[^>]*href="([^"]+)"/g)]
+        .every(m => m[1].startsWith('https://emc-physics.vercel.app')) &&
+      [...html.matchAll(/property="og:url"[^>]*href="([^"]+)"/g)]
+        .every(m => m[1] === ([...html.matchAll(/rel="canonical" href="([^"]+)"/g)][0] || [])[1]));
+    ok(`${p}: no third-party <script>/<link> (all assets same-origin)`,
+      ![...html.matchAll(/<(?:script|link)[^>]+(?:src|href)="(https?:\/\/[^"]+)"/g)]
+        .some(m => !/emc-physics\.vercel\.app/.test(m[1])));
+
+    // ---- #15 favicon artwork must equal the header brand mark -------------
+    // the data URI stores the SVG with single quotes; normalise before comparing
+    const favDec = decodeURIComponent((html.match(/<link rel="icon" href="data:image\/svg\+xml,([^"]+)">/) || ['', ''])[1])
+      .replace(/'/g, '"');
+    const brandMark = (html.match(/<svg class="brand-mark"[\s\S]*?<\/svg>/) || ['', ''])[0];
+    const favTokens = ['M15 15 C13 7 19 5 21 11', 'M33 15 C35 7 29 5 27 11',
+                       'rx="16" ry="15"', 'cx="18.5" cy="26"', 'cx="29.5" cy="26"',
+                       'cx="13.5" cy="30"', 'cx="34.5" cy="30"'];
+    ok(`${p}: favicon artwork matches the header mascot`,
+      brandMark.length > 100 && favTokens.every(t => favDec.includes(t) && brandMark.includes(t.replace(/"/g, '"'))));
   }
+  // ---- #14 no phantom important-variants of component classes -----------
+  const builtAll = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
+  ok('compiled css carries no escaped important class selectors',
+    !/\\![a-z][a-z0-9-]*\s*\{/.test(builtAll),
+    (builtAll.match(/\\![a-z][a-z0-9-]*/g) || []).join(','));
+  ok('quiz.js uses explicit null checks (no negated identifiers to scan)',
+    !/!btn|!card/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+  ok('the phantom class names stay blocklisted in the Tailwind config',
+    /'!btn', '!card'/.test(readFileSync(join(ROOT, 'tailwind.config.js'), 'utf8')));
+
+  // ---- #16 print: wide maths and tables are contained ---------------------
+  const printBlock = builtAll.slice(builtAll.indexOf('@media print'));
+  ok('print css contains formula blocks inside the page width',
+    printBlock.startsWith('@media print') &&
+    /\.formula[^{]*\{[^}]*max-width:100%/.test(printBlock) &&
+    /\.table-scroll[^{]*\{[^}]*overflow:visible/.test(printBlock) &&
+    /table\.data[^{]*\{[^}]*table-layout:fixed/.test(printBlock));
+
+  // ---- #1 exactly four keyboard labels ------------------------------------
+  ok('the quiz exposes exactly four option key labels (A-D)',
+    /const KEYS = \['A', 'B', 'C', 'D'\];/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+
+  // ---- #3 one printed speed of sound site-wide -----------------------------
+  const printed = pages.map(f => readFileSync(join(ROOT, f), 'utf8')).join('\n') +
+                  readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8');
+  ok('every printed speed of sound is 343 m/s (code keeps the same value)',
+    !/340 m\/s/.test(printed) && /343 m\/s/.test(printed) &&
+    /V_SOUND: 343/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+
+  // ---- #9 water density is the round 1000 everywhere it is printed ---------
+  ok('printed water density is consistently 1000 kg/m³',
+    !/1000 kg\/m³/.test(printed) === false &&
+    /RHO_WATER: 1000/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+
+  // ---- #10 the 70% rule is announced where it fires ------------------------
+  ok('the score card announces the 70% auto-tick when it happens',
+    /const passNote = pct >= 70/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
+    /Scoring 70% or more/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
+    /Scoring 70% or more in the quiz also ticks all five topics/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
+
+  // ---- #6 vendored libraries ship with their licences ---------------------
+  ok('Chart.js and KaTeX are vendored with their licence files',
+    ['vendor/chart/chart.umd.min.js', 'vendor/chart/LICENSE',
+     'vendor/katex/katex.min.js', 'vendor/katex/LICENSE']
+      .every(f => existsSync(join(ROOT, f))));
+
+  // ---- #8 one public name --------------------------------------------------
+  ok('one public name everywhere: EMC Lab in the UI, emc-lab in package.json',
+    /"name": "emc-lab"/.test(readFileSync(join(ROOT, 'package.json'), 'utf8')) &&
+    pages.every(f => /property="og:site_name" content="EMC Lab"/.test(readFileSync(join(ROOT, f), 'utf8'))));
+
+  // ---- #12 the advertised social card exists at the promised size ----------
+  const ogPath = join(ROOT, 'img/og-card.png');
+  let ogDims = '';
+  if (existsSync(ogPath)) {
+    const b = readFileSync(ogPath);
+    ogDims = `${b.readUInt32BE(16)}x${b.readUInt32BE(20)}`;
+  }
+  ok('img/og-card.png exists at the size the meta tags promise',
+    existsSync(ogPath) && ogDims === '1200x630', ogDims);
+
   const dividerCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
   ok('compiled css styles the .hr divider with the dark hairline token',
     /\.hr\{[^}]*border-top:1px solid var\(--line-soft\)/.test(dividerCss));
@@ -686,6 +804,30 @@ console.log('\u2500'.repeat(66));
   ok('blocklisted prose words never leak into site.css as utilities',
     !/\.(grow|shrink|table|transform|filter|ring|container|collapse|resize|summary|content|order)\s*\{/
       .test(builtCss));
+}
+
+/* ---------------- progress export / import ---------------- */
+{
+  console.log('\n[progress export / import]');
+  const { win, doc } = await loadPage('index.html');
+  const P = win.EMC.Progress;
+  P.markTopic('vectors', true);
+  P.recordQuiz(50);                       // below the pass mark: only vectors ticks
+  const snapshot = P.exportJSON();
+  P.reset();
+  eq('the export is a self-describing JSON document', JSON.parse(snapshot).app, 'emc-lab');
+  const res = P.importJSON(snapshot);
+  ok('import restores topics and scores', res.ok && P.isTopicDone('vectors') &&
+     !P.isTopicDone('fluids') && P.read().quizBest === 50, res.message);
+  ok('import refuses junk and foreign files',
+    !P.importJSON('not json at all').ok &&
+    !P.importJSON(JSON.stringify({ app: 'something-else', progress: {} })).ok);
+  ok('the dashboard offers export, import and reset controls',
+    !!doc.getElementById('exportProgress') && !!doc.getElementById('importProgress') &&
+    !!doc.getElementById('importProgressFile') && !!doc.getElementById('resetProgress'));
+  ok('the dashboard says progress is device-local',
+    /this device only/.test(doc.body.textContent));
+  win.close();
 }
 
 /* ---------------- summary ---------------- */

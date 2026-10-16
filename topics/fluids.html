@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Density, pressure with depth, Archimedes' principle and Bernoulli's equation — with a buoyancy tank and a wing/venturi visualiser.">
+  <meta name="theme-color" content="#17181c">
+  <title>Topic 2 · Fluids — EMC Lab</title>
+  <link rel="canonical" href="https://emc-physics.vercel.app/topics/fluids.html">
+  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
+       production origin; if the deploy URL ever changes, update it in all pages
+       (tools/smoke-test.mjs asserts they all agree). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EMC Lab">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Topic 2 · Fluids">
+  <meta property="og:description" content="Density, pressure with depth, Archimedes' principle and Bernoulli's equation — with a buoyancy tank and a wing/venturi visualiser.">
+  <meta property="og:url" content="https://emc-physics.vercel.app/topics/fluids.html">
+  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="EMC Lab — an interactive physics tutorial">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Topic 2 · Fluids">
+  <meta name="twitter:description" content="Density, pressure with depth, Archimedes' principle and Bernoulli's equation — with a buoyancy tank and a wing/venturi visualiser.">
+  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Crect%20width='48'%20height='48'%20rx='14'%20fill='%2317181c'/%3E%3Cpath%20d='M15%2015%20C13%207%2019%205%2021%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cpath%20d='M33%2015%20C35%207%2029%205%2027%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cellipse%20cx='24'%20cy='27'%20rx='16'%20ry='15'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Ccircle%20cx='18.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Ccircle%20cx='29.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Cpath%20d='M22%2031%20q2%202%204%200'%20stroke='%232b2d33'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3Ccircle%20cx='13.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3Ccircle%20cx='34.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3C/svg%3E">
+  <script>if (window.tailwind) { tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#22d3ee', deep: '#0e1a2e', line: '#1e2f4d' } } } } }; }</script>
+  <link rel="stylesheet" href="../css/site.css">
+  <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-700.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-400.woff2" crossorigin>
+  <!-- KaTeX: the LaTeX formatter for every equation on the page -->
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
+</head>
+
+<body class="emc">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <noscript>
+    <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>
+  </noscript>
+
+  <header class="site-header">
+    <div class="wrap nav-inner">
+      <a class="brand" href="../index.html" aria-label="EMC Lab — home">
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
+          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
+        </svg>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+      <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
+        <a class="nav-link" href="../index.html">Home</a>
+        <div class="nav-drop">
+          <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
+                  aria-expanded="false" aria-controls="topicsMenu">Topics
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="nav-drop-menu" id="topicsMenu">
+            <a class="dd-link" href="vectors.html"><b>1 · Measurement &amp; Vectors</b><small>SI units · dimensional analysis · resultants</small></a>
+            <a class="dd-link" href="fluids.html"><b>2 · Fluids</b><small>pressure · Archimedes · Bernoulli</small></a>
+            <a class="dd-link" href="heat.html"><b>3 · Temperature &amp; Heat</b><small>scales · Q = mcΔT · heat transfer</small></a>
+            <a class="dd-link" href="waves.html"><b>4 · Waves &amp; Sound</b><small>v = fλ · wave types · tone player</small></a>
+            <a class="dd-link" href="current.html"><b>5 · Electricity</b><small>Ohm’s law · series &amp; parallel</small></a>
+          </div>
+        </div>
+        <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
+      </nav>
+    </div>
+    <div class="scroll-progress"><i id="readingProgress"></i></div>
+  </header>
+
+  <main class="emc-main" id="main">
+    <div class="wrap wrap-narrow section-tight topic-head">
+      <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span>Topic 2</span>
+      </nav>
+      <svg class="mascot mascot-sm" aria-hidden="true" viewBox="0 0 120 112">
+  <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
+  <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="60" cy="64" rx="42" ry="40" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3"/>
+  <circle cx="46" cy="58" r="3.6" fill="#2b2d33"/><circle cx="74" cy="58" r="3.6" fill="#2b2d33"/>
+  <path d="M55 68 q5 5 10 0" stroke="#2b2d33" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
+  <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
+</svg>
+      <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 2 of 5</span>
+      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Fluids</h1>
+      <p class="lede">
+        A fluid — liquid or gas — cannot resist being reshaped, so it pushes <strong>equally in
+        every direction</strong> and its pressure grows with depth. From those two facts fall
+        everything else: why ships float, how hydraulic presses lift cars, and how a wing makes
+        lift out of moving air.
+      </p>
+
+      <div class="card mt-4">
+        <h2 class="h-sub" style="margin-top:0">Learning objectives</h2>
+        <ul class="objectives">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Define density and pressure, and compute pressure at depth with P = P₀ + ρgh.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>State Archimedes’ principle and predict floating depth from the density ratio.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Explain sinking, floating and apparent weight in terms of forces.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Apply the continuity equation A₁v₁ = A₂v₂ to a narrowing pipe.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Use Bernoulli’s equation qualitatively: faster flow, lower pressure — on wings and in venturis.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec" id="density">2.1 · Density and pressure</h2>
+      <dl class="defs">
+        <div><dt>Density ρ — mass per unit volume</dt><dd>ρ = m/V, in <strong>kg/m³</strong>. Water: 1000 kg/m³ (a litre weighs a kilogram); air at sea level: about 1.2 kg/m³; steel: 7800 kg/m³.</dd></div>
+        <div><dt>Pressure P — force per unit area</dt><dd>P = F/A, in <strong>pascals</strong> (Pa = N/m²). One atmosphere ≈ 101 kPa — the column of air above you presses with the weight of about a tonne on every square metre, and you do not feel it because your body pushes back equally.</dd></div>
+      </dl>
+
+      <div class="formula">
+        <span class="eq" data-display data-tex="P = P_0 + \rho g h">P = P₀ + ρ·g·h</span>
+        <span class="where">P₀ = pressure at the surface (usually 1 atm) · h = depth below it · ρ = fluid density</span>
+      </div>
+      <p>
+        Pressure in a still fluid grows <strong>linearly with depth</strong>: every layer of fluid
+        must support the weight of everything above it. Direction does not matter — pressure at a
+        point pushes equally in all directions (Pascal), which is why a small force on a small
+        piston becomes a big force on a big piston: <strong>F₂ = F₁·A₂/A₁</strong>, the hydraulic
+        press.
+      </p>
+
+      <div class="callout callout-key">
+        <div class="callout-title">Worked example</div>
+        <p>What is the absolute pressure 10 m below a lake surface? (ρ = 1000 kg/m³, g = 9.81 m/s², P₀ = 101 kPa)</p>
+        <p class="mono small">P = 101 000 + 1000 × 9.81 × 10 = 101 000 + 98 100 = <b>199 kPa</b> ≈ 2 atm — every 10 m of water adds roughly one atmosphere.</p>
+      </div>
+
+      <h2 class="h-sec" id="archimedes">2.2 · Archimedes’ principle</h2>
+      <div class="formula">
+        <span class="eq" data-display data-tex="F_B = \rho_{\mathrm{fluid}}\, V_{\mathrm{displaced}}\, g">F<sub>B</sub> = ρ<sub>fluid</sub> · V<sub>displaced</sub> · g</span>
+        <span class="where">the buoyant force equals the WEIGHT of the fluid pushed aside</span>
+      </div>
+      <p>
+        Why does this force exist? Pressure grows with depth, so the fluid pushes up on the
+        bottom face of a submerged body <strong>harder</strong> than it pushes down on the top
+        face. The difference is exactly the weight of the displaced fluid — that is Archimedes’
+        principle, and it yields the floating rule:
+      </p>
+      <ul>
+        <li><strong>Floats</strong> (ρ<sub>obj</sub> &lt; ρ<sub>fluid</sub>): the body settles until displaced weight = its own weight. Submerged fraction = ρ<sub>obj</sub>/ρ<sub>fluid</sub> — ice shows 8% of itself above the surface because 917/1000 ≈ 0.92 is below.</li>
+        <li><strong>Sinks</strong> (ρ<sub>obj</sub> &gt; ρ<sub>fluid</sub>): even fully submerged, F<sub>B</sub> &lt; W. The floor supplies the rest as a normal force — the “apparent weight” underwater is W − F<sub>B</sub>.</li>
+      </ul>
+
+      <details class="dig dig-real">
+        <summary>Real world — steel ships and load lines</summary>
+        <div class="dig-body">
+        <p>
+          A cargo ship is steel, eight times denser than water — but it is a steel <em>shell
+          around air</em>. What floats is the ship’s <strong>average</strong> density. Load the
+          hold until the average density passes water’s and the deck goes under; that is why hulls
+          carry <strong>Plimsoll load lines</strong>, one mark per water type: a ship floats
+          deeper in warm fresh water (ρ ≈ 997) than in cold seawater (ρ ≈ 1025).
+        </p>
+        </div>
+      </details>
+
+      <details class="dig dig-trap">
+        <summary>Common misconceptions</summary>
+        <div class="dig-body">
+        <p>1. “Heavier things sink.” A 100-tonne ship floats; a 5-gram steel bolt sinks. What matters is <em>density</em> — mass per volume — not mass.</p>
+        <p>2. “Buoyancy increases with depth.” For a fully submerged, incompressible body it is constant: F<sub>B</sub> depends on displaced <em>volume</em>, and that does not grow as the body descends.</p>
+        <p>3. “Floating means no forces act.” Floating is <em>equilibrium</em>: weight down, buoyancy up, equal magnitudes. The net force is zero because two real forces balance, not because forces stopped existing.</p>
+        </div>
+      </details>
+
+      <h2 class="h-sec" id="sim-arch-panel" style="scroll-margin-top:5rem">2.3 · Simulation — the buoyancy tank</h2>
+      <p>
+        Set the block’s density and volume, choose the fluid, then drag the block under and let it
+        go. The arrows are drawn to scale: weight (rose) down, buoyancy (cyan) up, and the floor’s
+        normal force (amber) once a sunk block comes to rest. The readouts recompute
+        F<sub>B</sub> = ρ<sub>f</sub>·V<sub>sub</sub>·g every frame — watch them balance exactly
+        when the block floats.
+      </p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h3 class="panel-title"><span class="dot" style="background:#b5d777"></span> Archimedes bench</h3>
+          <p class="panel-sub">F<sub>B</sub> = ρ<sub>f</sub>·V<sub>sub</sub>·g · floats when ρ<sub>obj</sub> &lt; ρ<sub>f</sub></p>
+          <div class="panel-actions">
+            <div class="seg" id="arch-fluid" role="group" aria-label="Fluid">
+              <button class="seg-btn" type="button" data-value="1000" aria-pressed="true">Water</button>
+              <button class="seg-btn" type="button" data-value="1025" aria-pressed="false">Seawater</button>
+              <button class="seg-btn" type="button" data-value="900" aria-pressed="false">Oil</button>
+            </div>
+            <div class="seg" id="arch-shape" role="group" aria-label="Object shape">
+              <button class="seg-btn" type="button" data-value="cube" aria-pressed="true">Cube</button>
+              <button class="seg-btn" type="button" data-value="ball" aria-pressed="false">Ball</button>
+            </div>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <canvas id="sim-archimedes" class="sim-canvas" role="img"
+                    aria-label="A tank of fluid with a draggable block that floats or sinks according to its density"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#f8aebe"></i> weight W = ρ<sub>obj</sub>Vg</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> buoyancy F<sub>B</sub></span>
+              <span><i class="swatch" style="background:#f6d36b"></i> normal force N (on the floor)</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl-stack">
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">ρ<sub>obj</sub></span> object density</span>
+                <span class="ctl-value" id="arch-rhov">600 kg/m³</span>
+                <input class="range ctl-range" type="range" id="arch-rho" min="300" max="3000" step="10" value="600" aria-label="Object density in kilograms per cubic metre">
+                <span class="ctl-hint">wood ≈ 600 · ice ≈ 917 · water = 1000 · steel ≈ 7800</span>
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">V</span> object volume</span>
+                <span class="ctl-value" id="arch-volv">2.0 L</span>
+                <input class="range ctl-range" type="range" id="arch-vol" min="0.5" max="5" step="0.1" value="2" aria-label="Object volume in litres">
+              </div>
+            </div>
+
+            <div class="readouts mt-4">
+              <div class="stat"><span class="stat-label">Weight W</span><span class="stat-value hl-amber" id="arch-weight">—</span></div>
+              <div class="stat"><span class="stat-label">Buoyancy F<sub>B</sub></span><span class="stat-value hl-cyan" id="arch-buoy">—</span></div>
+              <div class="stat"><span class="stat-label">Net force</span><span class="stat-value" id="arch-net">—</span></div>
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">Submerged</span><span class="stat-value hl-emerald" id="arch-subfr">—</span><span class="stat-sub">displaces <span id="arch-vsub">—</span></span></div>
+              <div class="stat"><span class="stat-label">Verdict</span><span class="stat-value" id="arch-state">—</span></div>
+            </div>
+            <p class="sim-note mt-3" id="arch-explain" style="overflow-wrap:anywhere">—</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec" id="bernoulli">2.4 · Moving fluids: continuity and Bernoulli</h2>
+      <p>
+        Set a fluid in motion and two new rules appear. First, <strong>continuity</strong>: fluid
+        is not created or destroyed, so whatever flows into a pipe must flow out — in a narrower
+        section it must move <em>faster</em>:
+      </p>
+      <div class="formula">
+        <span class="eq" data-display data-tex="A_1 v_1 = A_2 v_2">A₁·v₁ = A₂·v₂</span>
+        <span class="where">narrower pipe ⇒ faster flow — the same litres per second, squeezed through less area</span>
+      </div>
+      <p>
+        Second, <strong>Bernoulli</strong>: for steady, incompressible, frictionless flow along a
+        streamline, the sum of pressure, kinetic and gravitational energy density is constant:
+      </p>
+      <div class="formula">
+        <span class="eq" data-display data-tex="P + \tfrac{1}{2}\rho v^2 + \rho g h = \text{constant}">P + ½ρv² + ρgh = constant</span>
+        <span class="where">the headline: where the fluid speeds up, its pressure DROPS</span>
+      </div>
+      <p>
+        That counter-intuitive sentence — <strong>faster flow, lower pressure</strong> — powers
+        most of the fluid world: a wing’s curved top surface runs air faster than the bottom, so
+        the pressure above is lower and the pressure difference lifts the aeroplane; a venturi’s
+        throat sucks fuel into a carburettor; wind over your roof lowers the pressure above it,
+        which is why hurricanes lift roofs <em>off</em> rather than push them down.
+      </p>
+
+      <details class="dig dig-trap">
+        <summary>The “equal transit time” myth</summary>
+        <div class="dig-body">
+        <p>
+          Textbooks once claimed air splits at the leading edge and the two halves
+          <em>meet again</em> at the trailing edge, forcing the longer top path to be faster.
+          <strong>They do not meet.</strong> In real flow the air over the top arrives well
+          <em>ahead</em> of the air underneath — it is faster still than the myth suggests.
+          Lift comes from the wing deflecting air downward (Newton III) and from the pressure
+          difference that goes with it (Bernoulli) — the two explanations are the same physics
+          viewed two ways, and neither needs equal transit times.
+        </p>
+        </div>
+      </details>
+
+      <h2 class="h-sec" id="sim-bern-panel" style="scroll-margin-top:5rem">2.5 · Simulation — Bernoulli visualiser</h2>
+      <p>
+        Two scenes. In <strong>aerofoil</strong> mode, particles stream past a wing: raise the
+        angle of attack and watch the top-side flow speed up, the pressure difference grow, the
+        lift arrow lengthen — until past 15° the flow separates and the wing <em>stalls</em>.
+        In <strong>venturi</strong> mode, water accelerates through a throat; the manometer
+        columns show the pressure drop that continuity + Bernoulli predict, computed live.
+      </p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h3 class="panel-title"><span class="dot" style="background:#b5d777"></span> Bernoulli visualiser</h3>
+          <p class="panel-sub">P + ½ρv² = constant · A₁v₁ = A₂v₂</p>
+          <div class="panel-actions">
+            <div class="seg" id="bern-mode" role="group" aria-label="Scene">
+              <button class="seg-btn" type="button" data-value="wing" aria-pressed="true">Aerofoil</button>
+              <button class="seg-btn" type="button" data-value="pipe" aria-pressed="false">Venturi pipe</button>
+            </div>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <canvas id="sim-bernoulli" class="sim-canvas" role="img"
+                    aria-label="Particles flowing past an aerofoil or through a venturi pipe, showing speed and pressure changes"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#a8d3e0"></i> flow particles</span>
+              <span><i class="swatch" style="background:#b5d777"></i> lift / faster stream</span>
+              <span><i class="swatch" style="background:#f6d36b"></i> throat flow</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl-stack">
+              <div class="ctl" id="bern-ctl-v">
+                <span class="ctl-label"><span class="sym">v</span> wind speed</span>
+                <span class="ctl-value" id="bern-vv">15 m/s</span>
+                <input class="range ctl-range" type="range" id="bern-v" min="2" max="40" step="1" value="15" aria-label="Wind speed in metres per second">
+              </div>
+              <div class="ctl" id="bern-ctl-aoa">
+                <span class="ctl-label"><span class="sym">α</span> angle of attack</span>
+                <span class="ctl-value" id="bern-aoav">6°</span>
+                <input class="range ctl-range" type="range" id="bern-aoa" min="0" max="20" step="1" value="6" aria-label="Angle of attack in degrees">
+                <span class="ctl-hint">stall begins around 15° — push past it</span>
+              </div>
+              <div class="ctl" id="bern-ctl-flow" style="display:none">
+                <span class="ctl-label"><span class="sym">v₁</span> flow in the wide section</span>
+                <span class="ctl-value" id="bern-flowv">0.50 m/s</span>
+                <input class="range ctl-range" type="range" id="bern-flow" min="0.1" max="2" step="0.05" value="0.5" aria-label="Flow speed in the wide section, metres per second">
+              </div>
+              <div class="ctl" id="bern-ctl-ratio" style="display:none">
+                <span class="ctl-label"><span class="sym">d₂/d₁</span> throat ratio</span>
+                <span class="ctl-value" id="bern-ratiov">d₂ = 5.0 cm</span>
+                <input class="range ctl-range" type="range" id="bern-ratio" min="0.2" max="0.9" step="0.05" value="0.5" aria-label="Throat diameter as a fraction of the wide section">
+              </div>
+            </div>
+
+            <div class="readouts mt-4">
+              <div class="stat"><span class="stat-label" id="bern-l1">free-stream v</span><span class="stat-value hl-cyan" id="bern-v1">—</span></div>
+              <div class="stat"><span class="stat-label" id="bern-l2">v over the top</span><span class="stat-value hl-emerald" id="bern-v2">—</span></div>
+              <div class="stat"><span class="stat-label" id="bern-l3">ΔP</span><span class="stat-value hl-amber" id="bern-dp">—</span></div>
+              <div class="stat"><span class="stat-label" id="bern-l4">lift</span><span class="stat-value" id="bern-extra">—</span></div>
+            </div>
+            <p class="sim-note mt-3"><span class="tag tag-emerald" id="bern-state">attached flow</span></p>
+            <p class="sim-note mt-2 mono" id="bern-sub" style="overflow-wrap:anywhere">—</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec" id="check">2.6 · Check your understanding</h2>
+
+      <details class="check">
+        <summary>A 1200 kg car rests on a hydraulic lift. The car piston has 100× the area of the input piston. What force must you apply?</summary>
+        <div class="answer">Pressure is transmitted unchanged (Pascal), so F scales with area: <b>F = 1200·g/100 ≈ 118 N</b> — about the push of a 12 kg weight. You pay for it in distance: your piston travels 100× farther.</div>
+      </details>
+      <details class="check">
+        <summary>An object floats in water with 30% of its volume above the surface. What is its density?</summary>
+        <div class="answer">70% submerged ⇒ ρ<sub>obj</sub> = 0.70 × 1000 = <b>700 kg/m³</b> — roughly oak or a very full rubbish bin.</div>
+      </details>
+      <details class="check">
+        <summary>A 2 kg block (density 2500 kg/m³) hangs from a string, fully submerged in water. What does the string feel?</summary>
+        <div class="answer">V = m/ρ = 2/2500 = 0.0008 m³ → F<sub>B</sub> = 1000 × 0.0008 × 9.81 = 7.85 N. Tension = W − F<sub>B</sub> = 19.6 − 7.85 = <b>11.8 N</b> — it feels about 40% lighter underwater.</div>
+      </details>
+      <details class="check">
+        <summary>Water flows at 1 m/s through a pipe whose diameter halves at a junction. How fast is it in the narrow section?</summary>
+        <div class="answer">Area scales with diameter², so A₂ = A₁/4 and v₂ = 4·v₁ = <b>4 m/s</b>. Halving the <em>diameter</em> quadruples the speed — continuity bites hard.</div>
+      </details>
+      <details class="check">
+        <summary>Why do two ships sailing close side-by-side risk being pulled together?</summary>
+        <div class="answer">Water squeezed between the hulls speeds up, and by Bernoulli its pressure drops below the pressure on the outer sides — the higher outside pressure pushes the ships together. The same effect slams a shower curtain inward while the water runs.</div>
+      </details>
+
+      <div class="card mt-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold">Finished with Topic 2?</h3>
+            <p class="small muted" style="margin:.25rem 0 0">Next: temperature scales, specific heat and the three ways heat moves.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" type="button" data-complete-topic="fluids" aria-pressed="false">Mark topic as complete</button>
+            <a class="btn" href="../quiz.html?topic=fluids">Quiz this topic</a>
+          </div>
+        </div>
+      </div>
+
+      <nav class="pager" aria-label="Topic navigation">
+        <a href="vectors.html"><span class="dir">← Previous</span><span class="ttl">1 · Measurement &amp; vectors</span></a>
+        <a class="next" href="heat.html"><span class="dir">Next topic →</span><span class="ttl">3 · Temperature &amp; heat</span></a>
+      </nav>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <span class="brand" style="pointer-events:none">
+          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
+          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
+        </svg>
+          <span class="brand-name">EMC<em>Lab</em></span>
+        </span>
+        <p class="small muted" style="margin-top:.6rem">Topic 2 of 5.</p>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
+        <ul class="footer-links">
+          <li><a href="vectors.html">1 · Measurement &amp; vectors</a></li>
+          <li><a href="fluids.html">2 · Fluids</a></li>
+          <li><a href="heat.html">3 · Temperature &amp; heat</a></li>
+          <li><a href="waves.html">4 · Waves &amp; sound</a></li>
+          <li><a href="current.html">5 · Electricity</a></li>
+          <li><a href="../quiz.html">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">On this page</h3>
+        <ul class="footer-links">
+          <li><a href="#density">2.1 Density and pressure</a></li>
+          <li><a href="#archimedes">2.2 Archimedes’ principle</a></li>
+          <li><a href="#sim-arch-panel">2.3 The buoyancy tank</a></li>
+          <li><a href="#bernoulli">2.4 Continuity and Bernoulli</a></li>
+          <li><a href="#sim-bern-panel">2.5 Bernoulli visualiser</a></li>
+          <li><a href="#check">2.6 Check your understanding</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top:1.6rem">
+      <hr class="hr">
+      <p class="tiny faint center" style="margin-top:1rem">© <span data-year>2026</span> EMC Lab</p>
+    </div>
+  </footer>
+
+  <script defer src="../vendor/katex/katex.min.js"></script>
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/sim-archimedes.js"></script>
+  <script defer src="../js/sim-bernoulli.js"></script>
+</body>
+</html>

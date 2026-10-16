@@ -97,6 +97,15 @@
   /* intro paragraphs in the wide column fill it (58ch only stays for the
      centred home hero, where the stack is deliberately narrow) */
   .wrap-narrow .lede { max-width: 100%; }
+  /* <noscript> banner: the only thing on the page that must be legible with
+     JavaScript off, so it gets the amber warning treatment by default. */
+  .noscript-note {
+    margin: .9rem 0; padding: .8rem 1.05rem;
+    border: 1.5px solid var(--ye); border-radius: var(--r-mid);
+    background: var(--ye-t); color: var(--text);
+    font-size: .93rem; line-height: 1.65;
+  }
+  .noscript-note strong { color: var(--ye); }
   .skip-link {
     position: absolute; left: -9999px; top: 0; z-index: 200;
     background: var(--ye); color: #221d07; padding: .5rem 1rem;
@@ -522,10 +531,23 @@
   }
   @media print {
     .site-header, .site-footer, .nav-toggle, .panel-actions, .btn, .sim-canvas,
-    .scroll-progress, #p5-gen-host, .legend, .mascot { display: none !important; }
+    .scroll-progress, #p5-gen-host, .legend, .mascot, noscript { display: none !important; }
     body { background: #fff; color: #000; }
     .card, .panel, .q-card { border-color: #bbb; background: #fff; }
     .prose p, .prose li, .lede, .muted { color: #222; }
     figure.fig .fig-box { background: #fff; border-color: #bbb; }
+
+    /* Paper has no horizontal scrollbar, so anything that scrolls on screen has
+       to be squeezed into the page width instead of running off the right edge:
+       long KaTeX display blocks, the .formula strip and the formula table. */
+    .wrap, .wrap-narrow, .wrap-sim { max-width: none; padding-inline: 0; }
+    .formula, .katex-display, .prose .formula { max-width: 100%; overflow: hidden; }
+    .formula { display: block; padding: .7rem .8rem; border-color: #bbb; }
+    .formula .eq, .formula .eq .katex, .katex { font-size: .88em !important; }
+    .katex-display > .katex { white-space: normal; }
+    .table-scroll { overflow: visible; border: 0; }
+    table.data { table-layout: fixed; width: 100%; }
+    table.data th, table.data td { overflow-wrap: anywhere; }
+    pre, code, .mono { white-space: pre-wrap; overflow-wrap: anywhere; }
   }
 }

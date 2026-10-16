@@ -15,7 +15,7 @@
  * ------------
  *  1. deletes any previous public/ (always a clean rebuild),
  *  2. copies the runtime allow-list into it:
- *       index.html, quiz.html, topics/, css/, js/, vendor/
+ *       index.html, quiz.html, topics/, css/, js/, vendor/, img/
  *       (dev docs such as README/TESTING stay in the repo, not on the site),
  *  3. prunes dev-only files that ride inside copied dirs (css/input.css, .gitkeep),
  *  4. verifies every required asset exists AND every local href/src in every
@@ -43,9 +43,12 @@ const COPY_FILES = [
 ];
 
 // Whole directories copied recursively.
-const COPY_DIRS = ['topics', 'css', 'js', 'vendor'];
+const COPY_DIRS = ['topics', 'css', 'js', 'vendor', 'img'];
 
 // Dev-only files that live inside copied dirs but must not ship.
+// NB: the vendored libraries' LICENSE files are deliberately NOT pruned -
+// MIT / LGPL-2.1 require the licence to travel with the distributed code, so
+// the deployed bundle carries vendor/{katex,chart}/LICENSE too (~26 KB).
 const PRUNE = ['css/input.css', 'vendor/fonts/.gitkeep'];
 
 // Assets that MUST exist in public/ afterwards (fail the build otherwise).
@@ -56,12 +59,15 @@ const MUST_EXIST = [
   'css/fonts.css',
   'js/common.js',
   'js/quiz.js',
-  'topics/charges.html',
+  'topics/vectors.html',
+  'topics/fluids.html',
+  'topics/heat.html',
+  'topics/waves.html',
   'topics/current.html',
-  'topics/magnetism.html',
-  'topics/induction.html',
   'vendor/katex/katex.min.js',
   'vendor/katex/katex.min.css',
+  'vendor/chart/chart.umd.min.js',
+  'img/og-card.png',
   'vendor/fonts/g8321-100.woff2',
   'vendor/fonts/g8321-400.woff2',
   'vendor/fonts/g8321-700.woff2',

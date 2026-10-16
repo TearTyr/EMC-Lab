@@ -1,22 +1,27 @@
-/* EMC Lab shared engine (window.EMC): physical constants, maths + SI-prefix formatting, HiDPI canvas Stage (rAF loop, resize, unified pointer input), drawing helpers, safe localStorage, progress tracking, control binding, page UI (nav/reveal/toasts), KaTeX typesetting and licensed-font loading. */
+/* EMC Lab shared engine (window.EMC): physical constants, maths + SI-prefix formatting, HiDPI canvas Stage (rAF loop, resize, unified pointer input), drawing helpers, safe localStorage, progress tracking with JSON export/import, control binding, page UI (nav/reveal/toasts), KaTeX typesetting and licensed-font loading. */
 'use strict';
 
 window.EMC = (function () {
 
   /* ------------------------------------------------------------------------ 1. Physical constants (SI units, CODATA 2018 exact values where defined) ------------------------------------------------------------------------ */
   const CONST = {
-    /* Coulomb constant k = 1/(4*pi*eps0) [N m^2 C^-2] */
-    K: 8.987551787e9,
-    /* Permittivity of free space eps0 [F/m] (exact) */
-    EPS0: 8.8541878128e-12,
-    /* Permeability of free space mu0 [T m/A] */
-    MU0: 1.25663706212e-6,
-    /* Elementary charge e [C] (exact) */
+    /* Elementary charge e [C] (exact) — used by the electricity sims to
+       express a current as a charge-carrier rate. */
     E: 1.602176634e-19,
-    /* Electron mass [kg] */
-    M_ELECTRON: 9.1093837015e-31,
-    /* Proton mass [kg] */
-    M_PROTON: 1.67262192369e-27
+    /* Standard gravitational acceleration g [m/s^2] */
+    G: 9.80665,
+    /* Density of pure water at 4 degC [kg/m^3] */
+    RHO_WATER: 1000,
+    /* Density of dry air at sea level, 15 degC [kg/m^3] */
+    RHO_AIR: 1.225,
+    /* Specific heat capacity of liquid water [J/(kg K)] */
+    C_WATER: 4186,
+    /* Speed of sound in dry air at 20 degC [m/s] */
+    V_SOUND: 343,
+    /* Standard atmospheric pressure [Pa] */
+    P_ATM: 101325,
+    /* Absolute zero on the Celsius scale [degC] */
+    T_ABS_ZERO: -273.15
   };
 
   /* ------------------------------------------------------------------------ 2. Math helpers ------------------------------------------------------------------------ */
@@ -236,22 +241,6 @@ window.EMC = (function () {
     ctx.restore();
   }
 
-  /* Draw a point charge as a flat sticker: pastel disc, cream ring, dark sign. No gradients and no glow, per the flat-art policy. */
-  function chargeGlyph(ctx, x, y, r, q, { pulse = 0 } = {}) {
-    const pos = q >= 0;
-    ctx.save();
-    ctx.fillStyle = pos ? '#f8aebe' : '#a8d3e0';
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(246,241,229,.85)'; ctx.stroke();
-
-    // sign
-    ctx.strokeStyle = '#2b2d33'; ctx.lineWidth = Math.max(2, r * 0.18); ctx.lineCap = 'round';
-    const s = r * 0.46;
-    ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
-    if (pos) { ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x, y + s); ctx.stroke(); }
-    ctx.restore();
-  }
-
   /* ------------------------------------------------------------------------ 6. Storage wrapper — localStorage can throw (private mode, sandboxed iframe, file:// in some browsers), so we fall back to memory. ------------------------------------------------------------------------ */
   const store = (function () {
     let mem = {};
@@ -278,14 +267,14 @@ window.EMC = (function () {
   })();
 
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
-  const TOPICS = ['charges', 'current', 'magnetism', 'induction'];
+  const TOPICS = ['vectors', 'fluids', 'heat', 'waves', 'current'];
   const PROGRESS_KEY = 'emc.progress.v1';
 
   const Progress = {
     /* @returns {{topics:Object<string,boolean>,quizBest:number,quizAttempts:number,quizLast:number,updatedAt:string}} */
     read() {
       const blank = {
-        topics: { charges: false, current: false, magnetism: false, induction: false },
+        topics: { vectors: false, fluids: false, heat: false, waves: false, current: false },
         quizBest: 0, quizAttempts: 0, quizLast: 0,
         quizHistory: [],          // [{ pct, at }] — newest last, capped at 20
         updatedAt: null
@@ -319,7 +308,7 @@ window.EMC = (function () {
       p.quizBest = Math.max(p.quizBest, pct);
       p.quizHistory = (p.quizHistory || []).concat([{ pct, at: new Date().toISOString() }]).slice(-20);
       // as promised on the home dashboard: a passing score counts as having
-      // studied all four topics
+      // studied all five topics
       if (pct >= 70) TOPICS.forEach(t => { p.topics[t] = true; });
       this.write(p);
       return p;
@@ -329,6 +318,55 @@ window.EMC = (function () {
       const p = this.read();
       const done = TOPICS.filter(t => p.topics[t]).length;
       return Math.round((done / TOPICS.length) * 80 + (p.quizBest / 100) * 20);
+    },
+
+    /* -- export / import ---------------------------------------------------
+       Progress lives in this browser's localStorage, so a student who moves to
+       another machine would otherwise start from zero. Export writes a small
+       JSON file; Import reads one back. Import validates and sanitises every
+       field before it touches storage, so a hand-edited or corrupt file can
+       never poison the dashboard.                                          */
+    exportJSON() {
+      return JSON.stringify({
+        app: 'emc-lab', version: 1,
+        exportedAt: new Date().toISOString(),
+        progress: this.read()
+      }, null, 2);
+    },
+    /* @param {string} text contents of an exported file
+       @returns {{ok:boolean, message:string}} */
+    importJSON(text) {
+      let raw;
+      try { raw = JSON.parse(text); }
+      catch (e) { return { ok: false, message: 'That file is not valid JSON.' }; }
+      const src = (raw && raw.progress) ? raw.progress : raw;
+      if (!src || typeof src !== 'object') return { ok: false, message: 'No progress data found in that file.' };
+      if (raw && raw.app && raw.app !== 'emc-lab') {
+        return { ok: false, message: 'That file was not exported by EMC Lab.' };
+      }
+
+      const num = (v, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0; };
+      const p = {
+        topics: { vectors: false, fluids: false, heat: false, waves: false, current: false },
+        quizBest: num(src.quizBest, 100),
+        quizAttempts: Math.round(num(src.quizAttempts, 1e6)),
+        quizLast: num(src.quizLast, 100),
+        quizHistory: [],
+        updatedAt: null
+      };
+      TOPICS.forEach(t => { p.topics[t] = !!(src.topics && src.topics[t]); });
+      if (Array.isArray(src.quizHistory)) {
+        p.quizHistory = src.quizHistory.slice(-20)
+          .filter(h => h && Number.isFinite(Number(h.pct)))
+          .map(h => ({ pct: num(h.pct, 100), at: typeof h.at === 'string' ? h.at : new Date().toISOString() }));
+      }
+      this.write(p);
+      const done = TOPICS.filter(t => p.topics[t]).length;
+      return {
+        ok: true,
+        message: `Imported: ${done} of ${TOPICS.length} topics` +
+                 (p.quizAttempts ? `, best score ${p.quizBest}%` : '')
+      };
     },
     reset() { store.remove(PROGRESS_KEY); return this.read(); }
   };
@@ -384,6 +422,7 @@ window.EMC = (function () {
   }
 
   /* ------------------------------------------------------------------------ 9. Page UI: nav, reveal, reading progress, toasts, topic completion ------------------------------------------------------------------------ */
+  const topicSyncs = [];   // one renderer per [data-complete-topic] button
   const UI = {
     initNav() {
       const toggle = document.getElementById('navToggle');
@@ -482,6 +521,7 @@ window.EMC = (function () {
 
     /* "Mark this topic complete" buttons -> Progress.markTopic */
     initTopicButtons() {
+      topicSyncs.length = 0;
       document.querySelectorAll('[data-complete-topic]').forEach(btn => {
         const id = btn.dataset.completeTopic;
         const sync = () => {
@@ -492,6 +532,7 @@ window.EMC = (function () {
             : 'Mark topic as complete';
           btn.setAttribute('aria-pressed', String(done));
         };
+        topicSyncs.push(sync);
         btn.addEventListener('click', () => {
           const nowDone = !Progress.isTopicDone(id);
           Progress.markTopic(id, nowDone);
@@ -502,6 +543,11 @@ window.EMC = (function () {
         sync();
       });
     },
+
+    /* Re-render every topic button from storage. Called after a Reset or an
+       Import, so the buttons (cheering mascot included) always tell the truth
+       without duplicating the markup rules from initTopicButtons(). */
+    syncTopicButtons() { topicSyncs.forEach(fn => fn()); },
 
     /* Show a warning banner when localStorage is unavailable. */
     initStorageNotice() {
@@ -543,7 +589,7 @@ window.EMC = (function () {
     return n;
   }
 
-  /* * Optional: activate PRIVATELY licensed faces listed in vendor/fonts/manifest.json. * The site's own fonts (G8321 Bold + Lilita One, both SIL OFL) are committed * woff2 files declared in css/fonts.css - they render on any host with no * runtime work. This hook exists for faces you may NOT redistribute: drop the * file into vendor/fonts/ (gitignored), list it in the manifest, and it gets * registered locally via the FontFace API - a missing file degrades with ZERO * console noise (a plain @font-face would log a 404 on every page load). */
+  /* * Optional: activate PRIVATELY licensed faces listed in vendor/fonts/manifest.json. * The site's own font (G8321 in 100/400/700, SIL OFL) is a committed * woff2 set declared in css/fonts.css - it renders on any host with no * runtime work. This hook exists for faces you may NOT redistribute: drop the * file into vendor/fonts/ (gitignored), list it in the manifest, and it gets * registered locally via the FontFace API - a missing file degrades with ZERO * console noise (a plain @font-face would log a 404 on every page load). */
   function loadLicensedFont() {
     // vendor/fonts/manifest.json (always committed, always 200) lists the
     // licensed faces present locally, so we never probe for files that
@@ -622,7 +668,7 @@ window.EMC = (function () {
     CONST, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, roundTo, mapRange, damp,
     eng, unit, fixed,
-    Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, loadLicensedFont,
+    Stage, roundRect, arrow, label, scrollToEl, katexify, loadLicensedFont,
     store, Progress,
     bindRange, bindSegment, bindToggles,
     UI, toast: UI.toast
