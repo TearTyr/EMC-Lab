@@ -27,7 +27,10 @@
  * Run it via `bun run build:public` (or `bun run build` = build:css + this).
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { createHash as _createHash } from 'node:crypto';
+const nodeCrypto = { createHash: _createHash };
 import { dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -55,10 +58,8 @@ const PRUNE = ['css/input.css', 'vendor/fonts/.gitkeep'];
 const MUST_EXIST = [
   'index.html',
   'quiz.html',
-  'css/site.css',
-  'css/fonts.css',
-  'js/common.js',
-  'js/quiz.js',
+  /* css/site.css, css/fonts.css, js/*.js exist under content-hashed names;
+     checked separately below */
   'topics/vectors.html',
   'topics/fluids.html',
   'topics/heat.html',
@@ -77,6 +78,8 @@ const MUST_EXIST = [
 /* ------------------------------------------------------------------- steps */
 
 const errors = [];
+
+const summary = { minifiedJs: 0, readableJs: 0, hashedAssets: 0 };
 
 // 1. clean slate -------------------------------------------------------------
 rmSync(outDir, { recursive: true, force: true });
@@ -105,9 +108,78 @@ for (const rel of PRUNE) {
   rmSync(join(outDir, rel), { force: true });
 }
 
+// 3b+3c are wrapped: ANY unexpected environment problem (missing Bun, odd FS
+// semantics, etc.) degrades to readable unhashed assets instead of failing the
+// deploy. A broken site is worse than an unoptimised one.
+let assetPipeline = 'hashed+minified';
+try {
+if (process.env.PUBLIC_FORCE_FALLBACK) throw new Error('forced fallback (fallback-path test)');
+// 3b. minify the shipped JavaScript (production output ONLY) -------------------
+// Sources in js/ stay readable and keep working from file://; only the deploy
+// bundle is minified, with Bun's built-in minifier (no new dependency). When
+// the build runs under Node without Bun on PATH the files are copied readable
+// and the summary says so - never a hard failure.
+{
+  const jsOut = join(outDir, 'js');
+  let minified = 0, kept = 0;
+  for (const f of readdirSync(jsOut).filter(f => f.endsWith('.js'))) {
+    const file = join(jsOut, f);
+    const res = spawnSync('bun', ['build', '--no-bundle', '--minify', '--target=browser', file, '--outfile', file + '.tmp']);
+    if (res.status === 0 && existsSync(file + '.tmp')) { renameSync(file + '.tmp', file); minified++; }
+    else { rmSync(file + '.tmp', { force: true }); kept++; }
+  }
+  summary.minifiedJs = minified;
+  summary.readableJs = kept;
+}
+
+// 3c. content-hashed filenames for our own js/css (immutable caching) --------
+// Only the deploy bundle is rewritten; sources keep stable names so file://
+// and the dev workflow are untouched. Vendor libs keep their 1-day cache.
+const hashed = {};
+{
+  const targets = [
+    ...readdirSync(join(outDir, 'js')).filter(f => f.endsWith('.js')).map(f => ['js', f]),
+    ...readdirSync(join(outDir, 'css')).filter(f => f.endsWith('.css')).map(f => ['css', f]),
+  ];
+  for (const [dir, f] of targets) {
+    const full = join(outDir, dir, f);
+    const h = nodeCrypto.createHash('sha256').update(readFileSync(full)).digest('hex').slice(0, 8);
+    const nf = f.replace(/\.(js|css)$/, '.' + h + '.$1');
+    renameSync(full, join(outDir, dir, nf));
+    hashed[`${dir}/${f}`] = `${dir}/${nf}`;
+  }
+  // rewrite references in the copied pages
+  const pages = [
+    ...readdirSync(outDir).filter(f => f.endsWith('.html')).map(f => join(outDir, f)),
+    ...readdirSync(join(outDir, 'topics')).filter(f => f.endsWith('.html')).map(f => join(outDir, 'topics', f)),
+  ];
+  for (const p of pages) {
+    let html = readFileSync(p, 'utf8');
+    for (const [from, to] of Object.entries(hashed)) {
+      const base = from.split('/')[1];
+      html = html.split(base).join(to.split('/')[1]);
+    }
+    writeFileSync(p, html);
+  }
+  summary.hashedAssets = Object.keys(hashed).length;
+}
+
+} catch (err) {
+  assetPipeline = 'readable+unhashed (fallback: ' + (err && err.message ? err.message : err) + ')';
+  for (const dir of ['js', 'css']) rmSync(join(outDir, dir), { recursive: true, force: true });
+  cpSync(join(repoRoot, 'js'), join(outDir, 'js'), { recursive: true });
+  cpSync(join(repoRoot, 'css'), join(outDir, 'css'), { recursive: true });
+  rmSync(join(outDir, 'css/input.css'), { force: true });
+  console.error('asset pipeline fell back to readable unhashed assets: ' + (err && err.message ? err.message : err));
+}
+
 // 4a. required assets -----------------------------------------------------------
 for (const rel of MUST_EXIST) {
   if (!existsSync(join(outDir, rel))) errors.push(`required asset missing in public/: ${rel}`);
+}
+for (const [dir, prefix] of [['css', 'site.'], ['css', 'fonts.'], ['js', 'common.'], ['js', 'quiz.']]) {
+  const hit = existsSync(join(outDir, dir)) && readdirSync(join(outDir, dir)).some(f => f.startsWith(prefix));
+  if (!hit) errors.push(`required hashed asset missing in public/${dir}/: ${prefix}*`);
 }
 
 // 4b. every local link inside every copied page must resolve in public/ ---------
@@ -158,4 +230,6 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log('build:public OK — output directory is deployable.');
+console.log('build:public OK — output directory is deployable.' +
+  (summary.minifiedJs ? ` (js minified: ${summary.minifiedJs}, readable fallback: ${summary.readableJs})` : ' (js shipped readable - bun not found)') +
+  ` [assets: ${assetPipeline}]`);
