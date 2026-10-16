@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
   <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+  </script>
   <title>Topic 5 · Electricity — EMC Lab</title>
   <link rel="canonical" href="https://emc-physics.vercel.app/topics/current.html">
   <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
@@ -55,6 +59,13 @@
         </svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
       </a>
+      <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
+              title="Details: full technical explanations (ON) or simplified ones (OFF)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
       <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
         <a class="nav-link" href="../index.html">Home</a>
@@ -75,6 +86,11 @@
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
+    <div class="boot-strip" id="bootStrip" aria-hidden="true">
+      <span class="boot-chip" data-stage="shell">layout</span>
+      <span class="boot-chip" data-stage="equations">equations</span>
+      <span class="boot-chip" data-stage="sims">simulations</span>
+    </div>
   </header>
 
   <main class="emc-main" id="main">
@@ -94,7 +110,8 @@
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 5 of 5</span>
       <h1 class="h-topic" style="margin:.4rem 0 .35rem">Electricity</h1>
-      <p class="lede">
+      <p class="lede small muted" data-detail="plain" style="margin:0 0 .4rem">Circuits come down to three numbers — voltage pushes, current flows, resistance opposes — linked by one equation, V = IR. This topic builds from that to real networks.</p>
+      <p class="lede" data-detail="tech">
         Set charges in motion and they do the work of the modern world. A steady flow of charge is a
         <strong>current</strong>, and the three quantities that describe any simple circuit —
         voltage, current and resistance — are tied together by the most useful equation in
@@ -115,16 +132,17 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="quantities">5.1 · Current, voltage and resistance</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Voltage is the push, current is the flow, resistance is the opposition. Each has its own unit: volts, amperes, ohms.</p>
       <dl class="defs">
         <div><dt>Current I — the rate of flow of charge</dt><dd>I = ΔQ/Δt, measured in <strong>amperes</strong> (A). One ampere is one coulomb passing a point every second, about 6.24×10<sup>18</sup> electrons per second.</dd></div>
         <div><dt>Potential difference V — energy per unit charge</dt><dd>V = W/Q, measured in <strong>volts</strong> (V). One volt means one joule of energy transferred per coulomb that passes. A battery is a charge pump that gives each coulomb a fixed amount of energy.</dd></div>
         <div><dt>Resistance R — how much a component opposes current</dt><dd>R = V/I, measured in <strong>ohms</strong> (Ω). For a uniform wire R = ρL/A: longer and thinner wires resist more.</dd></div>
       </dl>
 
-      <details class="dig dig-trap">
+      <details class="dig dig-trap" data-detail="tech">
         <summary>Conventional current vs electron flow</summary>
         <div class="dig-body">
-        <p>
+        <p data-detail="tech">
           Electrons in a metal drift from the negative terminal to the positive one — and very
           slowly, typically fractions of a millimetre per second. <strong>Conventional current</strong>
           is defined the other way round (positive charge moving + → −), a convention that
@@ -137,12 +155,13 @@
       </details>
 
       <h2 class="h-sec" id="ohm">5.2 · Ohm’s law</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Ohm's law: double the voltage and the current doubles; double the resistance and the current halves. Power is how fast energy is used.</p>
       <div class="formula">
         <span class="eq" data-display data-tex="V = IR">V = I · R</span>
         <span class="eq" data-display data-tex="I = \dfrac{V}{R}, \quad R = \dfrac{V}{I}" style="font-size:1.05rem">I = V/R &nbsp;·&nbsp; R = V/I</span>
         <span class="where">V in volts · I in amperes · R in ohms</span>
       </div>
-      <p>
+      <p data-detail="tech">
         Strictly, <strong>Ohm’s law is a property of some materials, not a universal law</strong>.
         An <em>ohmic</em> conductor (a metal resistor at constant temperature) keeps R constant,
         so its I–V graph is a straight line through the origin with gradient 1/R. A filament lamp,
@@ -168,13 +187,14 @@
       </div>
 
       <h2 class="h-sec" id="networks">5.3 · Series and parallel circuits</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Series means one path, so resistances add up. Parallel means extra paths, so the total gets easier to flow through. Combine step by step.</p>
       <figure class="fig">
         <div class="fig-box">
           <svg viewBox="0 0 560 210" width="560" height="210" role="img"
                aria-label="Left: two resistors in series on one path. Right: two resistors in parallel on separate branches.">
             <g stroke="#5b7299" stroke-width="2.5" fill="none">
               <!-- SERIES -->
-              <path d="M40 40 H250 V170 H40 Z"/>
+              <p data-detail="tech"ath d="M40 40 H250 V170 H40 Z"/>
               <!-- PARALLEL -->
               <path d="M310 40 H520 V170 H310 Z"/>
             </g>
@@ -244,7 +264,7 @@
         <li><strong>Work back outwards</strong>, splitting the current and voltage at each step you undid.</li>
       </ol>
 
-      <details class="dig dig-real">
+      <details class="dig dig-real" data-detail="tech">
         <summary>Real world</summary>
         <div class="dig-body">
         <p>
@@ -265,7 +285,7 @@
         </div>
       </details>
 
-      <details class="dig dig-trap">
+      <details class="dig dig-trap" data-detail="tech">
         <summary>Common misconceptions</summary>
         <div class="dig-body">
         <p>1. “Current is used up by the bulb.” No — the same current flows out as in; what is used up is <em>energy</em> (the charge loses potential energy, which becomes light and heat).</p>
@@ -275,7 +295,8 @@
       </details>
 
       <h2 class="h-sec" id="sim-ohm-panel" style="scroll-margin-top:5rem">5.4 · Simulation — Ohm’s law bench</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Move the voltage and resistance sliders and watch the current and power respond, with a meter that picks its range like a real one.</p>
+      <p data-detail="tech">
         Move the voltage and resistance sliders and watch the current respond. The ammeter
         auto-ranges like a real meter, the bulb brightens with dissipated power, and the chart
         plots the I–V characteristic — the straight line whose gradient is 1/R. Push the power
@@ -340,7 +361,7 @@
               <div class="stat"><span class="stat-label">Power P</span><span class="stat-value hl-amber" id="ohm-P">—</span></div>
               <div class="stat"><span class="stat-label">Meter range</span><span class="stat-value" id="ohm-range">—</span></div>
             </div>
-            <p class="sim-note mt-3 mono" id="ohm-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-3 mono" data-detail="tech" id="ohm-sub" style="overflow-wrap:anywhere">—</p>
             <div class="callout callout-warn" id="ohm-warn" hidden style="margin-top:.75rem"></div>
           </div>
         </div>
@@ -349,7 +370,8 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="sim-circuit-panel" style="scroll-margin-top:5rem">5.5 · Simulation — circuit builder</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Build series, parallel or mixed circuits. The animated dots show the current splitting exactly as the rules predict.</p>
+      <p data-detail="tech">
         Build a real circuit. Choose a topology, add or delete resistors, and change any value.
         The simulator solves the network exactly, prints the equivalent-resistance working, and
         animates charge flow with a dot density proportional to the current in each branch — so
@@ -422,7 +444,7 @@
             <div class="stat"><span class="stat-label">Supply power</span><span class="stat-value" id="circ-ptotal">—</span></div>
           </div>
 
-          <p class="sim-note mt-3 mono" id="circ-breakdown" style="overflow-wrap:anywhere">—</p>
+          <p class="sim-note mt-3 mono" data-detail="tech" id="circ-breakdown" style="overflow-wrap:anywhere">—</p>
           <p class="sim-note mt-2" id="circ-rule" style="border-left-color:#fbbf24;background:rgba(251,191,36,.07)">—</p>
 
           <div class="table-scroll mt-4">
@@ -548,10 +570,20 @@
   <script defer src="../js/common.js"></script>
   <script defer src="../js/sim-ohm.js"></script>
   <script defer src="../js/sim-circuit.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
-  <script type="module">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
-    injectSpeedInsights();
+  <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
+       site is actually served from Vercel, so local runs, file:// and the test
+       suite stay zero-third-party-request and console-clean. On Vercel the
+       integrations keep reporting exactly as the dashboard expects. -->
+  <script>
+    if (/\.vercel\.app$/.test(location.hostname)) {
+      var wa = document.createElement('script');
+      wa.defer = true;
+      wa.src = 'https://cdn.vercel-insights.com/v1/script.js';
+      document.head.appendChild(wa);
+      import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
+        .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
+        .catch(function () { /* analytics is optional; never break the page */ });
+    }
   </script>
 </body>
 </html>

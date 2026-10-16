@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Wave anatomy, v = fλ, transverse versus longitudinal waves and the physics of pitch — with a live wave simulator and a playable tone bench.">
   <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+  </script>
   <title>Topic 4 · Waves &amp; sound — EMC Lab</title>
   <link rel="canonical" href="https://emc-physics.vercel.app/topics/waves.html">
   <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
@@ -55,6 +59,13 @@
         </svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
       </a>
+      <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
+              title="Details: full technical explanations (ON) or simplified ones (OFF)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
       <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
         <a class="nav-link" href="../index.html">Home</a>
@@ -75,6 +86,11 @@
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
+    <div class="boot-strip" id="bootStrip" aria-hidden="true">
+      <span class="boot-chip" data-stage="shell">layout</span>
+      <span class="boot-chip" data-stage="equations">equations</span>
+      <span class="boot-chip" data-stage="sims">simulations</span>
+    </div>
   </header>
 
   <main class="emc-main" id="main">
@@ -94,7 +110,8 @@
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 4 of 5</span>
       <h1 class="h-topic" style="margin:.4rem 0 .35rem">Waves &amp; sound</h1>
-      <p class="lede">
+      <p class="lede small muted" data-detail="plain" style="margin:0 0 .4rem">Waves carry energy without carrying material. This topic covers the vocabulary, the master equation v = fλ, and sound as a wave you can actually hear.</p>
+      <p class="lede" data-detail="tech">
         A wave is a <strong>disturbance that travels, carrying energy without carrying matter</strong>.
         Ripples, sound, seismic tremors and light are all the same idea wearing different costumes —
         and one equation, v = fλ, ties them together.
@@ -114,6 +131,7 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="describe">4.1 · Describing a wave</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Four numbers describe any wave: how tall it is (amplitude), the length of one cycle (wavelength), how many cycles per second (frequency), and the seconds per cycle (period).</p>
       <dl class="defs">
         <div><dt>Amplitude A — the biggest displacement</dt><dd>How far the medium swings from rest, in metres (or the field’s strength, for light). Amplitude carries the <strong>energy</strong>: double A and a wave carries four times the energy.</dd></div>
         <div><dt>Wavelength λ — one complete cycle, in space</dt><dd>Crest to crest (or compression to compression), in metres.</dd></div>
@@ -125,7 +143,7 @@
         <span class="eq" data-display data-tex="v = f\lambda">v = f · λ</span>
         <span class="where">wave speed in m/s — each second, f wavelengths of length λ go past</span>
       </div>
-      <p>
+      <p data-detail="tech">
         The wave speed v is a property of the <strong>medium</strong>: sound flies through steel
         (~5100 m/s) fifteen times faster than through air (343 m/s); waves on a tighter string run
         faster. Since f is fixed by the source, entering a new medium forces <strong>λ to
@@ -139,6 +157,7 @@
       </div>
 
       <h2 class="h-sec" id="types">4.2 · Transverse vs longitudinal</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Waves either wiggle side-to-side across their travel (transverse, like a rope) or squeeze-and-stretch along it (longitudinal, like sound).</p>
       <div class="table-scroll">
         <table class="data">
           <thead><tr><th></th><th>Transverse</th><th>Longitudinal</th></tr></thead>
@@ -151,17 +170,18 @@
         </table>
       </div>
 
-      <details class="dig dig-trap">
+      <details class="dig dig-trap" data-detail="tech">
         <summary>Common misconceptions</summary>
         <div class="dig-body">
-        <p>1. “The medium travels with the wave.” It does not — a floating duck bobs in place while the swell passes. Only the <em>disturbance</em> (and its energy) moves. Turn on “medium particles” in the simulator and watch a single dot: up and down, never along.</p>
+        <p data-detail="tech">1. “The medium travels with the wave.” It does not — a floating duck bobs in place while the swell passes. Only the <em>disturbance</em> (and its energy) moves. Turn on “medium particles” in the simulator and watch a single dot: up and down, never along.</p>
         <p>2. “Higher frequency means faster wave.” Only if the medium lets it. In air, a 100 Hz bass note and a 10 kHz whistle travel at the same 343 m/s — the whistle just has a 100× shorter wavelength.</p>
         <p>3. “Sound is transverse because you can draw it as a wiggly line.” Oscilloscope traces plot pressure against time — they are <em>graphs</em>, not pictures of the air. In the air itself, sound is compressions marching along the direction of travel.</p>
         </div>
       </details>
 
       <h2 class="h-sec" id="sim-wave-panel" style="scroll-margin-top:5rem">4.3 · Simulation — the wave bench</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Move the sliders and the wave responds instantly, including its speed, which is always frequency × wavelength.</p>
+      <p data-detail="tech">
         Set amplitude, frequency and wavelength and watch v = fλ recompute live. Switch between
         the transverse drawing and the longitudinal one — same maths, different motion. Freeze the
         wave with <em>Pause</em> to measure a wavelength against the λ marker, and keep
@@ -221,7 +241,7 @@
               <div class="stat"><span class="stat-label">Period T = 1/f</span><span class="stat-value hl-amber" id="wave-T">—</span></div>
               <div class="stat"><span class="stat-label">ω = 2πf</span><span class="stat-value" id="wave-omega">—</span></div>
             </div>
-            <p class="sim-note mt-3 mono" id="wave-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-3 mono" data-detail="tech" id="wave-sub" style="overflow-wrap:anywhere">—</p>
           </div>
         </div>
       </div>
@@ -229,7 +249,8 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="sound">4.4 · Sound</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Sound is a squeezing-and-stretching wave in air. Higher frequency means higher pitch; bigger amplitude means louder.</p>
+      <p data-detail="tech">
         Sound is a <strong>longitudinal mechanical wave</strong>: a loudspeaker cone punches
         compressions into the air, and your eardrum reads them back. It needs a medium — ring a
         bell under a vacuum jar and the hammer keeps moving in silence.
@@ -246,7 +267,7 @@
         <p><strong>How far is that storm?</strong> Flash, then thunder 6 s later: d = v·t = 343 × 6 ≈ <b>2 km</b>. (The rule of thumb: 3 s ≈ 1 km.)</p>
       </div>
 
-      <details class="dig dig-real">
+      <details class="dig dig-real" data-detail="tech">
         <summary>Real world — the Doppler effect</summary>
         <div class="dig-body">
         <p>
@@ -260,7 +281,8 @@
       </details>
 
       <h2 class="h-sec" id="sim-sound-panel" style="scroll-margin-top:5rem">4.5 · Simulation — the tone player</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Press Play and hear exactly the note you see on the screen. Sweep the frequency upward and the pitch climbs with it.</p>
+      <p data-detail="tech">
         This one you can <strong>hear</strong>. Sweep the frequency slider and watch the pitch name
         track across the note ruler — then press Play and listen to exactly the tone you see on the
         scope. Try the wave shapes: same pitch, different timbre (that is what makes a violin and
@@ -312,7 +334,7 @@
               <div class="stat"><span class="stat-label">λ in air</span><span class="stat-value hl-amber" id="snd-lambda">—</span></div>
               <div class="stat"><span class="stat-label">Period</span><span class="stat-value" id="snd-period">—</span></div>
             </div>
-            <p class="sim-note mt-3 mono" id="snd-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-3 mono" data-detail="tech" id="snd-sub" style="overflow-wrap:anywhere">—</p>
             <p class="sim-note mt-2" id="snd-status">—</p>
           </div>
         </div>
@@ -412,10 +434,20 @@
   <script defer src="../js/common.js"></script>
   <script defer src="../js/sim-wave.js"></script>
   <script defer src="../js/sim-sound.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
-  <script type="module">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
-    injectSpeedInsights();
+  <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
+       site is actually served from Vercel, so local runs, file:// and the test
+       suite stay zero-third-party-request and console-clean. On Vercel the
+       integrations keep reporting exactly as the dashboard expects. -->
+  <script>
+    if (/\.vercel\.app$/.test(location.hostname)) {
+      var wa = document.createElement('script');
+      wa.defer = true;
+      wa.src = 'https://cdn.vercel-insights.com/v1/script.js';
+      document.head.appendChild(wa);
+      import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
+        .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
+        .catch(function () { /* analytics is optional; never break the page */ });
+    }
   </script>
 </body>
 </html>

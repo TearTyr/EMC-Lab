@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Thirty multiple-choice questions on vectors, fluids, temperature &amp; heat, waves &amp; sound and electricity — with automatic scoring, worked explanations and a per-topic breakdown.">
   <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+  </script>
   <title>Quiz · EMC Lab</title>
   <link rel="canonical" href="https://emc-physics.vercel.app/quiz.html">
   <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
@@ -55,6 +59,13 @@
         </svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
       </a>
+      <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
+              title="Details: full technical explanations (ON) or simplified ones (OFF)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
       <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
         <a class="nav-link" href="index.html">Home</a>
@@ -75,6 +86,11 @@
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
+    <div class="boot-strip" id="bootStrip" aria-hidden="true">
+      <span class="boot-chip" data-stage="shell">layout</span>
+      <span class="boot-chip" data-stage="equations">equations</span>
+      <span class="boot-chip" data-stage="sims">simulations</span>
+    </div>
   </header>
 
   <main class="emc-main" id="main">
@@ -146,7 +162,8 @@
             Keyboard: <span class="mono">1–4</span> or <span class="mono">A–D</span> answer the question on screen,
             <span class="mono">Enter</span> submits, <span class="mono">N</span> jumps to the next blank.
           </p>
-          <p class="tiny faint mt-3">
+          <p class="tiny faint mt-3" data-detail="plain">Exam mode grades everything at the end. Instant feedback grades each answer right away — better while learning.</p>
+          <p class="tiny faint mt-3" data-detail="tech">
             <strong>Exam mode</strong> marks nothing until you submit — good for a real test.
             <strong>Instant feedback</strong> marks each answer immediately and shows the
             explanation, which is better when you are learning. Submitting always grades the
@@ -224,10 +241,20 @@
   <script defer src="js/common.js"></script>
   <script defer src="js/quiz-data.js"></script>
   <script defer src="js/quiz.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
-  <script type="module">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
-    injectSpeedInsights();
+  <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
+       site is actually served from Vercel, so local runs, file:// and the test
+       suite stay zero-third-party-request and console-clean. On Vercel the
+       integrations keep reporting exactly as the dashboard expects. -->
+  <script>
+    if (/\.vercel\.app$/.test(location.hostname)) {
+      var wa = document.createElement('script');
+      wa.defer = true;
+      wa.src = 'https://cdn.vercel-insights.com/v1/script.js';
+      document.head.appendChild(wa);
+      import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
+        .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
+        .catch(function () { /* analytics is optional; never break the page */ });
+    }
   </script>
 </body>
 </html>

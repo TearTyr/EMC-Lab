@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Density, pressure with depth, Archimedes' principle and Bernoulli's equation — with a buoyancy tank and a wing/venturi visualiser.">
   <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+  </script>
   <title>Topic 2 · Fluids — EMC Lab</title>
   <link rel="canonical" href="https://emc-physics.vercel.app/topics/fluids.html">
   <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
@@ -55,6 +59,13 @@
         </svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
       </a>
+      <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
+              title="Details: full technical explanations (ON) or simplified ones (OFF)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
       <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
         <a class="nav-link" href="../index.html">Home</a>
@@ -75,6 +86,11 @@
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
+    <div class="boot-strip" id="bootStrip" aria-hidden="true">
+      <span class="boot-chip" data-stage="shell">layout</span>
+      <span class="boot-chip" data-stage="equations">equations</span>
+      <span class="boot-chip" data-stage="sims">simulations</span>
+    </div>
   </header>
 
   <main class="emc-main" id="main">
@@ -94,7 +110,8 @@
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 2 of 5</span>
       <h1 class="h-topic" style="margin:.4rem 0 .35rem">Fluids</h1>
-      <p class="lede">
+      <p class="lede small muted" data-detail="plain" style="margin:0 0 .4rem">Fluids are liquids and gases. This topic explains why pressure grows with depth, why things float or sink, and how moving fluid can lift an aeroplane.</p>
+      <p class="lede" data-detail="tech">
         A fluid — liquid or gas — cannot resist being reshaped, so it pushes <strong>equally in
         every direction</strong> and its pressure grows with depth. From those two facts fall
         everything else: why ships float, how hydraulic presses lift cars, and how a wing makes
@@ -115,6 +132,7 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="density">2.1 · Density and pressure</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Density is how tightly mass is packed; pressure is how hard a fluid pushes. Go deeper and the push grows, because more fluid weighs on you.</p>
       <dl class="defs">
         <div><dt>Density ρ — mass per unit volume</dt><dd>ρ = m/V, in <strong>kg/m³</strong>. Water: 1000 kg/m³ (a litre weighs a kilogram); air at sea level: about 1.2 kg/m³; steel: 7800 kg/m³.</dd></div>
         <div><dt>Pressure P — force per unit area</dt><dd>P = F/A, in <strong>pascals</strong> (Pa = N/m²). One atmosphere ≈ 101 kPa — the column of air above you presses with the weight of about a tonne on every square metre, and you do not feel it because your body pushes back equally.</dd></div>
@@ -124,7 +142,7 @@
         <span class="eq" data-display data-tex="P = P_0 + \rho g h">P = P₀ + ρ·g·h</span>
         <span class="where">P₀ = pressure at the surface (usually 1 atm) · h = depth below it · ρ = fluid density</span>
       </div>
-      <p>
+      <p data-detail="tech">
         Pressure in a still fluid grows <strong>linearly with depth</strong>: every layer of fluid
         must support the weight of everything above it. Direction does not matter — pressure at a
         point pushes equally in all directions (Pascal), which is why a small force on a small
@@ -139,11 +157,12 @@
       </div>
 
       <h2 class="h-sec" id="archimedes">2.2 · Archimedes’ principle</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Anything in a fluid gets pushed up by the weight of the fluid it shoves aside. That is why less-dense things float and denser things sink.</p>
       <div class="formula">
         <span class="eq" data-display data-tex="F_B = \rho_{\mathrm{fluid}}\, V_{\mathrm{displaced}}\, g">F<sub>B</sub> = ρ<sub>fluid</sub> · V<sub>displaced</sub> · g</span>
         <span class="where">the buoyant force equals the WEIGHT of the fluid pushed aside</span>
       </div>
-      <p>
+      <p data-detail="tech">
         Why does this force exist? Pressure grows with depth, so the fluid pushes up on the
         bottom face of a submerged body <strong>harder</strong> than it pushes down on the top
         face. The difference is exactly the weight of the displaced fluid — that is Archimedes’
@@ -154,7 +173,7 @@
         <li><strong>Sinks</strong> (ρ<sub>obj</sub> &gt; ρ<sub>fluid</sub>): even fully submerged, F<sub>B</sub> &lt; W. The floor supplies the rest as a normal force — the “apparent weight” underwater is W − F<sub>B</sub>.</li>
       </ul>
 
-      <details class="dig dig-real">
+      <details class="dig dig-real" data-detail="tech">
         <summary>Real world — steel ships and load lines</summary>
         <div class="dig-body">
         <p>
@@ -167,7 +186,7 @@
         </div>
       </details>
 
-      <details class="dig dig-trap">
+      <details class="dig dig-trap" data-detail="tech">
         <summary>Common misconceptions</summary>
         <div class="dig-body">
         <p>1. “Heavier things sink.” A 100-tonne ship floats; a 5-gram steel bolt sinks. What matters is <em>density</em> — mass per volume — not mass.</p>
@@ -177,7 +196,8 @@
       </details>
 
       <h2 class="h-sec" id="sim-arch-panel" style="scroll-margin-top:5rem">2.3 · Simulation — the buoyancy tank</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Put a block in a tank and change how dense it is. Watch it float or sink, with the upward and downward pushes drawn to scale.</p>
+      <p data-detail="tech">
         Set the block’s density and volume, choose the fluid, then drag the block under and let it
         go. The arrows are drawn to scale: weight (rose) down, buoyancy (cyan) up, and the floor’s
         normal force (amber) once a sunk block comes to rest. The readouts recompute
@@ -245,7 +265,8 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="bernoulli">2.4 · Moving fluids: continuity and Bernoulli</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">When a fluid speeds up, its pressure drops. That single idea explains wing lift, narrow-pipe suction and many everyday surprises.</p>
+      <p data-detail="tech">
         Set a fluid in motion and two new rules appear. First, <strong>continuity</strong>: fluid
         is not created or destroyed, so whatever flows into a pipe must flow out — in a narrower
         section it must move <em>faster</em>:
@@ -270,7 +291,7 @@
         which is why hurricanes lift roofs <em>off</em> rather than push them down.
       </p>
 
-      <details class="dig dig-trap">
+      <details class="dig dig-trap" data-detail="tech">
         <summary>The “equal transit time” myth</summary>
         <div class="dig-body">
         <p>
@@ -286,7 +307,8 @@
       </details>
 
       <h2 class="h-sec" id="sim-bern-panel" style="scroll-margin-top:5rem">2.5 · Simulation — Bernoulli visualiser</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Two scenes: air flowing over a wing (raise the angle and watch lift grow, then stall), and water speeding up through a narrow pipe while its pressure drops.</p>
+      <p data-detail="tech">
         Two scenes. In <strong>aerofoil</strong> mode, particles stream past a wing: raise the
         angle of attack and watch the top-side flow speed up, the pressure difference grow, the
         lift arrow lengthen — until past 15° the flow separates and the wing <em>stalls</em>.
@@ -349,7 +371,7 @@
               <div class="stat"><span class="stat-label" id="bern-l4">lift</span><span class="stat-value" id="bern-extra">—</span></div>
             </div>
             <p class="sim-note mt-3"><span class="tag tag-emerald" id="bern-state">attached flow</span></p>
-            <p class="sim-note mt-2 mono" id="bern-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-2 mono" data-detail="tech" id="bern-sub" style="overflow-wrap:anywhere">—</p>
           </div>
         </div>
       </div>
@@ -448,10 +470,20 @@
   <script defer src="../js/common.js"></script>
   <script defer src="../js/sim-archimedes.js"></script>
   <script defer src="../js/sim-bernoulli.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
-  <script type="module">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
-    injectSpeedInsights();
+  <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
+       site is actually served from Vercel, so local runs, file:// and the test
+       suite stay zero-third-party-request and console-clean. On Vercel the
+       integrations keep reporting exactly as the dashboard expects. -->
+  <script>
+    if (/\.vercel\.app$/.test(location.hostname)) {
+      var wa = document.createElement('script');
+      wa.defer = true;
+      wa.src = 'https://cdn.vercel-insights.com/v1/script.js';
+      document.head.appendChild(wa);
+      import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
+        .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
+        .catch(function () { /* analytics is optional; never break the page */ });
+    }
   </script>
 </body>
 </html>

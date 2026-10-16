@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Temperature scales and conversions, specific heat with Q = mcΔT, and the three mechanisms of heat transfer — with an interactive thermometer and a heat-transfer lab.">
   <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+  </script>
   <title>Topic 3 · Temperature &amp; heat — EMC Lab</title>
   <link rel="canonical" href="https://emc-physics.vercel.app/topics/heat.html">
   <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
@@ -55,6 +59,13 @@
         </svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
       </a>
+      <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
+              title="Details: full technical explanations (ON) or simplified ones (OFF)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
       <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
         <a class="nav-link" href="../index.html">Home</a>
@@ -75,6 +86,11 @@
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
+    <div class="boot-strip" id="bootStrip" aria-hidden="true">
+      <span class="boot-chip" data-stage="shell">layout</span>
+      <span class="boot-chip" data-stage="equations">equations</span>
+      <span class="boot-chip" data-stage="sims">simulations</span>
+    </div>
   </header>
 
   <main class="emc-main" id="main">
@@ -94,7 +110,8 @@
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 3 of 5</span>
       <h1 class="h-topic" style="margin:.4rem 0 .35rem">Temperature &amp; heat</h1>
-      <p class="lede">
+      <p class="lede small muted" data-detail="plain" style="margin:0 0 .4rem">Temperature says how hot something is; heat is energy moving from hot to cold. This topic covers the three scales, the energy maths of heating, and the three ways heat travels.</p>
+      <p class="lede" data-detail="tech">
         <strong>Temperature</strong> says how fast the particles of a body are jittering on
         average; <strong>heat</strong> is energy on the move from hot to cold. Keeping those two
         apart — and knowing how energy travels — explains everything from sea breezes to
@@ -115,7 +132,8 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="scales">3.1 · Temperature and the three scales</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Celsius, Fahrenheit and Kelvin are just three number labels for the same hotness. The converter below keeps them in step.</p>
+      <p data-detail="tech">
         A thermometer works by <strong>thermal equilibrium</strong>: put it in contact with
         something and wait, and the reading stops moving when both share the same temperature
         (the zeroth law of thermodynamics). Three scales describe that number:
@@ -148,7 +166,8 @@
       </p>
 
       <h2 class="h-sec" id="sim-thermo-panel" style="scroll-margin-top:5rem">3.2 · Simulation — the thermometer</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Drag the thermometer or use the slider. All three scales update together, with the conversion maths shown step by step.</p>
+      <p data-detail="tech">
         Drag the mercury column or move the slider: all three scales update together, with the
         conversion arithmetic printed live. The dashed markers show the landmarks — freezing,
         body temperature, boiling — and the special crossing point at −40°.
@@ -193,7 +212,7 @@
               <div class="stat"><span class="stat-label">Fahrenheit</span><span class="stat-value hl-amber" id="thermo-F">—</span></div>
               <div class="stat"><span class="stat-label">Kelvin</span><span class="stat-value hl-emerald" id="thermo-K">—</span></div>
             </div>
-            <p class="sim-note mt-3 mono" id="thermo-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-3 mono" data-detail="tech" id="thermo-sub" style="overflow-wrap:anywhere">—</p>
             <p class="sim-note mt-2" id="thermo-note">—</p>
           </div>
         </div>
@@ -202,7 +221,8 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="heat">3.3 · Heat and specific heat capacity</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Heating something takes energy: more mass or a bigger temperature rise costs more. Water soaks up a lot of energy, which is why it is used for cooling.</p>
+      <p data-detail="tech">
         <strong>Heat Q</strong> is energy transferred because of a temperature difference — it
         flows spontaneously from hot to cold and is measured in joules. How much a body’s
         temperature rises per joule depends on its mass and its material:
@@ -242,16 +262,17 @@
       </div>
 
       <h2 class="h-sec" id="transfer">3.4 · The three ways heat moves</h2>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Heat moves three ways: through contact (conduction), through circulating fluids (convection), and as invisible waves that cross empty space (radiation).</p>
       <dl class="defs">
         <div><dt>Conduction — contact, particle to particle</dt><dd>Vibrating atoms and (in metals) free electrons pass energy along a material without the material moving. Rate ∝ k·A·ΔT/L: k is the thermal conductivity — copper 401 W/(m·K), glass 1.0, wood 0.15, air 0.026. Still air is an <em>insulator</em>; that is what fleeces, double glazing and loft wool are really trapping.</dd></div>
         <div><dt>Convection — the fluid itself travels</dt><dd>Heated fluid expands, becomes less dense and rises; cooler fluid sinks to replace it, setting up a circulation loop. Convection needs a fluid and gravity: radiators sit under windows to intercept sinking cold air, and there is no convection aboard the ISS.</dd></div>
         <div><dt>Radiation — electromagnetic waves</dt><dd>Every body radiates; output grows as T⁴ (Stefan–Boltzmann, P = εσAT⁴), which is why a small temperature rise means much more radiation. It needs <strong>no medium at all</strong> — sunlight crosses 150 million km of vacuum. Matt black surfaces absorb and emit best (ε ≈ 0.95); shiny surfaces reflect (ε ≈ 0.05).</dd></div>
       </dl>
 
-      <details class="dig dig-trap">
+      <details class="dig dig-trap" data-detail="tech">
         <summary>Common misconceptions</summary>
         <div class="dig-body">
-        <p>1. “Heat rises.” Heat is not a substance. <em>Hot air</em> rises because it is less dense — that is convection. In a vacuum, nothing rises; radiation still travels in straight lines.</p>
+        <p data-detail="tech">1. “Heat rises.” Heat is not a substance. <em>Hot air</em> rises because it is less dense — that is convection. In a vacuum, nothing rises; radiation still travels in straight lines.</p>
         <p>2. “Metal feels cold, so metal is colder.” On a table indoors, the metal and the wood are at exactly the same temperature — your skin is the thermometer, and metal conducts your heat away faster.</p>
         <p>3. “A coat warms you up.” A coat generates nothing; it slows the loss of <em>your</em> heat. Wrap one around an ice cube and the ice melts <em>more slowly</em>.</p>
         <p>4. “ΔT must be converted to kelvin before using Q = mcΔT.” No — a change of 1 °C equals a change of 1 K, so differences pass through untouched. Only <em>absolute</em> temperatures (as in gas laws or T⁴) need kelvin.</p>
@@ -259,7 +280,8 @@
       </details>
 
       <h2 class="h-sec" id="sim-heat-panel" style="scroll-margin-top:5rem">3.5 · Simulation — heat transfer lab</h2>
-      <p>
+      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Three scenes you can switch between: heat spreading along a rod, water circulating in a pot, and warmth radiating across a gap. The settings change what you see.</p>
+      <p data-detail="tech">
         Three scenes, one canvas. <strong>Conduction:</strong> hold one end of a rod hot and watch
         the temperature profile relax to steady state — then swap copper for wood and see the flux
         collapse by a factor of thousands. <strong>Convection:</strong> a heater drives a visible
@@ -327,7 +349,7 @@
               <div class="stat"><span class="stat-label" id="ht-r3l">heat flux</span><span class="stat-value hl-amber" id="ht-r3">—</span></div>
               <div class="stat"><span class="stat-label" id="ht-r4l">k</span><span class="stat-value" id="ht-r4">—</span></div>
             </div>
-            <p class="sim-note mt-3 mono" id="ht-sub" style="overflow-wrap:anywhere">—</p>
+            <p class="sim-note mt-3 mono" data-detail="tech" id="ht-sub" style="overflow-wrap:anywhere">—</p>
             <p class="sim-note mt-2" id="ht-note">—</p>
           </div>
         </div>
@@ -427,10 +449,20 @@
   <script defer src="../js/common.js"></script>
   <script defer src="../js/sim-thermometer.js"></script>
   <script defer src="../js/sim-heat-transfer.js"></script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
-  <script type="module">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
-    injectSpeedInsights();
+  <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
+       site is actually served from Vercel, so local runs, file:// and the test
+       suite stay zero-third-party-request and console-clean. On Vercel the
+       integrations keep reporting exactly as the dashboard expects. -->
+  <script>
+    if (/\.vercel\.app$/.test(location.hostname)) {
+      var wa = document.createElement('script');
+      wa.defer = true;
+      wa.src = 'https://cdn.vercel-insights.com/v1/script.js';
+      document.head.appendChild(wa);
+      import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
+        .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
+        .catch(function () { /* analytics is optional; never break the page */ });
+    }
   </script>
 </body>
 </html>

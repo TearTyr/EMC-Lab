@@ -809,6 +809,47 @@ console.log('\u2500'.repeat(66));
       .test(builtCss));
 }
 
+/* ---------------- startup system + detail mode ---------------- */
+{
+  console.log('\n[startup + detail mode]');
+  const { win, doc } = await loadPage('topics/vectors.html');
+  await frames(win, 4);
+  eq('detail mode defaults to technical', win.document.documentElement.dataset.detail, 'on');
+  eq('boot strip ships three honest stage chips', doc.querySelectorAll('#bootStrip .boot-chip').length, 3);
+  const btn = doc.getElementById('detailToggle');
+  ok('toggle is an accessible switch', btn.getAttribute('role') === 'switch' && btn.getAttribute('aria-checked') === 'true');
+  win.__marker = 'alive';
+  click(win, btn);
+  eq('toggle flips the html level attribute', win.document.documentElement.dataset.detail, 'off');
+  eq('switch state exposed to assistive tech', btn.getAttribute('aria-checked'), 'false');
+  ok('preference persisted', /"detail":"off"/.test(win.localStorage.getItem('emc.prefs.v1') || ''), win.localStorage.getItem('emc.prefs.v1'));
+  eq('no reload: page state survived the toggle', win.__marker, 'alive');
+  click(win, btn);
+  eq('toggle back to technical', win.document.documentElement.dataset.detail, 'on');
+  await new Promise(r => setTimeout(r, 900));
+  ok('idle prefetch offers the next topic page',
+    !!doc.querySelector('link[rel="prefetch"][href$="fluids.html"]'));
+  await new Promise(r => setTimeout(r, 800));
+  eq('boot strip completes all three stages', doc.querySelectorAll('#bootStrip .boot-chip.done').length, 3);
+  ok('boot strip unmounts once complete', doc.getElementById('bootStrip').hidden === true);
+  win.close();
+
+  // sim + form state must survive a mode switch untouched
+  const w2 = await loadPage('topics/waves.html');
+  await frames(w2.win, 3);
+  setRange(w2.win, 'wave-f', 2.5);
+  click(w2.win, w2.win.document.getElementById('detailToggle'));
+  eq('slider value survives the toggle', w2.win.document.getElementById('wave-f').value, '2.5');
+  eq('physics readout survives the toggle', w2.win.document.getElementById('wave-v').textContent, '5.00 m/s');
+  w2.win.close();
+
+  for (const f of ['index.html', 'quiz.html', 'topics/vectors.html', 'topics/fluids.html',
+                  'topics/heat.html', 'topics/waves.html', 'topics/current.html']) {
+    const h = readFileSync(join(ROOT, f), 'utf8');
+    ok(`${f} ships both explanation levels`, h.includes('data-detail="plain"') && h.includes('data-detail="tech"'));
+  }
+}
+
 /* ---------------- progress export / import ---------------- */
 {
   console.log('\n[progress export / import]');

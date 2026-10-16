@@ -413,6 +413,34 @@ window.EMC = (function () {
     };
   })();
 
+  /* ------------------------------------------------------------------------ 6b. Preferences (small, validated, storage-safe) ------------------------------------------------------------------------ */
+  const PREFS_KEY = 'emc.prefs.v1';
+  const Prefs = {
+    read() {
+      try { const p = JSON.parse(store.get(PREFS_KEY) || '{}'); return (p && typeof p === 'object' && !Array.isArray(p)) ? p : {}; }
+      catch (e) { return {}; }
+    },
+    get(k, d) { const v = this.read()[k]; return v === undefined ? d : v; },
+    set(k, v) { const p = this.read(); p[k] = v; store.set(PREFS_KEY, JSON.stringify(p)); }
+  };
+
+  /* ------------------------------------------------------------------------ 6c. Boot stages (honest, event-driven loading indicator) ------------------------------------------------------------------------ */
+  const BOOT_STAGES = ['shell', 'equations', 'sims'];
+  const bootDone = {};
+  /* Flip a stage chip when the REAL work completes - never a fake percentage. */
+  function bootStage(name) {
+    if (bootDone[name]) return;
+    bootDone[name] = true;
+    const chip = document.querySelector(`#bootStrip [data-stage="${name}"]`);
+    if (chip) chip.classList.add('done');
+    const strip = document.getElementById('bootStrip');
+    if (!strip) return;
+    if (BOOT_STAGES.every(s => bootDone[s])) {
+      strip.classList.add('done');
+      setTimeout(() => { strip.hidden = true; }, 500);
+    }
+  }
+
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
   const TOPICS = ['vectors', 'fluids', 'heat', 'waves', 'current'];
   const PROGRESS_KEY = 'emc.progress.v1';
@@ -720,6 +748,82 @@ window.EMC = (function () {
 
     initYear() {
       document.querySelectorAll('[data-year]').forEach(el => { el.textContent = String(new Date().getFullYear()); });
+    },
+
+    /* Global Detail Mode: ON = full technical explanations, OFF = simplified.
+       Content levels live in the markup as [data-detail="tech"|"plain"]; the
+       toggle only flips one attribute on <html> plus the persisted pref, so
+       switching never reloads, rerenders sims/charts, or touches form state. */
+    initDetailToggle() {
+      const root = document.documentElement;
+      if (root.dataset.detail !== 'on' && root.dataset.detail !== 'off') {
+        root.dataset.detail = Prefs.get('detail', 'on') === 'off' ? 'off' : 'on';
+      }
+      const btn = document.getElementById('detailToggle');
+      const apply = () => {
+        const on = root.dataset.detail !== 'off';
+        if (btn) {
+          btn.setAttribute('aria-checked', String(on));
+          const s = btn.querySelector('.dt-state');
+          if (s) s.textContent = on ? 'ON' : 'OFF';
+        }
+      };
+      apply();
+      if (btn) btn.addEventListener('click', () => {
+        root.dataset.detail = root.dataset.detail === 'off' ? 'on' : 'off';
+        Prefs.set('detail', root.dataset.detail);
+        apply();
+        document.dispatchEvent(new CustomEvent('emc:detail', { detail: root.dataset.detail }));
+      });
+    },
+
+    /* The strip stays invisible unless some stage is still pending ~160 ms in,
+       so warm repeat visits (everything done pre-paint) never flash it. */
+    initBootStrip() {
+      const strip = document.getElementById('bootStrip');
+      if (!strip) return;
+      setTimeout(() => {
+        if (strip.classList.contains('done')) return;
+        // sit exactly under whatever the header's real height is (it wraps on
+        // small screens); one layout read, only when the strip actually shows
+        const hdr = document.querySelector('.site-header');
+        if (hdr) strip.style.top = Math.round(hdr.getBoundingClientRect().bottom) + 'px';
+        strip.classList.add('show');
+      }, 160);
+    },
+
+    /* Stage 5 background preparation: prefetch the pager's next page once idle,
+       and any topic link on hover/focus intent. Deduped, same-origin only, and
+       link rel=prefetch keeps it at browser-idle priority so it never competes
+       with the critical path. */
+    initPrefetch() {
+      const seen = new Set();
+      const add = href => {
+        if (!href || seen.has(href)) return;
+        try {
+          const u = new URL(href, location.href);
+          if (u.origin !== location.origin) return;
+          seen.add(href);
+          const l = document.createElement('link');
+          l.rel = 'prefetch';
+          l.href = u.pathname + u.search;
+          document.head.appendChild(l);
+        } catch (e) { /* ignore bad urls */ }
+      };
+      const idle = cb => (typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(cb, { timeout: 2500 }) : setTimeout(cb, 600));
+      document.addEventListener('emc:ready', () => idle(() => {
+        const next = document.querySelector('.pager a.next');
+        if (next) add(next.getAttribute('href'));
+      }));
+      document.addEventListener('mouseover', e => {
+        const a = e.target.closest && e.target.closest('a[data-topic-link], .pager a, .dd-link, a[href^="topics/"]');
+        if (a) add(a.getAttribute('href'));
+      }, { passive: true });
+      document.addEventListener('focusin', e => {
+        const a = e.target.closest && e.target.closest('a[data-topic-link], .pager a, .dd-link, a[href^="topics/"]');
+        if (a) add(a.getAttribute('href'));
+      }, { passive: true });
     }
   };
 
@@ -737,11 +841,14 @@ window.EMC = (function () {
      browsers), so behaviour degrades to today's eager model. */
   function whenNear(el, init, rootMargin) {
     if (!el) return;
-    if (typeof IntersectionObserver !== 'function') { init(); return; }
+    const panel = el.closest ? el.closest('.panel') : null;
+    const run = () => { if (panel) panel.removeAttribute('data-sim-pending'); init(); bootStage('sims'); };
+    if (panel) panel.setAttribute('data-sim-pending', '');
+    if (typeof IntersectionObserver !== 'function') { run(); return; }
     let done = false;
     const io = new IntersectionObserver(entries => {
       for (const en of entries) {
-        if (en.isIntersecting && !done) { done = true; io.disconnect(); init(); }
+        if (en.isIntersecting && !done) { done = true; io.disconnect(); run(); }
       }
     }, { rootMargin: rootMargin || '800px' });
     io.observe(el);
@@ -837,16 +944,22 @@ window.EMC = (function () {
     UI.initTopicButtons();
     UI.initStorageNotice();
     UI.initYear();
+    UI.initDetailToggle();
+    UI.initBootStrip();
+    UI.initPrefetch();
+    bootStage('shell');
     loadLicensedFont();
     // Typeset what the reader can see right now; the rest waits for idle time
     // so boot never pays for equations below the fold.
     katexify(document, true);
+    bootStage('equations');
     const idle = cb => (typeof window.requestIdleCallback === 'function'
       ? window.requestIdleCallback(cb, { timeout: 1500 })
       : setTimeout(cb, 400));
     // KaTeX loads with `defer`, i.e. after this boot runs: typeset the
     // remainder once the whole page (including deferred scripts) has loaded.
-    window.addEventListener('load', () => idle(() => katexify(document)));
+    // Pages whose sims all live below the fold still complete the boot strip:
+    window.addEventListener('load', () => idle(() => { katexify(document); bootStage('sims'); }));
     // Let individual pages react to progress changes (home dashboard).
     document.dispatchEvent(new CustomEvent('emc:ready', { detail: Progress.read() }));
   }
@@ -862,8 +975,8 @@ window.EMC = (function () {
     Stage, roundRect, arrow, label, scrollToEl, katexify, loadLicensedFont, whenNear,
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
     get lowTier() { return LOW_TIER_DEVICE; },
-    store, Progress,
-    bindRange, bindSegment, bindToggles,
+    store, Progress, Prefs, PREFS_KEY,
+    bindRange, bindSegment, bindToggles, bootStage,
     UI, toast: UI.toast
   };
 })();

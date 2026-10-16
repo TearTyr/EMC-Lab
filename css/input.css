@@ -254,6 +254,50 @@
   .topic-list li::before { content: "\2022"; position: absolute; left: .1rem; top: 0; color: var(--topic-accent, var(--sk)); font-weight: 700; }
 
   /* -- simulation plates & controls -------------------------------------- */
+
+  /* ---- Detail Mode content levels: one attribute on <html> switches every
+     dual-level block; pure CSS so toggling never rerenders sims or charts ---- */
+  html[data-detail="off"] [data-detail="tech"] { display: none; }
+  html[data-detail="on"] [data-detail="plain"],
+  html:not([data-detail]) [data-detail="plain"] { display: none; }
+  [data-detail="plain"] { color: var(--text-dim); }
+
+  /* ---- global Details toggle (header, left cluster) ---- */
+  .detail-toggle {
+    display: inline-flex; align-items: center; gap: .42rem; margin-left: .8rem;
+    background: var(--panel-2); border: 1.5px solid var(--line); border-radius: 999px;
+    padding: .3rem .7rem; cursor: pointer; color: var(--text-dim);
+    font-family: theme('fontFamily.ui'); font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+  }
+  .detail-toggle .dt-track { width: 30px; height: 16px; border-radius: 999px; background: #33363e; position: relative; transition: background .2s ease; flex: none; }
+  .detail-toggle .dt-knob { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-dim); transition: transform .2s ease, background .2s ease; }
+  .detail-toggle[aria-checked="true"] { color: var(--text); }
+  .detail-toggle[aria-checked="true"] .dt-track { background: var(--mi-t); }
+  .detail-toggle[aria-checked="true"] .dt-knob { transform: translateX(14px); background: var(--mi); }
+  .detail-toggle:focus-visible { outline: 2px solid var(--sk); outline-offset: 2px; }
+  @media (max-width: 640px) { .detail-toggle { margin-left: .4rem; padding: .26rem .55rem; } .detail-toggle .dt-label { display: none; } }
+
+  /* ---- staged boot strip: fixed overlay under the header, so it can never
+     shift layout (CLS 0); invisible unless a stage is genuinely pending ---- */
+  .boot-strip {
+    position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 60;
+    display: flex; gap: .4rem; justify-content: center; padding: .45rem 1rem;
+    pointer-events: none; opacity: 0; transition: opacity .25s ease;
+  }
+  .boot-strip.show { opacity: 1; }
+  .boot-strip.done { opacity: 0; }
+  .boot-chip {
+    font-family: theme('fontFamily.ui'); font-size: .7rem; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--text-dim);
+    background: var(--panel-2); border: 1.5px solid var(--line-soft);
+    border-radius: 999px; padding: .18rem .62rem;
+  }
+  .boot-chip.done { color: var(--mi); border-color: var(--mi-e); }
+  .boot-chip.done::after { content: " \2713"; }
+
+  /* ---- sim panel warming pulse (opacity only, paused with the strip) ---- */
+  .panel[data-sim-pending] .panel-title .dot { animation: bootpulse 1.2s ease-in-out infinite; }
+  @keyframes bootpulse { 50% { opacity: .3; } }
   .sim-canvas { display: block; width: 100%; height: 380px; touch-action: pan-y; cursor: crosshair; background: var(--plate); border-bottom: 1.5px solid var(--line); }
   .sim-canvas.dragging { touch-action: none; }   /* set only while a canvas drag owns the pointer */
   .sim-canvas.tall { height: 440px; }
@@ -529,6 +573,8 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .mascot, .mascot-cheer { animation: none; }
+    .panel[data-sim-pending] .panel-title .dot { animation: none; }
+    .boot-strip, .detail-toggle .dt-track, .detail-toggle .dt-knob { transition: none; }
     * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   }
   @media print {
