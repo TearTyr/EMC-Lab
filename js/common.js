@@ -438,6 +438,7 @@ window.EMC = (function () {
       setTimeout(() => { strip.hidden = true; }, 500);
     }
     if (BOOT_STAGES.every(s => bootDone[s])) {
+      document.dispatchEvent(new CustomEvent('emc:booted'));
       const ov = document.getElementById('bootOverlay');
       if (ov) {
         ov.classList.add('hide');
@@ -862,6 +863,35 @@ window.EMC = (function () {
   }
 
   /* * Typeset every [data-tex] element with KaTeX (the project's LaTeX formatter). * Each element keeps hand-readable plain text as its content, so if the KaTeX * CDN is unreachable the equation still renders legibly — just un-typeset. */
+  /* Below-fold typesetting runs in <=6 ms slices scheduled when the main
+     thread is idle, so it can never block a running canvas animation (a single
+     monolithic pass measured ~80 ms of jitter right after load). */
+  let texQueue = null, texPumping = false;
+  function katexifyRest() {
+    if (!window.katex) return;
+    texQueue = [...document.querySelectorAll('[data-tex]:not([data-tex-done])')];
+    if (!texQueue.length) return;
+    if (texPumping) return;
+    texPumping = true;
+    const slice = () => {
+      const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      while (texQueue.length && ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0) < 4) {
+        const elm = texQueue.shift();
+        if (elm.dataset.texDone) continue;
+        try {
+          window.katex.render(elm.dataset.tex, elm, { displayMode: elm.hasAttribute('data-display'), throwOnError: false });
+          elm.dataset.texDone = '1';
+        } catch (err) { elm.dataset.texDone = '1'; }
+      }
+      if (texQueue.length) {
+        if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(slice, { timeout: 900 });
+        else setTimeout(slice, 24);
+      } else { texPumping = false; }
+    };
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(slice, { timeout: 900 });
+    else setTimeout(slice, 24);
+  }
+
   function katexify(root, aboveFoldOnly) {
     if (!window.katex) return 0;
     let n = 0;
@@ -965,8 +995,9 @@ window.EMC = (function () {
       : setTimeout(cb, 400));
     // KaTeX loads with `defer`, i.e. after this boot runs: typeset the
     // remainder once the whole page (including deferred scripts) has loaded.
-    // Pages whose sims all live below the fold still complete the boot strip:
-    window.addEventListener('load', () => idle(() => { katexify(document); bootStage('sims'); }));
+    // Pages whose sims all live below the fold still complete the boot strip;
+    // the remaining equations typeset in idle slices (never one big task).
+    window.addEventListener('load', () => idle(() => { katexifyRest(); bootStage('sims'); }));
     // Let individual pages react to progress changes (home dashboard).
     document.dispatchEvent(new CustomEvent('emc:ready', { detail: Progress.read() }));
   }
@@ -979,7 +1010,7 @@ window.EMC = (function () {
     CONST, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, roundTo, mapRange, damp,
     eng, unit, fixed, setText, throttle,
-    Stage, roundRect, arrow, label, scrollToEl, katexify, loadLicensedFont, whenNear,
+    Stage, roundRect, arrow, label, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
     get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,

@@ -74,8 +74,19 @@
     // KaTeX, first raster) has landed - removes the load-time stutter battle
     // for the main thread. Reduced-motion users keep the static frame.
     const startHero = () => { if (!EMC.reducedMotion) stage.start(); };
-    if (document.readyState === 'complete') startHero();
-    else window.addEventListener('load', startHero, { once: true });
+    const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    const loaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(r => window.addEventListener('load', r, { once: true }));
+    // Sequence, don't overlap: the hero's first frames wait for (1) load,
+    // (2) the font-swap reflow and (3) the boot overlay's exit (emc:booted),
+    // so its first raster never shares a frame budget with the fade, the
+    // swap or the idle typesetter - the measured cause of load-time jitter.
+    const booted = new Promise(r => {
+      let done = false;
+      const fin = () => { if (!done) { done = true; r(); } };
+      document.addEventListener('emc:booted', fin, { once: true });
+      setTimeout(fin, 1500);                      // never stall the hero
+    });
+    Promise.all([loaded, fontsReady, booted]).then(startHero);
 
     // nothing to cache per size — the wave is analytic — but keep the redraw tidy
     let lastW = 0, lastH = 0;

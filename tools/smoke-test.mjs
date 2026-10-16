@@ -157,6 +157,7 @@ console.log('\u2500'.repeat(66));
   console.log('\n[index.html]');
   const { win, doc, problems } = await loadPage('index.html');
   await new Promise(r => { win.document.readyState === 'complete' ? r() : win.addEventListener('load', r, { once: true }); });
+  await new Promise(r => setTimeout(r, 1300));   // hero now starts after emc:booted
   await frames(win, 8);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('progress ring shows a percentage', /^\d+%$/.test(txt(win, 'ringPct') || ''), txt(win, 'ringPct'));
@@ -852,6 +853,10 @@ console.log('\u2500'.repeat(66));
   await new Promise(r => setTimeout(r, 800));
   eq('boot strip completes all three stages', doc.querySelectorAll('#bootStrip .boot-chip.done').length, 3);
   ok('boot strip unmounts once complete', doc.getElementById('bootStrip').hidden === true);
+  await new Promise(r => setTimeout(r, 900));
+  ok('chunked idle typesetting finishes every equation',
+    [...doc.querySelectorAll('[data-tex]')].every(e => e.dataset.texDone === '1'),
+    [...doc.querySelectorAll('[data-tex]:not([data-tex-done])')].length + ' left');
   win.close();
 
   // sim + form state must survive a mode switch untouched
