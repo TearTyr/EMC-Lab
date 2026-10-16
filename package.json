@@ -22,5 +22,6 @@
   "description": "Interactive electromagnetics tutorial for Calculus-based Physics II. Fully static: zero runtime dependencies; jsdom is a dev-only test dependency.",
   "dependencies": {
     "@vercel/analytics": "^2.0.1"
+    "@vercel/speed-insights": "^2.0.0"
   }
 }
