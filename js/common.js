@@ -74,12 +74,48 @@ window.EMC = (function () {
     return parts.length === 2 ? `${parts[0]}\u00A0${parts[1]}${u}` : `${s}\u00A0${u}`;
   }
 
+  /* Write textContent only when the string actually changed. Re-writing an
+     identical value still dirties the node and forces style+layout work, which
+     is exactly what per-frame readout updates were doing at 60 Hz. */
+  function setText(el, s) {
+    if (!el) return;
+    if (el.__emcTxt !== s) { el.__emcTxt = s; el.textContent = s; }
+  }
+
+  /* Rate-limit a non-critical callback (sim readouts) to ~hz calls/second.
+     The trailing call is always delivered, so the last value never goes stale.
+     Physics and user-critical feedback must NOT go through this. */
+  function throttle(fn, hz) {
+    const gap = 1000 / hz;
+    let last = 0, timer = 0, args = null;
+    const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    return function (...a) {
+      args = a;
+      const t = now();
+      if (t - last >= gap) { last = t; fn(...args); return; }
+      if (!timer) timer = setTimeout(() => { timer = 0; last = now(); fn(...args); }, gap - (t - last));
+    };
+  }
+
   /* Fixed-decimal formatting that never returns "-0.0". */
   function fixed(v, dp = 2) {
     if (!isFinite(v)) return '\u2014';
     const r = Number(v.toFixed(dp));
     return (Object.is(r, -0) ? 0 : r).toFixed(dp);
   }
+
+  /* Device tier: small high-DPR screens (phones, emulated mobile profiles)
+     get a 30 fps animation cap and sims may trim particle counts. Signals are
+     feature-detected with safe fallbacks; desktop is never tiered down. */
+  function detectLowTier() {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    const small = (window.innerWidth || 1200) < 500;
+    const hidpi = (window.devicePixelRatio || 1) >= 3;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 8;
+    return (hidpi && small) || (coarse && cores <= 4);
+  }
+  const LOW_TIER_DEVICE = detectLowTier();
 
   /* ------------------------------------------------------------------------ 4. Stage — HiDPI canvas wrapper with an optional rAF loop ------------------------------------------------------------------------ */
   /* * @param {HTMLCanvasElement} canvas * @param {(ctx:CanvasRenderingContext2D, w:number, h:number, stage:Stage)=>void} render * @param {{animate?:boolean}} [opts] animate=true keeps a rAF loop running * (it auto-pauses when the canvas scrolls out of view to save CPU). */
@@ -89,14 +125,27 @@ window.EMC = (function () {
       this.ctx = canvas.getContext('2d');
       this.render = render;
       this.animate = !!opts.animate;
+      /* prefers-reduced-motion: non-essential continuous motion starts as a
+         static frame. Interactions still redraw on demand (invalidate), so
+         every sim stays fully usable — only the autonomous motion stops. */
+      this._prm = !!(typeof window !== 'undefined' && window.matchMedia &&
+                     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (this.animate && this._prm) this.animate = false;
       this.w = 0; this.h = 0; this.dpr = 1;
       this.t = 0;                 // accumulated time in seconds (animation)
       this.pointer = { x: 0, y: 0, down: false, inside: false };
       this._raf = 0; this._last = 0; this._visible = true; this._running = false;
+      this._drawRaf = 0; this._pmRaf = 0; this._pm = null;
+      this._lastRender = 0;
+      this._fpsCap = LOW_TIER_DEVICE ? 30 : 0;      // 0 = uncapped
+      this._hidden = typeof document !== 'undefined' && document.hidden === true;
+      this._idle = false;           // set by sims whose scene has visually settled
 
       this.resize();
       this._observeResize();
+      this._observeDPR();
       this._observeVisibility();
+      this._observePageVisibility();
       if (this.animate) this.start(); else this.draw();
     }
 
@@ -136,7 +185,69 @@ window.EMC = (function () {
       this._io.observe(this.canvas);
     }
 
+    /* Re-resize when the device-pixel-ratio changes (browser zoom, moving the
+       window between monitors): window `resize` does not always fire for that.
+       The matchMedia query is re-armed after every change because the query
+       itself contains the current DPR. */
+    _observeDPR() {
+      if (typeof window === 'undefined' || !window.matchMedia) return;
+      const arm = () => {
+        const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+        if (!mq || typeof mq.addEventListener !== 'function') return;
+        const onchange = () => { this.resize(); this.draw(); mq.removeEventListener('change', onchange); arm(); };
+        this._dq = mq; this._dqHandler = onchange;
+        mq.addEventListener('change', onchange);
+      };
+      arm();
+    }
+
+    /* Pause when the TAB is hidden. Off-screen detection alone is not enough:
+       a visible-but-hidden tab keeps every IntersectionObserver reporting
+       "intersecting", so without this the chains would rely on the browser's
+       own rAF throttling instead of stopping cleanly (and would burst-resume). */
+    _observePageVisibility() {
+      if (typeof document === 'undefined' || !document.addEventListener) return;
+      this._onVis = () => {
+        this._hidden = document.hidden === true;
+        if (!this._hidden && this._running && this._visible) { this._last = 0; this._tick(); }
+      };
+      document.addEventListener('visibilitychange', this._onVis);
+    }
+
+    /* Full teardown: stop the chain and release observers/listeners. Pages
+       keep stages for their lifetime, but repeated objects (quiz charts,
+       future dynamic sims) can release everything through one call. */
+    destroy() {
+      this.stop();
+      if (this._drawRaf) cancelAnimationFrame(this._drawRaf);
+      if (this._pmRaf) cancelAnimationFrame(this._pmRaf);
+      if (this._ro) this._ro.disconnect();
+      if (this._io) this._io.disconnect();
+      if (this._dq && this._dqHandler) this._dq.removeEventListener('change', this._dqHandler);
+      if (this._onVis && typeof document !== 'undefined') document.removeEventListener('visibilitychange', this._onVis);
+    }
+
     draw() { if (this.w && this.h) this.render(this.ctx, this.w, this.h, this); }
+
+    /* Sims whose scene has visually settled (spring at rest, diffusion at
+       steady state, tone stopped) call setIdle(true) to stop the chain; any
+       interaction calls setIdle(false) or invalidate() to wake it. Physics
+       outputs are unchanged — this only stops redrawing an unchanged scene. */
+    setIdle(v) {
+      v = !!v;
+      if (this._idle === v) return;
+      this._idle = v;
+      if (!v && this._running && this._visible && !this._hidden) { this._last = 0; this._tick(); }
+    }
+    /* Ask for a redraw without doing it synchronously: multiple invalidations
+       inside one input burst collapse into a single draw on the next frame.
+       A live animation chain already implies the next draw, so this is a no-op
+       there. */
+    invalidate() {
+      if (this._running && !this._idle) return;
+      if (this._drawRaf) return;
+      this._drawRaf = requestAnimationFrame(() => { this._drawRaf = 0; this.draw(); });
+    }
 
     start() {
       if (this._running) return;
@@ -146,17 +257,25 @@ window.EMC = (function () {
     stop() { this._running = false; if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; }
 
     _tick() {
-      if (!this._running) return;
+      if (!this._running || this._raf) return;   // a frame is already scheduled: never spawn a second chain
       this._raf = requestAnimationFrame(now => {
+        this._raf = 0;
         if (!this._running) return;
+        // device tier: skip renders between capped frames while keeping the
+        // chain and the real-time dt bookkeeping intact
+        if (this._fpsCap && this._lastRender && (now - this._lastRender) < (1000 / this._fpsCap) - 2) {
+          this._tick();
+          return;
+        }
+        this._lastRender = now;
         if (!this._last) this._last = now;
         // Clamp dt so a backgrounded tab does not produce a huge time jump.
         const dt = clamp((now - this._last) / 1000, 0, 0.05);
         this._last = now;
         this.t += dt;
-        this.resize();
         this.render(this.ctx, this.w, this.h, this, dt);
-        if (this._visible) this._tick(); else this._raf = 0;
+        if (this._idle) { this._raf = 0; return; }        // settled: stop the chain until invalidated
+        if (this._visible && !this._hidden) this._tick(); else this._raf = 0;
       });
     }
 
@@ -169,6 +288,10 @@ window.EMC = (function () {
       this.canvas.addEventListener('pointerdown', e => {
         const p = toLocal(e);
         this.pointer = { ...p, down: true, inside: true };
+        // Own the gesture only once a drag actually starts on this canvas, so
+        // a touch that begins here can still scroll the page (pan-y) until
+        // then. Released on pointerup/pointercancel.
+        this.canvas.classList.add('dragging');
         // Keep receiving move events even if the pointer leaves the canvas.
         if (this.canvas.setPointerCapture) { try { this.canvas.setPointerCapture(e.pointerId); } catch (_) {} }
         handler({ ...p, down: true, type: 'down', e });
@@ -177,11 +300,25 @@ window.EMC = (function () {
       this.canvas.addEventListener('pointermove', e => {
         const p = toLocal(e);
         this.pointer = { ...p, down: this.pointer.down, inside: true };
-        handler({ ...p, down: this.pointer.down, type: 'move', e });
+        // Coalesce: a 120 Hz mouse or a fast finger must not trigger more than
+        // one handler run (and therefore one redraw) per animation frame.
+        this._pm = { ...p, down: this.pointer.down, type: 'move', e };
+        if (!this._pmRaf) {
+          this._pmRaf = requestAnimationFrame(() => {
+            this._pmRaf = 0;
+            if (this._pm) { const q = this._pm; this._pm = null; handler(q); }
+          });
+        }
       });
+      const flushMove = () => {
+        if (this._pmRaf) { cancelAnimationFrame(this._pmRaf); this._pmRaf = 0; }
+        if (this._pm) { const q = this._pm; this._pm = null; handler(q); }
+      };
       const up = e => {
+        flushMove();                       // never drop the last position
         const p = toLocal(e);
         this.pointer.down = false;
+        this.canvas.classList.remove('dragging');
         handler({ ...p, down: false, type: 'up', e });
       };
       this.canvas.addEventListener('pointerup', up);
@@ -228,10 +365,20 @@ window.EMC = (function () {
     ctx.restore();
   }
 
+  /* label() is called dozens of times per frame; parsing the font shorthand is
+     wasted work when 99% of calls reuse a (weight,size) pair. */
+  const FONT_CACHE = new Map();
+  const fontFor = (weight, size) => {
+    const k = weight + '|' + size;
+    let f = FONT_CACHE.get(k);
+    if (!f) FONT_CACHE.set(k, f = `${weight} ${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`);
+    return f;
+  };
+
   /* Small label with a dark halo so it stays legible over any drawing. */
   function label(ctx, text, x, y, { color = '#e8eefb', size = 12, align = 'center', baseline = 'middle', halo = true, weight = '600' } = {}) {
     ctx.save();
-    ctx.font = `${weight} ${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    ctx.font = fontFor(weight, size);
     ctx.textAlign = align; ctx.textBaseline = baseline;
     if (halo) {
       ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,8,16,.85)';
@@ -480,6 +627,18 @@ window.EMC = (function () {
       items.forEach(el => io.observe(el));
     },
 
+    /* The mascot's bob is an infinite compositor animation on every page;
+       pause it while the mascot is out of view so offscreen pages/sections
+       keep zero animation work. */
+    initMascotPause() {
+      const mascots = document.querySelectorAll('.mascot, .mascot-sm');
+      if (!mascots.length || typeof IntersectionObserver !== 'function') return;
+      const io = new IntersectionObserver(entries => {
+        for (const en of entries) en.target.classList.toggle('offscreen', !en.isIntersecting);
+      }, { threshold: 0 });
+      mascots.forEach(m => io.observe(m));
+    },
+
     initReadingBar() {
       const bar = document.getElementById('readingProgress');
       if (!bar) return;
@@ -571,12 +730,33 @@ window.EMC = (function () {
     }
   }
 
+  /* Initialise a sim (or any heavy component) the first time its canvas comes
+     near the viewport. Below-fold sims then cost nothing at boot: no Stage, no
+     listeners, no backing-store work until the reader approaches. Falls back
+     to immediate init wherever IntersectionObserver is missing (jsdom, old
+     browsers), so behaviour degrades to today's eager model. */
+  function whenNear(el, init, rootMargin) {
+    if (!el) return;
+    if (typeof IntersectionObserver !== 'function') { init(); return; }
+    let done = false;
+    const io = new IntersectionObserver(entries => {
+      for (const en of entries) {
+        if (en.isIntersecting && !done) { done = true; io.disconnect(); init(); }
+      }
+    }, { rootMargin: rootMargin || '800px' });
+    io.observe(el);
+  }
+
   /* * Typeset every [data-tex] element with KaTeX (the project's LaTeX formatter). * Each element keeps hand-readable plain text as its content, so if the KaTeX * CDN is unreachable the equation still renders legibly — just un-typeset. */
-  function katexify(root) {
+  function katexify(root, aboveFoldOnly) {
     if (!window.katex) return 0;
     let n = 0;
     (root || document).querySelectorAll('[data-tex]').forEach(elm => {
       if (elm.dataset.texDone) return;
+      if (aboveFoldOnly && window.innerHeight) {
+        // below-the-fold maths waits for idle time (see boot())
+        if (elm.getBoundingClientRect().top > window.innerHeight * 1.25) return;
+      }
       try {
         window.katex.render(elm.dataset.tex, elm, {
           displayMode: elm.hasAttribute('data-display'),
@@ -594,16 +774,21 @@ window.EMC = (function () {
     // vendor/fonts/manifest.json (always committed, always 200) lists the
     // licensed faces present locally, so we never probe for files that
     // might not exist: no 404 noise on hosts without them.
-    const cssLink = document.querySelector('link[href$="css/site.css"]') ||
-                  document.querySelector('link[href$="css/fonts.css"]');
-    const base = cssLink ? cssLink.getAttribute('href').replace(/css\/[^/]+$/, '') : '';
+    // Derive the site base from OUR OWN script tag (js/common*.js): unlike a
+    // stylesheet href it survives any css naming/hashing scheme, and a missed
+    // match can never send the manifest fetch to a wrong directory (404).
+    const selfScript = document.querySelector('script[src*="js/common"]');
+    const cssLink = document.querySelector('link[href*="css/site."][href$=".css"]') ||
+                  document.querySelector('link[href*="css/fonts."][href$=".css"]');
+    const base = selfScript ? selfScript.getAttribute('src').replace(/js\/[^/]+$/, '')
+               : cssLink ? cssLink.getAttribute('href').replace(/css\/[^/]+$/, '') : '';
     const note = msg => console.info('[EMC] ' + msg);
     const mark = state => { document.documentElement.dataset.licensedFont = state; };
     if (typeof window.fetch !== 'function') {          // e.g. jsdom test harness
       mark('bundled');
       return;
     }
-    fetch(base + 'vendor/fonts/manifest.json', { cache: 'no-store' })
+    fetch(base + 'vendor/fonts/manifest.json', { cache: 'default' })
       .then(r => (r.ok ? r.json() : { licensed: [] }))
       .then(man => {
         const cuts = (man && Array.isArray(man.licensed) ? man.licensed : [])
@@ -647,15 +832,21 @@ window.EMC = (function () {
   function boot() {
     UI.initNav();
     UI.initReveal();
+    UI.initMascotPause();
     UI.initReadingBar();
     UI.initTopicButtons();
     UI.initStorageNotice();
     UI.initYear();
     loadLicensedFont();
-    katexify(document);
-    // KaTeX loads with `defer`, i.e. after this boot runs: typeset again once
-    // the whole page (including deferred scripts) has finished loading.
-    window.addEventListener('load', () => katexify(document));
+    // Typeset what the reader can see right now; the rest waits for idle time
+    // so boot never pays for equations below the fold.
+    katexify(document, true);
+    const idle = cb => (typeof window.requestIdleCallback === 'function'
+      ? window.requestIdleCallback(cb, { timeout: 1500 })
+      : setTimeout(cb, 400));
+    // KaTeX loads with `defer`, i.e. after this boot runs: typeset the
+    // remainder once the whole page (including deferred scripts) has loaded.
+    window.addEventListener('load', () => idle(() => katexify(document)));
     // Let individual pages react to progress changes (home dashboard).
     document.dispatchEvent(new CustomEvent('emc:ready', { detail: Progress.read() }));
   }
@@ -667,8 +858,10 @@ window.EMC = (function () {
   return {
     CONST, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, roundTo, mapRange, damp,
-    eng, unit, fixed,
-    Stage, roundRect, arrow, label, scrollToEl, katexify, loadLicensedFont,
+    eng, unit, fixed, setText, throttle,
+    Stage, roundRect, arrow, label, scrollToEl, katexify, loadLicensedFont, whenNear,
+    get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
+    get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress,
     bindRange, bindSegment, bindToggles,
     UI, toast: UI.toast

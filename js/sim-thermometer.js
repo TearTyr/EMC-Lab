@@ -3,6 +3,9 @@
   const canvas = document.getElementById('sim-thermometer');
   if (!canvas) return;
 
+  EMC.whenNear(canvas, init);
+  function init() {
+
   const { clamp, fixed, label, Stage } = EMC;
 
   const TMIN = -80, TMAX = 250;
@@ -125,7 +128,7 @@
         : T > 200 ? 'Hotter than most kitchen ovens. Lead melts at 327 °C, just off the top of this scale.'
         : 'Drag the column or move the slider — all three scales update together.';
     }
-    stage.draw();
+    stage.invalidate();
   }
 
   /* ---- controls -------------------------------------------------------------------- */
@@ -144,4 +147,5 @@
   });
 
   setT(state.T);
+  }
 })();

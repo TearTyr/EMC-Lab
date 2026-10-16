@@ -3,6 +3,9 @@
   const canvas = document.getElementById('sim-wave');
   if (!canvas) return;
 
+  EMC.whenNear(canvas, init);
+  function init() {
+
   const { clamp, fixed, arrow, label, Stage, bindRange, bindSegment } = EMC;
 
   const state = {
@@ -127,10 +130,10 @@
   function refresh() { updateReadouts(); }
 
   /* ---- controls ------------------------------------------------------------------ */
-  bindRange('wave-A', 'wave-Av', v => { state.A = v; refresh(); }, v => `${fixed(v, 0)} cm`);
-  bindRange('wave-f', 'wave-fv', v => { state.f = v; refresh(); }, v => `${fixed(v, 2)} Hz`);
-  bindRange('wave-lam', 'wave-lamv', v => { state.lambda = v; refresh(); }, v => `${fixed(v, 2)} m`);
-  bindSegment('wave-type', v => { state.type = v; });
+  bindRange('wave-A', 'wave-Av', v => { state.A = v; stage.invalidate(); refresh(); }, v => `${fixed(v, 0)} cm`);
+  bindRange('wave-f', 'wave-fv', v => { state.f = v; stage.invalidate(); refresh(); }, v => `${fixed(v, 2)} Hz`);
+  bindRange('wave-lam', 'wave-lamv', v => { state.lambda = v; stage.invalidate(); refresh(); }, v => `${fixed(v, 2)} m`);
+  bindSegment('wave-type', v => { state.type = v; stage.invalidate(); });
 
   const partBox = el('wave-particles');
   if (partBox) partBox.addEventListener('change', () => { state.particles = partBox.checked; });
@@ -142,4 +145,5 @@
   });
 
   refresh();
+  }
 })();

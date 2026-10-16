@@ -3,7 +3,10 @@
   const canvas = document.getElementById('sim-heat-transfer');
   if (!canvas) return;
 
-  const { CONST, clamp, fixed, eng, unit, arrow, label, Stage, bindRange, bindSegment } = EMC;
+  EMC.whenNear(canvas, init);
+  function init() {
+
+  const { CONST, clamp, fixed, eng, unit, arrow, label, Stage, bindRange, bindSegment, setText, throttle } = EMC;
 
   const MATERIALS = {
     copper: { k: 401, name: 'copper', rate: 0.45 },
@@ -47,8 +50,9 @@
   const intensity = () => state.power / (4 * Math.PI * state.dist * state.dist);
 
   /* ---- particles (convection) ----------------------------------------------- */
+  const PARTS = EMC.lowTier ? 42 : 70;
   function ensureParts() {
-    while (state.parts.length < 70) {
+    while (state.parts.length < PARTS) {
       state.parts.push({ x: Math.random() * 2 - 1, y: Math.random() });   // x in [-1,1], y 0 top .. 1 bottom
     }
   }
@@ -235,42 +239,43 @@
     if (state.mode === 'conduction') conductionScene(ctx, w, h, st, d);
     else if (state.mode === 'convection') convectionScene(ctx, w, h, st, d);
     else radiationScene(ctx, w, h, st);
-    updateReadouts();
+    readoutsLive();               // capped at 15 Hz; controls below call updateReadouts() directly
   }, { animate: true });
 
   /* ---- readouts ------------------------------------------------------------------ */
   const el = id => document.getElementById(id);
+  const readoutsLive = throttle(() => updateReadouts(), 15);
   function updateReadouts() {
-    const set = (l, v, lt, vt) => { if (el(l)) el(l).textContent = lt; if (v && el(v)) el(v).textContent = vt; };
+    const set = (l, v, lt, vt) => { setText(el(l), lt); if (v) setText(el(v), vt); };
     if (state.mode === 'conduction') {
       const k = MATERIALS[state.material].k;
-      set('ht-r1l', 'ht-r1', 'hot end', `${fixed(state.T[0], 0)} °C`);
-      set('ht-r2l', 'ht-r2', 'cold end', `${fixed(state.T[ROD.N - 1], 0)} °C`);
+      set('ht-r1l', 'ht-r1', 'hot end', `${fixed(state.T[0], 0)} \u00B0C`);
+      set('ht-r2l', 'ht-r2', 'cold end', `${fixed(state.T[ROD.N - 1], 0)} \u00B0C`);
       set('ht-r3l', 'ht-r3', 'heat flux q', unit(flux(), 'W', 3));
-      set('ht-r4l', 'ht-r4', `k · ${MATERIALS[state.material].name}`, `${k} W/(m·K)`);
-      if (el('ht-sub')) el('ht-sub').textContent =
-        `q = k·A·ΔT/L = ${k} × 1×10⁻⁴ m² × ${fixed(state.T[0] - state.T[ROD.N - 1], 0)} K / ${ROD.L} m = ${eng(flux(), 3)} W`;
-      if (el('ht-note')) el('ht-note').textContent =
-        'Conduction: energy hops atom-to-atom through direct contact — the material never moves. Metals lead by orders of magnitude because their free electrons carry energy too. Watch the profile relax to its straight steady state.';
+      set('ht-r4l', 'ht-r4', `k \u00B7 ${MATERIALS[state.material].name}`, `${k} W/(m\u00B7K)`);
+      setText(el('ht-sub'),
+        `q = k\u00B7A\u00B7\u0394T/L = ${k} \u00D7 1\u00D710\u207B\u2074 m\u00B2 \u00D7 ${fixed(state.T[0] - state.T[ROD.N - 1], 0)} K / ${ROD.L} m = ${eng(flux(), 3)} W`);
+      setText(el('ht-note'),
+        'Conduction: energy hops atom-to-atom through direct contact \u2014 the material never moves. Metals lead by orders of magnitude because their free electrons carry energy too. Watch the profile relax to its straight steady state.');
     } else if (state.mode === 'convection') {
       set('ht-r1l', 'ht-r1', 'heater power', `${state.power} W`);
       set('ht-r2l', 'ht-r2', 'circulation', state.power > 1400 ? 'vigorous' : state.power > 700 ? 'moderate' : 'gentle');
       set('ht-r3l', 'ht-r3', 'hot region', 'bottom centre');
       set('ht-r4l', 'ht-r4', 'cool region', 'top & sides');
-      if (el('ht-sub')) el('ht-sub').textContent =
-        `more power → faster plume → more energy carried per second (the loop itself is the conveyor belt)`;
-      if (el('ht-note')) el('ht-note').textContent =
-        'Convection: the fluid itself moves and carries the energy with it. Heated fluid expands, becomes less dense and rises; cooler fluid sinks to replace it — a circulation loop. This is why radiators sit under windows and freezers chill from the top.';
+      setText(el('ht-sub'),
+        'more power \u2192 faster plume \u2192 more energy carried per second (the loop itself is the conveyor belt)');
+      setText(el('ht-note'),
+        'Convection: the fluid itself moves and carries the energy with it. Heated fluid expands, becomes less dense and rises; cooler fluid sinks to replace it \u2014 a circulation loop. This is why radiators sit under windows and freezers chill from the top.');
     } else {
       const I = intensity();
-      set('ht-r1l', 'ht-r1', `intensity at d`, unit(I, 'W/m²', 3));
-      set('ht-r2l', 'ht-r2', 'absorbed · matt black', unit(0.9 * I, 'W/m²', 3));
-      set('ht-r3l', 'ht-r3', 'absorbed · shiny', unit(0.1 * I, 'W/m²', 3));
+      set('ht-r1l', 'ht-r1', 'intensity at d', unit(I, 'W/m\u00B2', 3));
+      set('ht-r2l', 'ht-r2', 'absorbed \u00B7 matt black', unit(0.9 * I, 'W/m\u00B2', 3));
+      set('ht-r3l', 'ht-r3', 'absorbed \u00B7 shiny', unit(0.1 * I, 'W/m\u00B2', 3));
       set('ht-r4l', 'ht-r4', 'distance d', `${fixed(state.dist, 2)} m`);
-      if (el('ht-sub')) el('ht-sub').textContent =
-        `I = P/(4πd²) = ${state.power} / (4π × ${fixed(state.dist, 2)}²) = ${eng(I, 3)} W/m² — halve d and I quadruples (inverse square)`;
-      if (el('ht-note')) el('ht-note').textContent =
-        'Radiation: energy carried by electromagnetic waves — the only mechanism that crosses a vacuum, which is how sunlight reaches Earth. Matt black surfaces absorb (and emit) best; shiny surfaces reflect most of what hits them.';
+      setText(el('ht-sub'),
+        `I = P/(4\u03C0d\u00B2) = ${state.power} / (4\u03C0 \u00D7 ${fixed(state.dist, 2)}\u00B2) = ${eng(I, 3)} W/m\u00B2 \u2014 halve d and I quadruples (inverse square)`);
+      setText(el('ht-note'),
+        'Radiation: energy carried by electromagnetic waves \u2014 the only mechanism that crosses a vacuum, which is how sunlight reaches Earth. Matt black surfaces absorb (and emit) best; shiny surfaces reflect most of what hits them.');
     }
   }
 
@@ -282,11 +287,12 @@
     show('ht-ctl-power', state.mode !== 'conduction');
     show('ht-ctl-dist', state.mode === 'radiation');
   }
-  bindSegment('ht-mode', v => { state.mode = v; syncVisibility(); updateReadouts(); });
-  bindSegment('ht-material', v => { state.material = v; updateReadouts(); });
-  bindRange('ht-hot', 'ht-hotv', v => { state.Thot = v; updateReadouts(); }, v => `${v} °C`);
-  bindRange('ht-power', 'ht-powerv', v => { state.power = v; updateReadouts(); }, v => `${v} W`);
-  bindRange('ht-dist', 'ht-distv', v => { state.dist = v; updateReadouts(); }, v => `${fixed(v, 2)} m`);
+  bindSegment('ht-mode', v => { state.mode = v; syncVisibility(); stage.setIdle(false); stage.invalidate(); updateReadouts(); });
+  bindSegment('ht-material', v => { state.material = v; converged = false; stage.setIdle(false); updateReadouts(); });
+  bindRange('ht-hot', 'ht-hotv', v => { state.Thot = v; converged = false; stage.setIdle(false); updateReadouts(); }, v => `${v} °C`);
+  bindRange('ht-power', 'ht-powerv', v => { state.power = v; stage.setIdle(false); stage.invalidate(); updateReadouts(); }, v => `${v} W`);
+  bindRange('ht-dist', 'ht-distv', v => { state.dist = v; stage.invalidate(); updateReadouts(); }, v => `${fixed(v, 2)} m`);
   syncVisibility();
   updateReadouts();
+  }
 })();

@@ -12,6 +12,7 @@
     "switch:built": "node tools/switch-css.mjs built",
     "font:scan": "node tools/add-font.mjs",
     "perf": "node tools/perf-audit.mjs",
+    "perf:guard": "node tools/perf-measure.mjs guard",
     "og:card": "node tools/make-og-card.mjs"
   },
   "devDependencies": {

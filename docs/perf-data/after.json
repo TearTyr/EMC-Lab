@@ -1,0 +1,673 @@
+{
+  "browser": "Chrome/148.0.7778.97",
+  "profiles": {
+    "desktop": {
+      "width": 1280,
+      "height": 900,
+      "dpr": 1,
+      "throttle": 1,
+      "touch": false
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "dpr": 3,
+      "throttle": 4,
+      "touch": true
+    }
+  },
+  "rows": [
+    {
+      "page": "index.html",
+      "profile": "desktop",
+      "loadMs": 364,
+      "heapUsedMB": 3.57,
+      "heapTotalMB": 6.08,
+      "domNodes": 1687,
+      "metricsNodes": 3006,
+      "listeners": {
+        "window": 4,
+        "document": 6,
+        "canvases": 0
+      },
+      "canvasCount": 1,
+      "canvases": [
+        {
+          "id": "heroCanvas",
+          "cssW": 1018,
+          "cssH": 380,
+          "devW": 1018,
+          "devH": 380,
+          "bytes": 1547360
+        }
+      ],
+      "backingStoreMB": 1.48,
+      "rafIdle": 1,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 4,
+      "longTasksOver100": 0,
+      "worstLongTaskMs": 97,
+      "frameP95Ms": 16.7,
+      "frameSamples": 20,
+      "inpProxyMs": 0,
+      "interactions": [],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 496.9
+    },
+    {
+      "page": "quiz.html",
+      "profile": "desktop",
+      "loadMs": 293,
+      "heapUsedMB": 3.43,
+      "heapTotalMB": 4.81,
+      "domNodes": 780,
+      "metricsNodes": 1823,
+      "listeners": {
+        "window": 3,
+        "document": 4,
+        "canvases": 0
+      },
+      "canvasCount": 0,
+      "canvases": [],
+      "backingStoreMB": 0,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 2,
+      "longTasksOver100": 0,
+      "worstLongTaskMs": 66,
+      "frameP95Ms": 0,
+      "frameSamples": 0,
+      "inpProxyMs": 48,
+      "interactions": [
+        "quiz-option",
+        "quiz-filter",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 12,
+      "transferKB": 664.2
+    },
+    {
+      "page": "topics/vectors.html",
+      "profile": "desktop",
+      "loadMs": 297,
+      "heapUsedMB": 3.05,
+      "heapTotalMB": 4.83,
+      "domNodes": 774,
+      "metricsNodes": 1640,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 1,
+      "canvases": [
+        {
+          "id": "sim-vector-add",
+          "cssW": 598,
+          "cssH": 515,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.17,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 2,
+      "longTasksOver100": 0,
+      "worstLongTaskMs": 64,
+      "frameP95Ms": 0,
+      "frameSamples": 0,
+      "inpProxyMs": 24,
+      "interactions": [
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 484.9
+    },
+    {
+      "page": "topics/fluids.html",
+      "profile": "desktop",
+      "loadMs": 363,
+      "heapUsedMB": 3.04,
+      "heapTotalMB": 4.84,
+      "domNodes": 733,
+      "metricsNodes": 1610,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 2,
+      "canvases": [
+        {
+          "id": "sim-archimedes",
+          "cssW": 598,
+          "cssH": 530,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-bernoulli",
+          "cssW": 598,
+          "cssH": 489,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.34,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 2,
+      "longTasksOver100": 0,
+      "worstLongTaskMs": 90,
+      "frameP95Ms": 550,
+      "frameSamples": 12,
+      "inpProxyMs": 32,
+      "interactions": [
+        "slider-drag",
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 496.7
+    },
+    {
+      "page": "topics/heat.html",
+      "profile": "desktop",
+      "loadMs": 279,
+      "heapUsedMB": 2.9,
+      "heapTotalMB": 4.59,
+      "domNodes": 613,
+      "metricsNodes": 1400,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 2,
+      "canvases": [
+        {
+          "id": "sim-thermometer",
+          "cssW": 598,
+          "cssH": 413,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-heat-transfer",
+          "cssW": 598,
+          "cssH": 459,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.34,
+      "rafIdle": 0,
+      "rafOffscreen": 1,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 1,
+      "longTasksOver100": 0,
+      "worstLongTaskMs": 81,
+      "frameP95Ms": 33.3,
+      "frameSamples": 36,
+      "inpProxyMs": 24,
+      "interactions": [
+        "slider-drag",
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 496.3
+    },
+    {
+      "page": "topics/waves.html",
+      "profile": "desktop",
+      "loadMs": 253,
+      "heapUsedMB": 2.68,
+      "heapTotalMB": 4.58,
+      "domNodes": 431,
+      "metricsNodes": 1124,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 2,
+      "canvases": [
+        {
+          "id": "sim-wave",
+          "cssW": 598,
+          "cssH": 581,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-sound",
+          "cssW": 598,
+          "cssH": 451,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.34,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 2,
+      "longTasksOver100": 1,
+      "worstLongTaskMs": 101,
+      "frameP95Ms": 16.7,
+      "frameSamples": 26,
+      "inpProxyMs": 24,
+      "interactions": [
+        "slider-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 489.4
+    },
+    {
+      "page": "topics/current.html",
+      "profile": "desktop",
+      "loadMs": 302,
+      "heapUsedMB": 2.91,
+      "heapTotalMB": 4.61,
+      "domNodes": 729,
+      "metricsNodes": 1754,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 3,
+      "canvases": [
+        {
+          "id": "sim-ohm",
+          "cssW": 598,
+          "cssH": 468,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-ohm-chart",
+          "cssW": 598,
+          "cssH": 150,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-circuit",
+          "cssW": 598,
+          "cssH": 440,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.51,
+      "rafIdle": 0,
+      "rafOffscreen": 1,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 8,
+      "longTasksOver100": 0,
+      "worstLongTaskMs": 92,
+      "frameP95Ms": 33.3,
+      "frameSamples": 46,
+      "inpProxyMs": 40,
+      "interactions": [
+        "slider-drag",
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 521
+    },
+    {
+      "page": "index.html",
+      "profile": "mobile",
+      "loadMs": 879,
+      "heapUsedMB": 3.59,
+      "heapTotalMB": 6.33,
+      "domNodes": 1687,
+      "metricsNodes": 2999,
+      "listeners": {
+        "window": 4,
+        "document": 6,
+        "canvases": 0
+      },
+      "canvasCount": 1,
+      "canvases": [
+        {
+          "id": "heroCanvas",
+          "cssW": 351,
+          "cssH": 260,
+          "devW": 702,
+          "devH": 520,
+          "bytes": 1460160
+        }
+      ],
+      "backingStoreMB": 1.39,
+      "rafIdle": 1,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 16,
+      "longTasksOver100": 4,
+      "worstLongTaskMs": 332,
+      "frameP95Ms": 50,
+      "frameSamples": 10,
+      "inpProxyMs": 0,
+      "interactions": [],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 496.9
+    },
+    {
+      "page": "quiz.html",
+      "profile": "mobile",
+      "loadMs": 597,
+      "heapUsedMB": 3.9,
+      "heapTotalMB": 5.17,
+      "domNodes": 780,
+      "metricsNodes": 1831,
+      "listeners": {
+        "window": 3,
+        "document": 4,
+        "canvases": 0
+      },
+      "canvasCount": 0,
+      "canvases": [],
+      "backingStoreMB": 0,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 9,
+      "longTasksOver100": 2,
+      "worstLongTaskMs": 147,
+      "frameP95Ms": 0,
+      "frameSamples": 0,
+      "inpProxyMs": 104,
+      "interactions": [
+        "quiz-option",
+        "quiz-filter",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 12,
+      "transferKB": 664.2
+    },
+    {
+      "page": "topics/vectors.html",
+      "profile": "mobile",
+      "loadMs": 844,
+      "heapUsedMB": 3.47,
+      "heapTotalMB": 5.08,
+      "domNodes": 774,
+      "metricsNodes": 1648,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 1,
+      "canvases": [
+        {
+          "id": "sim-vector-add",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.17,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 11,
+      "longTasksOver100": 5,
+      "worstLongTaskMs": 189,
+      "frameP95Ms": 0,
+      "frameSamples": 0,
+      "inpProxyMs": 88,
+      "interactions": [
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 484.9
+    },
+    {
+      "page": "topics/fluids.html",
+      "profile": "mobile",
+      "loadMs": 817,
+      "heapUsedMB": 3.47,
+      "heapTotalMB": 5.1,
+      "domNodes": 733,
+      "metricsNodes": 1618,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 2,
+      "canvases": [
+        {
+          "id": "sim-archimedes",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-bernoulli",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.34,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 15,
+      "longTasksOver100": 4,
+      "worstLongTaskMs": 302,
+      "frameP95Ms": 700.1,
+      "frameSamples": 7,
+      "inpProxyMs": 120,
+      "interactions": [
+        "slider-drag",
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 496.7
+    },
+    {
+      "page": "topics/heat.html",
+      "profile": "mobile",
+      "loadMs": 738,
+      "heapUsedMB": 3.32,
+      "heapTotalMB": 4.85,
+      "domNodes": 613,
+      "metricsNodes": 1408,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 2,
+      "canvases": [
+        {
+          "id": "sim-thermometer",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-heat-transfer",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.34,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 8,
+      "longTasksOver100": 4,
+      "worstLongTaskMs": 249,
+      "frameP95Ms": 916.6,
+      "frameSamples": 21,
+      "inpProxyMs": 88,
+      "interactions": [
+        "slider-drag",
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 496.3
+    },
+    {
+      "page": "topics/waves.html",
+      "profile": "mobile",
+      "loadMs": 775,
+      "heapUsedMB": 3.08,
+      "heapTotalMB": 4.84,
+      "domNodes": 431,
+      "metricsNodes": 1132,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 2,
+      "canvases": [
+        {
+          "id": "sim-wave",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-sound",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.34,
+      "rafIdle": 0,
+      "rafOffscreen": 0,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 11,
+      "longTasksOver100": 4,
+      "worstLongTaskMs": 308,
+      "frameP95Ms": 33.3,
+      "frameSamples": 23,
+      "inpProxyMs": 72,
+      "interactions": [
+        "slider-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 489.4
+    },
+    {
+      "page": "topics/current.html",
+      "profile": "mobile",
+      "loadMs": 787,
+      "heapUsedMB": 3.34,
+      "heapTotalMB": 4.86,
+      "domNodes": 729,
+      "metricsNodes": 1763,
+      "listeners": {
+        "window": 3,
+        "document": 3,
+        "canvases": 0
+      },
+      "canvasCount": 3,
+      "canvases": [
+        {
+          "id": "sim-ohm",
+          "cssW": 349,
+          "cssH": 320,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-ohm-chart",
+          "cssW": 349,
+          "cssH": 150,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        },
+        {
+          "id": "sim-circuit",
+          "cssW": 349,
+          "cssH": 360,
+          "devW": 300,
+          "devH": 150,
+          "bytes": 180000
+        }
+      ],
+      "backingStoreMB": 0.51,
+      "rafIdle": 0,
+      "rafOffscreen": 1,
+      "rafHiddenProbe": 0,
+      "longTasksOver50": 21,
+      "longTasksOver100": 5,
+      "worstLongTaskMs": 330,
+      "frameP95Ms": 33.4,
+      "frameSamples": 22,
+      "inpProxyMs": 96,
+      "interactions": [
+        "slider-drag",
+        "canvas-drag",
+        "segment"
+      ],
+      "audioContexts": 0,
+      "requests": 13,
+      "transferKB": 521
+    }
+  ]
+}

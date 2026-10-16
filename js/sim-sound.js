@@ -3,6 +3,9 @@
   const canvas = document.getElementById('sim-sound');
   if (!canvas) return;
 
+  EMC.whenNear(canvas, init);
+  function init() {
+
   const { CONST, clamp, fixed, label, arrow, Stage, bindRange, bindSegment } = EMC;
 
   const FMIN = 55, FMAX = 1760;
@@ -37,7 +40,13 @@
   function audioStop() {
     try {
       if (gain && actx) gain.gain.linearRampToValueAtTime(0.0001, actx.currentTime + 0.05);
-      if (osc) osc.stop(actx.currentTime + 0.08);
+      if (osc) {
+        osc.stop(actx.currentTime + 0.08);
+        osc.onended = () => { try { osc && osc.disconnect(); } catch (e) {} try { gain && gain.disconnect(); } catch (e) {} };
+      }
+      // let the shared context sleep until the next gesture instead of
+      // keeping the audio thread awake for silence
+      if (actx && actx.state === 'running' && actx.suspend) actx.suspend();
     } catch (e) { /* already gone */ }
     osc = null; gain = null;
   }
@@ -69,6 +78,7 @@
 
   /* ---- stage ------------------------------------------------------------------ */
   const stage = new Stage(canvas, (ctx, w, h, st) => {
+    stage.setIdle(!state.playing);      // the scope is static unless a tone is playing
     ctx.clearRect(0, 0, w, h);
     const scopeH = h * 0.52, sy = h * 0.30;
 
@@ -154,9 +164,9 @@
   if (slider) slider.addEventListener('input', () => {
     state.f = parseFloat(slider.value);
     if (el('snd-fv')) el('snd-fv').textContent = `${fixed(state.f, 0)} Hz`;
-    audioSet(); updateReadouts();
+    audioSet(); stage.invalidate(); updateReadouts();
   });
-  bindSegment('snd-wave', v => { state.wave = v; audioSet(); });
+  bindSegment('snd-wave', v => { state.wave = v; audioSet(); stage.invalidate(); });
 
   const playBtn = el('snd-play');
   if (playBtn) playBtn.addEventListener('click', () => {
@@ -167,12 +177,14 @@
         return;
       }
       state.playing = true;
+      stage.setIdle(false);
       playBtn.textContent = 'Stop tone';
       playBtn.setAttribute('aria-pressed', 'true');
       setStatus(`playing ${fixed(state.f, 0)} Hz ${state.wave} \u2014 that is pitch ${noteOf(state.f).text}`);
     } else {
       audioStop();
       state.playing = false;
+      stage.setIdle(true); stage.invalidate();
       playBtn.textContent = 'Play tone';
       playBtn.setAttribute('aria-pressed', 'false');
       setStatus('stopped \u2014 press Play to hear the pitch again');
@@ -184,7 +196,7 @@
       const f = parseFloat(btn.dataset.sndPreset);
       state.f = clamp(f, FMIN, FMAX);
       if (slider) { slider.value = String(state.f); slider.dispatchEvent(new Event('input', { bubbles: true })); }
-      audioSet(); updateReadouts();
+      audioSet(); stage.invalidate(); updateReadouts();
       EMC.toast(`Preset: ${btn.textContent.trim()} — ${fixed(state.f, 1)} Hz`);
     });
   });
@@ -192,4 +204,5 @@
   if (el('snd-fv')) el('snd-fv').textContent = `${fixed(state.f, 0)} Hz`;
   setStatus(AC ? 'ready \u2014 press Play to hear the tone' : 'audio unavailable in this browser \u2014 the scope still works');
   updateReadouts();
+  }
 })();

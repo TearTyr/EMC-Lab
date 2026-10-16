@@ -156,6 +156,7 @@ console.log('\u2500'.repeat(66));
 {
   console.log('\n[index.html]');
   const { win, doc, problems } = await loadPage('index.html');
+  await new Promise(r => { win.document.readyState === 'complete' ? r() : win.addEventListener('load', r, { once: true }); });
   await frames(win, 8);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('progress ring shows a percentage', /^\d+%$/.test(txt(win, 'ringPct') || ''), txt(win, 'ringPct'));
@@ -477,9 +478,12 @@ console.log('\u2500'.repeat(66));
   eq('all 30 recorded', txt(win, 'quiz-progress-text'), '30 of 30 answered');
   click(win, doc.getElementById('quiz-submit'));
   ok('score card is revealed', doc.getElementById('quiz-score').hidden === false);
-  ok('with the vendored Chart.js loaded the charts take over',
-    doc.getElementById('quiz-charts').hidden === false &&
-    doc.getElementById('quiz-fallback-bars').hidden === true);
+  ok('Chart.js is lazy: injected only at grading time, not parser-blocking',
+    !/<script[^>]*vendor\/chart/.test(readFileSync(join(ROOT, 'quiz.html'), 'utf8')) &&
+    [...doc.head.querySelectorAll('script')].some(s => /vendor\/chart/.test(s.src || '')));
+  ok('until the injected lib executes the CSS-bar fallback carries the score card',
+    doc.getElementById('quiz-charts').hidden === true &&
+    doc.getElementById('quiz-fallback-bars').hidden === false);
   ok('perfect score is 100%', txt(win, 'quiz-score').includes('100%'), txt(win, 'quiz-score').slice(0, 80));
   ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 30);
   ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 30);
@@ -592,9 +596,8 @@ console.log('\u2500'.repeat(66));
   FakeChart.made = []; FakeChart.destroyed = 0; FakeChart.defaults = {};
 
   const { win, doc } = await loadPage('quiz.html', { Chart: FakeChart });
-  // the page now vendors the REAL Chart.js, which overwrites the stub while
-  // loadPage runs the page's scripts; put the spy back before grading so its
-  // constructor calls stay observable.
+  // window.Chart existed before quiz.js evaluated, so the lazy loader treats
+  // the library as ready and draws synchronously through the spy.
   win.Chart = FakeChart;
   doc.querySelectorAll('.q-card').forEach(card => {
     const q = win.EMC_QUIZ.find(x => x.id === Number(card.dataset.qid));

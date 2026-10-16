@@ -3,7 +3,10 @@
   const canvas = document.getElementById('sim-archimedes');
   if (!canvas) return;
 
-  const { CONST, clamp, fixed, eng, arrow, label, Stage, bindRange, bindSegment, damp } = EMC;
+  EMC.whenNear(canvas, init);
+  function init() {
+
+  const { CONST, clamp, fixed, eng, arrow, label, Stage, bindRange, bindSegment, setText, throttle } = EMC;
   const g = CONST.G;
 
   /* ---- state ------------------------------------------------------------- */
@@ -53,8 +56,11 @@
       state.y += vy * (dt || 0.016);
       if (Math.abs(p.yEq - state.y) < 1e-4 && Math.abs(vy) < 1e-3) { state.y = p.yEq; vy = 0; }
     }
+    const settled = !state.dragging && Math.abs(p.yEq - state.y) < 1e-4 && Math.abs(vy) < 1e-3;
+    stage.setIdle(settled);
+    if (settled) updateReadouts();          // final synchronous write before sleeping
     render(ctx, w, h, st, p);
-    updateReadouts();
+    readoutsLive();               // capped at 15 Hz; controls below call updateReadouts() directly
   }, { animate: true });
 
   function render(ctx, w, h, st, p) {
@@ -131,6 +137,7 @@
     if (p.type === 'down') {
       const hit = Math.abs(p.x - G.cx) < sPx && Math.abs(p.y - cy) < sPx;
       state.dragging = hit; vy = 0;
+      if (hit) stage.setIdle(false);
       canvas.style.cursor = hit ? 'grabbing' : 'default';
     } else if (p.type === 'move' && state.dragging) {
       state.y = clamp((p.y - G.surface) / G.pxPerM, -ph.s * 0.9, TANK_DEPTH - ph.s / 2);
@@ -141,36 +148,34 @@
 
   /* ---- readouts --------------------------------------------------------------- */
   const el = id => document.getElementById(id);
+  const readoutsLive = throttle(() => updateReadouts(), 15);
   function updateReadouts() {
     const p = phys();
-    if (el('arch-weight')) el('arch-weight').textContent = `${eng(p.W, 3)} N`;
-    if (el('arch-buoy')) el('arch-buoy').textContent = `${eng(p.FB, 3)} N`;
+    const set = (id, s) => setText(el(id), s);
+    set('arch-weight', `${eng(p.W, 3)} N`);
+    set('arch-buoy', `${eng(p.FB, 3)} N`);
     const net = p.W - p.FB - p.N;
-    if (el('arch-net')) {
-      el('arch-net').textContent = p.atRest
-        ? (p.floats || p.neutral ? '0 N — balanced' : `0 N — floor holds ${eng(p.N, 3)} N`)
-        : `${eng(Math.abs(net), 3)} N ${net > 0 ? '↓' : '↑'}`;
-    }
-    if (el('arch-subfr')) el('arch-subfr').textContent = `${fixed(p.fNow * 100, 1)} %`;
-    if (el('arch-vsub')) el('arch-vsub').textContent = `${fixed(p.fNow * state.volL, 2)} L`;
-    if (el('arch-state')) {
-      el('arch-state').textContent = p.neutral ? 'neutrally buoyant' : (p.floats ? 'floats' : 'sinks');
-    }
-    if (el('arch-explain')) {
-      el('arch-explain').textContent = p.floats || p.neutral
-        ? `Floating: the block settles until it displaces its own weight — submerged fraction = ρobj/ρfluid = ${state.rhoObj}/${state.rhoF} = ${fixed(p.f * 100, 1)}%, so F_B = W = ${eng(p.W, 3)} N.`
-        : `Sinking: fully submerged it displaces ${fixed(state.volL, 2)} L, so F_B = ρfluid·V·g = ${state.rhoF} × ${fixed(p.V, 4)} × ${fixed(g, 2)} = ${eng(state.rhoF * p.V * g, 3)} N < W = ${eng(p.W, 3)} N. On the floor the missing ${eng(p.N, 3)} N comes from the normal force.`;
-    }
+    set('arch-net', p.atRest
+      ? (p.floats || p.neutral ? '0 N \u2014 balanced' : `0 N \u2014 floor holds ${eng(p.N, 3)} N`)
+      : `${eng(Math.abs(net), 3)} N ${net > 0 ? '\u2193' : '\u2191'}`);
+    set('arch-subfr', `${fixed(p.fNow * 100, 1)} %`);
+    set('arch-vsub', `${fixed(p.fNow * state.volL, 2)} L`);
+    set('arch-state', p.neutral ? 'neutrally buoyant' : (p.floats ? 'floats' : 'sinks'));
+    set('arch-explain', p.floats || p.neutral
+      ? `Floating: the block settles until it displaces its own weight \u2014 submerged fraction = \u03C1obj/\u03C1fluid = ${state.rhoObj}/${state.rhoF} = ${fixed(p.f * 100, 1)}%, so F_B = W = ${eng(p.W, 3)} N.`
+      : `Sinking: fully submerged it displaces ${fixed(state.volL, 2)} L, so F_B = \u03C1fluid\u00B7V\u00B7g = ${state.rhoF} \u00D7 ${fixed(p.V, 4)} \u00D7 ${fixed(g, 2)} = ${eng(state.rhoF * p.V * g, 3)} N < W = ${eng(p.W, 3)} N. On the floor the missing ${eng(p.N, 3)} N comes from the normal force.`);
   }
+
   function refresh() { updateReadouts(); }
 
   /* ---- controls ------------------------------------------------------------------ */
-  bindRange('arch-rho', 'arch-rhov', v => { state.rhoObj = v; refresh(); }, v => `${v} kg/m³`);
-  bindRange('arch-vol', 'arch-volv', v => { state.volL = v; refresh(); }, v => `${fixed(v, 1)} L`);
-  bindSegment('arch-fluid', v => { state.rhoF = Number(v); state.y = phys().yEq; vy = 0; refresh(); });
-  bindSegment('arch-shape', v => { state.shape = v; refresh(); });
+  bindRange('arch-rho', 'arch-rhov', v => { state.rhoObj = v; stage.setIdle(false); stage.invalidate(); refresh(); }, v => `${v} kg/m³`);
+  bindRange('arch-vol', 'arch-volv', v => { state.volL = v; stage.setIdle(false); stage.invalidate(); refresh(); }, v => `${fixed(v, 1)} L`);
+  bindSegment('arch-fluid', v => { state.rhoF = Number(v); state.y = phys().yEq; vy = 0; stage.setIdle(false); stage.invalidate(); refresh(); });
+  bindSegment('arch-shape', v => { state.shape = v; stage.setIdle(false); stage.invalidate(); refresh(); });
 
   // start at equilibrium
   state.y = phys().yEq;
   refresh();
+  }
 })();

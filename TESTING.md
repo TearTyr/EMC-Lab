@@ -284,3 +284,43 @@ been verified and no doc should claim otherwise:
 | Manual pass (this checklist) | completed on Chrome 148 (Linux), Firefox-profile checks by code review of vendor prefixes |
 
 Any failure in §1 blocks release; §2 is run before every demonstration.
+
+---
+
+## 3. Performance regression protection (added by perf/optimize)
+
+### 3.1 Automated (`bun run perf:guard`)
+Dev-only headless checks in `tools/perf-measure.mjs guard` (not shipped in
+`public/`). Enforced, fail-the-run invariants:
+- home page boot-visible canvas runs exactly **1** rAF chain (double-schedule regression);
+- synthetic hidden tab drops every chain to **0** (visibilitychange regression);
+- a settled Archimedes sim **sleeps** (0 chains in view) — idle-redraw regression;
+- an essential-motion sim (circuit dots) keeps exactly **1** chain in view.
+JS heap is printed informationally (environment-dependent, not enforced).
+Full measurement matrix / sessions / screenshots: `tools/perf-measure.mjs
+measure|session|shots`, probes `tools/perf-probe*.mjs`; reports in `docs/PERF.md`,
+inventory in `docs/BUGLIST.md`.
+
+### 3.2 Manual verification procedures for the perf-phase behaviour changes
+- [ ] Touch scroll: on a phone (or DevTools touch emulation) start a vertical
+      swipe **on** a sim canvas that has no vertical drag (e.g. the wave bench):
+      the page scrolls. Start a drag on the buoyancy block or thermometer column
+      and move it: the object moves, the page does not scroll; after release,
+      scrolling works again (`.sim-canvas.dragging` toggles `touch-action`).
+- [ ] Reduced motion: with OS "reduce motion" on (or DevTools rendering
+      emulation), load waves.html — the wave is a still frame; moving the f or λ
+      sliders redraws the still wave with the new values; Play on the tone bench
+      still produces sound and a moving scope.
+- [ ] Quiz focus: keyboard-only, answer a question in instant mode — focus lands
+      on the graded feedback, not `<body>`; submit in exam mode — focus lands on
+      the score card; Tab continues from there.
+- [ ] Lazy sims: load a topic page with the network panel open — sim scripts run
+      but no sim canvas paints until scrolled near; scrolling in paints within
+      one frame; deep-linking (`index.html` sim cards → `#sim-*-panel`) lands
+      with the panel already painted.
+- [ ] Hashed deploy build: `bun run build`, serve `public/`, confirm the page
+      requests `js/common.<hash>.js` / `css/site.<hash>.css` and that a second
+      visit serves them from disk cache (immutable); confirm the licensed-font
+      console marker stays silent and `data-licensed-font="bundled"`.
+- [ ] Audio: play a tone, stop it, leave the page open — WebAudio state shows the
+      context suspended; playing again resumes from the same gesture.

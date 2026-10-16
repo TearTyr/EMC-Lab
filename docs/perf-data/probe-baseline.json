@@ -1,0 +1,46 @@
+{
+  "index.html": {
+    "atTop": 2,
+    "simInview": 2,
+    "hiddenWhileInview": 2,
+    "loopSources": [
+      "now => { if (!this._running) return; if (!th"
+    ]
+  },
+  "topics/vectors.html": {
+    "atTop": 0,
+    "simInview": 0,
+    "hiddenWhileInview": 0,
+    "loopSources": []
+  },
+  "topics/fluids.html": {
+    "atTop": 0,
+    "simInview": 1,
+    "hiddenWhileInview": 1,
+    "loopSources": [
+      "now => { if (!this._running) return; if (!th"
+    ]
+  },
+  "topics/heat.html": {
+    "atTop": 0,
+    "simInview": 0,
+    "hiddenWhileInview": 0,
+    "loopSources": []
+  },
+  "topics/waves.html": {
+    "atTop": 0,
+    "simInview": 1,
+    "hiddenWhileInview": 1,
+    "loopSources": [
+      "now => { if (!this._running) return; if (!th"
+    ]
+  },
+  "topics/current.html": {
+    "atTop": 0,
+    "simInview": 1,
+    "hiddenWhileInview": 1,
+    "loopSources": [
+      "now => { if (!this._running) return; if (!th"
+    ]
+  }
+}

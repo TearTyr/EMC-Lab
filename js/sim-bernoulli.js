@@ -3,7 +3,10 @@
   const canvas = document.getElementById('sim-bernoulli');
   if (!canvas) return;
 
-  const { CONST, clamp, fixed, eng, unit, arrow, label, Stage, bindRange, bindSegment } = EMC;
+  EMC.whenNear(canvas, init);
+  function init() {
+
+  const { CONST, clamp, fixed, eng, unit, arrow, label, Stage, bindRange, bindSegment, setText, throttle } = EMC;
 
   const state = {
     mode: 'wing',
@@ -47,7 +50,7 @@
       : { x: seeded ? Math.random() * w : -10 - Math.random() * 30, y: 0.12 + Math.random() * 0.76 };
   }
   function ensureParticles(w, h) {
-    const n = 46;
+    const n = EMC.lowTier ? 30 : 46;
     while (state.particles.length < n) state.particles.push(spawnParticle(w, h, state.mode === 'pipe', true));
   }
 
@@ -187,20 +190,19 @@
 
   /* ---- readouts ---------------------------------------------------------------- */
   const el = id => document.getElementById(id);
+  const readoutsLive = throttle(() => updateReadouts(), 15);
   function updateReadouts(p) {
     const wing = state.mode === 'wing';
     const q = p || (wing ? wingPhys() : pipePhys());
-    if (el('bern-l1')) el('bern-l1').textContent = wing ? 'free-stream v' : 'v in wide section';
-    if (el('bern-l2')) el('bern-l2').textContent = wing ? 'v over the top' : 'v in the throat';
-    if (el('bern-l3')) el('bern-l3').textContent = wing ? 'ΔP (top vs bottom)' : 'ΔP (wide vs throat)';
-    if (el('bern-l4')) el('bern-l4').textContent = wing ? `lift · ${WING_AREA} m² wing` : 'manometer Δh';
-    if (el('bern-v1')) el('bern-v1').textContent = `${fixed(q.v1 ?? state.v, 2)} m/s`;
-    if (el('bern-v2')) el('bern-v2').textContent = `${fixed(q.v2 ?? q.vTop, 2)} m/s`;
+    setText(el('bern-l1'), wing ? 'free-stream v' : 'v in wide section');
+    setText(el('bern-l2'), wing ? 'v over the top' : 'v in the throat');
+    setText(el('bern-l3'), wing ? 'ΔP (top vs bottom)' : 'ΔP (wide vs throat)');
+    setText(el('bern-l4'), wing ? `lift · ${WING_AREA} m² wing` : 'manometer Δh');
+    setText(el('bern-v1'), `${fixed(q.v1 ?? state.v, 2)} m/s`);
+    setText(el('bern-v2'), `${fixed(q.v2 ?? q.vTop, 2)} m/s`);
     const dP = wing ? q.dP : q.dP;
-    if (el('bern-dp')) el('bern-dp').textContent = unit(dP, 'Pa', 3);
-    if (el('bern-extra')) el('bern-extra').textContent = wing
-      ? unit(q.lift, 'N', 3)
-      : `${fixed(q.dh * 100, 1)} cm`;
+    setText(el('bern-dp'), unit(dP, 'Pa', 3));
+    setText(el('bern-extra'), wing ? unit(q.lift, 'N', 3) : `${fixed(q.dh * 100, 1)} cm`);
     if (el('bern-state')) {
       el('bern-state').textContent = wing
         ? (q.stalled ? 'STALLED — flow separated' : q.near ? 'near stall — smooth flow ending' : 'attached flow')
@@ -214,17 +216,18 @@
   }
 
   /* ---- controls ------------------------------------------------------------------ */
-  bindRange('bern-v', 'bern-vv', v => { state.v = v; updateReadouts(); }, v => `${fixed(v, 0)} m/s`);
-  bindRange('bern-aoa', 'bern-aoav', v => { state.aoa = v; updateReadouts(); }, v => `${fixed(v, 0)}°`);
-  bindRange('bern-flow', 'bern-flowv', v => { state.flow = v; updateReadouts(); }, v => `${fixed(v, 2)} m/s`);
-  bindRange('bern-ratio', 'bern-ratiov', v => { state.ratio = v; updateReadouts(); }, v => `d₂ = ${fixed(v * D1 * 100, 1)} cm`);
+  bindRange('bern-v', 'bern-vv', v => { state.v = v; stage.invalidate(); updateReadouts(); }, v => `${fixed(v, 0)} m/s`);
+  bindRange('bern-aoa', 'bern-aoav', v => { state.aoa = v; stage.invalidate(); updateReadouts(); }, v => `${fixed(v, 0)}°`);
+  bindRange('bern-flow', 'bern-flowv', v => { state.flow = v; stage.invalidate(); updateReadouts(); }, v => `${fixed(v, 2)} m/s`);
+  bindRange('bern-ratio', 'bern-ratiov', v => { state.ratio = v; stage.invalidate(); updateReadouts(); }, v => `d₂ = ${fixed(v * D1 * 100, 1)} cm`);
 
   function syncVisibility() {
     const wing = state.mode === 'wing';
     ['bern-ctl-v', 'bern-ctl-aoa'].forEach(id => { const n = el(id); if (n) n.style.display = wing ? '' : 'none'; });
     ['bern-ctl-flow', 'bern-ctl-ratio'].forEach(id => { const n = el(id); if (n) n.style.display = wing ? 'none' : ''; });
   }
-  bindSegment('bern-mode', v => { state.mode = v; state.particles.length = 0; syncVisibility(); updateReadouts(); });
+  bindSegment('bern-mode', v => { state.mode = v; state.particles.length = 0; syncVisibility(); stage.invalidate(); updateReadouts(); });
   syncVisibility();
   updateReadouts();
+  }
 })();

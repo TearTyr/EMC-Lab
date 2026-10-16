@@ -97,8 +97,8 @@ emc-physics-tutorial/
 │                                  (+ optional licensed slot: vendor/fonts/README.md)
 ├── package.json                   Dev scripts: check / test / build:css / perf / font:scan
 ├── README.md                      This file
-├── TESTING.md                     Manual + automated testing checklist
-└── PRESENTATION-NOTES.md          Physics + implementation notes for presenting the module
+├── TESTING.md                     Manual + automated testing checklist   [local-only, gitignored]
+└── PRESENTATION-NOTES.md          Physics + implementation notes for presenting the module  [local-only]
 ```
 
 Total: ~9,500 lines across 7 pages, the styling pipeline (source + build + font faces)
@@ -280,8 +280,9 @@ family, no licence risk. ~45 KB of fonts total.
   disclosure so the main flow stays short; worked examples and rules stay open.
 * **The site talks about physics only.** No page mentions the course, the module or how the
   site was built, tested or deployed — no "Works everywhere" blurb, no dependency/build-step
-  stats, no dev-doc links in footers. That material lives in this README, TESTING.md and
-  PRESENTATION-NOTES.md, which the deployed site no longer links to or ships.
+  stats, no dev-doc links in footers. That material lives in this README and in the
+  local-only docs (TESTING.md, PRESENTATION-NOTES.md, SYNC.md — gitignored, kept on
+  disk, never committed), which the deployed site no longer links to or ships.
 * **Everything is same-origin, on purpose.** KaTeX and Chart.js 4.4.3 are
   committed under `vendor/` with their MIT licence files, exactly like the fonts.
   That removes the CDN outage risk, the privacy leak and the SRI-hash maintenance in one
@@ -412,7 +413,7 @@ Exit codes: `0` clean · `1` you aborted · `2` not the EMC Lab repo · `3` a st
 ## 10. Browser support
 
 Chrome is the only browser this project tests (headless Chrome 148; see
-`TESTING.md`). Everything below is a *target*: the code avoids exotic APIs and is
+the local `TESTING.md`). Everything below is a *target*: the code avoids exotic APIs and is
 expected to work on these versions, but nothing has been verified there — do not
 read this table as a claim of tested support.
 

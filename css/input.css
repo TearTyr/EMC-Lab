@@ -41,7 +41,7 @@
     --sk-t: rgba(168,211,224,.08); --sk-e: rgba(168,211,224,.40);
     --ye-t: rgba(246,211,107,.08); --ye-e: rgba(246,211,107,.40);
     /* shape + rhythm */
-    --r-card: 18px; --r-mid: 14px; --r-ctl: 12px;
+    --r-card: 10px; --r-mid: 8px; --r-ctl: 6px;
     --header-h: 58px; --maxw: 1280px; --column: 1060px;
   }
 
@@ -109,7 +109,7 @@
   .skip-link {
     position: absolute; left: -9999px; top: 0; z-index: 200;
     background: var(--ye); color: #221d07; padding: .5rem 1rem;
-    border-radius: 0 0 12px 12px; font-weight: 700; font-family: theme('fontFamily.ui');
+    border-radius: 0 0 8px 8px; font-weight: 700; font-family: theme('fontFamily.ui');
   }
   .skip-link:focus { left: 0; }
 
@@ -171,13 +171,13 @@
     transition: opacity .15s ease, transform .15s ease;
   }
   .nav-drop-menu.open { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
-  .dd-link { display: grid; gap: .1rem; padding: .55rem .8rem; border-radius: 10px; text-decoration: none; color: var(--text-dim); }
+  .dd-link { display: grid; gap: .1rem; padding: .55rem .8rem; border-radius: 6px; text-decoration: none; color: var(--text-dim); }
   .dd-link:hover { background: #262830; color: var(--text); }
   .dd-link b { font-family: theme('fontFamily.ui'); font-size: .9rem; font-weight: 700; color: var(--text); }
   .dd-link small { font-size: .74rem; color: var(--text-faint); line-height: 1.45; }
   .dd-link.active { background: var(--sk-t); }
   .dd-link.active b { color: var(--sk); }
-  .nav-toggle { display: none; margin-left: auto; width: 46px; height: 42px; background: var(--panel-2); border: 2px solid var(--line); border-radius: 12px; cursor: pointer; }
+  .nav-toggle { display: none; margin-left: auto; width: 46px; height: 42px; background: var(--panel-2); border: 2px solid var(--line); border-radius: 8px; cursor: pointer; }
   .nav-toggle span { display: block; width: 18px; height: 2.5px; margin: 3.5px auto; background: var(--text); border-radius: 2px; }
   .scroll-progress { position: absolute; left: 0; bottom: -1.5px; height: 3px; width: 100%; }
   .scroll-progress i { display: block; height: 100%; width: 0%; background: var(--sk); }
@@ -247,14 +247,15 @@
   .topic-card { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: .85rem; }
   .topic-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--topic-accent, var(--sk)); }
   .topic-num { position: absolute; right: .7rem; top: .3rem; font-family: theme('fontFamily.ui'); font-size: 3.2rem; font-weight: 100; color: rgba(237,235,227,.07); line-height: 1; pointer-events: none; }
-  .topic-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--panel-2); border: 1.5px solid var(--line); }
+  .topic-icon { width: 46px; height: 46px; border-radius: 8px; display: grid; place-items: center; background: var(--panel-2); border: 1.5px solid var(--line); }
   .topic-icon svg { width: 25px; height: 25px; stroke: var(--topic-accent, var(--sk)); }
   .topic-list { list-style: none; display: grid; gap: .55rem; }
   .topic-list li { position: relative; padding-left: 1.05rem; font-size: .9rem; line-height: 1.65; color: var(--text-dim); }
   .topic-list li::before { content: "\2022"; position: absolute; left: .1rem; top: 0; color: var(--topic-accent, var(--sk)); font-weight: 700; }
 
   /* -- simulation plates & controls -------------------------------------- */
-  .sim-canvas { display: block; width: 100%; height: 380px; touch-action: none; cursor: crosshair; background: var(--plate); border-bottom: 1.5px solid var(--line); }
+  .sim-canvas { display: block; width: 100%; height: 380px; touch-action: pan-y; cursor: crosshair; background: var(--plate); border-bottom: 1.5px solid var(--line); }
+  .sim-canvas.dragging { touch-action: none; }   /* set only while a canvas drag owns the pointer */
   .sim-canvas.tall { height: 440px; }
   .sim-canvas.short { height: 250px; }
   .sim-canvas.chart { height: 150px; cursor: default; }
@@ -274,7 +275,7 @@
   input[type="range"].range::-moz-range-track { height: 6px; border-radius: 999px; background: #33363e; }
   input[type="range"].range::-moz-range-progress { height: 6px; border-radius: 999px; background: #5d7d89; }
   input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--sk); border: 3px solid var(--plate); }
-  input[type="number"].inp, input[type="text"].inp, select.inp { font-family: theme('fontFamily.ui'); font-size: .9rem; color: var(--text); background: var(--plate); border: 1.5px solid var(--edge); border-radius: 10px; padding: .4rem .6rem; width: 100%; }
+  input[type="number"].inp, input[type="text"].inp, select.inp { font-family: theme('fontFamily.ui'); font-size: .9rem; color: var(--text); background: var(--plate); border: 1.5px solid var(--edge); border-radius: 6px; padding: .4rem .6rem; width: 100%; }
   input[type="number"].inp:focus, select.inp:focus { border-color: var(--sk); outline: none; }
   .readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(126px, 1fr)); gap: .6rem; }
   .stat { background: var(--panel-2); border: 1.5px solid var(--line-soft); border-radius: var(--r-ctl); padding: .55rem .75rem; min-width: 0; }
@@ -287,7 +288,7 @@
   .stat-value.hl-rose    { color: var(--pk); }
   .stat-value.hl-violet  { color: var(--li); }
   .stat-sub { display: block; font-size: .72rem; color: var(--text-faint); }
-  .sim-note { font-size: .86rem; line-height: 1.65; color: var(--text-dim); background: var(--sk-t); border-left: 3px solid var(--sk); padding: .7rem .95rem; border-radius: 0 10px 10px 0; }
+  .sim-note { font-size: .86rem; line-height: 1.65; color: var(--text-dim); background: var(--sk-t); border-left: 3px solid var(--sk); padding: .7rem .95rem; border-radius: 0 6px 6px 0; }
   .legend { display: flex; flex-wrap: wrap; gap: .55rem 1.1rem; font-size: .78rem; color: var(--text-dim); padding: .65rem 1.2rem; border-top: 1.5px solid var(--line); background: var(--bg-soft); }
   .legend span { display: inline-flex; align-items: center; gap: .35rem; }
   .swatch { width: 11px; height: 11px; border-radius: 4px; display: inline-block; flex: none; }
@@ -415,6 +416,7 @@
 
   /* -- mascot, hero, footer, pager ---------------------------------------- */
   .mascot { width: 108px; height: auto; display: block; animation: bob 3.4s ease-in-out infinite; }
+  .mascot.offscreen { animation-play-state: paused; }   /* paused while out of view (IO-toggled) */
   .mascot-sm { width: 60px; margin-bottom: .15rem; }
   .mascot-cheer { width: 22px; height: auto; display: inline-block; vertical-align: -6px; animation: bob 1s ease-in-out 2; }
   .hero { padding-block: 2.6rem 1.8rem; }

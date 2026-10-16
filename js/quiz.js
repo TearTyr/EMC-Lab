@@ -220,6 +220,10 @@
         toast(S.streak >= 3 ? `Correct \u2014 streak \u00D7${S.streak}!` : 'Correct!');
       }
       EMC.scrollToEl(document.getElementById(`q-${qid}`));
+      // the re-render replaced the clicked (now disabled) button: keep keyboard
+      // users anchored by moving focus to the graded feedback
+      const fbNow = document.querySelector(`#q-${qid} .feedback`);
+      if (fbNow) { fbNow.setAttribute('tabindex', '-1'); fbNow.focus({ preventScroll: true }); }
     } else {
       // light-touch update: no full re-render, so scroll position is preserved
       card.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-checked', String(b === btn)));
@@ -287,6 +291,15 @@
     S.order.forEach(q => { S.marked.set(q.id, S.answers.has(q.id) && S.answers.get(q.id) === q.answer); });
     if (!S.instant) S.bestStreak = computeBestStreak();
     render();
+
+    // grading disables the option buttons and the submit button; a focused
+    // disabled control drops keyboard users to <body>, so hand focus to the
+    // score card instead
+    const scoreBox = el('quiz-score');
+    if (scoreBox) {
+      if (!scoreBox.hasAttribute('tabindex')) scoreBox.setAttribute('tabindex', '-1');
+      scoreBox.focus({ preventScroll: true });
+    }
 
     // record FIRST so the score card can quote the updated best/attempts
     const scored = S.order.slice();
@@ -407,25 +420,50 @@
     EMC.scrollToEl(box);
   }
 
-  /* ---- Chart.js score visualisation (CSS-bar fallback if it is missing) -- */
+  /* ---- Chart.js score visualisation (CSS-bar fallback if it is missing) --
+     The ~68 KB gzip library is no longer parser-blocking: it is injected the
+     first time a score card needs it (or used directly when window.Chart
+     already exists, e.g. in tests). Until it arrives, the dependency-free
+     CSS bars show the same breakdown. */
+  const chartScript = document.querySelector('script[src*="js/quiz"]');
+  const CHART_SRC = ((chartScript && chartScript.getAttribute('src')) || 'js/quiz.js')
+    .replace(/js\/[^/]+$/, '') + 'vendor/chart/chart.umd.min.js';
+  let chartLibState = typeof window.Chart === 'function' ? 'ready' : 'unloaded';
+  const pendingChart = [];
+  function withChart(done) {
+    if (chartLibState === 'ready') { done(window.Chart); return; }
+    if (chartLibState === 'failed') { done(null); return; }
+    if (chartLibState === 'loading') { pendingChart.push(done); return; }
+    chartLibState = 'loading';
+    pendingChart.push(done);
+    const s = document.createElement('script');
+    s.defer = true;
+    s.src = CHART_SRC;
+    s.onload = () => { chartLibState = typeof window.Chart === 'function' ? 'ready' : 'failed'; flushPending(); };
+    s.onerror = () => { chartLibState = 'failed'; flushPending(); };
+    document.head.appendChild(s);
+  }
+  function flushPending() { const q = pendingChart.splice(0); q.forEach(fn => fn(chartLibState === 'ready' ? window.Chart : null)); }
+
   function renderScoreCharts(right, total, scored) {
-    // always tear down previous instances first (Chart.js refuses to reuse a canvas)
+    // tear down previous instances now; show CSS bars until the lib is ready
     activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
     activeCharts = [];
     const chartsHost = el('quiz-charts');
     const fallback = el('quiz-fallback-bars');
     if (!chartsHost) return;
+    chartsHost.hidden = true;
+    if (fallback) fallback.hidden = false;
+    withChart(C => { if (C) drawScoreCharts(C, right, total, scored); });
+  }
 
-    if (!window.Chart) {
-      // Offline / blocked CDN: keep the dependency-free CSS bars instead.
-      chartsHost.hidden = true;
-      if (fallback) fallback.hidden = false;
-      return;
-    }
+  function drawScoreCharts(C, right, total, scored) {
+    activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
+    activeCharts = [];
+    const chartsHost = el('quiz-charts');
+    const fallback = el('quiz-fallback-bars');
     chartsHost.hidden = false;
     if (fallback) fallback.hidden = true;   // the charts supersede the bars
-
-    const C = window.Chart;
     C.defaults.color = '#a9bad6';
     C.defaults.borderColor = 'rgba(148,163,184,.14)';
 

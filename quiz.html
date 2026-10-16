@@ -217,9 +217,9 @@
     </div>
   </footer>
 
-  <!-- Chart.js 4.4.3 (MIT, vendor/chart/LICENSE) is vendored like KaTeX: same-origin,
-       no CDN dependency, no third-party request, and it works offline. -->
-  <script defer src="vendor/chart/chart.umd.min.js"></script>
+  <!-- Chart.js 4.4.3 (MIT, vendor/chart/LICENSE) stays vendored and same-origin
+       but is now injected lazily by js/quiz.js the first time a score card is
+       rendered - the quiz no longer pays ~68 KB gzip before it is needed. -->
   <script defer src="vendor/katex/katex.min.js"></script>
   <script defer src="js/common.js"></script>
   <script defer src="js/quiz-data.js"></script>

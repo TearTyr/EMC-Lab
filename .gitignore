@@ -34,6 +34,7 @@ public/
 vendor/fonts/*.ttf
 vendor/fonts/*.otf
 
+# --- local-only dev docs / generator (kept on disk, never committed) ---
 web_report.md
 html.py
 PRESENTATION-NOTES.md

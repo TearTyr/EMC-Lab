@@ -3,6 +3,9 @@
   const canvas = document.getElementById('sim-vector-add');
   if (!canvas) return;
 
+  EMC.whenNear(canvas, init);
+  function init() {
+
   const { clamp, fixed, arrow, label, Stage, bindSegment } = EMC;
 
   /* ---- state ----------------------------------------------------------- */
@@ -32,7 +35,7 @@
     if (p.type === 'down') {
       const dA = Math.hypot(p.x - tipA.x, p.y - tipA.y);
       const dB = Math.hypot(p.x - tipB.x, p.y - tipB.y);
-      state.drag = (dA < 22 && dA <= dB) ? 'A' : (dB < 22 ? 'B' : null);
+      state.drag = (dA < 30 && dA <= dB) ? 'A' : (dB < 30 ? 'B' : null);   // 30 px hit halo, generous for touch
       canvas.style.cursor = state.drag ? 'grabbing' : 'default';
     } else if (p.type === 'up' || p.type === 'leave') {
       state.drag = null; canvas.style.cursor = 'default';
@@ -136,7 +139,7 @@
         `  ·  |R| = √(Rx² + Ry²) = ${fixed(mag(r), 2)} u`;
     }
   }
-  function refresh() { stage.draw(); updateReadouts(); }
+  function refresh() { stage.invalidate(); updateReadouts(); }
 
   /* ---- controls ------------------------------------------------------------ */
   bindSegment('vec-mode', v => { state.mode = v; refresh(); });
@@ -155,4 +158,5 @@
   });
 
   refresh();
+  }
 })();

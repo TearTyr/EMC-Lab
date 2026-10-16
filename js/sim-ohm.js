@@ -3,6 +3,9 @@
   const canvas = document.getElementById('sim-ohm');
   if (!canvas) return;
 
+  EMC.whenNear(canvas, init);
+  function init() {
+
   const { CONST, clamp, label, eng, unit, fixed } = EMC;
 
   /* ---- state ---------------------------------------------------------- */
@@ -302,7 +305,7 @@
     if (el('ohm-range')) el('ohm-range').textContent = pickRange(Math.abs(I)).txt;
   }
 
-  function refresh() { stage.draw(); if (chart) chart.draw(); updateReadouts(); }
+  function refresh() { stage.invalidate(); if (chart) chart.invalidate(); updateReadouts(); }
 
   /* ---- controls -------------------------------------------------------- */
   EMC.bindRange('ohm-V', 'ohm-Vv', v => { state.V = v; refresh(); }, v => `${fixed(v, 1)} V`);
@@ -353,4 +356,5 @@
   if (flowToggle) flowToggle.addEventListener('change', () => { state.electrons = flowToggle.checked; refresh(); });
 
   refresh();
+  }
 })();

@@ -3,6 +3,9 @@
   const canvas = document.getElementById('sim-circuit');
   if (!canvas) return;
 
+  EMC.whenNear(canvas, init);
+  function init() {
+
   const { clamp, lerp, label, eng, unit, fixed } = EMC;
 
   /* ---- state ---------------------------------------------------------- */
@@ -341,7 +344,7 @@
       const row = host.querySelector(`[data-row="${i}"]`);
       if (row) row.addEventListener('click', e => {
         if (e.target.closest('input,button')) return;
-        state.selected = i; renderRows(); stage.draw();
+        state.selected = i; renderRows(); stage.invalidate();
       });
     });
     host.querySelectorAll('[data-del]').forEach(b => {
@@ -355,7 +358,7 @@
     });
   }
 
-  function refresh() { stage.draw(); updateReadouts(); }
+  function refresh() { stage.invalidate(); updateReadouts(); }
 
   /* ---- buttons --------------------------------------------------------- */
   const topo = el('circ-topology');
@@ -504,4 +507,5 @@
   renderRows();
   if (addBtn) addBtn.disabled = state.resistors.length >= LIMITS[state.topology][1];
   refresh();
+  }
 })();

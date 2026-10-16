@@ -68,7 +68,14 @@
 
       label(ctx, 'v = f\u03BB    \u00B7    Q = mc\u0394T    \u00B7    F_B = \u03C1Vg    \u00B7    V = IR', w / 2, h - 14,
         { color: 'rgba(169,186,214,.75)', size: 11.5, weight: '600' });
-    }, { animate: true });
+    }, { animate: false });
+
+    // Start the hero loop only after the page's first paint work (fonts,
+    // KaTeX, first raster) has landed - removes the load-time stutter battle
+    // for the main thread. Reduced-motion users keep the static frame.
+    const startHero = () => { if (!EMC.reducedMotion) stage.start(); };
+    if (document.readyState === 'complete') startHero();
+    else window.addEventListener('load', startHero, { once: true });
 
     // nothing to cache per size — the wave is analytic — but keep the redraw tidy
     let lastW = 0, lastH = 0;
