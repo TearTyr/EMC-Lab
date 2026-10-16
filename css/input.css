@@ -261,6 +261,10 @@
   html[data-detail="on"] [data-detail="plain"],
   html:not([data-detail]) [data-detail="plain"] { display: none; }
   [data-detail="plain"] { color: var(--text-dim); }
+  /* restrained cross-fade for mode swaps (opacity only, ~160 ms total) */
+  [data-detail] { transition: opacity .08s ease; }
+  html.detail-fade [data-detail] { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { [data-detail] { transition: none; } }
 
   /* ---- global Details toggle (header, left cluster) ---- */
   .detail-toggle {
@@ -293,7 +297,8 @@
     border-radius: 999px; padding: .18rem .62rem;
   }
   .boot-chip.done { color: var(--mi); border-color: var(--mi-e); }
-  .boot-chip.done::after { content: " \2713"; }
+  .boot-chip::after { content: " \2713"; visibility: hidden; }   /* reserve the glyph: no width jump on tick */
+  .boot-chip.done::after { visibility: visible; }
 
   /* ---- sim panel warming pulse (opacity only, paused with the strip) ---- */
   .panel[data-sim-pending] .panel-title .dot { animation: bootpulse 1.2s ease-in-out infinite; }

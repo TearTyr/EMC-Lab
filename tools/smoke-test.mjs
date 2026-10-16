@@ -810,18 +810,18 @@ console.log('\u2500'.repeat(66));
       .test(builtCss));
 }
 
-/* ---------------- warm repeat visit skips the shell ---------------- */
+/* ---------------- repeat visits still show the shell (owner spec) ---------------- */
 {
-  console.log('\n[warm boot]');
+  console.log('\n[repeat visit boot]');
   const { win, doc } = await loadPage('index.html');
-  win.localStorage.setItem('emc.booted', '1');
-  // reload semantics: re-run the early inline script path manually
-  const cls = win.document.documentElement.classList;
-  ok('warm storage marks the shell suppressed', (win.localStorage.getItem('emc.booted') === '1'));
+  win.localStorage.setItem('emc.booted', '1');     // leftover flag from older builds
   const inline = readFileSync(join(ROOT, 'index.html'), 'utf8');
-  ok('early script derives warm/cold from the stored flag',
-    /localStorage\.getItem\('emc\.booted'\) \? 'boot-warm' : 'boot-cold'/.test(inline) &&
+  ok('the shell is not skipped by any stored flag',
+    !/boot-warm/.test(inline) && /bootOverlay/.test(inline));
+  ok('a 6 s failsafe guarantees the shell can never trap a user',
     /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 6000\)/.test(inline));
+  ok('noscript hides the shell when JavaScript is off',
+    /<noscript>[\s\S]*?#bootOverlay\{display:none\}/.test(inline));
   win.close();
 }
 
@@ -831,27 +831,32 @@ console.log('\u2500'.repeat(66));
   const { win, doc } = await loadPage('topics/vectors.html');
   await frames(win, 4);
   eq('detail mode defaults to technical', win.document.documentElement.dataset.detail, 'on');
-  ok('cold visits paint the branded boot overlay', win.document.documentElement.classList.contains('boot-cold') &&
-    !!doc.getElementById('bootOverlay') && doc.querySelectorAll('#bootOverlay .bo-chip').length === 3);
+  ok('every visit paints the branded boot overlay until scripts+equations finish',
+    !!doc.getElementById('bootOverlay') &&
+    [...doc.querySelectorAll('#bootOverlay .bo-chip')].map(c => c.dataset.stage).join(',') === 'shell,scripts,equations');
   await new Promise(r => setTimeout(r, 1100));
   ok('overlay unmounts once every real stage completes', doc.getElementById('bootOverlay') === null);
-  ok('a warm flag is stored so repeat visits skip the shell', win.localStorage.getItem('emc.booted') === '1');
-  eq('boot strip ships three honest stage chips', doc.querySelectorAll('#bootStrip .boot-chip').length, 3);
+  ok('the shell stays until ALL defer scripts executed (boot) and above-fold maths typeset',
+    doc.querySelectorAll('#bootOverlay .bo-chip.done').length === 3 || doc.getElementById('bootOverlay') === null);
+  eq('boot strip ships the two post-boot stage chips', doc.querySelectorAll('#bootStrip .boot-chip').length, 2);
   const btn = doc.getElementById('detailToggle');
   ok('toggle is an accessible switch', btn.getAttribute('role') === 'switch' && btn.getAttribute('aria-checked') === 'true');
   win.__marker = 'alive';
   click(win, btn);
+  await new Promise(r => setTimeout(r, 260));      // 80 ms fade-out, then the flip
   eq('toggle flips the html level attribute', win.document.documentElement.dataset.detail, 'off');
   eq('switch state exposed to assistive tech', btn.getAttribute('aria-checked'), 'false');
   ok('preference persisted', /"detail":"off"/.test(win.localStorage.getItem('emc.prefs.v1') || ''), win.localStorage.getItem('emc.prefs.v1'));
   eq('no reload: page state survived the toggle', win.__marker, 'alive');
   click(win, btn);
+  await new Promise(r => setTimeout(r, 260));
   eq('toggle back to technical', win.document.documentElement.dataset.detail, 'on');
+  ok('fade class is cleaned up after the swap', !win.document.documentElement.classList.contains('detail-fade'));
   await new Promise(r => setTimeout(r, 900));
   ok('idle prefetch offers the next topic page',
     !!doc.querySelector('link[rel="prefetch"][href$="fluids.html"]'));
   await new Promise(r => setTimeout(r, 800));
-  eq('boot strip completes all three stages', doc.querySelectorAll('#bootStrip .boot-chip.done').length, 3);
+  eq('boot strip completes both stages', doc.querySelectorAll('#bootStrip .boot-chip.done').length, 2);
   ok('boot strip unmounts once complete', doc.getElementById('bootStrip').hidden === true);
   await new Promise(r => setTimeout(r, 900));
   ok('chunked idle typesetting finishes every equation',
@@ -863,9 +868,12 @@ console.log('\u2500'.repeat(66));
   const w2 = await loadPage('topics/waves.html');
   await frames(w2.win, 3);
   setRange(w2.win, 'wave-f', 2.5);
+  const syBefore = w2.win.scrollY;
   click(w2.win, w2.win.document.getElementById('detailToggle'));
+  await new Promise(r => setTimeout(r, 260));
   eq('slider value survives the toggle', w2.win.document.getElementById('wave-f').value, '2.5');
   eq('physics readout survives the toggle', w2.win.document.getElementById('wave-v').textContent, '5.00 m/s');
+  ok('scroll position survives the toggle', Math.abs(w2.win.scrollY - syBefore) < 400, `${syBefore} -> ${w2.win.scrollY}`);
   w2.win.close();
 
   for (const f of ['index.html', 'quiz.html', 'topics/vectors.html', 'topics/fluids.html',

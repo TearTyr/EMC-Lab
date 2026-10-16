@@ -383,6 +383,33 @@ async function guard(browser) {
     check('essential motion keeps 1 chain', await sampleRaf(page, 1500), 1);
     await page.close();
   }
+  for (const url of ['index.html', 'topics/current.html']) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
+    await page.evaluateOnNewDocument(() => {
+      window.__cls = 0;
+      new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; })
+        .observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
+    await sleep(3000);
+    const cls = await page.evaluate(() => +window.__cls.toFixed(4));
+    const okCls = cls < 0.01;
+    console.log(`${okCls ? '  \u2713' : '  \u2717'} unexpected CLS on ${url}: ${cls} (< 0.01)`);
+    if (!okCls) fails.push('cls:' + url);
+    // sticky header must never swallow an anchor target
+    const clear = await page.evaluate(() => {
+      const el = document.querySelector('[id][class*="h-sec"], #check, #ohm');
+      if (!el) return true;
+      el.scrollIntoView();
+      const hb = document.querySelector('.site-header').getBoundingClientRect().bottom;
+      return el.getBoundingClientRect().top >= hb - 2;
+    });
+    const okAnchor = clear === true;
+    console.log(`${okAnchor ? '  \u2713' : '  \u2717'} anchor targets clear the sticky header on ${url}`);
+    if (!okAnchor) fails.push('anchor:' + url);
+    await page.close();
+  }
   if (fails.length) { console.error(`guard FAILED: ${fails.join(', ')}`); process.exit(1); }
   console.log('guard OK');
 }

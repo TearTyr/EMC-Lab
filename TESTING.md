@@ -207,7 +207,30 @@ Open `index.html` (or `http://localhost:8000`) and work top to bottom.
 - [ ] `/api/...` returns 404 (the backend module was removed — nothing should answer there)
 - [ ] Progress ring, quiz scoring and localStorage work exactly as on localhost
 
-### 2.8 Quiz & progress
+### 2.8 Boot overlay & Detail Mode
+- [ ] Cold visit (private window): the branded shell (mascot, wordmark, three
+      stage chips, bar) paints before or with first content and fades out once
+      the chips tick; it never blocks clicks afterwards (node removed)
+- [ ] Repeat visit: the shell still appears briefly and exits right after the
+      scripts have executed (no warm-skip any more, per owner spec)
+- [ ] Throttled network (DevTools 4G): the shell stays visible while scripts
+      download; chips tick layout → scripts → equations in order
+- [ ] JavaScript disabled: no shell at all (noscript rule), prose still reads
+- [ ] Reduced motion: shell shows without bob/bar animation, still exits
+- [ ] Details toggle: flip ON/OFF mid-session - explanations cross-fade (~160 ms),
+      the paragraph under your eyes stays under your eyes (scroll-anchor
+      compensation), and explanations swap instantly afterwards;
+- [ ] Details toggle (reduced motion): flip is instant, no fade
+      sims keep their state (slider values, drag positions), no reload, no
+      network requests; the choice survives refresh and navigation
+- [ ] Layout stability: DevTools Performance > Experience on a cold 4G-throttled
+      load shows no unexpected layout shifts (boot chips must not change width
+      when they tick); flipping Details produces no shift entries without a
+      recent input
+- [ ] Keyboard: Tab reaches the Details switch; Space/Enter flips it; the
+      focus ring is visible; screen readers hear "switch, checked/unchecked"
+
+### 2.9 Quiz & progress
 - [ ] 30 questions render; each shows its topic tag
 - [ ] Answering updates the "n of 30 answered" bar and starts the quiz clock; the score card
       shows total time, seconds-per-question and best streak
@@ -235,7 +258,7 @@ Open `index.html` (or `http://localhost:8000`) and work top to bottom.
 - [ ] Reloading the page preserves progress (localStorage); in private/incognito mode a notice explains
       that progress will not persist, and nothing errors
 
-### 2.9 Cross-browser (optional — untested by the harness)
+### 2.10 Cross-browser (optional — untested by the harness)
 The automated harness runs Chrome only. If Firefox or Edge are handy, repeating
 §2.1–2.6 there is a bonus, never a requirement; no browser but Chrome has ever
 been verified and no doc should claim otherwise:
@@ -244,7 +267,7 @@ been verified and no doc should claim otherwise:
 - [ ] no console errors or warnings (DevTools → Console)
 - [ ] `prefers-reduced-motion` enabled: reveal animations and decorative motion stop, sims still work
 
-### 2.10 Accessibility spot checks
+### 2.11 Accessibility spot checks
 - [ ] skip link appears on first `Tab` and jumps to the main content
 - [ ] page reads sensibly with a screen reader: headings in order, canvases announced by their labels
 - [ ] colour is never the only signal (correct/incorrect quiz options also carry ✓/✗ text)

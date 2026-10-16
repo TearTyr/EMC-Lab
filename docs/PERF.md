@@ -227,3 +227,32 @@ invisible; reduced-motion only affects users who opt in).
    or tool (task manager screenshot, hosting dashboard), a human should re-check
    that source against §4; runtime measurements rule out tab heap, backing
    stores and leaks by two orders of magnitude.
+
+---
+
+## 9. Layout stability (stability-first pass)
+
+Method: `tools/perf-probe10.mjs` — `layout-shift` entries with source nodes,
+cold 4G-emulated (150 ms RTT, 1.6 Mb/s) and warm, desktop 1280×900 DPR1 and
+mobile 390×844 DPR3, plus a two-flip Detail-Mode cycle per page. Shifts with
+`hadRecentInput` are reported separately because the CLS specification excludes
+input-attributed shifts (they are expected movement, not instability).
+
+Baseline (commit 3a4ad60) and after (stability pass):
+
+| Scenario | Before | After |
+|---|---|---|
+| Unexpected CLS on load, all pages/profiles | 0 (0.0004 mobile: boot-chip glyph width) | **0** (glyph space reserved) |
+| Detail-Mode flip, unexpected CLS | 0 (all flip shifts are input-attributed) | **0** |
+| Detail-Mode flip, *perceived* reading jump | content above/below viewport moved under the reader (0.04 desktop / 0.14–0.17 mobile of input-attributed shift) | **scroll-anchor compensation**: the element under the reading position keeps its viewport offset (same-frame `scrollTo` delta), plus an 80+80 ms opacity cross-fade (PRM: instant) |
+| Sticky header vs anchor targets | clear (scroll-margin) | clear — now guard-enforced (`perf:guard`) |
+| 320/390 px header | – | brand / Details toggle / burger: no overlap, no horizontal scroll (measured rects) |
+
+Fixes: reserved `✓` glyph width on boot chips (`.boot-chip::after`
+visibility-toggle), `elementFromPoint`-based scroll compensation + opacity
+cross-fade in `UI.initDetailToggle`, CLS + anchor-clearance checks added to
+`bun run perf:guard`. Sim geometry was already stable: fixed-height canvas
+plates (`.sim-canvas`), backing store only reallocated on real size/DPR
+changes, state (sliders, selections, sim time) never reset by resize or mode
+swap — smoke-asserted (`slider value survives the toggle`, circuit/ohm
+readouts unchanged).

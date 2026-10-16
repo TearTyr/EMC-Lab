@@ -5,6 +5,17 @@ Commits: `e608aec` (startup system), `9bf4d07` + follow-ups (Detail Mode).
 
 ## 1. What was implemented
 
+### 1.0 Boot overlay (the loading screen)
+Every visit - cold or repeat - paints a branded full-viewport shell from inline
+markup+style: mascot, wordmark, three honest chips (layout / scripts /
+equations) and an indeterminate bar. Exit contract (owner spec): **all `<script>`
+tags loaded and executed** - true at `boot()`, since every script is `defer` -
+**plus the above-fold equations typeset**, then a 450 ms minimum visible time
+(`OVERLAY_MIN_MS`, tunable) and a 280 ms opacity fade; the node is removed after.
+Measured: scripts-executed 248 ms cold / 216 ms warm, overlay gone ~1.0 s /
+~0.97 s (local server, desktop). A 6 s inline failsafe and a `<noscript>` rule
+guarantee it can never trap a user; fixed overlay ⇒ 0 CLS; PRM disables bob/bar.
+
 ### 1.1 Native staged boot indicator (no fake progress)
 A fixed overlay strip under the sticky header (`#bootStrip`, `.boot-chip`s:
 layout / equations / simulations). Each chip flips **only when the real work

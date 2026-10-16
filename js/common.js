@@ -425,27 +425,40 @@ window.EMC = (function () {
   };
 
   /* ------------------------------------------------------------------------ 6c. Boot stages (honest, event-driven loading indicator) ------------------------------------------------------------------------ */
-  const BOOT_STAGES = ['shell', 'equations', 'sims'];
+  /* Stages flip only when the REAL work completes - never a fake percentage.
+     The overlay's exit contract is exactly what the owner asked for: every
+     <script> on the page loaded AND executed (true by the time boot() runs,
+     since all scripts are defer) plus the above-fold equations typeset.
+     The in-page strip keeps tracking the lazy sims afterwards. */
+  const BOOT_STAGES = ['shell', 'scripts', 'equations', 'sims'];
+  const OVERLAY_STAGES = ['shell', 'scripts', 'equations'];
+  const OVERLAY_MIN_MS = 450;          // long enough to read as a screen, not a flicker
   const bootDone = {};
-  /* Flip a stage chip when the REAL work completes - never a fake percentage. */
+  let bootMark = 0, overlayClosing = false;
+  function closeOverlay() {
+    const ov = document.getElementById('bootOverlay');
+    if (!ov || overlayClosing) return;
+    overlayClosing = true;
+    const wait = Math.max(0, OVERLAY_MIN_MS - (performance.now() - bootMark));
+    setTimeout(() => {
+      ov.classList.add('hide');
+      ov.setAttribute('aria-hidden', 'true');
+      setTimeout(() => ov.remove(), 320);
+    }, wait);
+  }
   function bootStage(name) {
     if (bootDone[name]) return;
     bootDone[name] = true;
+    if (!bootMark) bootMark = performance.now();
     document.querySelectorAll(`[data-stage="${name}"]`).forEach(c => c.classList.add('done'));
+    if (OVERLAY_STAGES.every(s => bootDone[s])) {
+      document.dispatchEvent(new CustomEvent('emc:booted'));
+      closeOverlay();
+    }
     const strip = document.getElementById('bootStrip');
     if (strip && BOOT_STAGES.every(s => bootDone[s])) {
       strip.classList.add('done');
       setTimeout(() => { strip.hidden = true; }, 500);
-    }
-    if (BOOT_STAGES.every(s => bootDone[s])) {
-      document.dispatchEvent(new CustomEvent('emc:booted'));
-      const ov = document.getElementById('bootOverlay');
-      if (ov) {
-        ov.classList.add('hide');
-        ov.setAttribute('aria-hidden', 'true');
-        setTimeout(() => ov.remove(), 320);
-      }
-      try { localStorage.setItem('emc.booted', '1'); } catch (e) { /* private mode: fine */ }
     }
   }
 
@@ -778,10 +791,32 @@ window.EMC = (function () {
       };
       apply();
       if (btn) btn.addEventListener('click', () => {
-        root.dataset.detail = root.dataset.detail === 'off' ? 'on' : 'off';
-        Prefs.set('detail', root.dataset.detail);
-        apply();
-        document.dispatchEvent(new CustomEvent('emc:detail', { detail: root.dataset.detail }));
+        /* Swap explanation levels WITHOUT moving the reader: capture the
+           element under the reading position, flip, then compensate the
+           reflow inside the same frame so no layout shift is observable. */
+        const headerBottom = (document.querySelector('.site-header') || {}).getBoundingClientRect
+          ? document.querySelector('.site-header').getBoundingClientRect().bottom : 60;
+        const anchorEl = (typeof document.elementFromPoint === 'function')
+          ? document.elementFromPoint(Math.round(window.innerWidth / 2), Math.round(headerBottom) + 28)
+          : null;
+        const topBefore = anchorEl ? anchorEl.getBoundingClientRect().top : 0;
+        const sy = window.scrollY;
+        const flip = () => {
+          root.dataset.detail = root.dataset.detail === 'off' ? 'on' : 'off';
+          Prefs.set('detail', root.dataset.detail);
+          apply();
+          if (anchorEl && anchorEl.isConnected) {
+            const d = anchorEl.getBoundingClientRect().top - topBefore;
+            if (Math.abs(d) > 1) window.scrollTo(0, Math.max(0, sy + d));
+          }
+          document.dispatchEvent(new CustomEvent('emc:detail', { detail: root.dataset.detail }));
+        };
+        if (EMC.reducedMotion) { flip(); return; }     // no fade for reduced motion
+        root.classList.add('detail-fade');              // 80 ms out
+        setTimeout(() => {
+          flip();
+          requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('detail-fade')));
+        }, 80);
       });
     },
 
@@ -985,6 +1020,9 @@ window.EMC = (function () {
     UI.initBootStrip();
     UI.initPrefetch();
     bootStage('shell');
+    // boot() only runs after EVERY defer script has been fetched and executed,
+    // so this chip is the honest "all JS loaded" signal.
+    bootStage('scripts');
     loadLicensedFont();
     // Typeset what the reader can see right now; the rest waits for idle time
     // so boot never pays for equations below the fold.
