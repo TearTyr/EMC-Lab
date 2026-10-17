@@ -46,7 +46,8 @@
     const chosen = S.answers.has(q.id) ? S.answers.get(q.id) : -1;
     const isMarked = S.marked.has(q.id);
     const correct = S.marked.get(q.id);
-    const topicClass = { vectors: 'tag-cyan', fluids: 'tag-emerald', heat: 'tag-rose', waves: 'tag-violet', current: 'tag-amber' }[q.topic] || '';
+    const ch = (window.EMC_REGISTRY || {}).chapter ? EMC_REGISTRY.chapter(q.topic) : null;
+    const topicClass = (ch && ch.tagClass) || '';
 
     const opts = q.options.map((text, i) => {
       let cls = 'opt';
@@ -320,8 +321,8 @@
     const band = bandFor(pct);
     const prog = Progress.read();
 
-    // per-topic breakdown
-    const topics = ['vectors', 'fluids', 'heat', 'waves', 'current'];
+    // per-chapter breakdown (registry order)
+    const topics = EMC_REGISTRY.chapters.map(c => c.id);
     const rows = topics.map(t => {
       const qs = scored.filter(q => q.topic === t);
       if (!qs.length) return '';
@@ -339,7 +340,7 @@
     // The home dashboard promises that a pass (>= 70%) ticks all five topics.
     // Say so out loud at the moment it happens instead of letting it be silent.
     const passNote = pct >= 70
-      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all five topics
+      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all three chapters
            as studied on your dashboard \u2014 a pass means the whole course has been covered.
            Un-tick any topic with the button at the end of its page if you would rather keep
            working on it.</p>`
@@ -486,8 +487,8 @@
 
     // 2. horizontal bars: percentage per topic
     // short axis labels: the full names clip on narrow canvases
-    const SHORT_TOPIC = { vectors: 'Vectors', fluids: 'Fluids', heat: 'Heat', waves: 'Waves', current: 'Electricity' };
-    const topics = ['vectors', 'fluids', 'heat', 'waves', 'current'];
+    const topics = EMC_REGISTRY.chapters.map(c => c.id);
+    const SHORT_TOPIC = topics.reduce((o, id) => (o[id] = EMC_REGISTRY.chapter(id).short || id, o), {});
     const labels = [], vals = [];
     topics.forEach(t => {
       const qs = scored.filter(q => q.topic === t);
@@ -526,11 +527,8 @@
   }
 
   /* ---- toolbar --------------------------------------------------------- */
-  const TOPIC_IDS = ['vectors', 'fluids', 'heat', 'waves', 'current'];
-  const TOPIC_NAMES = {
-    vectors: 'Measurement & vectors', fluids: 'Fluids',
-    heat: 'Temperature & heat', waves: 'Waves & sound', current: 'Electricity'
-  };
+  const TOPIC_IDS = EMC_REGISTRY.chapters.map(c => c.id);
+  const TOPIC_NAMES = TOPIC_IDS.reduce((o, id) => (o[id] = EMC_REGISTRY.chapter(id).title, o), {});
 
   /* Keep ?topic= in the address bar truthful: every topic page's "Quiz this
      topic" button deep-links here, and changing the filter by hand updates the

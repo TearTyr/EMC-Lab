@@ -1,243 +1,190 @@
-/* Quiz bank: 30 multiple-choice questions with worked explanations.
+/* Quiz bank: 24 multiple-choice questions with worked explanations.
    Schema: { id, topic, label, q, options[4], answer (0-based), explain }.
-   Coverage: vectors 6 · fluids 6 · heat 6 · waves 6 · current 6. Exactly four
-   options per question (js/quiz.js prints key labels A–D from that). */
+   Coverage: current 8 · efield 8 · magind 8 - exactly eight per chapter.
+   Displayed totals are derived from BANK.length, never hand-maintained. */
 window.EMC_QUIZ = [
-
-  /* ---------------- Topic 1: measurement & vectors ---------------------- */
   {
-    id: 1, topic: 'vectors', label: 'Measurement & vectors',
-    q: 'Which one of these is an SI <strong>base</strong> unit?',
-    options: ['newton (N)', 'joule (J)', 'kilogram (kg)', 'watt (W)'],
-    answer: 2,
-    explain: 'The kilogram is one of the seven SI base units (with the metre, second, ampere, kelvin, mole and candela). The newton, joule and watt are all <b>derived</b> units: 1 N = 1 kg·m/s², 1 J = 1 N·m, 1 W = 1 J/s. Every derived unit can be broken down into base units — that is the whole idea of dimensional analysis.'
-  },
-  {
-    id: 2, topic: 'vectors', label: 'Measurement & vectors',
-    q: 'A quantity is measured as 5 kg·m/s². Which unit is exactly equivalent to it?',
-    options: ['5 N', '5 J', '5 W', '5 Pa'],
-    answer: 0,
-    explain: 'Force has dimensions [M][L][T]<sup>−2</sup>, and the newton is <b>defined</b> as 1 N = 1 kg·m/s², so 5 kg·m/s² = <b>5 N</b>. The joule is kg·m²/s² (one power of length more), the watt is kg·m²/s³ and the pascal is kg/(m·s²) — dimensional analysis rules all three out instantly.'
-  },
-  {
-    id: 3, topic: 'vectors', label: 'Measurement & vectors',
-    q: 'Vector <b>A</b> is 3 m due east and vector <b>B</b> is 4 m due north. The magnitude of A + B is:',
-    options: ['7 m', '5 m', '1 m', '12 m'],
-    answer: 1,
-    explain: 'Vectors add by <b>components</b>, not by magnitudes. The two are perpendicular, so |A + B| = √(3² + 4²) = √25 = <b>5 m</b> — the classic 3-4-5 triangle — pointing 53.1° north of east. Adding 3 + 4 = 7 would only be correct if both pointed the same way.'
-  },
-  {
-    id: 4, topic: 'vectors', label: 'Measurement & vectors',
-    q: 'Two displacement vectors have magnitudes 6 m and 8 m. Their resultant CANNOT be:',
-    options: ['14 m', '10 m', '2 m', '1 m'],
-    answer: 3,
-    explain: 'The resultant of two vectors ranges between |8 − 6| = <b>2 m</b> (pointing in opposite directions) and 8 + 6 = <b>14 m</b> (same direction), with every value in between reachable at some angle: 10 m happens at 90° (√(36+64)). <b>1 m is outside that window</b>, so it is impossible.'
-  },
-  {
-    id: 5, topic: 'vectors', label: 'Measurement & vectors',
-    q: 'Which of these quantities is a vector?',
-    options: ['temperature', 'mass', 'velocity', 'time'],
-    answer: 2,
-    explain: '<b>Velocity</b> has both magnitude (speed) and direction, and velocities add by components — that makes it a vector. Temperature, mass and time have magnitude only: they are <b>scalars</b>. (Displacement, force, acceleration and momentum are the other vectors you will meet most.)'
-  },
-  {
-    id: 6, topic: 'vectors', label: 'Measurement & vectors',
-    q: 'A vector has components A<sub>x</sub> = −3 and A<sub>y</sub> = +4. Its magnitude and direction are:',
-    options: ['5, in the first quadrant', '5, in the second quadrant',
-              '7, in the second quadrant', '1, along the x-axis'],
-    answer: 1,
-    explain: '|A| = √(A<sub>x</sub>² + A<sub>y</sub>²) = √(9 + 16) = <b>5</b>. A negative x with a positive y places the arrow in the <b>second quadrant</b>, at tan<sup>−1</sup>(4/3) = 53.1° above the −x axis (126.9° from +x). Signs of the components tell you the quadrant; magnitudes alone never can.'
-  },
-
-  /* ---------------- Topic 2: fluids -------------------------------------- */
-  {
-    id: 7, topic: 'fluids', label: 'Fluids',
-    q: 'An object of mass 400 kg occupies a volume of 0.5 m³. Its density is:',
-    options: ['200 kg/m³', '800 kg/m³', '0.00125 kg/m³', '400.5 kg/m³'],
-    answer: 1,
-    explain: 'ρ = m/V = 400/0.5 = <b>800 kg/m³</b>. Since that is less than water’s 1000 kg/m³, this object floats in water — with 80% of its volume submerged, as the buoyancy simulator shows.'
-  },
-  {
-    id: 8, topic: 'fluids', label: 'Fluids',
-    q: 'A diver descends to 10 m in fresh water. Taking P<sub>atm</sub> ≈ 101 kPa, ρ = 1000 kg/m³ and g = 9.8 m/s², the ABSOLUTE pressure on the diver is about:',
-    options: ['98 kPa', '101 kPa', '199 kPa', '10 kPa'],
-    answer: 2,
-    explain: 'P = P<sub>0</sub> + ρgh = 101 kPa + (1000)(9.8)(10) = 101 + 98 = <b>199 kPa</b> — almost exactly two atmospheres. The 98 kPa answer is only the <i>gauge</i> pressure (the water’s contribution); absolute pressure always adds the air pressing on the surface. Every extra 10 m of water adds roughly one atmosphere.'
-  },
-  {
-    id: 9, topic: 'fluids', label: 'Fluids',
-    q: 'A block floats in water with exactly HALF its volume submerged. The density of the block is:',
-    options: ['2000 kg/m³', '1000 kg/m³', '500 kg/m³', 'impossible to tell without the block’s mass'],
-    answer: 2,
-    explain: 'Floating means weight = buoyant force: ρ<sub>obj</sub>Vg = ρ<sub>water</sub>V<sub>sub</sub>g. The volumes ratio gives ρ<sub>obj</sub> = ρ<sub>water</sub>·(V<sub>sub</sub>/V) = 1000 × ½ = <b>500 kg/m³</b>. A floating body always sinks to exactly the depth where the displaced fluid weighs as much as the body — which is why the submerged fraction <i>is</i> the density ratio.'
-  },
-  {
-    id: 10, topic: 'fluids', label: 'Fluids',
-    q: 'A rock is dropped into a deep lake and sinks. As it goes deeper (still fully underwater), the buoyant force on it:',
-    options: ['increases, because pressure grows with depth',
-              'decreases, because it is farther from the surface',
-              'stays the same, because it always displaces the same volume of water',
-              'becomes zero at the bottom'],
-    answer: 2,
-    explain: 'F<sub>B</sub> = ρ<sub>fluid</sub>·V<sub>displaced</sub>·g depends only on the <b>fluid</b> and the <b>displaced volume</b> — not on depth. A fully submerged rock displaces its own volume wherever it is, so F<sub>B</sub> is constant. Higher pressure at depth pushes on every side equally; only the top-bottom <i>difference</i> makes buoyancy, and that difference is depth-independent for an incompressible fluid. (At the very bottom the floor adds a normal force — the buoyancy itself is unchanged.)'
-  },
-  {
-    id: 11, topic: 'fluids', label: 'Fluids',
-    q: 'Air flows FASTER over the curved top surface of an aeroplane wing than under the flat bottom. By Bernoulli’s principle, the pressure on top is:',
-    options: ['higher than below, pushing the wing down',
-              'lower than below, so the wing is pushed up',
-              'the same — pressure does not depend on speed',
-              'zero, because the air has no time to press'],
-    answer: 1,
-    explain: 'Bernoulli: along a streamline P + ½ρv² is constant, so <b>faster flow ⇒ lower pressure</b>. The top surface runs at higher v and lower P; the higher pressure underneath pushes up — that pressure difference is lift. (Real wings also deflect air downward — Newton III gives the same answer from the other side.)'
-  },
-  {
-    id: 12, topic: 'fluids', label: 'Fluids',
-    q: 'A cargo ship is made of steel, which is about 8 times denser than water. Why does it float?',
-    options: ['Steel becomes lighter when wet',
-              'The ship’s engines push it up',
-              'Its hull encloses air, so the ship’s AVERAGE density is below that of water',
-              'Ocean water is denser than steel'],
-    answer: 2,
-    explain: 'Buoyancy cares about the <b>average</b> density of the whole floating body, not the material it is made of. The hull is mostly air, so mass/total-volume < 1000 kg/m³, and the ship settles until it displaces its own weight of water. Load it past its marks and the average density rises above water’s — which is what “sinks” means.'
-  },
-
-  /* ---------------- Topic 3: temperature & heat -------------------------- */
-  {
-    id: 13, topic: 'heat', label: 'Temperature & heat',
-    q: 'Room temperature is often quoted as 68 °F. That is:',
-    options: ['68 °C', '20 °C', '293 °C', '36 °C'],
-    answer: 1,
-    explain: '°C = (°F − 32) × 5/9 = (68 − 32) × 5/9 = 36 × 5/9 = <b>20 °C</b>. Subtract 32 FIRST, then rescale — the 32 is an offset between the zero points, not part of the scale factor. In kelvin that is 293.15 K, which is why 293 °C looks familiar but is badly wrong.'
-  },
-  {
-    id: 14, topic: 'heat', label: 'Temperature & heat',
-    q: 'Convert 27 °C to the kelvin scale:',
-    options: ['246.15 K', '27 K', '300.15 K', '80.6 K'],
-    answer: 2,
-    explain: 'K = °C + 273.15, so 27 °C = <b>300.15 K</b> (300 K to three figures). The kelvin uses the same <i>step size</i> as Celsius — a 1 K rise is a 1 °C rise — but starts at absolute zero, where molecular motion reaches its quantum minimum. That is why kelvin is the unit every physics equation (PV = nRT, Stefan–Boltzmann…) demands.'
-  },
-  {
-    id: 15, topic: 'heat', label: 'Temperature & heat',
-    q: 'At what temperature do the Celsius and Fahrenheit scales read the SAME number?',
-    options: ['−40°', '0°', '32°', 'there is no such temperature'],
-    answer: 0,
-    explain: 'Set T = (T − 32) × 5/9 → 9T = 5T − 160 → 4T = −160 → <b>T = −40</b>. So −40 °C = −40 °F exactly — the one point where the two scales cross. (0 °C = 32 °F and 100 °C = 212 °F are the fixed points they were built from.)'
-  },
-  {
-    id: 16, topic: 'heat', label: 'Temperature & heat',
-    q: 'How much heat is needed to warm 2.0 kg of water by 10 °C? (c<sub>water</sub> = 4186 J/(kg·K))',
-    options: ['4186 J', '8372 J', '83 720 J', '418 600 J'],
-    answer: 2,
-    explain: 'Q = mcΔT = (2.0)(4186)(10) = <b>83 720 J ≈ 83.7 kJ</b>. Note ΔT in kelvin equals ΔT in Celsius, so no conversion is needed for a temperature <i>change</i>. Water’s huge c is why a kettle takes minutes for one cup — and why oceans moderate coastal climate.'
-  },
-  {
-    id: 17, topic: 'heat', label: 'Temperature & heat',
-    q: 'Equal masses of water and iron receive equal amounts of heat. Iron’s specific heat (450 J/kg·K) is far smaller than water’s (4186 J/kg·K). Which ends up hotter?',
-    options: ['the water', 'the iron', 'both reach the same temperature', 'it depends on the starting temperature'],
-    answer: 1,
-    explain: 'ΔT = Q/(mc): with Q and m equal, the temperature change is <b>inversely proportional to c</b>. Iron’s small specific heat means each joule buys it roughly nine times more temperature rise than water — so the <b>iron</b> ends up far hotter. That is why a hot frying pan handle scorches while the soup in it is still drinkable.'
-  },
-  {
-    id: 18, topic: 'heat', label: 'Temperature & heat',
-    q: 'Which mechanism of heat transfer works through a complete vacuum?',
-    options: ['conduction', 'convection', 'radiation', 'all three work in a vacuum'],
-    answer: 2,
-    explain: '<b>Radiation</b> is electromagnetic waves — it needs no material at all, which is how the Sun’s energy crosses 150 million km of empty space. Conduction needs contact between particles and convection needs a bulk-moving fluid, so both are impossible in a vacuum. A vacuum flask exploits exactly that: its double wall stops conduction and convection, and the silvered surface reflects radiation.'
-  },
-
-  /* ---------------- Topic 4: waves & sound ------------------------------- */
-  {
-    id: 19, topic: 'waves', label: 'Waves & sound',
-    q: 'A sound wave has frequency 50 Hz and wavelength 6.86 m. Its speed is:',
-    options: ['7.3 m/s', '137 m/s', '343 m/s', '0.14 m/s'],
-    answer: 2,
-    explain: 'v = fλ = 50 × 6.86 = <b>343 m/s</b> — the speed of sound in air at 20 °C. Wave speed is set by the <b>medium</b>; frequency is set by the <b>source</b>; the wavelength is whatever λ = v/f makes it. That is why your voice sounds higher-pitched but unchanged in speed when the air is cold… v drops, so λ shrinks.'
-  },
-  {
-    id: 20, topic: 'waves', label: 'Waves & sound',
-    q: 'Sound travelling through air is what type of wave?',
-    options: ['transverse — the air moves perpendicular to the wave',
-              'longitudinal — the air oscillates parallel to the direction of travel',
-              'a mix that alternates between the two each cycle',
-              'neither — sound is not a wave'],
-    answer: 1,
-    explain: 'Sound is <b>longitudinal</b>: layers of air alternately compress and rarefy along the direction the wave travels, like a slinky pushed end-to-end. A wave on a rope or string is <b>transverse</b> (motion ⊥ travel). Light is transverse too — and unlike sound, it needs no medium at all.'
-  },
-  {
-    id: 21, topic: 'waves', label: 'Waves & sound',
-    q: 'A wave keeps the same speed but its frequency doubles. Its wavelength:',
-    options: ['doubles', 'halves', 'stays the same', 'becomes four times larger'],
-    answer: 1,
-    explain: 'v = fλ with v fixed makes f and λ <b>inversely proportional</b>: double f ⇒ <b>halve λ</b>. On a string the speed is set by tension and mass-per-length, in air by temperature — the source cannot change it, so squeezing more cycles per second into the same speed means each cycle is shorter.'
-  },
-  {
-    id: 22, topic: 'waves', label: 'Waves & sound',
-    q: 'A wave has a frequency of 4 Hz. Its period is:',
-    options: ['4 s', '0.25 s', '2 s', '16 s'],
-    answer: 1,
-    explain: 'T = 1/f = 1/4 = <b>0.25 s</b>: each crest takes a quarter of a second to pass a fixed point. Period and frequency are reciprocals — one is “seconds per cycle”, the other “cycles per second”, and their product is always 1.'
-  },
-  {
-    id: 23, topic: 'waves', label: 'Waves & sound',
-    q: 'On the tone player, you raise a note’s frequency from 220 Hz to 440 Hz while keeping the amplitude the same. What do you hear?',
-    options: ['a louder sound', 'a quieter sound',
-              'a higher pitch, same loudness', 'the same pitch, but faster'],
-    answer: 2,
-    explain: '<b>Frequency is pitch; amplitude is loudness</b> — two independent controls. 220 → 440 Hz is exactly one octave up (an A3 becoming A4), and with amplitude untouched the loudness stays put. Human hearing covers roughly 20 Hz to 20 kHz; below that is infrasound, above it ultrasound.'
-  },
-  {
-    id: 24, topic: 'waves', label: 'Waves & sound',
-    q: 'A water wave has wavelength 10 m and period 0.02 s. Its speed is:',
-    options: ['0.2 m/s', '5 m/s', '500 m/s', '50 m/s'],
-    answer: 2,
-    explain: 'f = 1/T = 1/0.02 = 50 Hz, so v = fλ = 50 × 10 = <b>500 m/s</b> (equivalently v = λ/T = 10/0.02). Real ocean waves are far slower than this — but the arithmetic is the same: speed = one wavelength per period.'
-  },
-
-  /* ---------------- Topic 5: electricity --------------------------------- */
-  {
-    id: 25, topic: 'current', label: 'Electricity',
+    id: 1, topic: 'current', label: 'Circuits & Ohm’s law',
     q: 'A 12 V battery is connected across a 4 Ω resistor. The current is:',
     options: ['48 A', '3 A', '0.33 A', '8 A'],
     answer: 1,
     explain: 'Ohm’s law: I = V/R = 12/4 = <b>3 A</b>. (48 A comes from multiplying instead of dividing — the most common slip.)'
   },
   {
-    id: 26, topic: 'current', label: 'Electricity',
+    id: 2, topic: 'current', label: 'Circuits & Ohm’s law',
     q: 'Three resistors of 2 Ω, 3 Ω and 5 Ω are connected in SERIES. Their equivalent resistance is:',
     options: ['0.97 Ω', '10 Ω', '3.3 Ω', '30 Ω'],
     answer: 1,
     explain: 'Series resistances <b>add</b>: R<sub>eq</sub> = 2 + 3 + 5 = <b>10 Ω</b>. In series R<sub>eq</sub> is always larger than the largest single resistor.'
   },
   {
-    id: 27, topic: 'current', label: 'Electricity',
+    id: 3, topic: 'current', label: 'Circuits & Ohm’s law',
     q: 'A 6 Ω and a 3 Ω resistor are connected in PARALLEL. Their equivalent resistance is:',
     options: ['9 Ω', '4.5 Ω', '2 Ω', '18 Ω'],
     answer: 2,
     explain: '1/R<sub>eq</sub> = 1/6 + 1/3 = 1/6 + 2/6 = 3/6 = 1/2 ⇒ R<sub>eq</sub> = <b>2 Ω</b>. In parallel R<sub>eq</sub> is always <b>smaller</b> than the smallest branch — adding a path makes it easier for current to flow.'
   },
   {
-    id: 28, topic: 'current', label: 'Electricity',
+    id: 4, topic: 'current', label: 'Circuits & Ohm’s law',
     q: 'In a series circuit containing several different resistors, which quantity is the SAME through every resistor?',
     options: ['the voltage across it', 'the current through it', 'the power it dissipates', 'the charge stored in it'],
     answer: 1,
     explain: 'There is only one path, so the <b>current is identical</b> everywhere (charge is conserved — Kirchhoff’s current law). Voltages divide in proportion to R, so P = I²R differs too. Resistors do not store charge.'
   },
   {
-    id: 29, topic: 'current', label: 'Electricity',
+    id: 5, topic: 'current', label: 'Circuits & Ohm’s law',
     q: 'A 10 Ω resistor carries a current of 2 A. The power it dissipates is:',
     options: ['5 W', '20 W', '40 W', '0.4 W'],
     answer: 2,
     explain: 'P = I²R = (2)²(10) = <b>40 W</b>. Equivalently V = IR = 20 V and P = VI = 20 × 2 = 40 W. That is far above a standard ¼ W resistor — it would need a proper power resistor and a heat sink.'
   },
   {
-    id: 30, topic: 'current', label: 'Electricity',
-    q: 'A household circuit breaker “trips” (switches off) after you plug in a heater, a kettle and a microwave at once. What actually happened?',
-    options: ['The mains voltage rose until it became dangerous',
-              'Adding appliances in parallel lowered the equivalent resistance, so the total current exceeded the safe rating',
-              'One of the appliances broke the circuit',
-              'The electricity meter ran out of credit'],
+    id: 6, topic: 'current', label: 'Circuits & Ohm’s law',
+    q: 'A 12 V battery is connected across a 4 \u03A9 resistor. The current is:',
+    options: ['48 A', '3 A', '0.33 A', '8 A'],
     answer: 1,
-    explain: 'Every appliance is another <b>parallel</b> path across the same voltage, and parallel paths always lower R<sub>eq</sub>. With V fixed, I = V/R<sub>eq</sub> rises — and the cables would heat as I²R. The breaker opens before that heat becomes a fire. This is Topic 5’s parallel rule protecting your house.'
-  }
+    explain: 'Ohm\u2019s law: I = V/R = 12/4 = <b>3 A</b>. (48 A comes from multiplying instead of dividing \u2014 the most common slip.)'
+  },
+  {
+    id: 7, topic: 'current', label: 'Circuits & Ohm’s law',
+    q: 'Three resistors of 2 \u03A9, 3 \u03A9 and 5 \u03A9 are connected in SERIES. Their equivalent resistance is:',
+    options: ['0.97 \u03A9', '10 \u03A9', '3.3 \u03A9', '30 \u03A9'],
+    answer: 1,
+    explain: 'Series resistances <b>add</b>: R<sub>eq</sub> = 2 + 3 + 5 = <b>10 \u03A9</b>. In series R<sub>eq</sub> is always larger than the largest single resistor.'
+  },
+  {
+    id: 8, topic: 'current', label: 'Circuits & Ohm’s law',
+    q: 'A 6 \u03A9 and a 3 \u03A9 resistor are connected in PARALLEL. Their equivalent resistance is:',
+    options: ['9 \u03A9', '4.5 \u03A9', '2 \u03A9', '18 \u03A9'],
+    answer: 2,
+    explain: '1/R<sub>eq</sub> = 1/6 + 1/3 = 1/6 + 2/6 = 3/6 = 1/2 \u21D2 R<sub>eq</sub> = <b>2 \u03A9</b>. In parallel R<sub>eq</sub> is always <b>smaller</b> than the smallest branch \u2014 adding a path makes it easier for current to flow.'
+  },
+  {
+    id: 9, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'Two point charges, +2 \u00B5C and \u22122 \u00B5C, are 0.30 m apart. What is the magnitude of the force between them? (k = 8.99\u00D710<sup>9</sup> N\u00B7m\u00B2/C\u00B2)',
+    options: ['0.40 N, attractive', '0.40 N, repulsive', '4.0 N, attractive', '0.040 N, attractive'],
+    answer: 0,
+    explain: 'F = k|q<sub>1</sub>q<sub>2</sub>|/r\u00B2 = (8.99\u00D710<sup>9</sup>)(2\u00D710<sup>−6</sup>)(2\u00D710<sup>−6</sup>)/(0.30)\u00B2 = 0.399 \u2248 <b>0.40 N</b>. Opposite signs \u21D2 the force is <b>attractive</b>.'
+  },
+  {
+    id: 10, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'Electric field lines around an isolated NEGATIVE point charge\u2026',
+    options: ['point radially outward from the charge', 'point radially inward toward the charge',
+              'form closed circles around the charge', 'are parallel straight lines'],
+    answer: 1,
+    explain: 'By convention field lines start on positive charge and end on negative charge, so around a lone negative charge they point <b>radially inward</b>. A positive test charge placed nearby would be pulled toward it.'
+  },
+  {
+    id: 11, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'Two charges exert a force F on each other. The separation is doubled while the charges stay the same. The new force is:',
+    options: ['F/4', 'F/2', '2F', '4F'],
+    answer: 0,
+    explain: 'Coulomb\u2019s law is an <b>inverse-square</b> law: F \u221D 1/r\u00B2. Doubling r divides F by 2\u00B2 = 4, so the force becomes <b>F/4</b>.'
+  },
+  {
+    id: 12, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'A proton is released from rest in a uniform electric field that points to the right. It will:',
+    options: ['accelerate to the right', 'accelerate to the left',
+              'move right at constant speed', 'stay where it is'],
+    answer: 0,
+    explain: 'F = qE and q > 0 for a proton, so the force is <b>along</b> E \u2014 to the right. Released from rest it <b>accelerates</b> (it does not move at constant speed, because a net force acts on it).'
+  },
+  {
+    id: 13, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'Which pair of units are both valid for electric field strength?',
+    options: ['N/C and V/m', 'N\u00B7m and V\u00B7m', 'C/N and m/V', 'J/C and N\u00B7C'],
+    answer: 0,
+    explain: 'E = F/q gives <b>N/C</b>; E = V/d (uniform field) gives <b>V/m</b>. They are equivalent: 1 V/m = 1 J/(C\u00B7m) = 1 N/C. (J/C is the volt, not a field unit.)'
+  },
+  {
+    id: 14, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'An atom of carbon is electrically neutral. Why?',
+    options: ['It contains no charged particles at all',
+              'It has equal numbers of protons and electrons',
+              'Protons and electrons are the same particle',
+              'Its neutrons cancel out the protons'],
+    answer: 1,
+    explain: 'Neutrality is a <b>balance</b>, not an absence: six protons (+6e) and six electrons (\u22126e) sum to zero. Rub the atom\u2019s material and you move electrons around \u2014 that imbalance <i>is</i> static charge, and it is where Topic 1 begins.'
+  },
+  {
+    id: 15, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'Two equal positive point charges sit 1 m apart. Where is the electric field zero?',
+    options: ['midway between them', '1 m beyond either charge', 'nowhere', 'at both charges'],
+    answer: 0,
+    explain: 'By symmetry the two fields are equal and opposite <b>only at the midpoint</b>, so E = 0 there. The potential, however, is NOT zero there - it is the sum of two positive kq/r terms. Field zero, potential non-zero: exactly the distinction the explorer\u2019s A/B integral teaches.'
+  },
+  {
+    id: 16, topic: 'efield', label: 'Electric fields & Coulomb’s law',
+    q: 'Moving a test charge from A to B, the explorer reports −∫E·dr = +120 V. What is V(B) − V(A)?',
+    options: ['+120 V', '−120 V', '0 V', 'it depends on the path'],
+    answer: 0,
+    explain: 'By definition V(B) − V(A) = −∫<sub>A→B</sub> E·dr = <b>+120 V</b>. Electrostatic fields are conservative, so the straight-path value equals every other path - which is why the numeric Simpson integral and the analytic Σkq/r agree to display precision in the sim.'
+  },
+  {
+    id: 17, topic: 'magind', label: 'Magnetism & induction',
+    q: 'Outside a bar magnet, magnetic field lines run:',
+    options: ['from the south pole to the north pole', 'from the north pole to the south pole',
+              'only through the middle of the magnet', 'in straight lines that never curve'],
+    answer: 1,
+    explain: 'Outside the magnet the lines go <b>N \u2192 S</b>; inside the magnet they continue S \u2192 N, so every line is a <b>closed loop</b>. That is the graphical statement of \u201Cthere are no magnetic monopoles\u201D.'
+  },
+  {
+    id: 18, topic: 'magind', label: 'Magnetism & induction',
+    q: 'A charged particle moves PARALLEL to a uniform magnetic field. The magnetic force on it is:',
+    options: ['maximum', 'q v B', 'zero', 'perpendicular to the field'],
+    answer: 2,
+    explain: 'F = qvB sin\u03B8 and \u03B8 = 0\u00B0, so sin\u03B8 = 0 and <b>F = 0</b>. The particle continues in a straight line at constant speed. The force is largest when v \u22A5 B.'
+  },
+  {
+    id: 19, topic: 'magind', label: 'Magnetism & induction',
+    q: 'A positive charge moves to the right (+x) through a magnetic field pointing OUT of the page (+z). The force on it points:',
+    options: ['up (+y)', 'down (\u2212y)', 'to the right (+x)', 'out of the page (+z)'],
+    answer: 1,
+    explain: 'F = q v \u00D7 B. With v = x\u0302 and B = z\u0302: x\u0302 \u00D7 z\u0302 = \u2212y\u0302, so the force is <b>downward</b>. Right hand: fingers along v (right), curl them out of the page, and the thumb points down.'
+  },
+  {
+    id: 20, topic: 'magind', label: 'Magnetism & induction',
+    q: 'A charged particle moves in a circle at constant speed in a uniform magnetic field. Which statement is correct?',
+    options: ['The magnetic force does work on the particle, increasing its kinetic energy.',
+              'The magnetic force is always perpendicular to the velocity, so it does no work and only changes the direction of motion.',
+              'The particle must be accelerating in the direction of its velocity.',
+              'The radius of the circle is independent of the particle\u2019s mass.'],
+    answer: 1,
+    explain: 'F = qv \u00D7 B is always \u22A5 v, so F\u00B7v = 0: <b>no work, no change in speed or kinetic energy</b> \u2014 the force only bends the path. The radius r = mv/(|q|B) certainly depends on mass, and the acceleration is centripetal (inward), never along v.'
+  },
+  {
+    id: 21, topic: 'magind', label: 'Magnetism & induction',
+    q: 'A coil of 200 turns has a magnetic flux through each turn changing at 0.05 Wb/s. The induced EMF is:',
+    options: ['0.25 V', '10 V', '4000 V', '0.00025 V'],
+    answer: 1,
+    explain: 'Faraday\u2019s law: |EMF| = N\u00B7|d\u03A6/dt| = 200 \u00D7 0.05 = <b>10 V</b>. The EMF depends on the <b>rate of change</b> of flux, not on the flux itself.'
+  },
+  {
+    id: 22, topic: 'magind', label: 'Magnetism & induction',
+    q: 'Lenz\u2019s law states that the induced current flows in a direction such that it:',
+    options: ['reinforces the change in flux that produced it',
+              'opposes the change in flux that produced it',
+              'always flows clockwise',
+              'makes the net flux through the coil zero'],
+    answer: 1,
+    explain: 'The induced current <b>opposes the change</b> that created it (that is the minus sign in EMF = \u2212Nd\u03A6/dt). It opposes the <i>change</i>, not the flux itself \u2014 so it cannot make the total flux zero. This is energy conservation in disguise: you must do mechanical work against the opposition.'
+  },
+  {
+    id: 23, topic: 'magind', label: 'Magnetism & induction',
+    q: 'A bar magnet is pushed through a coil connected to a resistor. Which change would NOT alter the magnitude of the EMF induced in the coil?',
+    options: ['Moving the magnet faster', 'Using a coil with more turns',
+              'Using a stronger magnet', 'Increasing the resistance of the circuit'],
+    answer: 3,
+    explain: 'EMF = \u2212N d\u03A6/dt depends on turns, magnet strength and speed only. Changing <b>R</b> leaves the EMF alone but changes the induced <b>current</b> (I = EMF/R) and the power dissipated. Resistance shapes the current and the heating \u2014 never the EMF itself.'
+  },
+  {
+    id: 24, topic: 'magind', label: 'Magnetism & induction',
+    q: 'A strong magnet dropped down a vertical copper tube falls much more slowly than it would in free fall. Why?',
+    options: ['Copper is magnetic and attracts the magnet.',
+              'The moving magnet induces eddy currents in the tube whose fields oppose the motion (Lenz\u2019s law).',
+              'Air resistance inside the tube is much larger.',
+              'The magnet loses its magnetism inside copper.'],
+    answer: 1,
+    explain: 'The falling magnet changes the flux through each part of the conducting tube, driving <b>eddy currents</b>. By Lenz\u2019s law their field opposes the relative motion, giving an upward drag force. The lost gravitational potential energy appears as heat (I\u00B2R) in the copper \u2014 the same principle used in eddy-current brakes.'
+  },
 ];

@@ -5,6 +5,13 @@ window.EMC = (function () {
 
   /* ------------------------------------------------------------------------ 1. Physical constants (SI units, CODATA 2018 exact values where defined) ------------------------------------------------------------------------ */
   const CONST = {
+    /* Coulomb constant k = 1/(4*pi*eps0) [N m^2 C^-2]. Simulations run on this
+       full-precision value; anything PRINTED rounds to 8.988e9. */
+    K: 8.987551787e9,
+    /* Permeability of free space mu0 [T m/A] */
+    MU0: 1.25663706212e-6,
+    /* Electron mass [kg] */ M_ELECTRON: 9.1093837015e-31,
+    /* Proton mass [kg] */  M_PROTON: 1.67262192369e-27,
     /* Elementary charge e [C] (exact) — used by the electricity sims to
        express a current as a charge-carrier rate. */
     E: 1.602176634e-19,
@@ -388,6 +395,22 @@ window.EMC = (function () {
     ctx.restore();
   }
 
+  /* Draw a point charge as a flat sticker: pastel disc, cream ring, dark sign. No gradients and no glow, per the flat-art policy. */
+  function chargeGlyph(ctx, x, y, r, q, { pulse = 0 } = {}) {
+    const pos = q >= 0;
+    ctx.save();
+    ctx.fillStyle = pos ? '#f8aebe' : '#a8d3e0';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(246,241,229,.85)'; ctx.stroke();
+
+    // sign
+    ctx.strokeStyle = '#2b2d33'; ctx.lineWidth = Math.max(2, r * 0.18); ctx.lineCap = 'round';
+    const s = r * 0.46;
+    ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
+    if (pos) { ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x, y + s); ctx.stroke(); }
+    ctx.restore();
+  }
+
   /* ------------------------------------------------------------------------ 6. Storage wrapper — localStorage can throw (private mode, sandboxed iframe, file:// in some browsers), so we fall back to memory. ------------------------------------------------------------------------ */
   const store = (function () {
     let mem = {};
@@ -463,31 +486,66 @@ window.EMC = (function () {
   }
 
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
-  const TOPICS = ['vectors', 'fluids', 'heat', 'waves', 'current'];
-  const PROGRESS_KEY = 'emc.progress.v1';
+  /* Active chapter ids come from the registry - one source of truth. */
+  const TOPICS = (window.EMC_REGISTRY ? window.EMC_REGISTRY.chapters.map(c => c.id) : ['current', 'efield', 'magind']);
+  const PROGRESS_KEY = 'emc.progress.v2';
+  const LEGACY_KEY = 'emc.progress.v1';
+
+  /* Map a legacy v1 record onto the v2 shape. Only chapters with a genuine
+     content correspondence migrate: current->current, charges->efield, and
+     magind only when BOTH magnetism and induction were complete (a half-done
+     old pair must not fake a finished chapter). Unmappable old topics
+     (vectors/fluids/heat/waves) are dropped, never reinterpreted. Idempotent:
+     migrating an already-migrated record changes nothing. */
+  function migrateLegacy(p) {
+    const t = (p && p.topics) || {};
+    return {
+      topics: {
+        current: !!t.current,
+        efield: !!t.charges,
+        magind: !!(t.magnetism && t.induction)
+      },
+      quizBest: Number(p.quizBest) || 0,
+      quizAttempts: Number(p.quizAttempts) || 0,
+      quizLast: Number(p.quizLast) || 0,
+      quizHistory: Array.isArray(p.quizHistory) ? p.quizHistory.slice(-20) : [],
+      updatedAt: p.updatedAt || null
+    };
+  }
 
   const Progress = {
     /* @returns {{topics:Object<string,boolean>,quizBest:number,quizAttempts:number,quizLast:number,updatedAt:string}} */
     read() {
       const blank = {
-        topics: { vectors: false, fluids: false, heat: false, waves: false, current: false },
+        topics: TOPICS.reduce((o, id) => (o[id] = false, o), {}),
         quizBest: 0, quizAttempts: 0, quizLast: 0,
         quizHistory: [],          // [{ pct, at }] — newest last, capped at 20
         updatedAt: null
       };
       const raw = store.get(PROGRESS_KEY);
-      if (!raw) return blank;
-      try {
-        const p = JSON.parse(raw);
-        return {
-          topics: Object.assign(blank.topics, p.topics || {}),
-          quizBest: Number(p.quizBest) || 0,
-          quizAttempts: Number(p.quizAttempts) || 0,
-          quizLast: Number(p.quizLast) || 0,
-          quizHistory: Array.isArray(p.quizHistory) ? p.quizHistory.slice(-20) : [],
-          updatedAt: p.updatedAt || null
-        };
-      } catch (e) { return blank; }
+      if (raw) {
+        try {
+          const p = JSON.parse(raw);
+          return {
+            topics: Object.assign(blank.topics, p.topics || {}),
+            quizBest: Number(p.quizBest) || 0,
+            quizAttempts: Number(p.quizAttempts) || 0,
+            quizLast: Number(p.quizLast) || 0,
+            quizHistory: Array.isArray(p.quizHistory) ? p.quizHistory.slice(-20) : [],
+            updatedAt: p.updatedAt || null
+          };
+        } catch (e) { return blank; }
+      }
+      // No v2 yet: migrate a legacy v1 record if present, keeping a
+      // recoverable copy and leaving the original untouched.
+      const legacy = store.get(LEGACY_KEY);
+      if (!legacy) return blank;
+      let parsed;
+      try { parsed = JSON.parse(legacy); } catch (e) { return blank; }
+      const moved = migrateLegacy(parsed);
+      if (!store.get(PROGRESS_KEY + '.legacy')) store.set(PROGRESS_KEY + '.legacy', legacy);
+      this.write(moved);
+      return moved;
     },
     write(p) { p.updatedAt = new Date().toISOString(); store.set(PROGRESS_KEY, JSON.stringify(p)); },
     markTopic(id, done = true) {
@@ -542,8 +600,11 @@ window.EMC = (function () {
       }
 
       const num = (v, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0; };
+      if (src.topics && ('charges' in src.topics || 'vectors' in src.topics || 'magnetism' in src.topics)) {
+        src = migrateLegacy(src);          // importing an old export file
+      }
       const p = {
-        topics: { vectors: false, fluids: false, heat: false, waves: false, current: false },
+        topics: TOPICS.reduce((o, id) => (o[id] = false, o), {}),
         quizBest: num(src.quizBest, 100),
         quizAttempts: Math.round(num(src.quizAttempts, 1e6)),
         quizLast: num(src.quizLast, 100),
@@ -1048,7 +1109,7 @@ window.EMC = (function () {
     CONST, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, roundTo, mapRange, damp,
     eng, unit, fixed, setText, throttle,
-    Stage, roundRect, arrow, label, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
+    Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
     get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,

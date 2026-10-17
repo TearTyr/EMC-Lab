@@ -1,100 +1,95 @@
 /* Home page: animated travelling-wave hero (two superposed sine waves with oscillating medium particles, flat art) + progress dashboard driven by EMC.Progress, with JSON export/import so device-local progress can be carried to another machine. */
 (function () {
-  const { clamp, label, Progress } = EMC;
+  const { CONST, clamp, chargeGlyph, label, Progress } = EMC;
+  const k = CONST.K;
 
   /* ---------------------------------------------------------------- hero */
   const hero = document.getElementById('heroCanvas');
   if (hero) {
-    /* Two travelling waves y = A sin(kx - wt): a bright primary and a faint
-       harmonic ghost, plus dots that ride the primary wave to show that the
-       MEDIUM only oscillates while the PATTERN travels. */
-    const waves = [
-      { A: 0.30, lambda: 0.34, f: 0.55, color: 'rgba(168,211,224,.95)', width: 2.6 },
-      { A: 0.13, lambda: 0.17, f: 1.35, color: 'rgba(213,184,216,.55)', width: 1.8 }
+    const dipole = [
+      { q: 5, nx: 0.34, ny: 0.5 },
+      { q: -5, nx: 0.66, ny: 0.5 }
     ];
-    const waveY = (wv, xFrac, t, h) =>
-      h / 2 - wv.A * h * Math.sin(2 * Math.PI * (xFrac / wv.lambda - wv.f * t));
+    const PX_PER_M = 260;
+    let lines = [];                       // cached polylines (canvas px)
+
+    function fieldAt(x, y, w, h) {
+      let ex = 0, ey = 0;
+      for (const c of dipole) {
+        const dxm = (x - c.nx * w) / PX_PER_M;
+        const dym = (y - c.ny * h) / PX_PER_M;
+        const r2 = dxm * dxm + dym * dym;
+        if (r2 < 1e-6) continue;
+        const r = Math.sqrt(r2);
+        const E = k * (c.q * 1e-6) / r2;
+        ex += E * dxm / r; ey += E * dym / r;
+      }
+      return { ex, ey, mag: Math.hypot(ex, ey) };
+    }
+
+    /* Trace the field lines once so the animation loop only has to stroke them. */
+    function buildLines(w, h) {
+      lines = [];
+      const seeds = dipole.filter(c => c.q > 0);
+      const step = 3, maxSteps = 700;
+      for (const c of seeds) {
+        const cx = c.nx * w, cy = c.ny * h;
+        const n = 16;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          let x = cx + Math.cos(a) * 14, y = cy + Math.sin(a) * 14;
+          const pts = [[x, y]];
+          for (let s = 0; s < maxSteps; s++) {
+            const f = fieldAt(x, y, w, h);
+            if (f.mag < 1e-9) break;
+            x += (f.ex / f.mag) * step; y += (f.ey / f.mag) * step;
+            pts.push([x, y]);
+            if (x < -30 || x > w + 30 || y < -30 || y > h + 30) break;
+            let stop = false;
+            for (const o of dipole) {
+              if (o.q > 0) continue;
+              if (Math.hypot(x - o.nx * w, y - o.ny * h) < 14) { stop = true; break; }
+            }
+            if (stop) break;
+          }
+          if (pts.length > 4) lines.push(pts);
+        }
+      }
+    }
 
     const stage = new EMC.Stage(hero, (ctx, w, h, st) => {
       ctx.clearRect(0, 0, w, h);
-      const t = st.t;
+      if (!lines.length) buildLines(w, h);
 
-      // equilibrium line
+      // animated flow along the cached lines
       ctx.save();
-      ctx.setLineDash([4, 8]);
-      ctx.strokeStyle = 'rgba(148,163,184,.28)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
-      ctx.restore();
-
-      // the waves
-      waves.forEach(wv => {
-        ctx.save();
-        ctx.strokeStyle = wv.color; ctx.lineWidth = wv.width;
-        ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        ctx.beginPath();
-        for (let px = 0; px <= w; px += 3) {
-          const y = waveY(wv, px / w, t, h);
-          px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
-        }
+      ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+      ctx.setLineDash([7, 11]);
+      ctx.lineDashOffset = -st.t * 26;
+      lines.forEach((pts, i) => {
+        ctx.strokeStyle = `hsla(${186 + (i % 5) * 6} 90% 66% / ${0.30 + 0.12 * Math.sin(st.t * 1.4 + i)})`;
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let j = 1; j < pts.length; j++) ctx.lineTo(pts[j][0], pts[j][1]);
         ctx.stroke();
-        ctx.restore();
       });
-
-      // medium particles riding the primary wave: they only move vertically
-      const primary = waves[0];
-      ctx.save();
-      ctx.fillStyle = '#f6d36b';
-      const n = 16;
-      for (let i = 0; i <= n; i++) {
-        const xFrac = i / n;
-        const y = waveY(primary, xFrac, t, h);
-        ctx.globalAlpha = 0.55 + 0.45 * Math.abs(Math.sin(2 * Math.PI * (xFrac / primary.lambda - primary.f * t)));
-        ctx.beginPath(); ctx.arc(xFrac * w, y, 3.4, 0, Math.PI * 2); ctx.fill();
-      }
       ctx.restore();
 
-      // direction of travel
-      ctx.save();
-      ctx.strokeStyle = 'rgba(232,238,251,.7)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-      const ay = h * 0.14;
-      ctx.beginPath(); ctx.moveTo(w * 0.72, ay); ctx.lineTo(w * 0.86, ay); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(w * 0.86, ay); ctx.lineTo(w * 0.845, ay - 5);
-      ctx.moveTo(w * 0.86, ay); ctx.lineTo(w * 0.845, ay + 5);
-      ctx.stroke();
-      ctx.restore();
-      label(ctx, 'wave travels', w * 0.79, ay - 14, { color: 'rgba(169,186,214,.8)', size: 10.5, weight: '600' });
-      label(ctx, 'particles only oscillate', w * 0.2, h * 0.86, { color: 'rgba(169,186,214,.65)', size: 10.5, weight: '600' });
-
-      label(ctx, 'v = f\u03BB    \u00B7    Q = mc\u0394T    \u00B7    F_B = \u03C1Vg    \u00B7    V = IR', w / 2, h - 14,
+      // the two charges breathe gently
+      const pulse = 0.18 * Math.sin(st.t * 1.6);
+      dipole.forEach(c => {
+        chargeGlyph(ctx, c.nx * w, c.ny * h, 15, c.q, { pulse });
+      });
+      label(ctx, 'E = k q / r\u00B2    \u00B7    F = k q1 q2 / r\u00B2', w / 2, h - 16,
         { color: 'rgba(169,186,214,.75)', size: 11.5, weight: '600' });
-    }, { animate: false });
+    }, { animate: true });
 
-    // Start the hero loop only after the page's first paint work (fonts,
-    // KaTeX, first raster) has landed - removes the load-time stutter battle
-    // for the main thread. Reduced-motion users keep the static frame.
-    const startHero = () => { if (!EMC.reducedMotion) stage.start(); };
-    const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-    const loaded = document.readyState === 'complete' ? Promise.resolve() : new Promise(r => window.addEventListener('load', r, { once: true }));
-    // Sequence, don't overlap: the hero's first frames wait for (1) load,
-    // (2) the font-swap reflow and (3) the boot overlay's exit (emc:booted),
-    // so its first raster never shares a frame budget with the fade, the
-    // swap or the idle typesetter - the measured cause of load-time jitter.
-    const booted = new Promise(r => {
-      let done = false;
-      const fin = () => { if (!done) { done = true; r(); } };
-      document.addEventListener('emc:booted', fin, { once: true });
-      setTimeout(fin, 1500);                      // never stall the hero
-    });
-    Promise.all([loaded, fontsReady, booted]).then(startHero);
-
-    // nothing to cache per size — the wave is analytic — but keep the redraw tidy
+    // Rebuild the cached line geometry only when the canvas size really changes.
     let lastW = 0, lastH = 0;
     const checkSize = () => {
       const r = hero.getBoundingClientRect();
       const w = Math.round(r.width), h = Math.round(r.height);
       if (w !== lastW || h !== lastH) {
-        lastW = w; lastH = h;
+        lastW = w; lastH = h; lines = [];
         stage.resize(); stage.draw();
       }
     };
@@ -107,13 +102,7 @@
   const RING_R = 58, RING_C = 2 * Math.PI * RING_R;
   if (ring) { ring.style.strokeDasharray = `${RING_C.toFixed(1)}`; ring.style.strokeDashoffset = String(RING_C); }
 
-  const TOPIC_META = {
-    vectors: { title: 'Measurement & vectors', href: 'topics/vectors.html' },
-    fluids: { title: 'Fluids', href: 'topics/fluids.html' },
-    heat: { title: 'Temperature & heat', href: 'topics/heat.html' },
-    waves: { title: 'Waves & sound', href: 'topics/waves.html' },
-    current: { title: 'Electricity', href: 'topics/current.html' }
-  };
+  const TOPIC_META = EMC_REGISTRY.chapters.reduce((o, c) => (o[c.id] = { title: c.title, href: c.path }, o), {});
 
   function renderDashboard() {
     const p = Progress.read();
@@ -125,7 +114,7 @@
     setTxt('dashPct', `${pct}% complete`);
 
     const doneCount = EMC.TOPICS.filter(t => p.topics[t]).length;
-    const topicsLine = `${doneCount} of ${EMC.TOPICS.length} topics studied`;
+    const topicsLine = `${doneCount} of ${EMC.TOPICS.length} chapters studied`;
     setTxt('dashTopicsDone', topicsLine);      // dashboard definition list
     setTxt('dashTopicsChip', topicsLine);      // chip above the topic grid
     setTxt('dashQuizBest', p.quizAttempts ? `${p.quizBest}%` : 'not attempted');

@@ -39,6 +39,22 @@ const outDir = join(repoRoot, 'public');
 
 /* ------------------------------------------------------------------ config */
 
+// Active pages come from the single registry (js/registry.js) - never a
+// hand-maintained list. Archived material is deliberately excluded.
+{
+  const raw = readFileSync(join(repoRoot, 'js', 'registry.js'), 'utf8');
+  const start = raw.indexOf('{');
+  let depth = 0, end = -1;
+  for (let i = start; i < raw.length; i++) {
+    if (raw[i] === '{') depth++;
+    else if (raw[i] === '}') { depth--; if (!depth) { end = i; break; } }
+  }
+  globalThis.__REG = JSON.parse(raw.slice(start, end + 1));
+}
+const REGISTRY = globalThis.__REG;
+const CHAPTER_PAGES = REGISTRY.subjects.flatMap(s => s.chapters).map(c => c.path);
+const ORIGIN = REGISTRY.origin;
+
 // Single files copied from the repo root (the pages themselves).
 const COPY_FILES = [
   'index.html',
@@ -60,15 +76,12 @@ const MUST_EXIST = [
   'quiz.html',
   /* css/site.css, css/fonts.css, js/*.js exist under content-hashed names;
      checked separately below */
-  'topics/vectors.html',
-  'topics/fluids.html',
-  'topics/heat.html',
-  'topics/waves.html',
-  'topics/current.html',
+  ...CHAPTER_PAGES,
   'vendor/katex/katex.min.js',
   'vendor/katex/katex.min.css',
   'vendor/chart/chart.umd.min.js',
   'img/og-card.png',
+  'sitemap.xml',
   'vendor/fonts/g8321-100.woff2',
   'vendor/fonts/g8321-400.woff2',
   'vendor/fonts/g8321-700.woff2',
@@ -171,6 +184,15 @@ const hashed = {};
   cpSync(join(repoRoot, 'css'), join(outDir, 'css'), { recursive: true });
   rmSync(join(outDir, 'css/input.css'), { force: true });
   console.error('asset pipeline fell back to readable unhashed assets: ' + (err && err.message ? err.message : err));
+}
+
+// 3d. sitemap.xml generated from the registry (active pages only) -------------
+{
+  const urls = ['index.html', 'quiz.html', ...CHAPTER_PAGES]
+    .map(p => `  <url><loc>${ORIGIN}/${p === 'index.html' ? '' : p}</loc><changefreq>weekly</changefreq></url>`)
+    .join('\n');
+  writeFileSync(join(outDir, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 }
 
 // 4a. required assets -----------------------------------------------------------

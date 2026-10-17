@@ -1,10 +1,20 @@
-# EMC Lab — Interactive Physics Tutorial
+# EMC Lab — Interactive Electromagnetics Tutorial
 
-A responsive, interactive educational website for **Calculus-based Physics**, built for the
-**EMC group**. It teaches measurement & vectors, fluids, temperature & heat, waves & sound
-and electricity through written tutorials, **nine live simulations**, and a
-**30-question auto-graded quiz** with Chart.js score analytics. Fully static: no backend,
-no build step, no required dependencies.
+A responsive, interactive educational website for **Calculus-based Electromagnetics**, built
+for the **EMC group**. The course is a single subject in three chapters — **Circuits &
+Ohm's Law**, **Electric Fields & Coulomb's Law**, and **Magnetism & Induction** — taught
+through written tutorials, **six live simulations**, and a **24-question auto-graded quiz**
+with Chart.js score analytics. Fully static: no backend, no build step, no required
+dependencies.
+
+The earlier general-physics material (vectors, fluids, heat, waves) is not deleted: it lives
+under `archive/` and remains recoverable; retired general-physics quiz questions are kept in
+`archive/js/quiz-data-general-physics.js`.
+
+**Single source of truth:** `js/registry.js` defines the subject, its chapters, their paths,
+tags and simulations. Navigation, chapter counts, progress topics, quiz categories, the
+production page list and `sitemap.xml` are all derived from it — adding a future subject
+means adding an entry there plus its content files, never editing counters by hand.
 
 > Every number on every screen is computed from the real equations (the component rule,
 > Archimedes' principle, Bernoulli's equation, Q = mcΔT, v = fλ, Ohm's law). Nothing is
@@ -52,11 +62,10 @@ emc-physics-tutorial/
 │                                  progress dashboard, animated dipole hero
 ├── quiz.html                      Quiz page: toolbar, question list, score card
 ├── topics/
-│   ├── vectors.html               Topic 1 — SI units, dimensional analysis, vector addition
-│   ├── fluids.html                Topic 2 — pressure, Archimedes, continuity + Bernoulli
-│   ├── heat.html                  Topic 3 — temperature scales, Q = mcΔT, heat transfer
-│   ├── waves.html                 Topic 4 — wave anatomy, v = fλ, sound and pitch
-│   └── current.html               Topic 5 — Ohm's law, series/parallel, R-equivalent
+│   ├── current.html               Chapter 1 — Ohm's law, power, series/parallel, builder
+│   ├── efield.html                Chapter 2 — charge, Coulomb's law, fields, potential
+│   └── magind.html                Chapter 3 — magnetism, Lorentz force, flux, Faraday, Lenz
+├── archive/                       Retired general-physics pages, sims and quiz bank
 ├── css/
 │   ├── input.css                  THE styling source: @layer base/components + @tailwind directives
 │   ├── site.css                   Committed build of input.css (bun run build:css)
@@ -64,17 +73,15 @@ emc-physics-tutorial/
 ├── js/
 │   ├── common.js                  Shared engine: constants, HiDPI canvas Stage, pointer input,
 │   │                              SI formatter, localStorage progress, nav/reveal/toasts
-│   ├── home.js                    Wave hero animation + progress dashboard (index.html)
-│   ├── sim-vector-add.js          Sim 1 — vector addition bench (drag arrows, live resultant)
-│   ├── sim-archimedes.js          Sim 2 — buoyancy tank (float/sink, to-scale force arrows)
-│   ├── sim-bernoulli.js           Sim 3 — aerofoil + venturi visualiser (lift, stall, manometer)
-│   ├── sim-thermometer.js         Sim 4 — draggable thermometer (°C / °F / K conversions)
-│   ├── sim-heat-transfer.js       Sim 5 — conduction / convection / radiation lab
-│   ├── sim-wave.js                Sim 6 — travelling wave bench (transverse + longitudinal)
-│   ├── sim-sound.js               Sim 7 — playable tone bench (WebAudio + oscilloscope)
-│   ├── sim-ohm.js                 Sim 8 — Ohm's law bench (auto-range meter + I–V chart)
-│   ├── sim-circuit.js             Sim 9 — circuit builder (series/parallel/combination)
-│   ├── quiz-data.js               30 questions with worked explanations (6 per topic)
+│   ├── registry.js                THE topic registry: subject, chapters, paths, tags, sims
+│   ├── home.js                    Dipole-field hero animation + progress dashboard
+│   ├── sim-ohm.js                 Sim 1 — Ohm's law bench (auto-range meter + I–V chart)
+│   ├── sim-circuit.js             Sim 2 — circuit builder (series/parallel/combination)
+│   ├── sim-coulomb.js             Sim 3 — Coulomb force bench (inverse-square, drag charges)
+│   ├── sim-efield.js              Sim 4 — field explorer: field lines, probe, −∫E·dr integral
+│   ├── sim-lorentz.js             Sim 5 — Lorentz force, RK4 orbits vs analytic r and T
+│   ├── sim-induction.js           Sim 6 — magnet through coil: dipole flux, EMF, galvanometer
+│   ├── quiz-data.js               24 questions with worked explanations (8 per chapter)
 │   └── quiz.js                    Quiz engine: marking modes, scoring, Chart.js analytics
 ├── tools/
 │   ├── check-links.mjs            Static validator (links, ids, data-hooks, CSS coverage)
@@ -112,20 +119,17 @@ and 13 scripts. No framework, no bundler, no backend.
 |---|---|
 | Clean landing page with navigation to each topic | `index.html` — centred hero with mascot and animated wave, 5 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
 | Responsive UI, desktop + mobile | Fluid `clamp()` type, `md:`/`lg:` grids, hamburger nav < 900 px, canvases resize via `ResizeObserver` |
-| Sim 1 — vector addition bench | `js/sim-vector-add.js`: drag the arrowheads of A and B; R = A + B recomposes live by components, as a parallelogram diagonal or tip-to-tail; presets include an exact cancellation |
-| Sim 2 — buoyancy tank | `js/sim-archimedes.js`: object density/volume vs three fluids; floats at submerged fraction ρ_obj/ρ_f or sinks to a normal force; F_B = ρ_f V_sub g recomputed every frame, to-scale force arrows, drag-and-release settling |
-| Sim 3 — Bernoulli visualiser | `js/sim-bernoulli.js`: aerofoil scene (top/bottom speed-up, lift ∝ ΔP·A, stall past 15° AoA) and venturi scene (continuity A₁v₁ = A₂v₂, manometer Δh from ΔP = ½ρ(v₂²−v₁²)) |
-| Sim 4 — interactive thermometer | `js/sim-thermometer.js`: drag the column; °C/°F/K convert live with the arithmetic printed; landmark markers at −40°, 0°, 37°, 100° |
-| Sim 5 — heat transfer lab | `js/sim-heat-transfer.js`: conduction diffusion along four materials with q = kAΔT/L, a driven convection circulation, radiation with inverse-square intensity and matt-black vs shiny absorption |
-| Sim 6 — wave simulator | `js/sim-wave.js`: y = A sin(kx − ωt) drawn transverse or longitudinal, amplitude/frequency/wavelength sliders, v = fλ recomputed live, medium particles that visibly only oscillate |
-| Sim 7 — playable tone bench | `js/sim-sound.js`: WebAudio oscillator (sine/square/saw/triangle) with a live AnalyserNode scope, note ruler, λ = v_sound/f; degrades to a drawn scope where audio is unavailable |
-| Sim 8 — Ohm's law calculator | `js/sim-ohm.js`: V and R sliders (R on a log scale), live I, P, auto-ranging ammeter, bulb brightness ∝ P, I–V characteristic plot, power-rating safety warning |
-| Sim 9 — circuit builder (battery + bulb, series/parallel) | `js/sim-circuit.js`: add/remove/edit resistors, three topologies, exact per-element V/I/P table, animated charge flow whose density ∝ branch current, clickable resistors |
+| Sim 1 — Ohm’s law bench | `js/sim-ohm.js`: V and R sliders (plus an editable R box), auto-ranging ammeter, a bulb whose brightness follows P = VI, and an I–V characteristic chart; presets for ohmic and non-ohmic behaviour |
+| Sim 2 — circuit builder | `js/sim-circuit.js`: battery + up to six resistors in series, parallel or a mixed combination; every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
+| Sim 3 — Coulomb force bench | `js/sim-coulomb.js`: two draggable point charges; F = k q₁ q₂ / r² recomputed per frame with to-scale arrows, full substitution line and inverse-square demonstration (doubling r quarters F) |
+| Sim 4 — electric field explorer | `js/sim-efield.js`: place any number of charges; field lines integrated along E, a vector grid coloured by |E|, a +1 nC test-charge probe, and draggable A/B markers with a live −∫E·dr Simpson integral checked against the analytic Σkq/r potential difference |
+| Sim 5 — Lorentz force & circular motion | `js/sim-lorentz.js`: proton/electron/alpha orbits integrated with RK4 at slowed visual time, printed slow-down factor, r = mv/(|q|B) and T = 2πm/(|q|B) theory readouts plus a live RK4-vs-theory radius error, and a right-hand-rule challenge |
+| Sim 6 — magnet through a coil | `js/sim-induction.js`: exact dipole flux Φ(z), Faraday EMF = −N dΦ/dt, a centre-zero galvanometer, Lenz current-direction indicator, N/R sliders, a scrolling Φ/EMF chart and a right-hand-rule quiz |
 | Tutorials with explanations, diagrams, formulas, real-world examples | Each topic page: objectives → theory → SVG figures → worked examples → applications → misconceptions → self-check reveals |
-| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 30 questions (6 per topic across vectors · fluids · heat · waves · current), exam *or* instant marking, per-question explanations, per-topic breakdown, grade bands, review-incorrect filter, shuffle, retake, **quiz clock with per-question splits, correct-streak counter with a pastel burst, keyboard flow (1–4/A–D, Enter, N)**, `?topic=` deep links from each topic page, and a reacting mascot in every graded feedback |
+| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 24 questions (8 per chapter across circuits · fields · magnetism), exam *or* instant marking, per-question explanations, per-topic breakdown, grade bands, review-incorrect filter, shuffle, retake, **quiz clock with per-question splits, correct-streak counter with a pastel burst, keyboard flow (1–4/A–D, Enter, N)**, `?topic=` deep links from each topic page, and a reacting mascot in every graded feedback |
 | Predict-then-run challenges | The circuit builder asks you to predict an outcome; the **simulator itself computes the answer** from its live analysis, then a "Try it" button performs the change so the readouts confirm it |
 | Chart.js score visualisation | Doughnut (correct/incorrect), horizontal bars (score per topic), line (attempt history) on the score card, drawn by the **vendored** `vendor/chart/chart.umd.min.js`; CSS-bar fallback if that file ever fails to load |
-| Progress tracking with localStorage | `EMC.Progress` in `js/common.js`: topics read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all five topics studied, exactly as the dashboard promises **and as the score card announces at the moment it happens**; **Export / Import** buttons move the snapshot between devices as JSON; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
+| Progress tracking with localStorage | `EMC.Progress` in `js/common.js` (key `emc.progress.v2`, with an automatic one-time migration from `emc.progress.v1` that keeps a recoverable legacy copy): chapters read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all three chapters studied, exactly as the dashboard promises **and as the score card announces at the moment it happens**; **Export / Import** buttons move the snapshot between devices as JSON; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
 | Social preview + SEO | Every page carries `<link rel=canonical>`, `og:type/title/description/url/image(+w/h/alt)`, `twitter:card/title/description/image`, all pointing at one production origin and at `img/og-card.png` (committed, 1200×630, regenerated by `bun run og:card`) |
 | No-JavaScript notice | Each page ships a `<noscript>` banner (`.noscript-note`) that says the sims, dashboard and quiz need JavaScript while the tutorial text still reads |
 | theme-color honesty | `<meta name="theme-color">` is `#17181c`, the exact `--bg` the pages paint, so mobile browser chrome matches the site instead of an older navy |

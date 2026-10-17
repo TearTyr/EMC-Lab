@@ -32,7 +32,7 @@ const LABEL = process.env.PERF_LABEL || (MODE === 'shots' ? (process.argv[3] || 
 const PORT = 8420;
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.json': 'application/json', '.ico': 'image/x-icon' };
 
-const PAGES = ['index.html', 'quiz.html', 'topics/vectors.html', 'topics/fluids.html', 'topics/heat.html', 'topics/waves.html', 'topics/current.html'];
+const PAGES = ['index.html', 'quiz.html', 'topics/current.html', 'topics/efield.html', 'topics/magind.html'];
 const PROFILES = {
   desktop: { width: 1280, height: 900, dpr: 1, throttle: 1, touch: false },
   mobile: { width: 390, height: 844, dpr: 3, throttle: 4, touch: true },
@@ -170,7 +170,7 @@ async function measurePage(browser, url, profile, name) {
       interactions.push('slider-drag');
     }
   }
-  const dragCanvas = await page.$('#sim-vector-add, #sim-archimedes, #sim-thermometer, #sim-ohm');
+  const dragCanvas = await page.$('#sim-ohm, #sim-efield, #sim-lorentz');
   if (dragCanvas) {
     const bb = await dragCanvas.boundingBox();
     if (bb) {
@@ -187,7 +187,7 @@ async function measurePage(browser, url, profile, name) {
   if (url.includes('quiz')) {
     const opt = await page.$('.opt');
     if (opt) { await opt.click(); interactions.push('quiz-option'); }
-    const filt = await page.$('[data-quiz-filter="fluids"]');
+    const filt = await page.$('[data-quiz-filter="efield"]');
     if (filt) { await filt.click(); interactions.push('quiz-filter'); }
   }
   const seg = await page.$('.seg-btn');
@@ -319,7 +319,7 @@ async function rss(browser) {
 /* Enforced, reliably-measurable lifecycle invariants (desktop profile):
    1. a boot-visible canvas runs exactly ONE rAF chain (no double scheduling)
    2. a synthetic hidden tab stops every chain (visibilitychange honoured)
-   3. a settled sim (archimedes at rest) sleeps: zero chains in view
+   3. a live sim (lorentz orbit) keeps exactly one chain in view
    4. an essential-motion sim (circuit dots) keeps exactly one chain in view
    Memory is reported informationally here; only loop invariants fail CI. */
 async function guard(browser) {
@@ -369,11 +369,11 @@ async function guard(browser) {
     await page.close();
   }
   {
-    const page = await openPage('topics/fluids.html');
-    await page.evaluate(() => document.querySelector('#sim-archimedes').scrollIntoView({ block: 'center' }));
-    await sleep(4000);                                   // let the spring settle
-    check('settled archimedes sleeps (0 chains)', await sampleRaf(page, 1500), 0);
-    check('fluids hidden chains = 0', await hiddenProbe(page), 0);
+    const page = await openPage('topics/magind.html');
+    await page.evaluate(() => document.querySelector('#sim-lorentz').scrollIntoView({ block: 'center' }));
+    await sleep(4000);                                   // let the orbit run
+    check('live lorentz sim keeps exactly 1 chain when visible', await sampleRaf(page, 1500), 1);
+    check('magind hidden chains = 0', await hiddenProbe(page), 0);
     await page.close();
   }
   {

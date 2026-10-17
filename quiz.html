@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Thirty multiple-choice questions on vectors, fluids, temperature &amp; heat, waves &amp; sound and electricity — with automatic scoring, worked explanations and a per-topic breakdown.">
+  <meta name="description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta name="theme-color" content="#17181c">
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
@@ -19,7 +19,7 @@
   <meta property="og:site_name" content="EMC Lab">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Quiz">
-  <meta property="og:description" content="Thirty multiple-choice questions on vectors, fluids, temperature &amp; heat, waves &amp; sound and electricity — with automatic scoring, worked explanations and a per-topic breakdown.">
+  <meta property="og:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta property="og:url" content="https://emc-physics.vercel.app/quiz.html">
   <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
   <meta property="og:image:width" content="1200">
@@ -27,7 +27,7 @@
   <meta property="og:image:alt" content="EMC Lab — an interactive physics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Quiz">
-  <meta name="twitter:description" content="Thirty multiple-choice questions on vectors, fluids, temperature &amp; heat, waves &amp; sound and electricity — with automatic scoring, worked explanations and a per-topic breakdown.">
+  <meta name="twitter:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Crect%20width='48'%20height='48'%20rx='14'%20fill='%2317181c'/%3E%3Cpath%20d='M15%2015%20C13%207%2019%205%2021%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cpath%20d='M33%2015%20C35%207%2029%205%2027%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cellipse%20cx='24'%20cy='27'%20rx='16'%20ry='15'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Ccircle%20cx='18.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Ccircle%20cx='29.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Cpath%20d='M22%2031%20q2%202%204%200'%20stroke='%232b2d33'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3Ccircle%20cx='13.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3Ccircle%20cx='34.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3C/svg%3E">
   <script>if (window.tailwind) { tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#22d3ee', deep: '#0e1a2e', line: '#1e2f4d' } } } } }; }</script>
@@ -106,7 +106,7 @@
           <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
           <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
         </svg>
-        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electromagnetics</span></span>
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
               title="Details: full technical explanations (ON) or simplified ones (OFF)">
@@ -124,11 +124,9 @@
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <a class="dd-link" href="topics/vectors.html"><b>1 · Measurement &amp; Vectors</b><small>SI units · dimensional analysis · resultants</small></a>
-            <a class="dd-link" href="topics/fluids.html"><b>2 · Fluids</b><small>pressure · Archimedes · Bernoulli</small></a>
-            <a class="dd-link" href="topics/heat.html"><b>3 · Temperature &amp; Heat</b><small>scales · Q = mcΔT · heat transfer</small></a>
-            <a class="dd-link" href="topics/waves.html"><b>4 · Waves &amp; Sound</b><small>v = fλ · wave types · tone player</small></a>
-            <a class="dd-link" href="topics/current.html"><b>5 · Electricity</b><small>Ohm’s law · series &amp; parallel</small></a>
+            <a class="dd-link" href="topics/current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
+            <a class="dd-link" href="topics/efield.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charges · fields · superposition · potential</small></a>
+            <a class="dd-link" href="topics/magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="quiz.html">Take the quiz</a>
@@ -157,14 +155,14 @@
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Assessment</span>
-      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Physics quiz</h1>
+      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Electromagnetics quiz</h1>
       <p class="lede">
-        <span id="quiz-total">30</span> multiple-choice questions covering all five topics, each
+        <span id="quiz-total">24</span> multiple-choice questions covering all three chapters, each
         with a worked explanation. Scoring is automatic; your best result is saved in this browser.
       </p>
 
       <div class="stat-strip stat-strip-4" style="max-width:640px">
-        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">30</span></div>
+        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">24</span></div>
         <div class="stat"><span class="stat-label">Best score</span><span class="stat-value hl-emerald" id="quiz-best">—</span></div>
         <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="quiz-attempts">0</span></div>
         <div class="stat"><span class="stat-label">Pass mark</span><span class="stat-value hl-amber">70%</span></div>
@@ -179,12 +177,9 @@
               <span class="ctl-label" style="margin-bottom:.4rem">Filter by topic</span>
               <div class="btn-group" role="group" aria-label="Filter questions by topic">
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="vectors" aria-pressed="false">Vectors</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="fluids" aria-pressed="false">Fluids</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="heat" aria-pressed="false">Heat</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="waves" aria-pressed="false">Waves</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Electricity</button>
-              </div>
+                <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Circuits</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="efield" aria-pressed="false">Fields</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button></div>
             </div>
             <div>
               <span class="ctl-label" style="margin-bottom:.4rem">Marking</span>
@@ -202,7 +197,7 @@
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
             <div style="flex:1 1 180px;min-width:160px">
               <div class="progress-track"><div class="progress-fill" id="quiz-progress-fill"></div></div>
-              <p class="tiny faint" style="margin:.35rem 0 0"><span id="quiz-progress-text">0 of 30 answered</span><span id="quiz-live" hidden></span></p>
+              <p class="tiny faint" style="margin:.35rem 0 0"><span id="quiz-progress-text">0 of 24 answered</span><span id="quiz-live" hidden></span></p>
             </div>
           </div>
 
@@ -237,11 +232,9 @@
             <p class="small muted" style="margin:.25rem 0 0">Each topic page ends with self-check questions and a live simulation.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <a class="btn btn-sm" href="topics/vectors.html">Topic 1</a>
-            <a class="btn btn-sm" href="topics/fluids.html">Topic 2</a>
-            <a class="btn btn-sm" href="topics/heat.html">Topic 3</a>
-            <a class="btn btn-sm" href="topics/waves.html">Topic 4</a>
-            <a class="btn btn-sm" href="topics/current.html">Topic 5</a>
+            <a class="btn btn-sm" href="topics/current.html">Chapter 1</a>
+            <a class="btn btn-sm" href="topics/efield.html">Chapter 2</a>
+            <a class="btn btn-sm" href="topics/magind.html">Chapter 3</a>
             <a class="btn btn-sm btn-primary" href="index.html">Home</a>
           </div>
         </div>
@@ -263,16 +256,14 @@
         </svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
-        <p class="small muted" style="margin-top:.6rem">Thirty questions across the five topics.</p>
+        <p class="small muted" style="margin-top:.6rem">Twenty-four questions across the three chapters.</p>
       </div>
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
         <ul class="footer-links">
-          <li><a href="topics/vectors.html">1 · Measurement &amp; vectors</a></li>
-          <li><a href="topics/fluids.html">2 · Fluids</a></li>
-          <li><a href="topics/heat.html">3 · Temperature &amp; heat</a></li>
-          <li><a href="topics/waves.html">4 · Waves &amp; sound</a></li>
-          <li><a href="topics/current.html">5 · Electricity</a></li>
+          <li><a href="topics/current.html">1 · Circuits &amp; Ohm’s law</a></li>
+          <li><a href="topics/efield.html">2 · Electric fields &amp; Coulomb’s law</a></li>
+          <li><a href="topics/magind.html">3 · Magnetism &amp; induction</a></li>
         </ul>
       </div>
     </div>
@@ -286,6 +277,7 @@
        but is now injected lazily by js/quiz.js the first time a score card is
        rendered - the quiz no longer pays ~68 KB gzip before it is needed. -->
   <script defer src="vendor/katex/katex.min.js"></script>
+  <script defer src="js/registry.js"></script>
   <script defer src="js/common.js"></script>
   <script defer src="js/quiz-data.js"></script>
   <script defer src="js/quiz.js"></script>

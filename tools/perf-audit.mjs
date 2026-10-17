@@ -13,8 +13,8 @@
 import { resolve, dirname } from 'node:path';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
-const PAGES = ['index.html', 'topics/vectors.html', 'topics/fluids.html',
-  'topics/heat.html', 'topics/waves.html', 'topics/current.html', 'quiz.html'];
+const PAGES = ['index.html', 'topics/current.html', 'topics/efield.html',
+  'topics/magind.html', 'quiz.html'];
 
 import http from 'node:http';
 import fs from 'node:fs';

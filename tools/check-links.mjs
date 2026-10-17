@@ -30,6 +30,7 @@ const dataHookNotes = new Set();
 /* ---------- helpers ------------------------------------------------------ */
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
+    if (name === 'archive') continue;
     if (name.startsWith('.') || name === 'node_modules') continue;
     const p = join(dir, name);
     if (statSync(p).isDirectory()) walk(p, out);
