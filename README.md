@@ -59,7 +59,7 @@ No internet connection is required at run time: Tailwind is compiled ahead of ti
 ```
 emc-physics-tutorial/
 ├── index.html                     Landing page: navigation, topic cards, formula sheet,
-│                                  progress dashboard, animated dipole hero
+│                                  progress dashboard, hero KaTeX equation strip
 ├── quiz.html                      Quiz page: toolbar, question list, score card
 ├── topics/
 │   ├── current.html               Chapter 1 — Ohm's law, power, series/parallel, builder
@@ -74,7 +74,7 @@ emc-physics-tutorial/
 │   ├── common.js                  Shared engine: constants, HiDPI canvas Stage, pointer input,
 │   │                              SI formatter, localStorage progress, nav/reveal/toasts
 │   ├── registry.js                THE topic registry: subject, chapters, paths, tags, sims
-│   ├── home.js                    Dipole-field hero animation + progress dashboard
+│   ├── home.js                    Derived hero counters + progress dashboard
 │   ├── sim-ohm.js                 Sim 1 — Ohm's law bench (auto-range meter + I–V chart)
 │   ├── sim-circuit.js             Sim 2 — circuit builder (series/parallel/combination)
 │   ├── sim-coulomb.js             Sim 3 — Coulomb force bench (inverse-square, drag charges)
@@ -117,7 +117,7 @@ and 13 scripts. No framework, no bundler, no backend.
 
 | Requirement | Where it lives |
 |---|---|
-| Clean landing page with navigation to each topic | `index.html` — centred hero with mascot and animated wave, 5 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
+| Clean landing page with navigation to each topic | `index.html` — centred hero with mascot, a KaTeX equation strip (the four governing laws) and stat counters derived from the registry/quiz bank, 3 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
 | Responsive UI, desktop + mobile | Fluid `clamp()` type, `md:`/`lg:` grids, hamburger nav < 900 px, canvases resize via `ResizeObserver` |
 | Sim 1 — Ohm’s law bench | `js/sim-ohm.js`: V and R sliders (plus an editable R box), auto-ranging ammeter, a bulb whose brightness follows P = VI, and an I–V characteristic chart; presets for ohmic and non-ohmic behaviour |
 | Sim 2 — circuit builder | `js/sim-circuit.js`: battery + up to six resistors in series, parallel or a mixed combination; every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
@@ -278,7 +278,7 @@ family, no licence risk. ~45 KB of fonts total.
   equations, callouts, figures, definition lists and disclosures — so only one idea sits on
   screen at a time and no page ever reads as a wall of text. Every page shares ONE content
   column (`--column: 1060 px`, i.e. 1020 px of content between the 20 px gutters): topic
-  prose, callouts, sim panels, the quiz head and the home hero canvas + stat strip all end
+  prose, callouts, sim panels, the quiz head and the home equation strip + stat strip all end
   at the same left/right edges, so no page ever looks thinner than another. Every
   supplementary block (real-world connections, common traps) is collapsed behind a "+"
   disclosure so the main flow stays short; worked examples and rules stay open.

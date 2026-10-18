@@ -22,7 +22,7 @@ for (const url of ['topics/fluids.html', 'index.html']) {
     Element.prototype.getBoundingClientRect = function () { window.__gbcr++; return o.apply(this, arguments); };
   });
   await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' }); await sleep(2500);
-  await page.evaluate(() => { const c = document.querySelector('.sim-canvas, #heroCanvas'); if (c) c.scrollIntoView({ block: 'center' }); });
+  await page.evaluate(() => { const c = document.querySelector('.sim-canvas'); if (c) c.scrollIntoView({ block: 'center' }); });
   await sleep(1200);
   const m0 = (await client.send('Performance.getMetrics')).metrics.reduce((m,x)=>(m[x.name]=x.value,m),{});
   const g0 = await page.evaluate(() => { window.__gbcr = 0; return performance.now(); });

@@ -1,100 +1,51 @@
-/* Home page: animated travelling-wave hero (two superposed sine waves with oscillating medium particles, flat art) + progress dashboard driven by EMC.Progress, with JSON export/import so device-local progress can be carried to another machine. */
+/* Home page: progress dashboard driven by EMC.Progress, with JSON export/import so device-local progress can be carried to another machine, plus hero counters derived from the registry and the quiz bank — no advertised number on this page is hand-maintained. */
 (function () {
-  const { CONST, clamp, chargeGlyph, label, Progress } = EMC;
-  const k = CONST.K;
+  const { clamp, Progress } = EMC;
 
-  /* ---------------------------------------------------------------- hero */
-  const hero = document.getElementById('heroCanvas');
-  if (hero) {
-    const dipole = [
-      { q: 5, nx: 0.34, ny: 0.5 },
-      { q: -5, nx: 0.66, ny: 0.5 }
-    ];
-    const PX_PER_M = 260;
-    let lines = [];                       // cached polylines (canvas px)
+  /* ------------------------------------------------ hero: derived counts */
+  /* Every count the hero advertises (chapters, simulations, quiz questions)
+     is computed from the single sources of truth — EMC_REGISTRY and
+     EMC_QUIZ — so the page cannot drift when content is added or removed.
+     The HTML ships the current values as no-JS fallbacks; these overwrite
+     them at boot. The old animated dipole canvas was removed in favour of
+     the static KaTeX equation strip in index.html (no driver needed). */
+  const chapters = (window.EMC_REGISTRY && Array.isArray(EMC_REGISTRY.chapters)) ? EMC_REGISTRY.chapters : [];
+  const simCount = chapters.reduce((n, c) => n + (Array.isArray(c.sims) ? c.sims.length : 0), 0);
+  const quizCount = (window.EMC_QUIZ && Array.isArray(EMC_QUIZ)) ? EMC_QUIZ.length : 0;
 
-    function fieldAt(x, y, w, h) {
-      let ex = 0, ey = 0;
-      for (const c of dipole) {
-        const dxm = (x - c.nx * w) / PX_PER_M;
-        const dym = (y - c.ny * h) / PX_PER_M;
-        const r2 = dxm * dxm + dym * dym;
-        if (r2 < 1e-6) continue;
-        const r = Math.sqrt(r2);
-        const E = k * (c.q * 1e-6) / r2;
-        ex += E * dxm / r; ey += E * dym / r;
-      }
-      return { ex, ey, mag: Math.hypot(ex, ey) };
-    }
+  /* 0–999 spelled out, lower-case ("twenty-four") — callers capitalise where
+     the word opens a sentence. Returns null outside the supported range so
+     the static fallback is left untouched rather than replaced by junk. */
+  function numberToWords(n) {
+    if (!Number.isInteger(n) || n < 0 || n > 999) return null;
+    const ones = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? '-' + ones[n % 10] : '');
+    return ones[Math.floor(n / 100)] + ' hundred' + (n % 100 ? ' and ' + numberToWords(n % 100) : '');
+  }
+  const cap = s => (s === null ? null : s.charAt(0).toUpperCase() + s.slice(1));
 
-    /* Trace the field lines once so the animation loop only has to stroke them. */
-    function buildLines(w, h) {
-      lines = [];
-      const seeds = dipole.filter(c => c.q > 0);
-      const step = 3, maxSteps = 700;
-      for (const c of seeds) {
-        const cx = c.nx * w, cy = c.ny * h;
-        const n = 16;
-        for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2;
-          let x = cx + Math.cos(a) * 14, y = cy + Math.sin(a) * 14;
-          const pts = [[x, y]];
-          for (let s = 0; s < maxSteps; s++) {
-            const f = fieldAt(x, y, w, h);
-            if (f.mag < 1e-9) break;
-            x += (f.ex / f.mag) * step; y += (f.ey / f.mag) * step;
-            pts.push([x, y]);
-            if (x < -30 || x > w + 30 || y < -30 || y > h + 30) break;
-            let stop = false;
-            for (const o of dipole) {
-              if (o.q > 0) continue;
-              if (Math.hypot(x - o.nx * w, y - o.ny * h) < 14) { stop = true; break; }
-            }
-            if (stop) break;
-          }
-          if (pts.length > 4) lines.push(pts);
-        }
-      }
-    }
-
-    const stage = new EMC.Stage(hero, (ctx, w, h, st) => {
-      ctx.clearRect(0, 0, w, h);
-      if (!lines.length) buildLines(w, h);
-
-      // animated flow along the cached lines
-      ctx.save();
-      ctx.lineWidth = 1.5; ctx.lineCap = 'round';
-      ctx.setLineDash([7, 11]);
-      ctx.lineDashOffset = -st.t * 26;
-      lines.forEach((pts, i) => {
-        ctx.strokeStyle = `hsla(${186 + (i % 5) * 6} 90% 66% / ${0.30 + 0.12 * Math.sin(st.t * 1.4 + i)})`;
-        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let j = 1; j < pts.length; j++) ctx.lineTo(pts[j][0], pts[j][1]);
-        ctx.stroke();
-      });
-      ctx.restore();
-
-      // the two charges breathe gently
-      const pulse = 0.18 * Math.sin(st.t * 1.6);
-      dipole.forEach(c => {
-        chargeGlyph(ctx, c.nx * w, c.ny * h, 15, c.q, { pulse });
-      });
-      label(ctx, 'E = k q / r\u00B2    \u00B7    F = k q1 q2 / r\u00B2', w / 2, h - 16,
-        { color: 'rgba(169,186,214,.75)', size: 11.5, weight: '600' });
-    }, { animate: true });
-
-    // Rebuild the cached line geometry only when the canvas size really changes.
-    let lastW = 0, lastH = 0;
-    const checkSize = () => {
-      const r = hero.getBoundingClientRect();
-      const w = Math.round(r.width), h = Math.round(r.height);
-      if (w !== lastW || h !== lastH) {
-        lastW = w; lastH = h; lines = [];
-        stage.resize(); stage.draw();
-      }
-    };
-    window.addEventListener('resize', checkSize);
-    checkSize();
+  const fill = (id, v) => {
+    if (v === null || v === undefined) return;
+    const n = document.getElementById(id);
+    if (n !== null) n.textContent = String(v);
+  };
+  if (chapters.length) {
+    fill('statChapters', chapters.length);
+    fill('ledeChapters', numberToWords(chapters.length));
+  }
+  if (simCount) {
+    fill('statSims', simCount);
+    fill('ledeSims', numberToWords(simCount));
+  }
+  if (quizCount) {
+    fill('statQuestions', quizCount);
+    fill('ledeQuizN', quizCount);
+    fill('quizCountWord', cap(numberToWords(quizCount)));   // opens the sentence
+    fill('quizCountCta', quizCount);
+    fill('quizCountFooter', quizCount);
   }
 
   /* ---------------------------------------------------------- dashboard */

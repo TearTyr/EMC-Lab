@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="EMC Lab — an interactive, browser-based physics tutorial: circuits, electric fields and magnetism/induction, with live simulations and a scored quiz.">
+  <meta name="description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
   <meta name="theme-color" content="#17181c">
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
@@ -19,15 +19,15 @@
   <meta property="og:site_name" content="EMC Lab">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Interactive Electromagnetics Tutorial">
-  <meta property="og:description" content="EMC Lab — an interactive, browser-based physics tutorial: measurement &amp; vectors, fluids, temperature &amp; heat, waves &amp; sound and electricity, with live simulations and a scored quiz.">
+  <meta property="og:description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
   <meta property="og:url" content="https://emc-physics.vercel.app/">
   <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="EMC Lab — an interactive physics tutorial">
+  <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Interactive Electromagnetics Tutorial">
-  <meta name="twitter:description" content="EMC Lab — an interactive, browser-based physics tutorial: measurement &amp; vectors, fluids, temperature &amp; heat, waves &amp; sound and electricity, with live simulations and a scored quiz.">
+  <meta name="twitter:description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
   <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Crect%20width='48'%20height='48'%20rx='14'%20fill='%2317181c'/%3E%3Cpath%20d='M15%2015%20C13%207%2019%205%2021%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cpath%20d='M33%2015%20C35%207%2029%205%2027%2011'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Cellipse%20cx='24'%20cy='27'%20rx='16'%20ry='15'%20fill='%23f6f1e5'%20stroke='%233a3d45'%20stroke-width='2'/%3E%3Ccircle%20cx='18.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Ccircle%20cx='29.5'%20cy='26'%20r='1.7'%20fill='%232b2d33'/%3E%3Cpath%20d='M22%2031%20q2%202%204%200'%20stroke='%232b2d33'%20stroke-width='1.6'%20fill='none'%20stroke-linecap='round'/%3E%3Ccircle%20cx='13.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3Ccircle%20cx='34.5'%20cy='30'%20r='2.4'%20fill='%23f8aebe'%20opacity='.85'/%3E%3C/svg%3E">
@@ -163,7 +163,8 @@
         <span class="eyebrow">Interactive electromagnetics</span>
         <h1 class="h-hero">See electromagnetics move.</h1>
         <p class="lede">
-          One subject, three chapters, six live simulations and a 24-question scored quiz.
+          One subject, <span id="ledeChapters">three</span> chapters, <span id="ledeSims">six</span> live
+          simulations and a <span id="ledeQuizN">24</span>-question scored quiz.
           Build a circuit, drag charges and watch the field lines bend, push a magnet through
           a coil and see the EMF flip sign — every number on screen is computed from the real
           equations, not faked.
@@ -173,17 +174,23 @@
           <a class="btn" href="topics/magind.html#sim-induction-panel">Jump to the induction lab</a>
           <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
         </div>
-        <div class="hero-visual">
-          <canvas id="heroCanvas" aria-label="Animated electric dipole field lines"></canvas>
-          <p class="tiny faint center" style="margin-top:.6rem">
-            An electric dipole: field lines run from the positive to the negative charge.
-            (Chapter 2 lets you build your own charge configurations.)
-          </p>
+        <!-- Hero equation strip (replaces the old animated dipole canvas): the four
+             governing laws of the three chapters, typeset by KaTeX through the same
+             [data-tex] pipeline as every other equation on the site. The spans carry
+             hand-readable fallbacks, so the strip still reads if KaTeX never loads. -->
+        <div class="eq-strip" aria-label="The four governing equations of the course">
+          <span class="eq-item"><span data-tex="V = IR">V = I·R</span><small>Ohm’s law</small></span>
+          <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·q<sub>1</sub>q<sub>2</sub>/r<sup>2</sup></span><small>Coulomb’s law</small></span>
+          <span class="eq-item"><span data-tex="\vec{F} = q\,\vec{v} \times \vec{B}">F = qv × B</span><small>Lorentz force</small></span>
+          <span class="eq-item"><span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span><small>Faraday’s law</small></span>
         </div>
+        <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
+             EMC_QUIZ (single sources of truth); the numbers below are the no-JS
+             fallbacks and must match the current content. -->
         <div class="stat-strip">
-          <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan">3</span></div>
-          <div class="stat"><span class="stat-label">Simulations</span><span class="stat-value hl-amber">6</span></div>
-          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald">24</span></div>
+          <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan" id="statChapters">3</span></div>
+          <div class="stat"><span class="stat-label">Simulations</span><span class="stat-value hl-amber" id="statSims">6</span></div>
+          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">24</span></div>
         </div>
       </div>
     </section>
@@ -209,7 +216,7 @@
         <div class="card step reveal">
           <h3 class="font-bold">Prove it in the quiz</h3>
           <p class="small muted" style="margin:.35rem 0 0">
-            Thirty multiple-choice questions with worked explanations. Your best score is
+            <span id="quizCountWord">Twenty-four</span> multiple-choice questions with worked explanations. Your best score is
             saved in this browser so you can track improvement.
           </p>
         </div>
@@ -427,7 +434,7 @@
           <div style="flex:1 1 320px">
             <h2 class="h-sec" style="margin:0">Ready to test yourself?</h2>
             <p class="muted small" style="margin:.3rem 0 0">
-              24 questions, instant or exam marking, worked explanations for every answer,
+              <span id="quizCountCta">24</span> questions, instant or exam marking, worked explanations for every answer,
               and a per-chapter breakdown so you know exactly what to revise.
             </p>
           </div>
@@ -463,7 +470,7 @@
           <li><a href="topics/current.html">1 · Circuits &amp; Ohm’s law</a></li>
           <li><a href="topics/efield.html">2 · Electric fields &amp; Coulomb’s law</a></li>
           <li><a href="topics/magind.html">3 · Magnetism &amp; induction</a></li>
-          <li><a href="quiz.html">Quiz (24 questions)</a></li>
+          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">24</span> questions)</a></li>
         </ul>
       </div>
     </div>
@@ -478,6 +485,7 @@
 
   <script defer src="vendor/katex/katex.min.js"></script>
   <script defer src="js/registry.js"></script>
+  <script defer src="js/quiz-data.js"></script>
   <script defer src="js/common.js"></script>
   <script defer src="js/home.js"></script>
   <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the

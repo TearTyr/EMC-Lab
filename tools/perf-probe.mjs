@@ -29,7 +29,7 @@ for (const url of ['index.html','topics/vectors.html','topics/fluids.html','topi
   await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
   await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' }); await sleep(3000);
   const top = await sample(page, 1500);
-  await page.evaluate(() => { const c = document.querySelector('.sim-canvas, #heroCanvas'); if (c) c.scrollIntoView({ block: 'center' }); });
+  await page.evaluate(() => { const c = document.querySelector('.sim-canvas'); if (c) c.scrollIntoView({ block: 'center' }); });
   await sleep(1200);
   const inview = await sample(page, 2400);
   await page.evaluate(() => { Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'}); Object.defineProperty(document,'hidden',{configurable:true,get:()=>true}); document.dispatchEvent(new Event('visibilitychange')); });

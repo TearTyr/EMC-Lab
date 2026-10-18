@@ -83,7 +83,6 @@ const drawCalls = (win, sel) => {
   const c = win.document.querySelector(sel);
   return c && c.__stats ? c.__stats.calls : 0;
 };
-const drawnText = (win, sel) => (win.document.querySelector(sel)?.__stats?.text || []);
 
 /* ---------- page loader -------------------------------------------------- */
 async function loadPage(relPath, globals = {}, opts = {}) {
@@ -157,15 +156,28 @@ console.log('\u2500'.repeat(66));
   console.log('\n[index.html]');
   const { win, doc, problems } = await loadPage('index.html');
   await new Promise(r => { win.document.readyState === 'complete' ? r() : win.addEventListener('load', r, { once: true }); });
-  await new Promise(r => setTimeout(r, 1300));   // hero now starts after emc:booted
+  await new Promise(r => setTimeout(r, 1300));   // boot overlay + idle typesetting settle
   await frames(win, 8);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('progress ring shows a percentage', /^\d+%$/.test(txt(win, 'ringPct') || ''), txt(win, 'ringPct'));
   eq('starts at 0% with empty storage', txt(win, 'ringPct'), '0%');
   eq('chapter counter text', txt(win, 'dashTopicsDone'), '0 of 3 chapters studied');
   eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 3 chapters studied');
-  ok('hero canvas rendered', drawCalls(win, '#heroCanvas') > 200, `${drawCalls(win, '#heroCanvas')} calls`);
-  ok('hero animation draws the dipole field-line labels', drawnText(win, '#heroCanvas').some(t => t.includes('E = k q')), '');
+  // the animated dipole canvas was retired in favour of a static KaTeX strip
+  ok('the animated hero canvas is gone (replaced by the equation strip)',
+    doc.getElementById('heroCanvas') === null && !doc.querySelector('.hero-visual'));
+  eq('hero equation strip ships the four governing laws', doc.querySelectorAll('.eq-strip [data-tex]').length, 4);
+  ok('hero equations are typeset by KaTeX',
+    [...doc.querySelectorAll('.eq-strip [data-tex]')].every(e => e.dataset.texDone === '1'));
+  // hero counters are derived, never hand-copied (audit 1.2 / 1.5 / 3.2)
+  eq('chapters stat is derived from the registry', txt(win, 'statChapters'),
+    String(win.EMC_REGISTRY.chapters.length));
+  eq('simulations stat is derived from the registry', txt(win, 'statSims'),
+    String(win.EMC_REGISTRY.chapters.reduce((n, c) => n + c.sims.length, 0)));
+  eq('quiz stat is derived from the bank', txt(win, 'statQuestions'), String(win.EMC_QUIZ.length));
+  eq('the spelled-out quiz count matches the bank', txt(win, 'quizCountWord'), 'Twenty-four');
+  ok('no hand-written "Thirty" survives in the homepage copy',
+    !/Thirty/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
   eq('storage status reported', txt(win, 'storageStatus'), 'enabled \u2014 your progress is saved in this browser');
   eq('year filled in', doc.querySelector('[data-year]').textContent, String(new Date().getFullYear()));
 
@@ -444,6 +456,8 @@ console.log('\u2500'.repeat(66));
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   const bank = win.EMC_QUIZ;
   eq('question bank size', bank.length, 24);
+  ok('the bank contains no duplicate questions (audit 3.1 regression guard)',
+    new Set(bank.map(q => q.q)).size === bank.length);
   ok('four-stat strip uses the 4-up layout class',
      doc.querySelector('.stat-strip').classList.contains('stat-strip-4'));
   ok('quiz copy is free of the word "module"',
@@ -533,7 +547,7 @@ console.log('\u2500'.repeat(66));
   // shuffle keeps the bank intact
   click(win, doc.getElementById('quiz-retake'));
   click(win, doc.getElementById('quiz-shuffle'));
-  eq('shuffle keeps all 30 questions', doc.querySelectorAll('.q-card').length, 24);
+  eq('shuffle keeps all 24 questions', doc.querySelectorAll('.q-card').length, 24);
 
   // topic filter
   click(win, doc.querySelector('[data-quiz-filter="efield"]'));
@@ -767,7 +781,7 @@ console.log('\u2500'.repeat(66));
   ok('one site-wide content column (--column: 1060px) ships compiled',
     /--column:1060px/.test(siteCss) && /max-width:var\(--column\)/.test(siteCss) &&
     /\.wrap-narrow\b/.test(siteCss) && /\.wrap-sim\b/.test(siteCss));
-  ok('home hero canvas + stat strip align to the same column edges',
+  ok('home equation strip + stat strip align to the same column edges',
     (siteCss.match(/max-width:calc\(var\(--column\) - 2\.5rem\)/g) || []).length >= 2);
   ok('the old thin 700px measure variable is fully gone',
     !/--measure/.test(siteCss) && !/--measure/.test(cssSrc));

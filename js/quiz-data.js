@@ -40,24 +40,24 @@ window.EMC_QUIZ = [
   },
   {
     id: 6, topic: 'current', label: 'Circuits & Ohm’s law',
-    q: 'A 12 V battery is connected across a 4 \u03A9 resistor. The current is:',
-    options: ['48 A', '3 A', '0.33 A', '8 A'],
+    q: 'A battery of EMF 12 V has an internal resistance of 1 Ω. It is connected to an external resistor of 5 Ω. The terminal voltage of the battery is:',
+    options: ['12 V', '10 V', '2 V', '11 V'],
     answer: 1,
-    explain: 'Ohm\u2019s law: I = V/R = 12/4 = <b>3 A</b>. (48 A comes from multiplying instead of dividing \u2014 the most common slip.)'
+    explain: 'Total resistance in the loop is R + r = 5 + 1 = 6 Ω, so I = ε/(R + r) = 12/6 = 2 A. The internal resistance drops Ir = 2 × 1 = 2 V, leaving a terminal voltage V = ε − Ir = 12 − 2 = <b>10 V</b>. A real battery reads less than its EMF whenever it is supplying current.'
   },
   {
     id: 7, topic: 'current', label: 'Circuits & Ohm’s law',
-    q: 'Three resistors of 2 \u03A9, 3 \u03A9 and 5 \u03A9 are connected in SERIES. Their equivalent resistance is:',
-    options: ['0.97 \u03A9', '10 \u03A9', '3.3 \u03A9', '30 \u03A9'],
-    answer: 1,
-    explain: 'Series resistances <b>add</b>: R<sub>eq</sub> = 2 + 3 + 5 = <b>10 \u03A9</b>. In series R<sub>eq</sub> is always larger than the largest single resistor.'
+    q: 'A 12 V supply is connected across two resistors in series: 8 Ω followed by 4 Ω. The output voltage measured across the 4 Ω resistor is:',
+    options: ['8 V', '6 V', '4 V', '12 V'],
+    answer: 2,
+    explain: 'This is a voltage divider: V<sub>out</sub> = V<sub>in</sub>·R<sub>2</sub>/(R<sub>1</sub>+R<sub>2</sub>) = 12 × 4/(8+4) = <b>4 V</b>. In series one current flows through both resistors (12/12 = 1 A), so the voltages divide in proportion to R — the 8 Ω takes 8 V and the 4 Ω takes 4 V.'
   },
   {
     id: 8, topic: 'current', label: 'Circuits & Ohm’s law',
-    q: 'A 6 \u03A9 and a 3 \u03A9 resistor are connected in PARALLEL. Their equivalent resistance is:',
-    options: ['9 \u03A9', '4.5 \u03A9', '2 \u03A9', '18 \u03A9'],
-    answer: 2,
-    explain: '1/R<sub>eq</sub> = 1/6 + 1/3 = 1/6 + 2/6 = 3/6 = 1/2 \u21D2 R<sub>eq</sub> = <b>2 \u03A9</b>. In parallel R<sub>eq</sub> is always <b>smaller</b> than the smallest branch \u2014 adding a path makes it easier for current to flow.'
+    q: 'A 2 kW electric heater runs for 3 hours. Electricity costs $0.15 per kWh. The cost of running the heater is:',
+    options: ['$0.90', '$9.00', '$0.09', '$6.00'],
+    answer: 0,
+    explain: 'Energy = power × time = 2 kW × 3 h = 6 kWh, so the cost is 6 × $0.15 = <b>$0.90</b>. A kilowatt-hour is a unit of <i>energy</i>, not power: 1 kWh = 3.6 MJ. ($6.00 is the energy reading in kWh mistaken for the price — check the units.)'
   },
   {
     id: 9, topic: 'efield', label: 'Electric fields & Coulomb’s law',

@@ -472,8 +472,13 @@
   .hero-stack { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; }
   .hero-stack .lede { margin-inline: auto; }
   .btn-row { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
-  .hero-visual { width: 100%; max-width: calc(var(--column) - 2.5rem); margin-top: .8rem; }
-  .hero-visual canvas { display: block; width: 100%; height: 380px; border-radius: var(--r-card); border: 2px solid var(--line); background: var(--plate); }
+  /* Hero equation strip (replaced the animated dipole canvas): the four
+     governing laws in one row, each a card with a KaTeX-typeset [data-tex]
+     span over a small caption. Same column measure as the stat strip below. */
+  .eq-strip { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; width: 100%; max-width: calc(var(--column) - 2.5rem); margin-top: 1.2rem; }
+  .eq-item { display: flex; flex-direction: column; align-items: center; gap: .35rem; background: var(--panel-2); border: 1.5px solid var(--line-soft); border-radius: var(--r-ctl); padding: .7rem 1.05rem; min-width: 0; }
+  .eq-item .katex { font-size: 1.02rem; }
+  .eq-item small { font-family: theme('fontFamily.ui'); font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
   .stat-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-top: 1.2rem; width: 100%; max-width: calc(var(--column) - 2.5rem); }
   .stat-strip .stat { text-align: center; }
   /* three-stat strips only: the odd one out spans the full row on 2-col screens.
@@ -553,7 +558,7 @@
     .sim-canvas { height: 320px; }
     .sim-canvas.tall { height: 360px; }
     .sim-canvas.short { height: 210px; }
-    .hero-visual canvas { height: 260px; }
+    .eq-item { padding: .55rem .8rem; }
     .card, .panel-body { padding: 1rem; }
     .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stat-value { font-size: .92rem; }
