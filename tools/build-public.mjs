@@ -55,10 +55,13 @@ const REGISTRY = globalThis.__REG;
 const CHAPTER_PAGES = REGISTRY.subjects.flatMap(s => s.chapters).map(c => c.path);
 const ORIGIN = REGISTRY.origin;
 
-// Single files copied from the repo root (the pages themselves).
+// Single files copied from the repo root (the pages themselves, plus the
+// crawl/favicon files crawlers and browsers probe at the origin root).
 const COPY_FILES = [
   'index.html',
   'quiz.html',
+  'robots.txt',
+  'favicon.ico',
 ];
 
 // Whole directories copied recursively.
@@ -82,6 +85,10 @@ const MUST_EXIST = [
   'vendor/chart/chart.umd.min.js',
   'img/og-card.png',
   'sitemap.xml',
+  'robots.txt',
+  'favicon.ico',
+  'img/favicon.svg',
+  'img/apple-touch-icon.png',
   'vendor/fonts/g8321-100.woff2',
   'vendor/fonts/g8321-400.woff2',
   'vendor/fonts/g8321-700.woff2',
@@ -188,8 +195,11 @@ const hashed = {};
 
 // 3d. sitemap.xml generated from the registry (active pages only) -------------
 {
+  // lastmod = the build date: every deploy regenerates every page, so the
+  // deploy date is the honest "content last changed" stamp for the whole set.
+  const lastmod = new Date().toISOString().slice(0, 10);
   const urls = ['index.html', 'quiz.html', ...CHAPTER_PAGES]
-    .map(p => `  <url><loc>${ORIGIN}/${p === 'index.html' ? '' : p}</loc><changefreq>weekly</changefreq></url>`)
+    .map(p => `  <url><loc>${ORIGIN}/${p === 'index.html' ? '' : p}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq></url>`)
     .join('\n');
   writeFileSync(join(outDir, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);

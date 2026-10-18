@@ -94,7 +94,12 @@ emc-physics-tutorial/
 │   ├── make-og-card.mjs           Renders that artwork to img/og-card.png (puppeteer, dev only)
 │   └── cleanup-repo.ps1           Windows repo-hygiene script: plan -> confirm -> clean (see §9)
 ├── img/
-│   └── og-card.png                Committed Open Graph / Twitter card image (1200x630)
+│   ├── og-card.png                Committed Open Graph / Twitter card image (1200x630)
+│   ├── favicon.svg                Favicon artwork — same mascot as the header brand mark
+│   └── apple-touch-icon.png       180x180 iOS home-screen icon (rasterised from favicon.svg)
+├── favicon.ico                    Multi-size ICO (16/32/48) fallback for Safari and any
+│                                  tool that probes /favicon.ico at the origin root
+├── robots.txt                     Allow-all policy + Sitemap pointer (shipped by the build)
 ├── vercel.json                    Vercel config: install/build commands, outputDirectory + cache headers
 ├── tailwind.config.js             Tailwind pipeline config (bun run build:css)
 ├── vendor/

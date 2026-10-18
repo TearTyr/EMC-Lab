@@ -633,6 +633,13 @@ console.log('\u2500'.repeat(66));
   console.log('\n[cross-page]');
   const pages = ['index.html', 'quiz.html', 'topics/current.html', 'topics/efield.html',
     'topics/magind.html'];
+  // ---- #15 favicon artwork must equal the header brand mark -------------
+  // the committed img/favicon.svg is the single artwork source; the ICO and
+  // apple-touch PNGs are rasterisations of it (generated, then committed).
+  const favSvg = readFileSync(join(ROOT, 'img/favicon.svg'), 'utf8');
+  const favTokens = ['M15 15 C13 7 19 5 21 11', 'M33 15 C35 7 29 5 27 11',
+                     'rx="16" ry="15"', 'cx="18.5" cy="26"', 'cx="29.5" cy="26"',
+                     'cx="13.5" cy="30"', 'cx="34.5" cy="30"'];
   for (const p of pages) {
     const html = readFileSync(join(ROOT, p), 'utf8');
     ok(`${p}: declares a viewport`, /name="viewport"/.test(html));
@@ -667,16 +674,35 @@ console.log('\u2500'.repeat(66));
         .some(m => !/emc-physics\.vercel\.app/.test(m[1])));
 
     // ---- #15 favicon artwork must equal the header brand mark -------------
-    // the data URI stores the SVG with single quotes; normalise before comparing
-    const favDec = decodeURIComponent((html.match(/<link rel="icon" href="data:image\/svg\+xml,([^"]+)">/) || ['', ''])[1])
-      .replace(/'/g, '"');
     const brandMark = (html.match(/<svg class="brand-mark"[\s\S]*?<\/svg>/) || ['', ''])[0];
-    const favTokens = ['M15 15 C13 7 19 5 21 11', 'M33 15 C35 7 29 5 27 11',
-                       'rx="16" ry="15"', 'cx="18.5" cy="26"', 'cx="29.5" cy="26"',
-                       'cx="13.5" cy="30"', 'cx="34.5" cy="30"'];
     ok(`${p}: favicon artwork matches the header mascot`,
-      brandMark.length > 100 && favTokens.every(t => favDec.includes(t) && brandMark.includes(t.replace(/"/g, '"'))));
+      brandMark.length > 100 && favTokens.every(t => favSvg.includes(t) && brandMark.includes(t)));
+    ok(`${p}: ships the full favicon set (ico + svg + apple-touch) with relative hrefs`,
+      /rel="icon" href="(?:\.\.\/)?favicon\.ico" type="image\/x-icon"/.test(html) &&
+      /rel="icon" href="(?:\.\.\/)?img\/favicon\.svg" type="image\/svg\+xml"/.test(html) &&
+      /rel="apple-touch-icon" href="(?:\.\.\/)?img\/apple-touch-icon\.png"/.test(html) &&
+      !/rel="icon" href="data:/.test(html));
   }
+  // ---- #15b the favicon/crawler files are real committed binaries ----------
+  const ico = readFileSync(join(ROOT, 'favicon.ico'));
+  ok('favicon.ico is a real multi-size ICO (16/32/48)',
+    ico.readUInt16LE(0) === 0 && ico.readUInt16LE(2) === 1 && ico.readUInt16LE(4) >= 3);
+  const apple = readFileSync(join(ROOT, 'img/apple-touch-icon.png'));
+  ok('apple-touch-icon.png exists at the 180x180 Apple requires',
+    `${apple.readUInt32BE(16)}x${apple.readUInt32BE(20)}` === '180x180',
+    `${apple.readUInt32BE(16)}x${apple.readUInt32BE(20)}`);
+  const robotsTxt = readFileSync(join(ROOT, 'robots.txt'), 'utf8');
+  ok('robots.txt allows everything and points at the production sitemap',
+    /User-agent: \*/.test(robotsTxt) && /Allow: \//.test(robotsTxt) &&
+    /Sitemap: https:\/\/emc-physics\.vercel\.app\/sitemap\.xml/.test(robotsTxt));
+  const buildSrc = readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8');
+  ok('the deploy allow-list ships robots.txt + favicon.ico and fails the build without them',
+    /'robots\.txt',\n  'favicon\.ico'/.test(buildSrc) &&
+    (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'robots.txt'")) &&
+    (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'favicon.ico'")));
+  ok('the generated sitemap carries lastmod stamps',
+    /<lastmod>\$\{lastmod\}<\/lastmod>/.test(buildSrc));
+
   // ---- #14 no phantom important-variants of component classes -----------
   const builtAll = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
   ok('compiled css carries no escaped important class selectors',
