@@ -674,6 +674,11 @@ console.log('\u2500'.repeat(66));
   // is covered by the Chromium harness; here we assert the guard stays wired.
   ok('the Enter shortcut still targets the shared top submit control',
     /const sb = el\('quiz-submit'\); if \(sb && !sb\.disabled\) \{ sb\.click\(\)/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+  // ...and that the shortcut can never hijack Enter from a focused LINK: the
+  // skip link / nav / pager must stay operable by keyboard (a keyboard user
+  // activating "Skip to main content" must land on the content, not submit).
+  ok('quiz hotkeys bail out when focus is on a link (A excluded)',
+    /if \(t && \/INPUT\|TEXTAREA\|SELECT\|SUMMARY\|BUTTON\|A\/\.test\(t\.tagName\)\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
 
   // floating timer: hidden until the first answer, then mirrors the one clock
   ok('floating timer is hidden before the first answer', doc.getElementById('floatTimer').hidden === true);
@@ -744,14 +749,29 @@ console.log('\u2500'.repeat(66));
     ok(`${p}: has a lang attribute`, /<html lang="en">/.test(html));
     ok(`${p}: has a skip link`, /class="skip-link"/.test(html));
     ok(`${p}: skip-link destination is a focusable main`, /<main class="emc-main" id="main" tabindex="-1">/.test(html));
+    // The Details swap must never restyle the same slot on ANY page: a
+    // plain-level copy must not carry a smaller size class ("lede small",
+    // "small muted" + data-detail="plain"), or toggling Details would change
+    // the font-size of intro/body text instead of only the content depth.
+    ok(`${p}: Details states share typography for swapped content`,
+      !/lede small|class="small muted" data-detail="plain"/.test(html));
     if (p.startsWith('topics/')) {
-      // the Details swap must never restyle the same slot: hero plain lede
-      // carries the identical class of the tech lede, and in-prose plain
-      // paragraphs inherit prose typography instead of .small/.muted
-      ok(`${p}: Details states share typography for swapped content`,
-        (html.match(/<p class="lede" data-detail="plain">/g) || []).length === 1 &&
-        !/lede small|class="small muted" data-detail="plain"/.test(html));
+      // hero plain lede carries the identical class of the tech lede, and
+      // in-prose plain paragraphs inherit prose typography instead of
+      // .small/.muted
+      ok(`${p}: hero plain lede is class-identical to the tech lede`,
+        (html.match(/<p class="lede" data-detail="plain">/g) || []).length === 1);
     }
+    // a bulk data-detail injection once fused an SVG element into
+    // `<p data-detail="tech"ath d=...>` — guard against that corruption class
+    ok(`${p}: no fused tag/attribute corruption around data-detail`,
+      !/<[a-z]+[^>]*data-detail="(?:tech|plain)"[a-z]/i.test(html));
+    // the boot shell (full-screen mascot) must never trap the reader: every
+    // page applies the stored Detail pref before first paint and force-closes
+    // #bootOverlay after 6 s even if the bundle never executes
+    ok(`${p}: ships the pre-paint Detail pref + 6 s boot-overlay failsafe`,
+      /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 6000\)/.test(html) &&
+      /document\.documentElement\.dataset\.detail = \(__p\.detail === 'off' \? 'off' : 'on'\)/.test(html));
     ok(`${p}: every canvas has an accessible label`,
       [...html.matchAll(/<canvas[^>]*>/g)].every(m => /aria-label=/.test(m[0])));
     ok(`${p}: links the compiled Tailwind pipeline (site.css) + font faces`,

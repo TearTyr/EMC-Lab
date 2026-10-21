@@ -119,6 +119,12 @@
   .h-sec   { font-size: clamp(1.15rem, 2.2vw, 1.5rem); margin-bottom: 1rem; }
   .h-sub   { font-size: 1.06rem; margin: 1.8rem 0 .55rem; }
   .lede    { color: var(--text-dim); font-size: 1.04rem; line-height: 1.8; max-width: 58ch; }
+  /* Size lock for the primary reading text: Detail Mode swaps WHICH copy of a
+     slot is visible ([data-detail="plain"|"tech"]) and must never re-scale it.
+     Even if a size utility ever rides along on a .lede again ("lede small
+     muted" in older revisions), the lede metrics win, so both states of the
+     toggle render at the identical, more comfortable size. */
+  .lede.small, .lede.tiny { font-size: 1.04rem; line-height: 1.8; }
   .muted   { color: var(--text-dim); }
   .faint   { color: var(--text-faint); }
   .small   { font-size: .89rem; line-height: 1.65; }
@@ -190,9 +196,11 @@
     text-decoration: none; border: 2px solid var(--edge);
     background: var(--panel-2); color: var(--text); user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: transform .12s ease, border-color .15s ease, background .15s ease;
+    /* slight overshoot on the transform gives the hover lift a soft spring;
+       reduced-motion flattens every transition globally (see below) */
+    transition: transform .22s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, box-shadow .22s ease;
   }
-  .btn:hover { border-color: #4b4e57; background: #262830; transform: translateY(-1px); }
+  .btn:hover { border-color: #4b4e57; background: #262830; transform: translateY(-1.5px); box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }
   .btn:active:not(:disabled) { transform: translateY(0) scale(.975); }   /* gentle press */
   .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
   .btn-primary { background: var(--ye); border-color: var(--ye); color: #221d07; }
@@ -229,11 +237,11 @@
   .card {
     background: var(--panel); border: 1.5px solid var(--line);
     border-radius: var(--r-card); padding: 1.35rem 1.4rem;
-    transition: border-color .15s ease, transform .16s ease;
+    transition: border-color .15s ease, transform .24s cubic-bezier(.34, 1.4, .64, 1), box-shadow .24s ease;
   }
   .card > p, .card > .small, .card > .lede { margin: 0; }
   .card-flat { background: var(--bg-soft); }
-  .card-hover:hover { border-color: var(--edge); transform: translateY(-2px); }
+  .card-hover:hover { border-color: var(--edge); transform: translateY(-3px) scale(1.004); box-shadow: 0 14px 30px -16px rgb(0 0 0 / .6); }
   .panel { background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-card); overflow: hidden; }
   .panel-head {
     display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;

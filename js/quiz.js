@@ -262,7 +262,10 @@
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target;
-      if (t && /INPUT|TEXTAREA|SELECT|SUMMARY|BUTTON/.test(t.tagName)) return;
+      // A is in the exclusion list on purpose: when focus sits on a link (the
+      // skip link, nav, pager …), Enter belongs to the link. Hijacking it here
+      // would both break keyboard navigation and fire an unintended submit.
+      if (t && /INPUT|TEXTAREA|SELECT|SUMMARY|BUTTON|A/.test(t.tagName)) return;
       const card = S.activeCard;
       // NB: explicit null checks here and below, never bang-negation. Tailwind
       // scans this file for class names, and a negated identifier reads as an
