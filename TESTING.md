@@ -11,7 +11,7 @@ headless Chrome 148 and jsdom on this build; the summary at the bottom records t
 ```bash
 bun install        # dev deps: jsdom (tests) + tailwindcss (CSS build). Website itself: none.
 bun run check      # static validator
-bun run test       # 396 runtime assertions
+bun run test       # 428 runtime assertions
 npm run build:css  # recompile Tailwind utilities -> css/site.css after markup changes
 npm run switch:cdn / npm run switch:built   # toggle the Play CDN tag (idempotent)
 npm run font:scan  # re-scan vendor/fonts/ for OPTIONAL licensed cuts -> manifest.json
@@ -331,7 +331,7 @@ been verified and no doc should claim otherwise:
 | Check | Result |
 |---|---|
 | `node tools/check-links.mjs` | **0 errors, 0 warnings** (19 advisory `[data-*]` notes, all guarded in code) |
-| `node tools/smoke-test.mjs` | **396 / 396 assertions passed** |
+| `node tools/smoke-test.mjs` | **428 / 428 assertions passed** |
 | Built-CSS mode, all external requests blocked | layout identical (2-col grid, type scale), **0 console errors** |
 | Headless Chrome, all assets same-origin | vendored Chart.js charts render; WebAudio tone bench plays; `?topic=` deep link filters; **0 console errors, 0 third-party requests** |
 | Headless Chrome, all 6 pages + print emulation | **0 console errors, 0 failed requests, no horizontal overflow in print** |

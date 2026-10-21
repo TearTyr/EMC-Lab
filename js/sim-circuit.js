@@ -1,4 +1,4 @@
-/* Sim 4 - circuit builder. Exact series/parallel/combination solve with per element V, I, P; animated charge flow whose density tracks branch current; resistors clickable on canvas. */
+/* Sim 2 - circuit builder (topics/current.html). Exact series/parallel/combination solve with per element V, I, P; animated charge flow whose density tracks branch current; resistors clickable on canvas. */
 (function () {
   const canvas = document.getElementById('sim-circuit');
   if (!canvas) return;
@@ -264,6 +264,16 @@
   }
 
   const stage = new EMC.Stage(canvas, render, { animate: true });
+
+  /* prefers-reduced-motion parks the rAF loop, which also parks the drifting
+     charge carriers. Any deliberate interaction with the bench - a topology
+     click, a slider, a drag - is a request for motion, so it starts the loop
+     (no-op when it is already running). Issue #3 item 2. */
+  const benchSection = canvas.closest('section') || canvas.parentElement;
+  if (benchSection) {
+    ['pointerdown', 'input', 'click'].forEach(ev =>
+      benchSection.addEventListener(ev, () => stage.start(), { passive: true }));
+  }
 
   /* ---- HTML readouts + resistor table ---------------------------------- */
   const el = id => document.getElementById(id);

@@ -59,15 +59,17 @@ window.EMC = (function () {
     const pre = PREFIX.find(p => p.e === e);
     if (!pre) return v.toExponential(Math.max(0, sig - 1));
 
-    // Rounding can push 999.6 up to 1000, so re-scale when that happens.
+    // Rounding can push 999.6 up to 1000, so re-scale when that happens -
+    // using the ROUNDED value, so the result keeps `sig` significant figures
+    // ("1.00 k", not "1.000").
     let decimals = Math.max(0, sig - 1 - Math.floor(Math.log10(Math.abs(scaled))));
     if (decimals > 4) return v.toExponential(Math.max(0, sig - 1));   // below femto
     if (Math.abs(Number(scaled.toFixed(decimals))) >= 1000) {
-      scaled /= 1000; e += 3;
+      scaled = Number(scaled.toFixed(decimals)) / 1000; e += 3;
       const pre2 = PREFIX.find(p => p.e === e);
       if (!pre2) return v.toExponential(Math.max(0, sig - 1));
       decimals = Math.max(0, sig - 1 - Math.floor(Math.log10(Math.abs(scaled))));
-      return scaled.toFixed(decimals) + (pre2.s ? ' ' + pre2.s : '');
+      return scaled.toFixed(decimals) + (pre2.s ? '\u00A0' + pre2.s : '');
     }
     return scaled.toFixed(decimals) + (pre.s ? '\u00A0' + pre.s : '');
   }
@@ -76,7 +78,9 @@ window.EMC = (function () {
   function unit(v, u, sig = 3) {
     const s = eng(v, sig);
     if (!u) return s;
-    const parts = s.split(' ');
+    // eng() joins number and prefix with a NON-BREAKING space - split on that
+    // (splitting on ' ' never matched, which printed "54.0 m V")
+    const parts = s.split('\u00A0');
     // parts = [number, prefix] when a prefix was applied, else [number]
     return parts.length === 2 ? `${parts[0]}\u00A0${parts[1]}${u}` : `${s}\u00A0${u}`;
   }
@@ -477,7 +481,7 @@ window.EMC = (function () {
      The in-page strip keeps tracking the lazy sims afterwards. */
   const BOOT_STAGES = ['shell', 'scripts', 'equations', 'sims'];
   const OVERLAY_STAGES = ['shell', 'scripts', 'equations'];
-  const OVERLAY_MIN_MS = 450;          // long enough to read as a screen, not a flicker
+  const OVERLAY_MIN_MS = 200;          // long enough to read as a screen, not a flicker; kept low because it delays LCP on every view
   const bootDone = {};
   let bootMark = 0, overlayClosing = false;
   function closeOverlay() {
@@ -615,7 +619,8 @@ window.EMC = (function () {
       let raw;
       try { raw = JSON.parse(text); }
       catch (e) { return { ok: false, message: 'That file is not valid JSON.' }; }
-      const src = (raw && raw.progress) ? raw.progress : raw;
+      // `let`, not `const`: a legacy v1 file is replaced by its migration below
+      let src = (raw && raw.progress) ? raw.progress : raw;
       if (!src || typeof src !== 'object') return { ok: false, message: 'No progress data found in that file.' };
       if (raw && raw.app && raw.app !== 'emc-lab') {
         return { ok: false, message: 'That file was not exported by EMC Lab.' };
@@ -624,6 +629,12 @@ window.EMC = (function () {
       const num = (v, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0; };
       if (src.topics && ('charges' in src.topics || 'vectors' in src.topics || 'magnetism' in src.topics)) {
         src = migrateLegacy(src);          // importing an old export file
+      }
+      // An object with NO recognised field is not a progress file - importing
+      // it used to silently wipe the stored scores ("Imported: 0 of 3").
+      const KNOWN = ['topics', 'quizBest', 'quizAttempts', 'quizLast', 'quizHistory'];
+      if (!KNOWN.some(key => key in src)) {
+        return { ok: false, message: 'That file contains no EMC Lab progress fields.' };
       }
       const p = {
         topics: TOPICS.reduce((o, id) => (o[id] = false, o), {}),
@@ -647,7 +658,14 @@ window.EMC = (function () {
                  (p.quizAttempts ? `, best score ${p.quizBest}%` : '')
       };
     },
-    reset() { store.remove(PROGRESS_KEY); return this.read(); }
+    reset() {
+      store.remove(PROGRESS_KEY);
+      // also drop the legacy v1 record, or the next read() would migrate it
+      // straight back and resurrect the old progress (the recoverable copy in
+      // PROGRESS_KEY.legacy survives)
+      store.remove(LEGACY_KEY);
+      return this.read();
+    }
   };
 
   /* ------------------------------------------------------------------------ 8. Control binding helper (slider <-> readout <-> state) ------------------------------------------------------------------------ */

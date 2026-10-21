@@ -1,4 +1,4 @@
-/* Sim 7 - magnet through a coil. Phi(z) = mu0 m a^2 / (2 (a^2+z^2)^{3/2}); EMF = -N dPhi/dz * v (analytic), I = EMF/R, P = EMF^2/R. Motion is sub-stepped at 2 ms so the narrow EMF peak is never undersampled. Sign convention: EMF > 0 = counter-clockwise seen from +x (dot at the top of each turn). */
+/* Sim 6 - magnet through a coil (topics/magind.html). Phi(z) = mu0 m a^2 / (2 (a^2+z^2)^{3/2}); EMF = -N dPhi/dz * v (analytic), I = EMF/R, P = EMF^2/R. Motion is sub-stepped at 2 ms so the narrow EMF peak is never undersampled. Sign convention: EMF > 0 = counter-clockwise seen from +x (dot at the top of each turn). */
 (function () {
   const canvas = document.getElementById('sim-induction');
   if (!canvas) return;
@@ -24,6 +24,14 @@
   };
   const Z_MAX = 0.11;   // magnet travel limit [m]
   let chart = null;     // strip-chart Stage (constructed below the main stage)
+
+  /* Declared ABOVE the Stage construction on purpose: under
+     prefers-reduced-motion the Stage draws one synchronous frame inside its
+     constructor, so anything render() -> updateReadouts() touches must be
+     initialised by then (a later `const el` hit the temporal dead zone and
+     crashed the whole sim - issue #3 item 1). */
+  const el = id => document.getElementById(id);
+  let lastLenzHTML = '';
 
   /* ---- core physics ---------------------------------------------------- */
   function fluxPerTurn(z) {
@@ -333,8 +341,6 @@
   }
 
   /* ---- readouts -------------------------------------------------------- */
-  const el = id => document.getElementById(id);
-  let lastLenzHTML = '';
   function updateReadouts(phys) {
     const set = (id, v) => { if (el(id)) el(id).textContent = v; };
     set('ind-z', `${(state.z * 100).toFixed(1)} cm`);
@@ -358,10 +364,14 @@
         : 'The flux through the coil is not changing, so by Faraday\u2019s law the induced EMF is zero. Move the magnet to generate a current.';
     } else {
       const approaching = state.z * state.v < 0;
+      // The magnet is drawn S-left / N-right, so WHICH pole faces the coil
+      // depends on which side of the coil the magnet is on (issue #3 item 3).
+      const facing = state.z < 0 ? 'north' : 'south';
+      const coilFace = approaching ? facing : (facing === 'north' ? 'south' : 'north');
       dir = phys.emf > 0 ? 'CCW from the right' : 'CW from the right';
       lenz = approaching
-        ? 'Flux is <b>increasing</b>. Lenz\u2019s law: the induced current flows so as to <b>oppose the increase</b> \u2014 it makes the coil\u2019s near face a <b>north</b> pole, which <b>repels</b> the approaching magnet. You must push harder; that extra mechanical work is exactly the electrical power I\u00B2R being dissipated.'
-        : 'Flux is <b>decreasing</b>. Lenz\u2019s law: the induced current flows to <b>sustain the flux</b> \u2014 it makes the coil\u2019s near face a <b>south</b> pole, which <b>attracts</b> the departing magnet and resists its motion. Again, energy is conserved.';
+        ? `Flux is <b>increasing</b>. Lenz\u2019s law: the induced current flows so as to <b>oppose the increase</b> \u2014 it makes the coil\u2019s near face a <b>${coilFace}</b> pole, which <b>repels</b> the approaching magnet. You must push harder; that extra mechanical work is exactly the electrical power I\u00B2R being dissipated.`
+        : `Flux is <b>decreasing</b>. Lenz\u2019s law: the induced current flows to <b>sustain the flux</b> \u2014 it makes the coil\u2019s near face a <b>${coilFace}</b> pole, which <b>attracts</b> the departing magnet and resists its motion. Again, energy is conserved.`;
     }
     if (dirEl && dirEl.textContent !== dir) dirEl.textContent = dir;
     if (lenzEl && lenz !== lastLenzHTML) { lenzEl.innerHTML = lenz; lastLenzHTML = lenz; }
@@ -387,6 +397,9 @@
       else if (mode === 'pull') { state.z = Z_MAX; state.v = 0; setMode('pull'); }
       else if (mode === 'oscillate') setMode('oscillate');
       else { state.v = 0; setMode('manual'); }
+      // Push/Pull/Oscillate ARE a request for motion: start the loop even when
+      // prefers-reduced-motion kept it parked (issue #3 item 2)
+      stage.start();
       stage.draw();
     });
   });
@@ -428,6 +441,9 @@
       const hit = Math.abs(p.x - G.magnetX) < G.magLen / 2 + 14 && Math.abs(p.y - G.cy) < G.magThick + 16;
       if (hit) {
         dragging = true; setMode('manual');
+        // dragging the magnet is an explicit request for live physics: under
+        // prefers-reduced-motion the loop starts here so v (and the EMF) are real
+        stage.start();
         canvas.classList.add('grabbing');
         lastZ = state.z;
       }

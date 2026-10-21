@@ -1,4 +1,4 @@
-/* Sim 1 - Coulomb bench (topics/charges.html). F = k|q1q2|/r^2; charges stored in normalised coords so the physics is resolution-independent; midpoint field by superposition; drag either charge to change r. */
+/* Sim 3 - Coulomb bench (topics/efield.html). F = k|q1q2|/r^2; charges stored in normalised coords so the physics is resolution-independent; midpoint field by superposition; drag either charge to change r. */
 (function () {
   const canvas = document.getElementById('sim-coulomb');
   if (!canvas) return;                     // guard: page does not contain this sim
@@ -31,10 +31,13 @@
     const r = Math.max(separation(), 1e-4);
     const d = r / 2;
     const q1 = state.q1 * 1e-6, q2 = state.q2 * 1e-6;
-    // Midpoint lies to the RIGHT of q1 -> field of q1 points +x when q1 > 0.
-    const e1 = k * q1 / (d * d);
-    // Midpoint lies to the LEFT of q2 -> field of q2 points -x when q2 > 0.
-    const e2 = -k * q2 / (d * d);
+    // s = which side q2 sits on relative to q1: dragging a charge through the
+    // other one flips it, and every direction below must flip with it
+    const s = Math.sign(state.x2n - state.x1n) || 1;
+    // Midpoint lies toward q2 from q1 -> field of q1 points s*k*q1/d^2 ...
+    const e1 = s * k * q1 / (d * d);
+    // ... and toward q1 from q2 -> field of q2 points -s when q2 > 0.
+    const e2 = -s * k * q2 / (d * d);
     return e1 + e2;
   }
   const chargeRadius = q => 13 + 9 * Math.cbrt(Math.abs(q) / 3);
@@ -76,7 +79,10 @@
     const col = repel ? '#f8aebe' : attract ? '#b5d777' : '#8b897f';
 
     if (product !== 0 && L > 0) {
-      const dir1 = repel ? -1 : 1;           // direction of force ON q1
+      // s = which side q2 sits on relative to q1 (dragging can swap them):
+      // repulsion pushes q1 AWAY from q2, attraction pulls it toward q2
+      const s = Math.sign(state.x2n - state.x1n) || 1;
+      const dir1 = repel ? -s : s;           // direction of force ON q1
       const dir2 = -dir1;                    // equal and opposite on q2
       arrow(ctx, x1 + dir1 * (r1 + 4), midY, x1 + dir1 * (r1 + 4 + L), midY, { color: col, width: 4, head: 13 });
       arrow(ctx, x2 + dir2 * (r2 + 4), midY, x2 + dir2 * (r2 + 4 + L), midY, { color: col, width: 4, head: 13 });

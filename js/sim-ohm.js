@@ -1,4 +1,4 @@
-/* Sim 3 - Ohm bench. I = V/R, P = VI; auto-ranging ammeter, bulb brightness proportional to P, I-V characteristic with R/2 and 2R reference lines. */
+/* Sim 1 - Ohm bench (topics/current.html). I = V/R, P = VI; auto-ranging ammeter, bulb brightness proportional to P, I-V characteristic with R/2 and 2R reference lines. */
 (function () {
   const canvas = document.getElementById('sim-ohm');
   if (!canvas) return;

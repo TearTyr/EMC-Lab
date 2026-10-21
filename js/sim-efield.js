@@ -1,11 +1,18 @@
-/* Sim 2 - field explorer. E(P) = SUM k q (P-r)/|P-r|^3; field lines integrated along E from + charges, vector grid coloured by |E|, +1 nC test probe. */
+/* Sim 4 - field explorer (topics/efield.html). E(P) = SUM k q (P-r)/|P-r|^3; field lines integrated along E from + charges, vector grid coloured by |E|, +1 nC test probe. */
 (function () {
   const canvas = document.getElementById('sim-efield');
   if (!canvas) return;
 
   const { CONST, clamp, arrow, label, chargeGlyph, unit } = EMC;
   const k = CONST.K;
-  const PX_PER_M = 220;              // canvas scale: 220 px = 1 metre
+  /* Charges are stored as FRACTIONS of the canvas, so the physics scale must
+     follow the canvas too: one fixed world width keeps every readout identical
+     at any size. (A fixed 220 px/m made the same setup read ~6% differently on
+     a 400 px phone canvas vs a 900 px desktop one - issue #3, minor item.
+     3 m across keeps the old look on the typical ~660 px canvas.) */
+  const WORLD_W_M = 3;               // metres spanned by the full canvas width
+  const pxPerM = w => w / WORLD_W_M; // canvas scale in px per metre
+  const MAX_CHARGES = 12;            // gentle cap so the scene stays readable
   const Q_TEST = 1e-9;               // test charge used for the probe: +1 nC
 
   /* ---- state ---------------------------------------------------------- */
@@ -49,11 +56,12 @@
   /* * Net electric field at a pixel position. * @returns {{ex:number, ey:number, mag:number}} field in N/C */
   function fieldAt(x, y, w, h) {
     let ex = 0, ey = 0;
+    const scale = pxPerM(w);
     for (const c of state.charges) {
       const p = px(c, w, h);
       // Convert the pixel offset to metres, then apply E = k q r_hat / r^2.
-      const dxm = (x - p.x) / PX_PER_M;
-      const dym = (y - p.y) / PX_PER_M;
+      const dxm = (x - p.x) / scale;
+      const dym = (y - p.y) / scale;
       const r2 = dxm * dxm + dym * dym;
       if (r2 < 1e-6) continue;                       // ignore the singularity
       const r = Math.sqrt(r2);
@@ -309,9 +317,10 @@
      potential V = SUM kq/r every frame. */
   function potentialAt(x, y, w, h) {
     let V = 0;
+    const scale = pxPerM(w);
     for (const c of state.charges) {
       const p = px(c, w, h);
-      const dxm = (x - p.x) / PX_PER_M, dym = (y - p.y) / PX_PER_M;
+      const dxm = (x - p.x) / scale, dym = (y - p.y) / scale;
       const r = Math.hypot(dxm, dym);
       if (r < 1e-6) continue;
       V += CONST.K * (c.q * 1e-6) / r;
@@ -325,7 +334,7 @@
     for (let i = 0; i <= N; i++) {
       const t = i / N;
       const f = fieldAt(ax + (bx - ax) * t, ay + (by - ay) * t, w, h);
-      const dot = (f.ex * (bx - ax) + f.ey * (by - ay)) / (PX_PER_M);   // E . dr per unit t, in metres
+      const dot = (f.ex * (bx - ax) + f.ey * (by - ay)) / (pxPerM(w));   // E . dr per unit t, in metres
       const wgt = (i === 0 || i === N) ? 1 : (i % 2 ? 4 : 2);
       sum += wgt * dot;
     }
@@ -349,6 +358,10 @@
       } else if (state.brush === 'erase') {
         if (idx >= 0) { state.charges.splice(idx, 1); refresh(); }
       } else {
+        if (state.charges.length >= MAX_CHARGES) {
+          EMC.toast(`That\u2019s plenty of charges \u2014 ${MAX_CHARGES} is the cap. Erase one first.`, 'warn');
+          return;
+        }
         const q = (state.brush === 'add+' ? 1 : -1) * state.size;
         state.charges.push({ q, nx: clamp(p.x / w, .04, .96), ny: clamp(p.y / h, .06, .94) });
         refresh();

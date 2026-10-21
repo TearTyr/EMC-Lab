@@ -140,6 +140,16 @@
     importFile.addEventListener('change', () => {
       const f = importFile.files && importFile.files[0];
       if (!f) return;
+      // Importing REPLACES the progress stored on this device - when there is
+      // something to lose, ask first (issue #3 item 11).
+      const cur = Progress.read();
+      const hasProgress = cur.quizAttempts > 0 || cur.quizBest > 0 ||
+        Object.keys(cur.topics).some(t => cur.topics[t]);
+      if (hasProgress && typeof window.confirm === 'function' &&
+          window.confirm('Importing replaces the progress saved on this device. Continue?') === false) {
+        importFile.value = '';
+        return;
+      }
       const finish = (msg, ok) => {
         renderDashboard();
         refreshTopicButtons();

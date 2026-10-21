@@ -48,10 +48,12 @@
     enterPhase: 'enter',          // first paint gets the staggered entrance, later swaps a shorter fade
     timerMode: 'off',             // 'off' (calm default) | 'up' practice | 'down' challenge
     timerMins: 10,                // challenge duration: 10 / 15 / 20
-    t0: 0,                 // quiz clock start (ms, 0 = not started)
-    startedWall: 0,        // Date.now() at first answer - lets a resume continue the clock
+    t0: 0,                 // current visible clock segment start (ms, 0 = stopped/paused)
+    baseMs: 0,             // banked ACTIVE milliseconds - the clock pauses with the tab
+    clockOn: false,        // the quiz clock has been started by an answer
     lastMark: 0,           // timestamp of the previously answered question
     times: new Map(),      // question id -> seconds spent on it
+    optOrder: new Map(),   // question id -> display permutation of [0,1,2,3] (reshuffled per attempt)
     streak: 0,             // live streak (instant mode)
     bestStreak: 0,         // longest consecutive-correct run (question order)
     totalTime: 0,          // seconds, frozen at submit
@@ -67,6 +69,29 @@
     return q.topic === S.filter;
   });
 
+  /* The bank's answer key is skewed (A/B/C/D = 7/12/4/1 - always picking B
+     would score 50%), so every attempt shuffles each question's display order
+     (issue #3 item 10). data-opt keeps the ORIGINAL index, so answers,
+     autosave, marking and the 1-4 hotkeys are untouched; only the A-D labels
+     and the visual order move. */
+  function buildOptOrder() {
+    S.optOrder = new Map();
+    for (const q of BANK) {
+      const a = [0, 1, 2, 3];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      S.optOrder.set(q.id, a);
+    }
+  }
+  /* The A-D label an original option index is wearing in this attempt. */
+  function displayKey(qid, optIdx) {
+    const order = S.optOrder.get(qid);
+    const d = order ? order.indexOf(optIdx) : -1;
+    return KEYS[d >= 0 ? d : optIdx];
+  }
+
   /* ---- rendering ------------------------------------------------------- */
   function questionHTML(q, index) {
     const chosen = S.answers.has(q.id) ? S.answers.get(q.id) : -1;
@@ -75,18 +100,19 @@
     const ch = (window.EMC_REGISTRY || {}).chapter ? EMC_REGISTRY.chapter(q.topic) : null;
     const topicClass = (ch && ch.tagClass) || '';
 
-    const opts = q.options.map((text, i) => {
+    const order = S.optOrder.get(q.id) || [0, 1, 2, 3];
+    const opts = order.map((o, d) => {
       let cls = 'opt';
       if (isMarked) {
-        if (i === q.answer) cls += ' correct';
-        else if (i === chosen) cls += ' wrong';
+        if (o === q.answer) cls += ' correct';
+        else if (o === chosen) cls += ' wrong';
       }
       // worded marks: U+2713/U+2717 are absent from several common font stacks
-      const mark = isMarked && i === q.answer ? '<span class="mark">correct</span>'
-        : isMarked && i === chosen ? '<span class="mark">your answer</span>' : '';
-      return `<button type="button" class="${cls}" role="radio" data-opt="${i}"
-                aria-checked="${i === chosen}" ${isMarked ? 'disabled' : ''}>
-                <span class="key">${KEYS[i]}</span><span>${text}</span>${mark}</button>`;
+      const mark = isMarked && o === q.answer ? '<span class="mark">correct</span>'
+        : isMarked && o === chosen ? '<span class="mark">your answer</span>' : '';
+      return `<button type="button" class="${cls}" role="radio" data-opt="${o}"
+                aria-checked="${o === chosen}" ${isMarked ? 'disabled' : ''}>
+                <span class="key">${KEYS[d]}</span><span>${q.options[o]}</span>${mark}</button>`;
     }).join('');
 
     let fb = '';
@@ -99,7 +125,7 @@
                 secs ? ` <span class="tiny faint">(answered in ${secs}s)</span>` : ''}</span>
             </div>`;
     } else if (chosen >= 0) {
-      fb = `<div class="feedback">Answer recorded: <b>${KEYS[chosen]}</b>. ${
+      fb = `<div class="feedback">Answer recorded: <b>${displayKey(q.id, chosen)}</b>. ${
         S.instant ? '' : 'It will be marked when you submit the quiz.'}</div>`;
     }
 
@@ -194,7 +220,21 @@
      the timer Off (the calm default) the clock still runs internally but
      nothing time-related is displayed and the float panel stays hidden. */
   const fmtTime = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-  const elapsedSec = () => (S.t0 ? (performance.now() - S.t0) / 1000 : 0);
+  /* The quiz clock counts ACTIVE time only: hidden/closed tabs bank the time
+     and pause (issue #3 item 12 - a day-old resume must never auto-grade a
+     challenge). elapsed = banked ms + the current visible segment. */
+  const elapsedMs = () => S.baseMs + (S.t0 ? performance.now() - S.t0 : 0);
+  const elapsedSec = () => elapsedMs() / 1000;
+
+  document.addEventListener('visibilitychange', () => {
+    if (S.submitted || S.clockOn === false) return;
+    if (document.hidden) {
+      if (S.t0) { S.baseMs += performance.now() - S.t0; S.t0 = 0; }
+      flushSession();                  // the tab may never come back
+    } else if (S.t0 === 0) {
+      S.t0 = performance.now(); S.lastMark = S.t0;
+    }
+  });
 
   function tickTimer() {
     if (S.t0 === 0 || S.submitted || S.timerMode === 'off') return;
@@ -241,8 +281,9 @@
   }
   function startTimer() {
     if (S.t0 === 0) {
-      S.t0 = performance.now(); S.lastMark = S.t0; S.startedWall = Date.now();
+      S.t0 = performance.now(); S.lastMark = S.t0;
     }
+    S.clockOn = true;
     const elT = el('quiz-timer');
     if (elT !== null && elT !== undefined) elT.hidden = S.timerMode === 'off';
     if (S.timerMode !== 'off') { showTimerPanel(); startTick(); }
@@ -250,7 +291,7 @@
   }
   function stopTimer() {
     stopTick();
-    if (S.t0) S.totalTime = Math.round((performance.now() - S.t0) / 1000);
+    if (S.clockOn) S.totalTime = Math.round(elapsedMs() / 1000);
   }
   function timeUp() {
     if (S.submitted) return;
@@ -379,34 +420,45 @@
      OFFERS to resume - never a silent restore - and submitting, retaking or
      choosing "Start fresh" clears it. */
   const SESSION_KEY = 'emc.quiz.session.v1';
-  function saveSession() {
+  function writeSession() {
     if (S.submitted) return;
+    // While the resume banner is up the stored session is the user's PENDING
+    // choice - a background save of the empty boot state must never wipe it
+    // (issue #3 item 4).
+    if (resumePending) return;
+    if (S.answers.size === 0 && S.flagged.size === 0) { store.remove(SESSION_KEY); return; }
+    try {
+      store.set(SESSION_KEY, JSON.stringify({
+        v: 2,
+        answers: [...S.answers],
+        marked: [...S.marked],
+        flagged: [...S.flagged],
+        order: S.order.map(q => q.id),
+        optOrder: [...S.optOrder],
+        instant: S.instant,
+        filter: S.filter,
+        baseMs: elapsedMs(),          // ACTIVE time only - pauses with the tab
+        clockOn: S.clockOn,
+        timerMode: S.timerMode,
+        timerMins: S.timerMins
+      }));
+    } catch (err) { /* storage full or locked - the quiz itself still works */ }
+  }
+  function saveSession() {
+    if (S.submitted || resumePending) return;
     if (saveHandle) return;
-    saveHandle = setTimeout(() => {
-      saveHandle = 0;
-      if (S.submitted) return;
-      try {
-        store.set(SESSION_KEY, JSON.stringify({
-          v: 1,
-          answers: [...S.answers],
-          marked: [...S.marked],
-          flagged: [...S.flagged],
-          order: S.order.map(q => q.id),
-          instant: S.instant,
-          filter: S.filter,
-          startedWall: S.startedWall,
-          timerMode: S.timerMode,
-          timerMins: S.timerMins
-        }));
-      } catch (err) { /* storage full or locked - the quiz itself still works */ }
-    }, 400);
+    saveHandle = setTimeout(() => { saveHandle = 0; writeSession(); }, 400);
+  }
+  function flushSession() {
+    if (saveHandle) { clearTimeout(saveHandle); saveHandle = 0; }
+    writeSession();
   }
   function readSession() {
     try {
       const raw = store.get(SESSION_KEY);
       if (raw === null || raw === undefined) return null;
       const d = JSON.parse(raw);
-      if (d === null || typeof d !== 'object' || d.v !== 1) return null;
+      if (d === null || typeof d !== 'object' || d.v !== 2) return null;
       if (Array.isArray(d.answers) === false || d.answers.length === 0) return null;
       const ids = new Set(BANK.map(q => q.id));
       const answers = new Map(d.answers
@@ -442,6 +494,14 @@
       const order = d.order.map(id => byId.get(id)).filter(q => q !== undefined);
       if (order.length === BANK.length) S.order = order;
     }
+    // the saved display permutation keeps A/B/C/D labels matching the answers
+    if (Array.isArray(d.optOrder)) {
+      const ids = new Set(BANK.map(q => q.id));
+      const restored = d.optOrder
+        .filter(pair => Array.isArray(pair) && ids.has(pair[0]) && Array.isArray(pair[1]) && pair[1].length === 4)
+        .map(pair => [Number(pair[0]), pair[1].map(Number)]);
+      if (restored.length === BANK.length) S.optOrder = new Map(restored);
+    }
     S.instant = d.instant === true;
     syncSegQuiet(el('quiz-mode'), S.instant ? 'instant' : 'exam');
     if (typeof d.filter === 'string') S.filter = d.filter;
@@ -449,11 +509,13 @@
     syncMinsChips();
     syncSegQuiet(el('quiz-timer-mode'), d.timerMode === 'up' || d.timerMode === 'down' ? d.timerMode : 'off');
     applyTimerMode(d.timerMode, true);
-    if (Number(d.startedWall) > 0) {
-      // the clock kept running while the page was away - resume from wall time
-      S.startedWall = Number(d.startedWall);
-      S.t0 = performance.now() - (Date.now() - S.startedWall);
-      S.lastMark = performance.now();
+    if (d.clockOn === true && Number(d.baseMs) > 0) {
+      // resume the ACTIVE-time clock where it left off; the time the page was
+      // closed simply never happened (a stale challenge must not auto-grade)
+      S.baseMs = Number(d.baseMs);
+      S.clockOn = true;
+      S.t0 = performance.now();
+      S.lastMark = S.t0;
       if (S.timerMode !== 'off') {
         const elT = el('quiz-timer');
         if (elT !== null && elT !== undefined) elT.hidden = false;
@@ -634,7 +696,7 @@
       btn.classList.add('pick');
       let fb = card.querySelector('.feedback');
       if (!fb) { fb = document.createElement('div'); fb.className = 'feedback'; card.appendChild(fb); }
-      fb.innerHTML = `Answer recorded: <b>${KEYS[S.answers.get(qid)]}</b>. It will be marked when you submit the quiz.`;
+      fb.innerHTML = `Answer recorded: <b>${displayKey(qid, S.answers.get(qid))}</b>. It will be marked when you submit the quiz.`;
       card.classList.add('answered');
       renderMeta();
     }
@@ -865,7 +927,8 @@
       S.submitted = false; S.blankWarned = false; S.confirmAsk = false;
       clearTimeout(confirmHandle);
       S.t0 = 0; S.lastMark = 0; S.times.clear(); S.streak = 0; S.bestStreak = 0; S.totalTime = 0;
-      S.startedWall = 0;
+      S.baseMs = 0; S.clockOn = false;
+      buildOptOrder();               // a fresh attempt gets a fresh shuffle
       store.remove(SESSION_KEY);
       dismissResume(false);
       clearInterval(timerHandle); timerHandle = 0;
@@ -1115,6 +1178,7 @@
   if (el('quiz-total-end')) el('quiz-total-end').textContent = String(BANK.length);
 
   /* ---- boot ------------------------------------------------------------ */
+  buildOptOrder();                    // shuffle this attempt's A-D display order
   // optional timer: restore the saved preference (calm default: Off)
   const savedMins = Number(Prefs.get('quizTimerMins', 10));
   S.timerMins = [10, 15, 20].indexOf(savedMins) >= 0 ? savedMins : 10;

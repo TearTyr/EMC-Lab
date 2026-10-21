@@ -1,4 +1,4 @@
-/* Sim 6 - Lorentz force. F = qv x B; exact circular solution p(t) = c + Rot(Omega t)(p0 - c) with Omega = -q Bz/m; r = mv/|q|B, T = 2pi m/|q|B. Rotation direction is physical; the rate is slowed and the slow-down factor is printed on the canvas. */
+/* Sim 5 - Lorentz force (topics/magind.html). F = qv x B; exact circular solution p(t) = c + Rot(Omega t)(p0 - c) with Omega = -q Bz/m; r = mv/|q|B, T = 2pi m/|q|B. Rotation direction is physical; the rate is slowed and the slow-down factor is printed on the canvas. */
 (function () {
   const canvas = document.getElementById('sim-lorentz');
   if (!canvas) return;
@@ -233,12 +233,22 @@
     const slowDown = (1 / REV_PER_SEC) / ph.T;      // how much the animation is stretched
     label(ctx, `|F| = ${eng(ph.F, 3)} N    r = ${eng(ph.r, 2)} m    T = ${eng(ph.T, 3)} s    (animation slowed \u00D7${eng(slowDown, 1)})`,
       w / 2, h - 12, { color: 'rgba(169,186,214,.92)', size: 11, weight: '600' });
+
+    // the RK4-vs-theory error only exists once frames tick, so the readouts
+    // must follow the animation, not just the controls (issue #3 item 9);
+    // throttled to 6 Hz so the DOM never sees the 60 Hz loop
+    readoutTick();
   }
+
+  /* Hoisted above the Stage on purpose: under prefers-reduced-motion the
+     constructor draws one synchronous frame, and render() now feeds the
+     readouts - both touch `el`, so it must be initialised first. */
+  const el = id => document.getElementById(id);
+  const readoutTick = EMC.throttle(updateReadouts, 6);
 
   const stage = new EMC.Stage(canvas, render, { animate: true });
 
   /* ---- readouts -------------------------------------------------------- */
-  const el = id => document.getElementById(id);
   function updateReadouts() {
     const ph = physics();
     if (el('lor-force')) el('lor-force').textContent = unit(ph.F, 'N', 3);
@@ -291,6 +301,9 @@
     state.playing = !state.playing;
     playBtn.textContent = state.playing ? 'Pause' : 'Play';
     playBtn.setAttribute('aria-pressed', String(!state.playing));
+    // Play is an explicit request for motion: under prefers-reduced-motion the
+    // loop never started, so start it now (no-op when it is already running)
+    if (state.playing) stage.start();
   });
   const resetBtn = el('lor-reset');
   if (resetBtn) resetBtn.addEventListener('click', () => { state.rkSig = ''; state.swept = 0; stage.draw(); });

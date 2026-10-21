@@ -125,7 +125,7 @@ and 13 scripts. No framework, no bundler, no backend.
 | Clean landing page with navigation to each topic | `index.html` — centred hero with mascot, a KaTeX equation strip (the four governing laws) and stat counters derived from the registry/quiz bank, 3 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
 | Responsive UI, desktop + mobile | Fluid `clamp()` type, `md:`/`lg:` grids, hamburger nav < 900 px, canvases resize via `ResizeObserver` |
 | Sim 1 — Ohm’s law bench | `js/sim-ohm.js`: V and R sliders (plus an editable R box), auto-ranging ammeter, a bulb whose brightness follows P = VI, and an I–V characteristic chart; presets for ohmic and non-ohmic behaviour |
-| Sim 2 — circuit builder | `js/sim-circuit.js`: battery + up to six resistors in series, parallel or a mixed combination; every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
+| Sim 2 — circuit builder | `js/sim-circuit.js`: battery + up to four resistors in series or parallel (three in combination mode); every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
 | Sim 3 — Coulomb force bench | `js/sim-coulomb.js`: two draggable point charges; F = k q₁ q₂ / r² recomputed per frame with to-scale arrows, full substitution line and inverse-square demonstration (doubling r quarters F) |
 | Sim 4 — electric field explorer | `js/sim-efield.js`: place any number of charges; field lines integrated along E, a vector grid coloured by |E|, a +1 nC test-charge probe, and draggable A/B markers with a live −∫E·dr Simpson integral checked against the analytic Σkq/r potential difference |
 | Sim 5 — Lorentz force & circular motion | `js/sim-lorentz.js`: proton/electron/alpha orbits integrated with RK4 at slowed visual time, printed slow-down factor, r = mv/(|q|B) and T = 2πm/(|q|B) theory readouts plus a live RK4-vs-theory radius error, and a right-hand-rule challenge |
@@ -146,20 +146,16 @@ and 13 scripts. No framework, no bundler, no backend.
 
 | Sim | Governing equations implemented |
 |---|---|
-| Vector bench | R = A + B by components (R<sub>x</sub> = A<sub>x</sub>+B<sub>x</sub>, R<sub>y</sub> = A<sub>y</sub>+B<sub>y</sub>); |R| = √(R<sub>x</sub>²+R<sub>y</sub>²); θ = tan⁻¹(R<sub>y</sub>/R<sub>x</sub>) with the quadrant fixed by the signs |
-| Buoyancy tank | W = ρ<sub>obj</sub>Vg; F<sub>B</sub> = ρ<sub>f</sub>V<sub>sub</sub>g; floats when ρ<sub>obj</sub> < ρ<sub>f</sub> at submerged fraction ρ<sub>obj</sub>/ρ<sub>f</sub>; N = W − F<sub>B</sub> on the floor; spring-damper settling |
-| Bernoulli visualiser | A₁v₁ = A₂v₂ (v₂ = v₁/ratio² in the throat); ΔP = ½ρ(v₂² − v₁²); lift = ΔP × wing area; separation model past 15° AoA |
-| Thermometer | °F = °C × 9/5 + 32; K = °C + 273.15; ΔT invariance between the degree scales |
-| Heat transfer lab | Fourier: q = k·A·ΔT/L with per-material k; convective circulation field driven by heater power; radiation I = P/(4πd²) with absorbed αI per surface |
-| Wave simulator | y = A sin(kx − ωt), k = 2π/λ, ω = 2πf; v = fλ; T = 1/f; longitudinal displacement field with compressions/rarefactions |
-| Tone bench | λ = v<sub>sound</sub>/f; MIDI-mapped note naming with cent deviation; oscillator frequency = f exactly |
-| Ohm bench | I = V/R; P = VI = I²R = V²/R; I–V line of gradient 1/R |
-| Circuit builder | R<sub>eq</sub> = ΣRᵢ (series), 1/R<sub>eq</sub> = Σ1/Rᵢ (parallel), R₁+(R₂R₃)/(R₂+R₃) (combo); Kirchhoff's laws; P = I²R per element |
+| Sim 1 — Ohm bench (`sim-ohm.js`) | I = V/R; P = VI = I²R = V²/R; I–V characteristic line of gradient 1/R with R/2 and 2R references; auto-ranging meter; over-power warning against the resistor rating |
+| Sim 2 — circuit builder (`sim-circuit.js`) | R<sub>eq</sub> = ΣRᵢ (series), 1/R<sub>eq</sub> = Σ1/Rᵢ (parallel), R₁+(R₂R₃)/(R₂+R₃) (combo); Kirchhoff's laws for every branch V/I/P; carrier-dot density proportional to branch current |
+| Sim 3 — Coulomb bench (`sim-coulomb.js`) | F = k\|q₁q₂\|/r² with to-scale log-mapped arrows; Newton's-third-law pair; midpoint field by superposition; directions follow which side each charge is on |
+| Sim 4 — field explorer (`sim-efield.js`) | E(P) = Σ kq (P−r)/\|P−r\|³; field lines integrated along E; vector grid coloured by \|E\|; Simpson −∫E·dr between draggable A/B markers checked against the analytic Σkq/r potential difference; one fixed world scale (3 m across) so readouts never depend on canvas size |
+| Sim 5 — Lorentz force (`sim-lorentz.js`) | F = qv × B; RK4-integrated orbits against the analytic circle r = mv/(\|q\|B), T = 2πm/(\|q\|B); live radius-error readout; physical rotation direction at a printed slow-down factor |
+| Sim 6 — magnet through a coil (`sim-induction.js`) | exact dipole flux Φ(z) = μ₀ma²/(2(a²+z²)^{3/2}); EMF = −N dΦ/dt (analytic derivative, 2 ms sub-stepping); I = EMF/R; P = I²R; pole-aware Lenz direction text |
 
-The conduction scene relaxes a 20-cell diffusion profile every frame (with reservoir ends),
-so the printed temperature profile is the numerical solution of the heat equation rather than
-a drawn line; the radiation scene's intensity follows the inverse square exactly, which the
-smoke test verifies by doubling d and expecting a quarter of the intensity.
+The retired general-physics simulations (vector bench, buoyancy, Bernoulli, thermometer,
+heat transfer, waves, tone bench) live under `archive/` with their original documentation
+and are not part of the deployed site.
 
 ---
 
@@ -169,7 +165,7 @@ smoke test verifies by doubling d and expecting a quarter of the intensity.
 bun install          # installs the single dev dependency (tailwindcss) -> bun.lock
 bun run build:css    # css/input.css -> css/site.css (minified, ~36 kB)
 bun run check        # static validator (links, ids, utility coverage)
-bun run test         # 292-assertion jsdom harness
+bun run test         # full jsdom harness (exact assertion count printed at the end)
 bun run perf         # gzip transfer / font payload / blocking-script budgets
 bun run font:scan    # re-scan vendor/fonts/ for OPTIONAL licensed cuts -> manifest.json
 bun run og:card      # regenerate img/og-card.png from tools/og-card.html (puppeteer)
@@ -196,8 +192,10 @@ project standardises on Bun (`bun.lock` is committed and Vercel detects it).
 * `outputDirectory: public` — pinned in `vercel.json`, which **overrides** the dashboard's
   Output Directory setting, so a stale dashboard value can never fail the build again.
   `public/` itself is gitignored: it is a build artifact, regenerated on every deploy.
-* Headers: `/css/` and `/js/` are `no-cache` (304 when unchanged) so fresh HTML can never
-  pair with a stale stylesheet; `/vendor/` (KaTeX, fonts) caches for a day.
+* Headers: `/css/` and `/js/` are `immutable, max-age=31536000` — safe because every
+  deploy ships content-hashed filenames (`common.9f3c12ab.js`), and `build:public` now
+  FAILS on Vercel rather than ever falling back to unhashed files under those headers;
+  `/vendor/` (KaTeX, fonts) caches for a day.
 * Each page carries one line of inline critical CSS — scoped to `@media (min-width: 901px)` —
   that keeps the Topics dropdown collapsed even if a stale stylesheet were ever served.
 
@@ -238,7 +236,7 @@ There is no second stylesheet to fight with: the file is organised as
 Because CSS cascade layers order **base < components < utilities**, a utility class in the
 markup always wins over an element reset or a component rule of equal specificity — that is
 the whole specificity-conflict story, solved by architecture instead of `!important`.
-`bun run check` proves coverage: it lists every utility class used in the seven pages and
+`bun run check` proves coverage: it lists every utility class used in the site pages and
 verifies each one exists in the compiled `css/site.css`.
 
 ### Type system (one committed OFL family, three weights)
@@ -348,8 +346,8 @@ family, no licence risk. ~45 KB of fonts total.
 ```bash
 bun install          # dev deps only: jsdom (tests) + tailwindcss (CSS build)
 bun run check        # static validation: links, ids, data-hooks, CSS coverage
-bun run test         # 292 runtime assertions across all seven pages (skips politely
-                     # if jsdom is absent)
+bun run test         # runtime assertions across all five live pages (exact count
+                     # printed at the end; skips politely if jsdom is absent)
 bun run build:css    # recompile css/input.css -> css/site.css after markup changes
 bun run perf         # gzip transfer / font payload / blocking-script budgets
 bun run font:scan    # re-scan vendor/fonts/ for optional licensed cuts -> manifest.json

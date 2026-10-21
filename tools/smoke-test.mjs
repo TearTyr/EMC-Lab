@@ -104,6 +104,17 @@ async function loadPage(relPath, globals = {}, opts = {}) {
     virtualConsole: vc
   });
   installMocks(dom.window);
+  // emulate an OS-level "reduce motion" setting BEFORE the page scripts run:
+  // Stage, initReveal and the detail toggle all branch on this query
+  if (opts.reduceMotion) {
+    dom.window.matchMedia = q => ({
+      media: String(q),
+      matches: /prefers-reduced-motion/.test(String(q)),
+      addEventListener() {}, removeEventListener() {},
+      addListener() {}, removeListener() {},
+      onchange: null, dispatchEvent() { return false; }
+    });
+  }
   // seed localStorage BEFORE the page scripts run (resume-session tests)
   if (opts.seed) {
     for (const [k, v] of Object.entries(opts.seed)) dom.window.localStorage.setItem(k, v);
@@ -800,7 +811,7 @@ console.log('\u2500'.repeat(66));
   await new Promise(r => setTimeout(r, 500));
   const session = JSON.parse(win.localStorage.getItem('emc.quiz.session.v1') || 'null');
   ok('answering autosaves a resumable session',
-    session !== null && session.v === 1 &&
+    session !== null && session.v === 2 &&
     session.answers.length === 1 && session.answers[0][0] === q1.id);
 
   // finish all-correct -> pass: cheer face, tiny confetti, no weak spots
@@ -856,8 +867,8 @@ console.log('\u2500'.repeat(66));
 
   // --- window 3: resume an autosaved session (explicit choice) -------------
   const seed = JSON.stringify({
-    v: 1, answers: [[1, 1], [2, 1]], marked: [], flagged: [3],
-    instant: false, filter: 'all', startedWall: 0, timerMode: 'off', timerMins: 10
+    v: 2, answers: [[1, 1], [2, 1]], marked: [], flagged: [3], optOrder: null,
+    instant: false, filter: 'all', baseMs: 0, clockOn: false, timerMode: 'off', timerMins: 10
   });
   const { win: w3, doc: d3 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': seed } });
   await frames(w3, 2);
@@ -883,6 +894,199 @@ console.log('\u2500'.repeat(66));
     d4.getElementById('resume-wrap').hidden === true &&
     w4.localStorage.getItem('emc.quiz.session.v1') === null);
   w4.close();
+}
+
+/* ---------------- issue #3 regressions ------------------------------------
+   Each assertion maps to a numbered item in github.com/TearTyr/EMC-Lab/issues/3
+   so a regression points straight back at the report. ---------------------- */
+{
+  console.log('\n[issue #3 \u2014 physics, reduced motion, formats, progress I/O]');
+
+  /* --- items 3 + 9: Lenz pole text follows the magnet side; the RK4-vs-
+         theory error readout tracks the animation, not just the controls --- */
+  {
+    const { win, doc, problems } = await loadPage('topics/magind.html');
+    await frames(win, 3);
+    ok('magind loads without runtime errors', problems.length === 0, problems.join(' | '));
+    click(win, doc.querySelector('[data-ind-mode="pull"]'));
+    await frames(win, 2);
+    const lenzPull = txt(win, 'ind-lenz');
+    ok('item 3: magnet RIGHT of coil, approaching -> near face is SOUTH (S repels S)',
+      /south/i.test(lenzPull) && /repels/i.test(lenzPull), String(lenzPull).slice(0, 140));
+    click(win, doc.querySelector('[data-ind-mode="push"]'));
+    await frames(win, 2);
+    const lenzPush = txt(win, 'ind-lenz');
+    ok('item 3: magnet LEFT of coil, approaching -> near face is NORTH',
+      /north/i.test(lenzPush) && /repels/i.test(lenzPush), String(lenzPush).slice(0, 140));
+    // item 9: the orbit error must appear from the animation alone
+    await frames(win, 75);
+    await new Promise(r => setTimeout(r, 350));
+    const rk = txt(win, 'lor-rkerr');
+    ok('item 9: RK4-vs-theory readout updates from the running animation',
+      rk !== null && rk !== '\u2014' && rk !== '0\u00A0m', String(rk));
+    win.close();
+  }
+
+  /* --- items 1 + 2: reduced motion must not crash the induction sim, and
+         explicit user actions restart the parked loops --------------------- */
+  {
+    const { win, doc, problems } = await loadPage('topics/magind.html', {}, { reduceMotion: true });
+    await frames(win, 3);
+    ok('item 1: induction sim loads clean under prefers-reduced-motion',
+      problems.length === 0, problems.join(' | '));
+    ok('item 1: the constructor frame populated the readouts', /cm/.test(txt(win, 'ind-z') || ''));
+
+    const lorBefore = drawCalls(win, '#sim-lorentz');
+    await new Promise(r => setTimeout(r, 250));
+    eq('item 2: the Lorentz loop stays parked while nothing is asked for',
+      drawCalls(win, '#sim-lorentz'), lorBefore);
+    click(win, doc.getElementById('lor-play'));   // Pause
+    click(win, doc.getElementById('lor-play'));   // Play -> explicit request
+    await new Promise(r => setTimeout(r, 350));
+    ok('item 2: Play restarts the Lorentz orbit under reduced motion',
+      drawCalls(win, '#sim-lorentz') > lorBefore);
+
+    const indBefore = drawCalls(win, '#sim-induction');
+    click(win, doc.querySelector('[data-ind-mode="push"]'));
+    await new Promise(r => setTimeout(r, 500));
+    ok('item 2: Push runs the induction motion under reduced motion',
+      drawCalls(win, '#sim-induction') > indBefore &&
+      txt(win, 'ind-z') === '11.0 cm', txt(win, 'ind-z'));
+    win.close();
+  }
+
+  /* --- item 2 (circuit): any deliberate interaction wakes the carriers --- */
+  {
+    const { win, doc, problems } = await loadPage('topics/current.html', {}, { reduceMotion: true });
+    await frames(win, 3);
+    ok('current.html loads clean under prefers-reduced-motion', problems.length === 0, problems.join(' | '));
+    const before = drawCalls(win, '#sim-circuit');
+    click(win, doc.getElementById('circ-add'));
+    await new Promise(r => setTimeout(r, 350));
+    ok('item 2: a circuit interaction restarts the carrier animation',
+      drawCalls(win, '#sim-circuit') > before);
+    win.close();
+  }
+
+  /* --- item 8 + minor: Coulomb cross-drag keeps physics honest; the field
+         explorer caps charge placement ------------------------------------ */
+  {
+    const { win, doc, problems } = await loadPage('topics/efield.html');
+    await frames(win, 3);
+    // the r slider boots to 0.300 m, centring the charges at x=0.375w/0.625w;
+    // drag q1 right THROUGH q2 into the min-separation clamp
+    const cb = doc.getElementById('sim-coulomb');
+    pointer(win, cb, 'pointerdown', 0.375 * 900, 0.54 * 400);
+    pointer(win, cb, 'pointermove', 0.633 * 900, 0.54 * 400);
+    await frames(win, 2);
+    pointer(win, cb, 'pointerup', 0.633 * 900, 0.54 * 400);
+    eq('item 8: crossing the other charge lands on the separation clamp',
+      txt(win, 'coul-rv'), '0.020 m');
+    ok('item 8: the cross-drag raised no errors', problems.length === 0, problems.join(' | '));
+    ok('item 8: arrow + midpoint-field directions derive from the charge order',
+      (readFileSync(join(ROOT, 'js/sim-coulomb.js'), 'utf8')
+        .match(/Math\.sign\(state\.x2n - state\.x1n\)/g) || []).length === 2);
+
+    // minor item: charge placement is capped so the scene stays readable
+    click(win, doc.querySelector('#ef-brush [data-value="add+"]'));
+    for (let i = 0; i < 16; i++) {
+      pointer(win, doc.getElementById('sim-efield'), 'pointerdown', 100 + i * 45, 120 + (i % 5) * 50);
+      pointer(win, doc.getElementById('sim-efield'), 'pointerup', 100 + i * 45, 120 + (i % 5) * 50);
+    }
+    await frames(win, 2);
+    eq('minor: the field explorer caps placed charges at 12', txt(win, 'ef-count'), '12');
+    win.close();
+  }
+
+  /* --- items 5, 6, 7, 11: progress I/O + SI formatting ------------------- */
+  {
+    const { win } = await loadPage('index.html');
+    const P = win.EMC.Progress;
+
+    eq('item 7: prefix sticks to the unit (54.0 mV, not "54.0 m V")',
+      win.EMC.unit(0.054, 'V'), '54.0\u00A0mV');
+    eq('item 7: rounding up keeps the requested significant figures',
+      win.EMC.unit(0.9997, 'V'), '1.00\u00A0V');
+    eq('item 7: unprefixed values keep the number-unit space',
+      win.EMC.unit(12, 'V'), '12.0\u00A0V');
+
+    let threw = null, res = null;
+    try {
+      res = P.importJSON(JSON.stringify({ app: 'emc-lab', progress: { topics: { charges: true } } }));
+    } catch (err) { threw = err; }
+    ok('item 5: importing a legacy v1 file no longer throws', threw === null, threw && threw.message);
+    ok('item 5: the legacy topics are migrated (charges -> efield)',
+      res !== null && res.ok === true && P.read().topics.efield === true);
+
+    P.recordQuiz(80);
+    const junk = P.importJSON('{}');
+    ok('item 11: importing an unrecognised object is refused', junk.ok === false, JSON.stringify(junk));
+    eq('item 11: a refused import keeps the stored progress', P.read().quizBest, 80);
+
+    win.localStorage.setItem('emc.progress.v1', JSON.stringify({ topics: { current: true }, quizBest: 90 }));
+    win.localStorage.removeItem('emc.progress.v2');
+    P.read();                                   // migrates v1 -> v2
+    const after = P.reset();
+    ok('item 6: reset also drops the legacy key (progress stays reset)',
+      after.quizBest === 0 && win.localStorage.getItem('emc.progress.v1') === null);
+    win.close();
+  }
+
+  /* --- items 4, 10, 12: quiz session, shuffled key, active-time clock ---- */
+  {
+    // item 4: an unaccepted resume session must survive the boot-time saves
+    const seeded = JSON.stringify({
+      v: 2, answers: [[1, 1], [2, 1]], marked: [], flagged: [], optOrder: null,
+      instant: false, filter: 'all', baseMs: 0, clockOn: false, timerMode: 'off', timerMins: 10
+    });
+    const { win, doc } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': seeded } });
+    await frames(win, 2);
+    await new Promise(r => setTimeout(r, 1100));   // the old bug wiped it at ~400 ms
+    ok('item 4: a pending resume session survives past the save throttle',
+      win.localStorage.getItem('emc.quiz.session.v1') !== null &&
+      doc.getElementById('resume-wrap').hidden === false);
+    win.close();
+
+    // item 10: the skewed answer key is shuffled per attempt
+    const { win: w2, doc: d2 } = await loadPage('quiz.html');
+    await frames(w2, 2);
+    const orders = [...d2.querySelectorAll('.q-card')].map(c =>
+      [...c.querySelectorAll('.opt')].map(b => Number(b.dataset.opt)).join(','));
+    ok('item 10: every card still carries all four options',
+      orders.length === 24 && orders.every(o => o.split(',').sort((a, b) => a - b).join(',') === '0,1,2,3'));
+    ok('item 10: display order is shuffled (always-B no longer scores 50%)',
+      orders.filter(o => o === '0,1,2,3').length < orders.length);
+    eq('item 10: the visible key labels stay A, B, C, D',
+      [...d2.querySelector('.q-card').querySelectorAll('.opt .key')].map(k => k.textContent).join(''), 'ABCD');
+    w2.close();
+
+    // item 12: a stale challenge resume continues from ACTIVE time - it must
+    // not auto-grade a quiz that was closed for a day
+    const stale = JSON.stringify({
+      v: 2, answers: [[1, 1]], marked: [], flagged: [], optOrder: null,
+      instant: false, filter: 'all', baseMs: 45000, clockOn: true, timerMode: 'down', timerMins: 10
+    });
+    const { win: w3, doc: d3 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': stale } });
+    await frames(w3, 2);
+    click(w3, d3.getElementById('resume-yes'));
+    await new Promise(r => setTimeout(r, 1500));   // > one tick: the old bug graded here
+    ok('item 12: resuming a day-old challenge does NOT auto-grade',
+      d3.getElementById('quiz-score').hidden === true);
+    ok('item 12: the countdown resumes from the banked active time (~9:1x)',
+      /^9:(0\d|1[0-5])$/.test(txt(w3, 'quiz-timer') || ''), txt(w3, 'quiz-timer'));
+    w3.close();
+  }
+
+  /* --- item 15: a Vercel build must fail rather than ship unhashed assets
+         under the 1-year immutable headers -------------------------------- */
+  ok('item 15: build-public refuses the unhashed fallback on Vercel',
+    /if \(process\.env\.VERCEL\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')) &&
+    /process\.exit\(1\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')));
+
+  /* --- item 13: Q14 must point at the electric-fields chapter ------------- */
+  ok('item 13: Q14 explanation references Topic 2, not Topic 1',
+    !/where Topic 1 begins/.test(readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')) &&
+    /where Topic 2 begins/.test(readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')));
 }
 
 /* ---------------- cross-page checks ---------------- */
@@ -1158,6 +1362,12 @@ console.log('\u2500'.repeat(66));
     !/boot-warm/.test(inline) && /bootOverlay/.test(inline));
   ok('a 6 s failsafe guarantees the shell can never trap a user',
     /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 6000\)/.test(inline));
+  // item 14 (issue #3): the branded minimum must stay short - it delays LCP on
+  // every page view
+  const overlayMin = Number((readFileSync(join(ROOT, 'js/common.js'), 'utf8')
+    .match(/OVERLAY_MIN_MS = (\d+)/) || [0, NaN])[1]);
+  ok('the boot-overlay minimum stays at or under 200 ms (LCP)',
+    Number.isFinite(overlayMin) && overlayMin <= 200, String(overlayMin));
   ok('noscript hides the shell when JavaScript is off',
     /<noscript>[\s\S]*?#bootOverlay\{display:none\}/.test(inline));
   win.close();

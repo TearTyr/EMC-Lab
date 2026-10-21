@@ -185,6 +185,15 @@ const hashed = {};
 }
 
 } catch (err) {
+  // On Vercel, /js/ and /css/ are served `immutable, max-age=31536000`. That is
+  // only safe because deploy filenames are content-hashed - shipping UNHASHED
+  // files under those headers would poison every visitor's cache for a year
+  // (issue #3 item 15). Fail the deploy loudly instead of falling back.
+  if (process.env.VERCEL) {
+    console.error('asset pipeline failed on a Vercel build: refusing to ship readable unhashed assets under the 1-year immutable /js/ /css/ headers.');
+    console.error('original error: ' + (err && err.message ? err.message : err));
+    process.exit(1);
+  }
   assetPipeline = 'readable+unhashed (fallback: ' + (err && err.message ? err.message : err) + ')';
   for (const dir of ['js', 'css']) rmSync(join(outDir, dir), { recursive: true, force: true });
   cpSync(join(repoRoot, 'js'), join(outDir, 'js'), { recursive: true });

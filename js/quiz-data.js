@@ -104,7 +104,7 @@ window.EMC_QUIZ = [
               'Protons and electrons are the same particle',
               'Its neutrons cancel out the protons'],
     answer: 1,
-    explain: 'Neutrality is a <b>balance</b>, not an absence: six protons (+6e) and six electrons (\u22126e) sum to zero. Rub the atom\u2019s material and you move electrons around \u2014 that imbalance <i>is</i> static charge, and it is where Topic 1 begins.'
+    explain: 'Neutrality is a <b>balance</b>, not an absence: six protons (+6e) and six electrons (\u22126e) sum to zero. Rub the atom\u2019s material and you move electrons around \u2014 that imbalance <i>is</i> static charge, and it is where Topic 2 begins.'
   },
   {
     id: 15, topic: 'efield', label: 'Electric fields & Coulomb’s law',
