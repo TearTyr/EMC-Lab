@@ -21,14 +21,14 @@
   <meta property="og:title" content="Topic 1 · Circuits &amp; Ohm’s Law">
   <meta property="og:description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
   <meta property="og:url" content="https://emc-physics.vercel.app/topics/current.html">
-  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Topic 1 · Circuits &amp; Ohm’s Law">
   <meta name="twitter:description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
-  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
        home screens. All three carry the same Denki-chan artwork as the header
@@ -145,7 +145,7 @@
     </div>
   </header>
 
-  <main class="emc-main" id="main">
+  <main class="emc-main" id="main" tabindex="-1">
     <div class="wrap wrap-narrow section-tight topic-head">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -162,7 +162,7 @@
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 1 of 3</span>
       <h1 class="h-topic" style="margin:.4rem 0 .35rem">Circuits &amp; Ohm’s Law</h1>
-      <p class="lede small muted" data-detail="plain" style="margin:0 0 .4rem">Circuits come down to three quantities — voltage is energy per unit charge, current is the rate of charge flow, and resistance measures opposition to that flow — linked by one equation, V = IR. This topic builds from that to real networks.</p>
+      <p class="lede" data-detail="plain">Circuits come down to three quantities — voltage is energy per unit charge, current is the rate of charge flow, and resistance measures opposition to that flow — linked by one equation, V = IR. This topic builds from that to real networks.</p>
       <p class="lede" data-detail="tech">
         Set charges in motion and they do the work of the modern world. A steady flow of charge is a
         <strong>current</strong>, and the three quantities that describe any simple circuit —
@@ -184,7 +184,7 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="quantities">1.1 · Current, voltage and resistance</h2>
-      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Voltage (volts) is energy transferred per unit charge. Current (amperes) is charge passing a point per second. Resistance (ohms) is how strongly a component opposes current.</p>
+      <p data-detail="plain">Voltage (volts) is energy transferred per unit charge. Current (amperes) is charge passing a point per second. Resistance (ohms) is how strongly a component opposes current.</p>
       <dl class="defs">
         <div><dt>Current I — the rate of flow of charge</dt><dd>I = ΔQ/Δt, measured in <strong>amperes</strong> (A). One ampere is one coulomb passing a point every second, about 6.24×10<sup>18</sup> electrons per second.</dd></div>
         <div><dt>Potential difference V — energy per unit charge</dt><dd>V = W/Q, measured in <strong>volts</strong> (V). One volt means one joule of energy transferred per coulomb that passes. A battery is a charge pump that gives each coulomb a fixed amount of energy.</dd></div>
@@ -207,7 +207,7 @@
       </details>
 
       <h2 class="h-sec" id="ohm">1.2 · Ohm’s law</h2>
-      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Ohm’s law is V = IR. For a conductor that obeys it (many metals at constant temperature), doubling V doubles I, and doubling R halves I. Power is how fast energy is converted.</p>
+      <p data-detail="plain">Ohm’s law is V = IR. For a conductor that obeys it (many metals at constant temperature), doubling V doubles I, and doubling R halves I. Power is how fast energy is converted.</p>
       <div class="formula">
         <span class="eq" data-display data-tex="V = IR">V = I · R</span>
         <span class="eq" data-display data-tex="I = \dfrac{V}{R}, \quad R = \dfrac{V}{I}" style="font-size:1.05rem">I = V/R &nbsp;·&nbsp; R = V/I</span>
@@ -239,7 +239,7 @@
       </div>
 
       <h2 class="h-sec" id="networks">1.3 · Series and parallel circuits</h2>
-      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Series: one path, so resistances add — R<sub>eq</sub> = R<sub>1</sub> + R<sub>2</sub> + … is always larger than the biggest single resistor. Parallel: extra paths, so 1/R<sub>eq</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub> + … is always smaller than the smallest branch. Reduce a mixed network step by step.</p>
+      <p data-detail="plain">Series: one path, so resistances add — R<sub>eq</sub> = R<sub>1</sub> + R<sub>2</sub> + … is always larger than the biggest single resistor. Parallel: extra paths, so 1/R<sub>eq</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub> + … is always smaller than the smallest branch. Reduce a mixed network step by step.</p>
       <figure class="fig">
         <div class="fig-box">
           <svg viewBox="0 0 560 210" width="560" height="210" role="img"
@@ -347,7 +347,7 @@
       </details>
 
       <h2 class="h-sec" id="sim-ohm-panel" style="scroll-margin-top:5rem">1.4 · Simulation — Ohm’s law bench</h2>
-      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Move the voltage and resistance sliders and watch the current and power respond, with a meter that picks its range like a real one.</p>
+      <p data-detail="plain">Move the voltage and resistance sliders and watch the current and power respond, with a meter that picks its range like a real one.</p>
       <p data-detail="tech">
         Move the voltage and resistance sliders and watch the current respond. The ammeter
         auto-ranges like a real meter, the bulb brightens with dissipated power, and the chart
@@ -422,7 +422,7 @@
 
     <section class="section wrap wrap-narrow prose">
       <h2 class="h-sec" id="sim-circuit-panel" style="scroll-margin-top:5rem">1.5 · Simulation — circuit builder</h2>
-      <p class="small muted" data-detail="plain" style="margin:.35rem 0 0">Build series, parallel or mixed circuits. The animated dots show the current splitting exactly as the rules predict.</p>
+      <p data-detail="plain">Build series, parallel or mixed circuits. The animated dots show the current splitting exactly as the rules predict.</p>
       <p data-detail="tech">
         Build a real circuit. Choose a topology, add or delete resistors, and change any value.
         The simulator solves the network exactly, prints the equivalent-resistance working, and

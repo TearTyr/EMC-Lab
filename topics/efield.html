@@ -13,14 +13,14 @@
   <meta property="og:title" content="Topic 2 · Electric Fields &amp; Coulomb’s Law">
   <meta property="og:description" content="Charges, Coulomb’s inverse-square force, electric fields, superposition and electric potential — with a Coulomb bench and a field explorer that integrates −∫E·dr live.">
   <meta property="og:url" content="https://emc-physics.vercel.app/topics/efield.html">
-  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Topic 2 · Electric Fields &amp; Coulomb’s Law">
   <meta name="twitter:description" content="Charges, Coulomb’s inverse-square force, electric fields, superposition and electric potential — with a Coulomb bench and a field explorer that integrates −∫E·dr live.">
-  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
        home screens. All three carry the same Denki-chan artwork as the header
@@ -137,7 +137,7 @@
     </div>
   </header>
 
-  <main class="emc-main" id="main">
+  <main class="emc-main" id="main" tabindex="-1">
     <div class="wrap wrap-narrow section-tight topic-head">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -154,7 +154,7 @@
 </svg>
       <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 2 of 3</span>
       <h1 class="h-topic" style="margin:.4rem 0 .35rem">Electric Fields &amp; Coulomb’s Law</h1>
-      <p class="small muted" data-detail="plain" style="margin:0 0 .4rem">A charge creates an electric field in the space around it. Another charge placed in that field experiences a force — the field is the mediator. The explorer below lets you see it and measure it.</p>
+      <p class="lede" data-detail="plain">A charge creates an electric field in the space around it. Another charge placed in that field experiences a force — the field is the mediator. The explorer below lets you see it and measure it.</p>
       <p class="lede" data-detail="tech">
         Charge is the source of everything electrical. Around it space acquires a <strong>field</strong> — a vector at every point — and other charges simply respond to the field where they stand. This chapter builds from the inverse-square force to superposition, field lines and the potential difference measured by a live line integral.
       </p>
@@ -219,7 +219,7 @@
         well as attract.
       </p>
 
-      <p class="small muted" data-detail="plain" style="margin:.35rem 0 .6rem">For point charges, the force between two charges is F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup>: like signs repel, unlike signs attract, and doubling the separation quarters the force.</p>
+      <p data-detail="plain">For point charges, the force between two charges is F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup>: like signs repel, unlike signs attract, and doubling the separation quarters the force.</p>
 
       <div class="formula">
         <span class="eq" data-display data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k · |q<sub>1</sub> q<sub>2</sub>| / r<sup>2</sup></span>
@@ -518,9 +518,9 @@
             <div class="readouts mt-4">
               <div class="stat"><span class="stat-label">Charges</span><span class="stat-value" id="ef-count">2</span></div>
               <div class="stat"><span class="stat-label">Net charge</span><span class="stat-value" id="ef-net">0.0 µC</span></div>
-              <div class="stat"><span class="stat-label">|E| at probe</span><span class="stat-value hl-cyan" id="ef-emag">hover the field</span></div>
-              <div class="stat"><span class="stat-label">Direction</span><span class="stat-value" id="ef-edir">hover the field</span></div>
-              <div class="stat"><span class="stat-label">F on +1 nC</span><span class="stat-value hl-amber" id="ef-force">hover the field</span></div>
+              <div class="stat"><span class="stat-label">|E| at probe</span><span class="stat-value hl-cyan hold2" id="ef-emag">hover the field</span></div>
+              <div class="stat"><span class="stat-label">Direction</span><span class="stat-value hold2" id="ef-edir">hover the field</span></div>
+              <div class="stat"><span class="stat-label">F on +1 nC</span><span class="stat-value hl-amber hold2" id="ef-force">hover the field</span></div>
             </div>
             <div class="readouts mt-3">
               <div class="stat"><span class="stat-label">−∫E·dr (A→B, numeric)</span><span class="stat-value hl-emerald" id="ef-dv-num">—</span></div>

@@ -193,7 +193,7 @@
     transition: transform .12s ease, border-color .15s ease, background .15s ease;
   }
   .btn:hover { border-color: #4b4e57; background: #262830; transform: translateY(-1px); }
-  .btn:active { transform: translateY(0); }
+  .btn:active:not(:disabled) { transform: translateY(0) scale(.975); }   /* gentle press */
   .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
   .btn-primary { background: var(--ye); border-color: var(--ye); color: #221d07; }
   .btn-primary:hover { background: var(--ye); filter: brightness(1.07); }
@@ -331,6 +331,11 @@
   .stat-label { display: block; font-family: theme('fontFamily.ui'); font-size: .72rem; letter-spacing: .05em; color: var(--text-faint); font-weight: 700; margin-bottom: .15rem; }
   .stat-value { display: block; font-family: theme('fontFamily.mono'); font-size: 1.05rem; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
   .stat-value.tight { font-size: .88rem; line-height: 1.45; }
+  /* Reserve two lines for readout cells whose text swaps between a wrapping
+     placeholder ("hover the field") and a one-line value: without the reserve
+     the sidebar reflows on first hover, the stretched sim canvas resizes
+     MID-GESTURE, and every hit target shifts under the pointer. */
+  .stat-value.hold2 { min-height: 3.5em; }
   .stat-value.hl-cyan    { color: var(--sk); }
   .stat-value.hl-amber   { color: var(--ye); }
   .stat-value.hl-emerald { color: var(--mi); }
@@ -355,7 +360,7 @@
   table.data td.txt { font-family: theme('fontFamily.sans'); }
 
   /* -- prose & learning blocks ------------------------------------------- */
-  .prose p { margin-bottom: 1.05rem; color: var(--text-dim); line-height: 1.8; }
+  .prose p { color: var(--text-dim); }   /* rhythm (margin/line-height) is set once, further down */
   .prose ul, .prose ol { margin-bottom: 1rem; padding-left: 1.35rem; color: var(--text-dim); }
   .prose ul { list-style: disc; }
   .prose ol { list-style: decimal; }
@@ -375,7 +380,8 @@
   .prose figure.fig           { margin: 2.4rem 0; }
   .prose .defs                { margin: 2.2rem 0; gap: .8rem; }
   .prose details.dig          { margin: 2.2rem 0; }
-  .formula { display: flex; align-items: center; justify-content: center; gap: .8rem; flex-wrap: wrap; background: var(--panel-2); border: 1.5px solid var(--line); border-radius: var(--r-mid); padding: 1.1rem 1.25rem; margin: 1.1rem 0 1.25rem; text-align: center; overflow-x: auto; }
+  .formula { display: flex; align-items: center; justify-content: center; gap: .8rem; flex-wrap: wrap; background: var(--panel-2); border: 1.5px solid var(--line); border-radius: var(--r-mid); padding: 1.1rem 1.25rem; margin: 1.1rem 0 1.25rem; text-align: center; overflow-x: auto; transition: border-color .2s ease; }
+  .formula:hover { border-color: var(--edge); }
   .formula .eq { font-family: theme('fontFamily.mono'); font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 700; color: #f4f1e8; }
   .formula .eq[data-display] { display: block; width: 100%; }
   .formula .eq .katex { font-size: 1.22em; }
@@ -399,6 +405,15 @@
   details.check .answer { border-top: 1.5px dashed var(--line); padding: .65rem 1rem .85rem; font-size: .89rem; line-height: 1.75; color: var(--text-dim); }
   details.check .answer b, details.dig .dig-body b { color: var(--mi); }
   details.dig .dig-body { padding: .35rem 1rem .85rem; }
+  /* ---- micro-interactions: short, transform/opacity-only, and all of them
+     neutered by the global prefers-reduced-motion kill switch below ---- */
+  .nav-link, .dd-link { transition: color .16s ease, background-color .16s ease; }
+  .ring-fg { transition: stroke-dashoffset .6s ease; }
+  details.dig[open] .dig-body { animation: digIn .24s ease; }
+  @keyframes digIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  /* the skip link's destination takes focus programmatically; a page-sized
+     focus ring would be noise, the scrolled-to content is the visible cue */
+  #main:focus { outline: none; }
   details.dig .dig-body p { margin-top: .7rem; color: var(--text-dim); line-height: 1.75; font-size: .92rem; }
   figure.fig { margin: 1.1rem 0; }
   figure.fig .fig-box { background: var(--plate); border: 1.5px solid var(--line); border-radius: var(--r-mid); padding: 1rem; overflow-x: auto; }
@@ -437,9 +452,11 @@
   .q-topic { margin-top: .4rem; }
   .opts { display: grid; gap: .5rem; }
   .opt {
+    position: relative;
     display: flex; gap: .65rem; align-items: flex-start; text-align: left; width: 100%;
     background: var(--panel-2); border: 1.5px solid var(--line); border-radius: var(--r-ctl);
     padding: .68rem .9rem; cursor: pointer; font-family: inherit; font-size: .93rem; color: var(--text-dim);
+    transition: border-color .16s ease, background-color .16s ease, color .16s ease;
   }
   .opt:hover:not(:disabled) { border-color: var(--edge); color: var(--text); }
   .opt .key { flex: none; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; background: var(--plate); border: 1.5px solid var(--line); font-family: theme('fontFamily.mono'); font-size: .75rem; font-weight: 700; color: var(--text-dim); }
@@ -463,8 +480,65 @@
   .grade { font-size: 2.6rem; font-family: theme('fontFamily.ui'); font-weight: 100; line-height: 1.1; }
   .score-bar { flex: 1 1 220px; min-width: 200px; }
 
+  /* ---- quiz quality-of-life + motion ------------------------------------
+     Second submission point: a deliberate final action, separated by a hairline
+     so it never reads as a stray control. */
+  .quiz-end-cta { display: grid; justify-items: center; gap: .55rem; padding-block: 1.7rem .9rem; border-top: 1.5px solid var(--line-soft); margin-top: .5rem; }
+  .quiz-end-cta .btn { min-width: 230px; }
+
+  /* Floating elapsed-time panel: fixed to the viewport (never scrolls away),
+     moved with a transform only, flat panel styling like everything else. */
+  .float-timer { position: fixed; top: 0; left: 0; z-index: 90; width: 172px; max-width: calc(100vw - 2 * 14px); background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-mid); }
+  /* opacity-only entrance: a transform keyframe with fill:both would out-rank
+     the inline positioning transform and glue the panel to its origin */
+  .float-timer.show { animation: fadeIn .3s ease both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .float-timer.dragging { transition: none; }
+  .ft-head { display: flex; align-items: center; gap: .45rem; padding: .38rem .45rem .38rem .6rem; cursor: grab; touch-action: none; border-bottom: 1.5px solid var(--line-soft); border-radius: var(--r-mid) var(--r-mid) 0 0; background: var(--panel-2); }
+  .float-timer.dragging .ft-head { cursor: grabbing; }
+  .ft-head:focus-visible { outline: 2px solid var(--sk); outline-offset: -2px; }
+  .ft-grip { width: 7px; height: 12px; border-left: 2px dotted var(--text-faint); border-right: 2px dotted var(--text-faint); opacity: .75; }
+  .ft-title { font-family: theme('fontFamily.ui'); font-size: .64rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
+  .ft-btns { margin-left: auto; display: flex; gap: .25rem; }
+  .ft-btn { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--line); background: var(--panel); color: var(--text-dim); cursor: pointer; padding: 0; }
+  .ft-btn:hover { color: var(--text); border-color: var(--edge); }
+  .ft-body { padding: .5rem .65rem .6rem; display: grid; gap: .1rem; }
+  .ft-time { font-family: theme('fontFamily.ui'); font-weight: 400; font-size: 1.5rem; line-height: 1.1; color: var(--sk); font-variant-numeric: tabular-nums; }
+  .ft-hint { font-size: .68rem; color: var(--text-faint); }
+  /* compact state: drop the hint + title, shrink the digits */
+  .float-timer.min .ft-hint, .float-timer.min .ft-title { display: none; }
+  .float-timer.min .ft-body { padding: .3rem .65rem .38rem; }
+  .float-timer.min .ft-time { font-size: 1.1rem; }
+  .float-timer.min .ft-head { border-bottom: 0; border-radius: var(--r-mid); }
+
+  /* Entrance motion: heading block, then the control panel with a one-shot
+     cyan pulse travelling along its top edge (solid colour, no gradients). */
+  @keyframes riseIn { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+  .rise-1 { animation: riseIn .45s ease both; }
+  .rise-2 { animation: riseIn .45s ease .08s both; }
+  .quiz-sweep { position: relative; }
+  .quiz-sweep::after { content: ""; position: absolute; left: 0; top: -1.5px; height: 2px; width: 22%; background: var(--sk); opacity: 0; pointer-events: none; animation: quizSweep .9s ease-out .4s 1; }
+  @keyframes quizSweep { 0% { transform: translateX(0); opacity: .9; } 100% { transform: translateX(460%); opacity: 0; } }
+  /* Question cards: staggered rise on first paint, short cross-fade afterwards
+     (filter/shuffle/grading). Delays live in --qi, set once per render. */
+  .q-enter { animation: riseIn .4s ease both; animation-delay: calc(var(--qi, 0) * 45ms); }
+  .q-swap { animation: qFade .22s ease both; }
+  @keyframes qFade { from { opacity: 0; } to { opacity: 1; } }
+  /* One-shot selection ring on the picked option (restart via reflow in JS). */
+  .opt.pick::after { content: ""; position: absolute; inset: -2px; border-radius: 12px; border: 2px solid var(--sk); opacity: 0; pointer-events: none; animation: pickPulse .45s ease-out 1; }
+  @keyframes pickPulse { 0% { opacity: .75; transform: scale(.985); } 100% { opacity: 0; transform: scale(1.02); } }
+  /* Results entrance: card rises, grade pops, every bar grows from zero. */
+  .score-enter { animation: riseIn .4s ease both; }
+  .score-enter .grade { animation: gradePop .5s cubic-bezier(.2, .85, .3, 1.15) .08s both; }
+  @keyframes gradePop { from { opacity: 0; transform: scale(.86); } to { opacity: 1; transform: scale(1); } }
+  .score-enter .progress-fill { transform-origin: left center; animation: barGrow .65s ease .12s both; }
+  @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  #quiz-progress-text { font-variant-numeric: tabular-nums; }
+
   /* -- mascot, hero, footer, pager ---------------------------------------- */
-  .mascot { width: 108px; height: auto; display: block; animation: bob 3.4s ease-in-out infinite; }
+  /* Mascot: predictable slot, capped so it can never dominate the hero or a
+     short viewport (projectors, split screens); gentle idle bob only. */
+  .mascot { width: min(108px, 26vw); max-height: 40vh; height: auto; display: block; animation: bob 3.4s ease-in-out infinite; }
   .mascot.offscreen { animation-play-state: paused; }   /* paused while out of view (IO-toggled) */
   .mascot-sm { width: 60px; margin-bottom: .15rem; }
   .mascot-cheer { width: 22px; height: auto; display: inline-block; vertical-align: -6px; animation: bob 1s ease-in-out 2; }
@@ -548,6 +622,9 @@
   }
   @media (max-width: 640px) {
     .section { padding-block: 2.3rem; }
+    .float-timer { width: 150px; }
+    .ft-time { font-size: 1.25rem; }
+    .quiz-end-cta .btn { width: 100%; min-width: 0; }
     .topic-head { padding-block: 2rem 1.2rem; }
     /* tighter rhythm on phones, still airier than a wall of text */
     .prose .h-sec { margin-top: 3rem; }
@@ -562,7 +639,7 @@
     .card, .panel-body { padding: 1rem; }
     .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stat-value { font-size: .92rem; }
-    .mascot { width: 84px; }
+    .mascot { width: min(84px, 22vw); max-height: 30vh; }
     .btn-row { width: 100%; flex-direction: column; }
     .btn-row .btn { width: 100%; }
     .formula .eq .katex { font-size: 1.02em; }
@@ -586,10 +663,13 @@
     .panel[data-sim-pending] .panel-title .dot { animation: none; }
     .boot-strip, .detail-toggle .dt-track, .detail-toggle .dt-knob { transition: none; }
     * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
-  }
+    /* kill stagger/sweep delays too: with fill:both a leftover delay would
+       hold entrance states (opacity 0) before snapping visible */
+    .q-enter, .rise-1, .rise-2, .quiz-sweep::after, .score-enter, .score-enter .grade,
+    .score-enter .progress-fill, .opt.pick::after, .float-timer.show { animation-delay: 0ms !important; }  }
   @media print {
     .site-header, .site-footer, .nav-toggle, .panel-actions, .btn, .sim-canvas,
-    .scroll-progress, #p5-gen-host, .legend, .mascot, noscript { display: none !important; }
+    .scroll-progress, #p5-gen-host, .legend, .mascot, .float-timer, noscript { display: none !important; }
     body { background: #fff; color: #000; }
     .card, .panel, .q-card { border-color: #bbb; background: #fff; }
     .prose p, .prose li, .lede, .muted { color: #222; }

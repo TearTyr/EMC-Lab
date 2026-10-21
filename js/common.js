@@ -372,13 +372,35 @@ window.EMC = (function () {
     ctx.restore();
   }
 
+  /* Canvas type follows the page type. Sizes are design pixels at the 16 px
+     root, scaled by the LIVE root font-size so canvas annotations shrink and
+     grow together with the DOM across the 15.5/16/17 px breakpoints; weights
+     snap to the three committed G8321 faces (400 / 700) because intermediate
+     values would synthesize a fake bold, and the family is the site stack —
+     a monospace fallback here read as a different, smaller voice. */
+  let canvasTypeScale = 1;
+  const FONT_CACHE = new Map();
+  function syncCanvasType() {
+    let rp = 16;
+    if (typeof document !== 'undefined' && document.documentElement && typeof getComputedStyle === 'function') {
+      const v = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      if (isFinite(v) && v > 0) rp = v;
+    }
+    canvasTypeScale = rp / 16;
+    FONT_CACHE.clear();
+  }
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    syncCanvasType();
+    window.addEventListener('resize', syncCanvasType);
+  }
   /* label() is called dozens of times per frame; parsing the font shorthand is
      wasted work when 99% of calls reuse a (weight,size) pair. */
-  const FONT_CACHE = new Map();
   const fontFor = (weight, size) => {
-    const k = weight + '|' + size;
+    const w = Number(weight) >= 600 ? 700 : 400;
+    const s = Math.round(size * canvasTypeScale * 10) / 10;
+    const k = w + '|' + s;
     let f = FONT_CACHE.get(k);
-    if (!f) FONT_CACHE.set(k, f = `${weight} ${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`);
+    if (!f) FONT_CACHE.set(k, f = `${w} ${s}px G8321, 'Hiragino Maru Gothic ProN', 'Segoe UI', system-ui, sans-serif`);
     return f;
   };
 
@@ -872,11 +894,26 @@ window.EMC = (function () {
           }
           document.dispatchEvent(new CustomEvent('emc:detail', { detail: root.dataset.detail }));
         };
+        const settle = () => {
+          requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('detail-fade')));
+          /* Gentle rise on the blocks that just appeared, so the level swap
+             reads as content arriving rather than a hard cut. Transform and
+             opacity only, capped count, skipped entirely under reduced
+             motion (that path never reaches settle()). */
+          const level = root.dataset.detail === 'off' ? 'plain' : 'tech';
+          const shown = [...document.querySelectorAll(`[data-detail="${level}"]`)].slice(0, 24);
+          shown.forEach((n, i) => {
+            if (!n.animate) return;
+            n.animate(
+              [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+              { duration: 220, delay: Math.min(i * 22, 150), easing: 'ease', fill: 'backwards' });
+          });
+        };
         if (EMC.reducedMotion) { flip(); return; }     // no fade for reduced motion
         root.classList.add('detail-fade');              // 80 ms out
         setTimeout(() => {
           flip();
-          requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('detail-fade')));
+          settle();
         }, 80);
       });
     },
@@ -1110,6 +1147,7 @@ window.EMC = (function () {
     clamp, lerp, dist, roundTo, mapRange, damp,
     eng, unit, fixed, setText, throttle,
     Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
+    typeScale: () => canvasTypeScale,
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
     get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,

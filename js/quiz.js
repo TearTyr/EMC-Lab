@@ -19,12 +19,13 @@
 
   const S = {
     order: BANK.slice(),          // current question order (shuffle changes this)
-    filter: 'all',                // 'all' | topic id | 'wrong'
+    filter: 'all',                // 'all' | topic id | 'wrong' | 'unanswered'
     answers: new Map(),           // question id -> chosen option index
     marked: new Map(),            // question id -> true/false (only once graded)
     submitted: false,
     instant: false,
     blankWarned: false,
+    enterPhase: 'enter',          // first paint gets the staggered entrance, later swaps a shorter fade
     t0: 0,                 // quiz clock start (ms, 0 = not started)
     lastMark: 0,           // timestamp of the previously answered question
     times: new Map(),      // question id -> seconds spent on it
@@ -38,6 +39,7 @@
   const visible = () => S.order.filter(q => {
     if (S.filter === 'all') return true;
     if (S.filter === 'wrong') return S.marked.get(q.id) === false;
+    if (S.filter === 'unanswered') return !S.answers.has(q.id);
     return q.topic === S.filter;
   });
 
@@ -77,8 +79,13 @@
     }
 
     const cardClass = isMarked ? (correct ? 'answered-correct' : 'answered-wrong') : (chosen >= 0 ? 'answered' : '');
-    return `<article class="q-card ${cardClass}" data-qid="${q.id}" id="q-${q.id}">
-      <div class="q-head">
+    // Entrance motion: the first paint staggers cards in; every later repaint
+    // (filter, shuffle, grading) uses a short cross-fade instead. The delay
+    // lives in a custom property so CSS owns the animation entirely.
+    const enterCls = S.enterPhase === 'enter' ? 'q-enter' : 'q-swap';
+    const enterStyle = S.enterPhase === 'enter' ? ` style="--qi:${Math.min(index, 9)}"` : '';
+    return `<article class="q-card ${cardClass} ${enterCls}" data-qid="${q.id}" id="q-${q.id}"${enterStyle}>` +
+      `<div class="q-head">
         <span class="q-num">${index + 1}</span>
         <div style="min-width:0">
           <p class="q-text">${q.q}</p>
@@ -94,22 +101,26 @@
     const list = visible();
     if (!list.length) {
       host.innerHTML = `<div class="card center muted">No questions match this filter
-        ${S.filter === 'wrong' ? '(nothing was incorrect \u2014 well done!)' : ''}.</div>`;
+        ${S.filter === 'wrong' ? '(nothing was incorrect \u2014 well done!)'
+          : S.filter === 'unanswered' ? '(every question already has an answer \u2014 nice work!)' : ''}.</div>`;
     } else {
       host.innerHTML = list.map((q, i) => questionHTML(q, i)).join('');
     }
+    S.enterPhase = 'swap';           // the staggered entrance plays exactly once
     renderMeta();
   }
 
   /* Answered-count bar, counters in the sticky panel. */
   function renderMeta() {
     const list = visible();
-    const answered = list.filter(q => S.answers.has(q.id)).length;
-    const total = list.length;
+    // Progress always spans the FULL bank: filters are views, not denominators,
+    // so the bar and the "x of y answered" line never shrink with a filter.
+    const answered = S.order.filter(q => S.answers.has(q.id)).length;
+    const total = S.order.length;
     const pct = total ? (answered / total) * 100 : 0;
     if (el('quiz-progress-fill')) el('quiz-progress-fill').style.width = pct.toFixed(1) + '%';
     if (el('quiz-progress-text')) el('quiz-progress-text').textContent = `${answered} of ${total} answered`;
-    if (el('quiz-count')) el('quiz-count').textContent = String(total);   // label already says "Questions"
+    if (el('quiz-count')) el('quiz-count').textContent = String(list.length);   // label already says "Questions"
 
     // live score while in instant mode
     if (S.instant && el('quiz-live')) {
@@ -121,11 +132,12 @@
       el('quiz-live').hidden = true;
     }
 
-    const submitBtn = el('quiz-submit');
-    if (submitBtn) {
-      submitBtn.disabled = S.submitted;
-      submitBtn.textContent = S.submitted ? 'Quiz submitted' : `Submit quiz (${total})`;
-    }
+    const submitBtns = document.querySelectorAll('[data-quiz-submit]');
+    submitBtns.forEach(b => {
+      // one shared workflow: every submit control mirrors the same state
+      b.disabled = S.submitted;
+      b.textContent = S.submitted ? 'Quiz submitted' : `Submit quiz (${total})`;
+    });
   }
 
   /* ---- clock, streaks, keyboard ---------------------------------------- */
@@ -135,6 +147,11 @@
     S.t0 = performance.now(); S.lastMark = S.t0;
     const elT = el('quiz-timer');
     if (elT) elT.hidden = false;
+    // the floating panel surfaces the same single clock - no second timer
+    const ft = el('floatTimer');
+    if (ft) { ft.hidden = false; ft.classList.add('show'); ftPlace(); }
+    const hint = el('floatTimerHint');
+    if (hint) hint.textContent = 'since your first answer';
     timerHandle = setInterval(() => {
       if (elT && S.t0 && !S.submitted) elT.textContent = fmtTime(Math.round((performance.now() - S.t0) / 1000));
     }, 1000);
@@ -154,6 +171,77 @@
     S.bestStreak = Math.max(S.bestStreak, S.streak);
     const elS = el('quiz-streak');
     if (elS) { elS.hidden = S.streak < 2; elS.textContent = `streak \u00D7${S.streak}`; }
+  }
+
+  /* ---- floating timer panel: position, drag, keys, minimise -------------
+     One panel, one clock (S.t0). The panel is position:fixed at 0,0 and moved
+     with a transform, so scrolling never touches it and moving it costs one
+     compositor-friendly property. ftPos === null means "default slot"
+     (bottom-right corner); any drag or arrow-key nudge stores explicit px. */
+  const ftPanel = el('floatTimer');
+  const ftHandle = el('floatTimerHandle');
+  const FT_GAP = 14;
+  let ftPos = null;
+  function ftRect() { return ftPanel.getBoundingClientRect(); }
+  function ftClamp(p) {
+    const r = ftRect();
+    const maxX = Math.max(FT_GAP, window.innerWidth - r.width - FT_GAP);
+    const maxY = Math.max(FT_GAP, window.innerHeight - r.height - FT_GAP);
+    return { x: Math.min(Math.max(FT_GAP, p.x), maxX), y: Math.min(Math.max(FT_GAP, p.y), maxY) };
+  }
+  function ftDefault() {
+    const r = ftRect();
+    return { x: Math.max(FT_GAP, window.innerWidth - r.width - FT_GAP - 4),
+             y: Math.max(FT_GAP, window.innerHeight - r.height - FT_GAP) };
+  }
+  function ftPlace() {
+    if (!ftPanel) return;
+    const p = ftPos ? ftClamp(ftPos) : ftDefault();
+    ftPos = p;
+    ftPanel.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px)`;
+  }
+  if (ftPanel && ftHandle) {
+    /* pointer + touch drag (the handle only, so page scroll and text
+       selection elsewhere are untouched; buttons inside stay clickable) */
+    ftHandle.addEventListener('pointerdown', e => {
+      if (e.target.closest('.ft-btn')) return;
+      const r = ftRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      ftPanel.classList.add('dragging');
+      if (ftHandle.setPointerCapture) { try { ftHandle.setPointerCapture(e.pointerId); } catch (err) { /* older engines */ } }
+      const move = ev => { ftPos = ftClamp({ x: ev.clientX - dx, y: ev.clientY - dy }); ftPlace(); };
+      const end = () => {
+        ftPanel.classList.remove('dragging');
+        ftHandle.removeEventListener('pointermove', move);
+        ftHandle.removeEventListener('pointerup', end);
+        ftHandle.removeEventListener('pointercancel', end);
+      };
+      ftHandle.addEventListener('pointermove', move);
+      ftHandle.addEventListener('pointerup', end);
+      ftHandle.addEventListener('pointercancel', end);
+      e.preventDefault();          // no text selection while dragging
+    });
+    /* keyboard repositioning: arrows nudge, Shift = big step, Home = default */
+    ftHandle.addEventListener('keydown', e => {
+      const step = e.shiftKey ? 80 : 24;
+      const cur = ftPos ? ftClamp(ftPos) : ftDefault();
+      const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (delta) { ftPos = ftClamp({ x: cur.x + delta[0], y: cur.y + delta[1] }); ftPlace(); e.preventDefault(); return; }
+      if (e.key === 'Home') { ftPos = null; ftPlace(); e.preventDefault(); }
+    });
+    const minBtn = el('floatTimerMin');
+    if (minBtn) minBtn.addEventListener('click', () => {
+      const min = ftPanel.classList.toggle('min');
+      minBtn.setAttribute('aria-pressed', String(min));
+      minBtn.setAttribute('aria-label', min ? 'Expand timer panel' : 'Minimize timer panel');
+      const icMin = minBtn.querySelector('.ic-min'), icPlus = minBtn.querySelector('.ic-plus');
+      if (icMin) icMin.hidden = min;
+      if (icPlus) icPlus.hidden = !min;
+      requestAnimationFrame(ftPlace);        // re-clamp for the new size
+    });
+    const resetBtn = el('floatTimerReset');
+    if (resetBtn) resetBtn.addEventListener('click', () => { ftPos = null; ftPlace(); });
+    window.addEventListener('resize', ftPlace);   // stay inside a changed viewport
   }
   function computeBestStreak() {
     let run = 0, best = 0;
@@ -228,6 +316,11 @@
     } else {
       // light-touch update: no full re-render, so scroll position is preserved
       card.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-checked', String(b === btn)));
+      // one-shot electrical ring on the chosen option (CSS owns the keyframes;
+      // the reflow trick restarts it without ever stacking animations)
+      btn.classList.remove('pick');
+      void btn.offsetWidth;
+      btn.classList.add('pick');
       let fb = card.querySelector('.feedback');
       if (!fb) { fb = document.createElement('div'); fb.className = 'feedback'; card.appendChild(fb); }
       fb.innerHTML = `Answer recorded: <b>${KEYS[S.answers.get(qid)]}</b>. It will be marked when you submit the quiz.`;
@@ -258,6 +351,7 @@
   const bandFor = pct => BANDS.find(b => pct >= b.min);
 
   function submit() {
+    if (S.submitted) return;          // one grading pass per attempt, from any control
     // The score always covers the FULL bank: a topic filter is a revision aid,
     // not a way to shrink the denominator. Blanks count as incorrect.
     const blanks = S.order.filter(q => !S.answers.has(q.id));
@@ -337,6 +431,9 @@
     }).join('');
 
     box.hidden = false;
+    box.classList.remove('score-enter');
+    void box.offsetWidth;               // restart the entrance on every retake
+    box.classList.add('score-enter');
     // The home dashboard promises that a pass (>= 70%) ticks all five topics.
     // Say so out loud at the moment it happens instead of letting it be silent.
     const passNote = pct >= 70
@@ -407,6 +504,11 @@
       S.t0 = 0; S.lastMark = 0; S.times.clear(); S.streak = 0; S.bestStreak = 0; S.totalTime = 0;
       clearInterval(timerHandle); timerHandle = 0;
       const elT = el('quiz-timer'); if (elT) { elT.hidden = true; elT.textContent = '0:00'; }
+      const ft = el('floatTimer');
+      if (ft) { ft.hidden = true; ft.classList.remove('show', 'min', 'dragging'); ftPos = null; }
+      const minB = el('floatTimerMin');
+      if (minB) { minB.setAttribute('aria-pressed', 'false'); minB.setAttribute('aria-label', 'Minimize timer panel'); }
+      const hint = el('floatTimerHint'); if (hint) hint.textContent = 'starts on your first answer';
       const elS = el('quiz-streak'); if (elS) elS.hidden = true;
       S.filter = 'all'; syncFilterButtons();
       activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
@@ -598,14 +700,17 @@
     toast(S.instant ? 'Instant mode: answers are marked as you go' : 'Exam mode: nothing is marked until you submit');
   });
 
-  const submitBtn = el('quiz-submit');
-  if (submitBtn) submitBtn.addEventListener('click', submit);
+  /* Top and bottom controls, one workflow: every [data-quiz-submit] button
+     calls the same submit(), and renderMeta() keeps their labels and disabled
+     states in lockstep - there is exactly one submission path. */
+  document.querySelectorAll('[data-quiz-submit]').forEach(b => b.addEventListener('click', submit));
 
   /* ---- header stats ---------------------------------------------------- */
   const prog = Progress.read();
   if (el('quiz-best')) el('quiz-best').textContent = prog.quizBest ? `${prog.quizBest}%` : '\u2014';
   if (el('quiz-attempts')) el('quiz-attempts').textContent = String(prog.quizAttempts);
   if (el('quiz-total')) el('quiz-total').textContent = String(BANK.length);
+  if (el('quiz-total-end')) el('quiz-total-end').textContent = String(BANK.length);
 
   /* ---- boot ------------------------------------------------------------ */
   const deepTopic = topicFromURL();

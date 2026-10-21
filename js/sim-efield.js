@@ -73,11 +73,11 @@
   }
 
   /* ---- field-line tracing --------------------------------------------- */
-  /* * Integrate along the field direction with a fixed pixel step. * Lines are seeded on positive charges (or negatives if there are none) so * each line is drawn exactly once. */
-  function traceLines(ctx, w, h) {
+  /* * Integrate along the field direction with a fixed pixel step. * Lines are seeded on positive charges (or negatives if there are none) so * each line is drawn exactly once. * `lite` halves the budget for frames drawn mid-gesture. */
+  function traceLines(ctx, w, h, lite) {
     const seeds = state.charges.filter(c => c.q > 0);
     const sources = seeds.length ? seeds : state.charges.filter(c => c.q < 0);
-    const step = 2.6, maxSteps = 900;
+    const step = lite ? 3.4 : 2.6, maxSteps = lite ? 420 : 900;
 
     ctx.save();
     ctx.lineWidth = 1.35;
@@ -85,7 +85,8 @@
 
     for (const c of sources) {
       const p = px(c, w, h);
-      const nLines = clamp(Math.round(3 * Math.abs(c.q)), 6, 26);
+      const nLines = lite ? clamp(Math.round(1.5 * Math.abs(c.q)), 6, 14)
+                          : clamp(Math.round(3 * Math.abs(c.q)), 6, 26);
       const startR = chargeRadius(c.q) + 3;
       const offset = c.q > 0 ? 0 : Math.PI / nLines;
 
@@ -179,13 +180,13 @@
       return;
     }
 
-    // While dragging, skip the expensive line tracing so the UI stays fluid.
-    if (!state.dragging) {
-      if (state.mode === 'lines' || state.mode === 'both') traceLines(ctx, w, h);
-      if (state.mode === 'vectors' || state.mode === 'both') drawVectorGrid(ctx, w, h);
-    } else {
-      drawVectorGrid(ctx, w, h);
-    }
+    // While a gesture is live, trace a lighter line budget instead of dropping
+    // the lines entirely: a stripped canvas mid-drag reads as a render bug
+    // (especially on a projector), and the reduced budget keeps the frame
+    // cost low enough to stay fluid on modest hardware.
+    const gesturing = state.dragging || state.dragAB !== null;
+    if (state.mode === 'lines' || state.mode === 'both') traceLines(ctx, w, h, gesturing);
+    if (state.mode === 'vectors' || state.mode === 'both') drawVectorGrid(ctx, w, h);
 
     // A/B markers and the integration path
     {
@@ -358,6 +359,7 @@
         const m = state.dragAB === 'A' ? state.A : state.B;
         m.nx = Math.min(0.95, Math.max(0.05, p.x / w));
         m.ny = Math.min(0.95, Math.max(0.05, p.y / h));
+        refresh();              // live feedback while the marker follows the pointer
         return;
       }
       if (state.dragging && state.dragIndex >= 0) {
@@ -366,11 +368,13 @@
       }
       refresh();
     } else if (p.type === 'up') {
-      state.dragging = false; state.dragIndex = -1;
+      // Release EVERY gesture flag: a leftover dragAB used to glue the marker
+      // to the cursor and hijack every later pointerdown (erase/add/move died).
+      state.dragging = false; state.dragIndex = -1; state.dragAB = null;
       canvas.classList.remove('grabbing');
       refresh();
     } else if (p.type === 'leave') {
-      state.probe = null; state.dragging = false; state.dragIndex = -1;
+      state.probe = null; state.dragging = false; state.dragIndex = -1; state.dragAB = null;
       canvas.classList.remove('grabbing');
       refresh();
     }

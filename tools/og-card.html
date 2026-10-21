@@ -52,8 +52,8 @@
       background: linear-gradient(155deg, rgba(34, 36, 43, .92), rgba(16, 17, 20, .92));
       display: flex; flex-direction: column; padding: 54px 62px 44px;
     }
-    .row { display: flex; align-items: center; gap: 56px; flex: 1 1 auto; min-height: 0; }
-    .mascot { flex: none; width: 216px; height: 216px; }
+    .row { display: flex; align-items: center; gap: 44px; flex: 1 1 auto; min-height: 0; }
+    .mascot { flex: none; width: 190px; height: 190px; }
     .mascot svg { width: 100%; height: 100%; display: block; }
 
     .body { flex: 1 1 auto; min-width: 0; }
@@ -62,15 +62,15 @@
       color: var(--pk); margin-bottom: 16px;
     }
     h1 {
-      font-size: 88px; font-weight: 700; line-height: 1; letter-spacing: -.01em;
+      font-size: 76px; font-weight: 700; line-height: 1; letter-spacing: -.01em;
       color: var(--text);
     }
     h1 em { font-style: normal; color: var(--pk); }
-    .sub { font-size: 25px; line-height: 1.45; color: var(--text-dim); margin-top: 18px; max-width: 34ch; }
+    .sub { font-size: 24px; line-height: 1.45; color: var(--text-dim); margin-top: 14px; max-width: 40ch; }
 
-    .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+    .chips { display: flex; flex-wrap: nowrap; gap: 12px; margin-top: 16px; }
     .chip {
-      font-size: 19px; font-weight: 700; padding: 8px 18px; border-radius: 999px;
+      font-size: 18px; font-weight: 700; padding: 7px 16px; border-radius: 999px; white-space: nowrap;
       border: 1.5px solid var(--line); background: rgba(27, 29, 34, .9); color: var(--text-dim);
     }
     .chip.c1 { border-color: rgba(248, 174, 190, .5);  color: var(--pk); }
@@ -78,11 +78,28 @@
     .chip.c3 { border-color: rgba(213, 184, 216, .5);  color: var(--li); }
     .chip.c4 { border-color: rgba(168, 211, 224, .5);  color: var(--sk); }
 
-    .foot {
-      margin-top: 30px; padding-top: 24px; border-top: 1.5px solid var(--line);
-      display: flex; align-items: center; gap: 16px;
-      font-size: 21px; color: var(--text-faint); letter-spacing: .02em;
+    /* equation strip: the same four governing laws the hero shows on the site */
+    .eqs { display: flex; gap: 14px; margin-top: 20px; }
+    .eq {
+      flex: 1 1 0; min-width: 0; text-align: center;
+      background: var(--panel-2); border: 1.5px solid var(--line);
+      border-radius: 14px; padding: 13px 10px 11px;
+      display: flex; flex-direction: column; gap: 6px; align-items: center;
     }
+    .eq .f { font-size: 25px; color: var(--text); letter-spacing: .01em; white-space: nowrap; }
+    .eq .f sub, .eq .f sup { font-size: .62em; }
+    .eq small { font-size: 12.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); }
+    .eq.e1 .f { color: var(--ye); }
+    .eq.e2 .f { color: var(--pk); }
+    .eq.e3 .f { color: var(--li); }
+    .eq.e4 .f { color: var(--mi); }
+
+    .foot {
+      margin-top: 22px; padding-top: 20px; border-top: 1.5px solid var(--line);
+      display: flex; align-items: center; gap: 16px;
+      font-size: 20px; color: var(--text-faint); letter-spacing: .02em;
+    }
+    .foot span { white-space: nowrap; }
     .foot b { color: var(--mi); font-weight: 700; }
     .foot .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--edge, #3a3d45); }
   </style>
@@ -108,20 +125,29 @@
     </div>
 
     <div class="body">
-      <div class="eyebrow">Interactive physics</div>
+      <div class="eyebrow">Interactive electromagnetics</div>
       <h1>EMC<em>Lab</em></h1>
-      <p class="sub">See physics move — every number on screen is computed from the real equations.</p>
-      <div class="chips">
-        <span class="chip c2">1 · Circuits &amp; Ohm’s Law</span>
-        <span class="chip c1">2 · Electric Fields &amp; Coulomb’s Law</span>
-        <span class="chip c3">3 · Magnetism &amp; Induction</span>
-      </div>    </div>
+      <p class="sub">Every number on screen is computed from the real equations, not faked.</p>
+    </div>
+    </div>
+
+    <div class="eqs">
+      <span class="eq e1"><span class="f">V = IR</span><small>Ohm’s law</small></span>
+      <span class="eq e2"><span class="f">F = k·q<sub>1</sub>q<sub>2</sub>/r<sup>2</sup></span><small>Coulomb’s law</small></span>
+      <span class="eq e3"><span class="f">F = qv × B</span><small>Lorentz force</small></span>
+      <span class="eq e4"><span class="f">EMF = −N·dΦ/dt</span><small>Faraday’s law</small></span>
+    </div>
+
+    <div class="chips">
+      <span class="chip c2">1 · Circuits &amp; Ohm’s Law</span>
+      <span class="chip c1">2 · Electric Fields &amp; Coulomb’s Law</span>
+      <span class="chip c3">3 · Magnetism &amp; Induction</span>
     </div>
 
     <div class="foot">
-      <span>5 topics</span><span class="dot"></span>
-      <span>9 live simulations</span><span class="dot"></span>
-      <span><b>30</b>-question scored quiz</span>
+      <span><b>3</b> chapters</span><span class="dot"></span>
+      <span><b>6</b> live simulations</span><span class="dot"></span>
+      <span><b>24</b>-question scored quiz</span>
     </div>
   </div>
 </body>

@@ -100,6 +100,20 @@ Open `index.html` (or `http://localhost:8000`) and work top to bottom.
       Thin 100. Exception by design: the home stat-strip numbers (5 / 9 / 30) render
       in Regular 400 — at 1.45rem the Thin hairlines lose legibility.
 
+- [ ] **Details toggle typography parity:** on every topic page the hero lede and the
+      in-prose swap paragraphs measure the SAME computed font-size, line-height and colour
+      in Details ON and OFF (only the content volume changes); toggling repeatedly never
+      strands the page in a broken state, and the revealed blocks rise in gently unless
+      reduced motion is set
+- [ ] Skip link: first Tab focuses it, Enter lands focus on `<main>` (tabindex="-1") and the
+      page scrolls to the content; no page-sized focus ring appears
+- [ ] Mascot: capped at min(108px, 26vw)/40vh on desktop and min(84px, 22vw)/30vh on mobile;
+      it never overlaps the hero copy or pushes the buttons below the fold at 1280×800
+- [ ] Micro-interactions: buttons press with a slight scale, nav/dropdown links cross-fade
+      colour, the progress ring eases to new values, formula cards brighten their border on
+      hover, and "dig deeper" disclosures open with a short rise — all instant under
+      `prefers-reduced-motion`
+
 ### 2.1 Navigation & layout
 - [ ] Home → each topic → quiz links all navigate; the active nav item is highlighted
 - [ ] Under 900 px the nav collapses to a hamburger; it opens, closes on selection, and closes on `Esc`
@@ -231,15 +245,32 @@ Open `index.html` (or `http://localhost:8000`) and work top to bottom.
       focus ring is visible; screen readers hear "switch, checked/unchecked"
 
 ### 2.9 Quiz & progress
-- [ ] 30 questions render; each shows its topic tag
-- [ ] Answering updates the "n of 30 answered" bar and starts the quiz clock; the score card
+- [ ] 24 questions render; each shows its topic tag
+- [ ] Answering updates the "n of 24 answered" bar and starts the quiz clock; the score card
       shows total time, seconds-per-question and best streak
+- [ ] **Two submit points, one workflow:** the top control-panel button and the centred
+      button under the last question (separated by a hairline) call the same submission —
+      labels and disabled states stay identical on both; a double click can never grade
+      twice; Enter still submits; the two-step blank warning still jumps to the first blank
+- [ ] **Floating timer:** appears at the bottom-right on the first answer and stays fixed
+      while scrolling; drag it by its header with mouse or touch; arrow keys nudge it when
+      the handle has focus (Shift = larger steps, Home = default slot); the − button
+      compacts it and the crosshair button restores the default position; it can never be
+      dragged outside the viewport (try a corner drag, then resize the window); submitting
+      freezes the clock; retake hides the panel again
+- [ ] **Unanswered filter:** the fifth filter chip shows only questions without an answer,
+      shrinks as you answer, reports aria-pressed correctly, and never changes the scoring
+      denominator (the progress line still reads "n of 24 answered" while filtered)
+- [ ] **Motion:** heading and control panel rise in with a one-shot cyan pulse along the
+      panel edge; question cards stagger in once and cross-fade on filter/shuffle; picking
+      an option fires a single cyan ring; the score card rises, the grade pops and every
+      result bar grows from zero — all of it instant under `prefers-reduced-motion`
 - [ ] Instant mode: two consecutive correct answers reveal the streak chip (×2) and the burst
       ring; every graded feedback box shows the reacting mascot and the time spent
 - [ ] Keyboard: with a question on screen, keys 1–4 (or A–D) select an option, Enter submits,
       N jumps to the next blank; no fifth key does anything
 - [ ] Topic deep links: clicking *Quiz this topic* on any topic page opens the quiz already
-      filtered (6 cards) with the matching filter chip pressed and `?topic=` in the bar
+      filtered (8 cards) with the matching filter chip pressed and `?topic=` in the bar
 - [ ] Progress: **Export** downloads `emc-lab-progress-YYYY-MM-DD.json`; on a clean browser
       **Import** of that file restores topics + best score; a corrupt/foreign file is refused
       with a warning toast and nothing is overwritten

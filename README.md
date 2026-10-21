@@ -269,7 +269,9 @@ family, no licence risk. ~45 KB of fonts total.
   blue `#a8d3e0`, yellow `#f6d36b`) used sparingly as the only accents. Typography is a
   single-family system — G8321 (SIL OFL 1.1) in three committed weights (~45 KB total,
   zero licence risk): **Thin 100** for oversized display numerals, **Regular 400** for
-  body copy, **Bold 700** for headings, buttons and labels. Titles additionally try the
+  body copy, **Bold 700** for headings, buttons and labels — and the canvas annotations
+  use the same family, with their pixel sizes scaled by the live root font-size so they
+  shrink and grow together with the DOM at every breakpoint. Titles additionally try the
   privately licensed *FOT-Yuruka Std* first, which only machines holding that paid font
   can render; everywhere else they fall back to G8321 Bold, keeping every host consistent.
   `js/common.js` activates such local-only faces through the optional

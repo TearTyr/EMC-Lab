@@ -242,6 +242,31 @@ console.log('\u2500'.repeat(66));
   click(win, doc.getElementById('ef-clear'));
   eq('clear empties the canvas', txt(win, 'ef-count'), '0');
 
+  // --- gesture state machine: after dragging an A/B marker every tool must
+  //     still work. (A leftover dragAB flag used to glue the marker to the
+  //     cursor, so the next pointerdown — erase, add or move — was hijacked
+  //     by the marker and the sim felt dead.) Mock canvas rect is 900x400. ---
+  click(win, doc.querySelector('[data-ef-preset="dipole"]'));
+  await frames(win, 2);
+  const efCanvas = doc.getElementById('sim-efield');
+  pointer(win, efCanvas, 'pointerdown', 0.28 * 900, 0.66 * 400);   // grab marker A
+  pointer(win, efCanvas, 'pointermove', 0.40 * 900, 0.50 * 400);
+  await frames(win, 2);
+  pointer(win, efCanvas, 'pointerup', 0.40 * 900, 0.50 * 400);
+  pointer(win, efCanvas, 'pointermove', 0.34 * 900, 0.50 * 400);   // unheld hover …
+  await frames(win, 2);
+  click(win, doc.querySelector('#ef-brush [data-value="erase"]'));
+  pointer(win, efCanvas, 'pointerdown', 0.34 * 900, 0.50 * 400);   // … then erase the + charge
+  pointer(win, efCanvas, 'pointerup', 0.34 * 900, 0.50 * 400);
+  eq('erase still works right after dragging an A/B marker', txt(win, 'ef-count'), '1');
+  click(win, doc.querySelector('#ef-brush [data-value="move"]'));
+  pointer(win, efCanvas, 'pointerdown', 0.66 * 900, 0.50 * 400);   // drag the survivor
+  pointer(win, efCanvas, 'pointermove', 0.80 * 900, 0.30 * 400);
+  await frames(win, 2);
+  pointer(win, efCanvas, 'pointerup', 0.80 * 900, 0.30 * 400);
+  eq('the gesture sequence neither loses nor sticks a charge', txt(win, 'ef-count'), '1');
+  eq('canvas type scale tracks the root font size', win.EMC.typeScale(), 1);
+
   // --- the numeric line integral must equal the analytic potential difference ---
   click(win, doc.querySelector('[data-ef-preset="dipole"]'));
   await frames(win, 3);
@@ -628,6 +653,79 @@ console.log('\u2500'.repeat(66));
   win.close();
 }
 
+/* ---------------- quiz upgrade: dual submit, floating timer, unanswered --- */
+{
+  console.log('\n[quiz.html \u2014 dual submit / floating timer / unanswered filter]');
+  const { win, doc } = await loadPage('quiz.html');
+  await frames(win, 2);
+  const bank = win.EMC_QUIZ;
+
+  // two controls, one workflow, unique ids, sensible placement
+  const submitBtns = [...doc.querySelectorAll('[data-quiz-submit]')];
+  eq('two submit controls share one workflow', submitBtns.length, 2);
+  ok('every id on the page is unique',
+    new Set([...doc.querySelectorAll('[id]')].map(e => e.id)).size === doc.querySelectorAll('[id]').length);
+  ok('the bottom submit sits after the question list',
+    (doc.getElementById('quiz-list').compareDocumentPosition(submitBtns[1]) & win.Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
+  ok('submit() is guarded against double grading',
+    /function submit\(\) \{\n    if \(S\.submitted\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+
+  // Enter-key submission needs a real IntersectionObserver (active card), so it
+  // is covered by the Chromium harness; here we assert the guard stays wired.
+  ok('the Enter shortcut still targets the shared top submit control',
+    /const sb = el\('quiz-submit'\); if \(sb && !sb\.disabled\) \{ sb\.click\(\)/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+
+  // floating timer: hidden until the first answer, then mirrors the one clock
+  ok('floating timer is hidden before the first answer', doc.getElementById('floatTimer').hidden === true);
+  const card = doc.querySelector('.q-card');
+  const q = bank.find(x => x.id === Number(card.dataset.qid));
+  card.querySelector(`.opt[data-opt="${q.answer}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  ok('floating timer appears on the first answer', doc.getElementById('floatTimer').hidden === false);
+  ok('timer panel carries the single clock readout', doc.getElementById('quiz-timer').hidden === false);
+
+  // unanswered filter + full-bank progress while filtered
+  click(win, doc.querySelector('[data-quiz-filter="unanswered"]'));
+  eq('unanswered filter hides answered questions', doc.querySelectorAll('.q-card').length, bank.length - 1);
+  eq('unanswered button reports its pressed state',
+    doc.querySelector('[data-quiz-filter="unanswered"]').getAttribute('aria-pressed'), 'true');
+  click(win, doc.querySelector('[data-quiz-filter="current"]'));   // also resets the blank warning
+  ok('progress text spans the full bank while a filter is active',
+    /1 of 24 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
+  click(win, doc.querySelector('[data-quiz-filter="all"]'));
+
+  // bottom button: warning first, then grading; both controls lock in sync
+  click(win, submitBtns[1]);
+  ok('first bottom submit warns about blanks without grading',
+    doc.getElementById('quiz-score').hidden === true && !submitBtns[0].disabled);
+  click(win, submitBtns[1]);
+  ok('second bottom submit grades the full bank', doc.getElementById('quiz-score').hidden === false);
+  ok('both submit controls lock in sync',
+    submitBtns.every(b => b.disabled && b.textContent === 'Quiz submitted'));
+  ok('score card enters with the results animation class',
+    doc.getElementById('quiz-score').classList.contains('score-enter'));
+  eq('grading recorded exactly one attempt',
+    JSON.parse(win.localStorage.getItem('emc.progress.v2')).quizAttempts, 1);
+
+  // floating timer: keyboard move, reset, minimise/expand, clock stops submitted
+  const ft = doc.getElementById('floatTimer');
+  const handle = doc.getElementById('floatTimerHandle');
+  const t0 = ft.style.transform;
+  handle.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+  ok('arrow keys reposition the timer panel', ft.style.transform !== t0 && ft.style.transform !== '');
+  const moved = ft.style.transform;
+  click(win, doc.getElementById('floatTimerReset'));
+  ok('reset returns the panel to its default slot', ft.style.transform !== moved);
+  click(win, doc.getElementById('floatTimerMin'));
+  ok('minimise compacts the panel and flips aria-pressed',
+    ft.classList.contains('min') && doc.getElementById('floatTimerMin').getAttribute('aria-pressed') === 'true');
+  click(win, doc.getElementById('floatTimerMin'));
+  ok('expand restores the full panel', !ft.classList.contains('min'));
+  const frozen = txt(win, 'quiz-timer');
+  await new Promise(r => setTimeout(r, 1200));
+  eq('the clock stops once submitted', txt(win, 'quiz-timer'), frozen);
+  win.close();
+}
+
 /* ---------------- cross-page checks ---------------- */
 {
   console.log('\n[cross-page]');
@@ -645,6 +743,15 @@ console.log('\u2500'.repeat(66));
     ok(`${p}: declares a viewport`, /name="viewport"/.test(html));
     ok(`${p}: has a lang attribute`, /<html lang="en">/.test(html));
     ok(`${p}: has a skip link`, /class="skip-link"/.test(html));
+    ok(`${p}: skip-link destination is a focusable main`, /<main class="emc-main" id="main" tabindex="-1">/.test(html));
+    if (p.startsWith('topics/')) {
+      // the Details swap must never restyle the same slot: hero plain lede
+      // carries the identical class of the tech lede, and in-prose plain
+      // paragraphs inherit prose typography instead of .small/.muted
+      ok(`${p}: Details states share typography for swapped content`,
+        (html.match(/<p class="lede" data-detail="plain">/g) || []).length === 1 &&
+        !/lede small|class="small muted" data-detail="plain"/.test(html));
+    }
     ok(`${p}: every canvas has an accessible label`,
       [...html.matchAll(/<canvas[^>]*>/g)].every(m => /aria-label=/.test(m[0])));
     ok(`${p}: links the compiled Tailwind pipeline (site.css) + font faces`,
@@ -702,6 +809,22 @@ console.log('\u2500'.repeat(66));
     (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'favicon.ico'")));
   ok('the generated sitemap carries lastmod stamps',
     /<lastmod>\$\{lastmod\}<\/lastmod>/.test(buildSrc));
+
+  ok('the field explorer releases every gesture flag on pointer-up/leave',
+    (readFileSync(join(ROOT, 'js/sim-efield.js'), 'utf8').match(/state\.dragging = false; state\.dragIndex = -1; state\.dragAB = null;/g) || []).length === 2);
+  ok('canvas labels use the site family at root-scaled sizes (no mono drift)',
+    /G8321, 'Hiragino Maru Gothic ProN', 'Segoe UI', system-ui, sans-serif`/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')) &&
+    /canvasTypeScale = rp \/ 16/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+  ok('probe readouts reserve two lines so the canvas cannot resize mid-gesture',
+    /\.stat-value\.hold2 \{ min-height: 3\.5em; \}/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
+    (readFileSync(join(ROOT, 'topics/efield.html'), 'utf8').match(/stat-value [^"]*hold2|stat-value hold2/g) || []).length === 3);
+
+  ok('the Details swap animates revealed blocks unless reduced motion',
+    /const level = root\.dataset\.detail === 'off' \? 'plain' : 'tech';/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')) &&
+    /if \(EMC\.reducedMotion\) \{ flip\(\); return; \}/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+  ok('the mascot is capped so it can never dominate the hero',
+    /width: min\(108px, 26vw\); max-height: 40vh/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
+    /width: min\(84px, 22vw\); max-height: 30vh/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')));
 
   // ---- #14 no phantom important-variants of component classes -----------
   const builtAll = readFileSync(join(ROOT, 'css/site.css'), 'utf8');

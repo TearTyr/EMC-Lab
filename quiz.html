@@ -21,14 +21,14 @@
   <meta property="og:title" content="Quiz">
   <meta property="og:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta property="og:url" content="https://emc-physics.vercel.app/quiz.html">
-  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Quiz">
   <meta name="twitter:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
-  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png">
+  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
        home screens. All three carry the same Denki-chan artwork as the header
@@ -145,8 +145,8 @@
     </div>
   </header>
 
-  <main class="emc-main" id="main">
-    <div class="wrap wrap-narrow section-tight">
+  <main class="emc-main" id="main" tabindex="-1">
+    <div class="wrap wrap-narrow section-tight rise-1">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="index.html">Home</a><span aria-hidden="true">/</span><span>Quiz</span>
@@ -176,7 +176,7 @@
     </div>
 
     <div class="wrap section-tight">
-      <div class="panel">
+      <div class="panel rise-2 quiz-sweep">
         <div class="panel-body">
           <div class="flex flex-wrap items-center gap-3 justify-between">
             <div>
@@ -185,7 +185,8 @@
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Circuits</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="efield" aria-pressed="false">Fields</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button></div>
+                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="unanswered" aria-pressed="false">Unanswered</button></div>
             </div>
             <div>
               <span class="ctl-label" style="margin-bottom:.4rem">Marking</span>
@@ -197,9 +198,8 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-3 mt-4">
-            <button class="btn btn-primary" type="button" id="quiz-submit">Submit quiz</button>
+            <button class="btn btn-primary" type="button" id="quiz-submit" data-quiz-submit>Submit quiz</button>
             <button class="btn" type="button" id="quiz-shuffle">Shuffle order</button>
-            <span class="tag" id="quiz-timer" hidden aria-label="Elapsed time">0:00</span>
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
             <div style="flex:1 1 180px;min-width:160px">
               <div class="progress-track"><div class="progress-fill" id="quiz-progress-fill"></div></div>
@@ -230,6 +230,18 @@
       <div id="quiz-questions"><!-- questions injected by js/quiz.js --></div>
     </div>
 
+    <!-- Second submission point: same workflow as the top button (one shared
+         [data-quiz-submit] handler, synced label + disabled state), placed
+         where a student naturally ends up after answering the last card. -->
+    <div class="wrap quiz-end-cta">
+      <button class="btn btn-primary" type="button" data-quiz-submit
+              aria-label="Submit quiz — bottom of the question list">Submit quiz</button>
+      <p class="tiny faint center" style="margin:0">
+        Submitting grades the whole bank of <span id="quiz-total-end">24</span> questions —
+        filters are a revision aid only, and blank answers count as incorrect.
+      </p>
+    </div>
+
     <div class="wrap section-tight">
       <div class="card">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -247,6 +259,31 @@
       </div>
     </div>
   </main>
+
+  <!-- Floating elapsed-time panel: fixed to the viewport so it survives any
+       scroll position, draggable by its header (pointer or arrow keys),
+       minimisable, clamped inside the viewport. It mirrors the quiz's single
+       timing state in js/quiz.js — there is no second clock. -->
+  <div class="float-timer" id="floatTimer" hidden>
+    <div class="ft-head" id="floatTimerHandle" tabindex="0" role="button"
+         aria-label="Elapsed time panel. Drag with pointer or touch, or focus this handle and use the arrow keys to move it (Shift for larger steps, Home to reset).">
+      <span class="ft-grip" aria-hidden="true"></span>
+      <span class="ft-title">Elapsed</span>
+      <span class="ft-btns">
+        <button class="ft-btn" id="floatTimerMin" type="button" aria-pressed="false" aria-label="Minimize timer panel">
+          <svg class="ic-min" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg class="ic-plus" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" hidden><path d="M2 5h6M5 2v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button class="ft-btn" id="floatTimerReset" type="button" aria-label="Reset timer panel to its default position">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 .8v1.6M5 7.6v1.6M.8 5h1.6M7.6 5h1.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </span>
+    </div>
+    <div class="ft-body">
+      <span class="ft-time" id="quiz-timer" hidden role="timer" aria-live="off" aria-label="Elapsed time">0:00</span>
+      <span class="ft-hint" id="floatTimerHint">starts on your first answer</span>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <div class="wrap footer-grid footer-grid-2">
