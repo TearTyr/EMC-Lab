@@ -8,6 +8,7 @@
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+    document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
     setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
   </script>
   <title>Topic 2 · Electric Fields &amp; Coulomb’s Law — EMC Lab</title>

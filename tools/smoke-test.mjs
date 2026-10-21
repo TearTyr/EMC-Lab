@@ -104,6 +104,10 @@ async function loadPage(relPath, globals = {}, opts = {}) {
     virtualConsole: vc
   });
   installMocks(dom.window);
+  // seed localStorage BEFORE the page scripts run (resume-session tests)
+  if (opts.seed) {
+    for (const [k, v] of Object.entries(opts.seed)) dom.window.localStorage.setItem(k, v);
+  }
   for (const [k, v] of Object.entries(globals)) dom.window[k] = v;
 
   // run the page's own local scripts, in document order
@@ -512,9 +516,15 @@ console.log('\u2500'.repeat(66));
   ok('submitting a blank quiz warns first', doc.getElementById('quiz-score').hidden === true);
   ok('progress text counts answers', /0 of 24 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
 
-  // all correct -> 100%
+  // all correct -> 100% (the practice timer is enabled first so the clock
+  // assertions below exercise the opt-in timer; the default stays Off)
+  click(win, doc.querySelector('#quiz-timer-mode [data-value="up"]'));
   answerAll(false);
   eq('all 24 recorded', txt(win, 'quiz-progress-text'), '24 of 24 answered');
+  click(win, doc.getElementById('quiz-submit'));
+  ok('with no blanks the first submit asks for a gentle confirm',
+    doc.getElementById('quiz-score').hidden === true &&
+    doc.getElementById('quiz-submit').textContent === 'Confirm submission');
   click(win, doc.getElementById('quiz-submit'));
   ok('score card is revealed', doc.getElementById('quiz-score').hidden === false);
   ok('Chart.js is lazy: injected only at grading time, not parser-blocking',
@@ -537,7 +547,8 @@ console.log('\u2500'.repeat(66));
   click(win, doc.getElementById('quiz-retake'));
   ok('retake clears the marks', doc.querySelectorAll('.q-card.answered-correct').length === 0);
   answerAll(true);
-  click(win, doc.getElementById('quiz-submit'));
+  click(win, doc.getElementById('quiz-submit'));   // confirm phase
+  click(win, doc.getElementById('quiz-submit'));   // graded
   ok('all-wrong score is 0%', txt(win, 'quiz-score').includes('0%'), txt(win, 'quiz-score').slice(0, 60));
   ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 24);
   ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 24);
@@ -556,7 +567,8 @@ console.log('\u2500'.repeat(66));
     const idx = i < 10 ? q.answer : (q.answer + 1) % q.options.length;
     card.querySelector(`.opt[data-opt="${idx}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   });
-  click(win, doc.getElementById('quiz-submit'));
+  click(win, doc.getElementById('quiz-submit'));   // confirm phase
+  click(win, doc.getElementById('quiz-submit'));   // graded
   ok('10 of 24 correct scores 42%', txt(win, 'quiz-score').includes('42%'), txt(win, 'quiz-score').slice(0, 60));
   ok('10 of 24 reported', /10 \/ 24 correct/.test(txt(win, 'quiz-score')), '');
   ok('quiz clock was started by answering and frozen at submit',
@@ -616,6 +628,7 @@ console.log('\u2500'.repeat(66));
     card.querySelector(`.opt[data-opt="${q.answer}"]`).dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
   });
   d2.getElementById('quiz-submit').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+  d2.getElementById('quiz-submit').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));  // confirm
   ok('without the chart lib the CSS-bar fallback is used',
     d2.getElementById('quiz-charts').hidden === true &&
     d2.getElementById('quiz-fallback-bars').hidden === false);
@@ -643,6 +656,7 @@ console.log('\u2500'.repeat(66));
     card.querySelector(`.opt[data-opt="${q.answer}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   });
   doc.getElementById('quiz-submit').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  doc.getElementById('quiz-submit').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));  // confirm
   eq('three Chart.js instances created (doughnut, bar, line)', FakeChart.made.length, 3);
   eq('chart types', FakeChart.made.map(m => m.type).join(','), 'doughnut,bar,line');
   eq('charts target the score-card canvases',
@@ -681,7 +695,11 @@ console.log('\u2500'.repeat(66));
     /if \(t && \/INPUT\|TEXTAREA\|SELECT\|SUMMARY\|BUTTON\|A\/\.test\(t\.tagName\)\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
 
   // floating timer: hidden until the first answer, then mirrors the one clock
+  // (the practice timer is opt-in: switch it on before the first answer)
   ok('floating timer is hidden before the first answer', doc.getElementById('floatTimer').hidden === true);
+  click(win, doc.querySelector('#quiz-timer-mode [data-value="up"]'));
+  ok('the timer stays calm (hidden) until the quiz actually starts',
+    doc.getElementById('floatTimer').hidden === true);
   const card = doc.querySelector('.q-card');
   const q = bank.find(x => x.id === Number(card.dataset.qid));
   card.querySelector(`.opt[data-opt="${q.answer}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
@@ -731,6 +749,142 @@ console.log('\u2500'.repeat(66));
   win.close();
 }
 
+/* ---------------- quiz QOL: timer modes, navigator, flags, autosave ------ */
+{
+  console.log('\n[quiz.html \u2014 QOL: timer modes / navigator / flags / autosave]');
+
+  // --- window 1: calm defaults, navigator, flags, autosave, pass results ---
+  const { win, doc } = await loadPage('quiz.html');
+  await frames(win, 2);
+  const bank = win.EMC_QUIZ;
+
+  ok('timer defaults to Off (calm by default)',
+    doc.querySelector('#quiz-timer-mode [data-value="off"]').getAttribute('aria-pressed') === 'true' &&
+    doc.getElementById('timer-mins').hidden === true);
+  eq('navigator shows one chip per question', doc.querySelectorAll('#qnav .qnav-chip').length, 24);
+  ok('prev is disabled before any question is active', doc.getElementById('qnav-prev').disabled === true);
+  ok('progress pill is visible from the start', doc.getElementById('quizPill').hidden === false);
+  eq('pill counts answered questions', txt(win, 'pillText'), '0/24');
+
+  // answer q1 correctly; with the timer Off no clock may appear
+  const q1 = bank[0];
+  doc.querySelector(`#q-${q1.id} .opt[data-opt="${q1.answer}"]`)
+    .dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  ok('with the timer Off no clock panel appears', doc.getElementById('floatTimer').hidden === true);
+  eq('pill tracks the answer', txt(win, 'pillText'), '1/24');
+  ok('answered chip turns done',
+    doc.querySelector(`#qnav [data-goto="${q1.id}"]`).classList.contains('done'));
+
+  // flag q2 for review
+  click(win, doc.querySelector(`#q-${bank[1].id} .q-flag`));
+  ok('flag button toggles on with aria-pressed',
+    doc.querySelector(`#q-${bank[1].id} .q-flag`).getAttribute('aria-pressed') === 'true' &&
+    doc.querySelector(`#q-${bank[1].id}`).classList.contains('flagged'));
+  ok('flagged chip grows the amber dot',
+    doc.querySelector(`#qnav [data-goto="${bank[1].id}"]`).classList.contains('flag'));
+  eq('pill counts flags', txt(win, 'pillFlagCount'), '1');
+  click(win, doc.querySelector('[data-quiz-filter="flagged"]'));
+  eq('flagged filter shows exactly the flagged question', doc.querySelectorAll('.q-card').length, 1);
+  click(win, doc.querySelector('[data-quiz-filter="all"]'));
+  click(win, doc.querySelector(`#q-${bank[1].id} .q-flag`));
+  ok('flag toggles back off and the pill calms down', doc.getElementById('pillFlags').hidden === true);
+
+  // jumping to a question the current filter hides restores the full list
+  click(win, doc.querySelector('[data-quiz-filter="unanswered"]'));
+  click(win, doc.querySelector(`#qnav [data-goto="${q1.id}"]`));
+  ok('jumping to a filtered-away question restores the full list and marks it current',
+    doc.querySelectorAll('.q-card').length === 24 &&
+    doc.querySelector(`#qnav [data-goto="${q1.id}"]`).classList.contains('cur'));
+
+  // autosave (400 ms throttle) -> a resumable session document
+  await new Promise(r => setTimeout(r, 500));
+  const session = JSON.parse(win.localStorage.getItem('emc.quiz.session.v1') || 'null');
+  ok('answering autosaves a resumable session',
+    session !== null && session.v === 1 &&
+    session.answers.length === 1 && session.answers[0][0] === q1.id);
+
+  // finish all-correct -> pass: cheer face, tiny confetti, no weak spots
+  doc.querySelectorAll('.q-card').forEach(card2 => {
+    const q = bank.find(x => x.id === Number(card2.dataset.qid));
+    if (card2.querySelector('.opt[aria-checked="true"]') === null) {
+      card2.querySelector(`.opt[data-opt="${q.answer}"]`)
+        .dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    }
+  });
+  click(win, doc.getElementById('quiz-submit'));
+  click(win, doc.getElementById('quiz-submit'));
+  ok('passing score celebrates with the cheer face + tiny confetti',
+    doc.querySelectorAll('#quiz-score .score-cheer .mreact').length === 1 &&
+    doc.querySelectorAll('#quiz-score .confetti i').length === 14);
+  ok('a perfect score reports no weak spots', /flawless/i.test(txt(win, 'quiz-score')));
+  ok('with the timer Off the score card shows no time tags',
+    /\btime \d+:\d\d/.test(txt(win, 'quiz-score')) === false &&
+    /s per question/.test(txt(win, 'quiz-score')) === false);
+  ok('submitting clears the saved session', win.localStorage.getItem('emc.quiz.session.v1') === null);
+  ok('the pill hides once the results are up', doc.getElementById('quizPill').hidden === true);
+  const prefsNow = JSON.parse(win.localStorage.getItem('emc.prefs.v1') || '{}');
+  eq('the timer preference is persisted', prefsNow.quizTimerMode, 'off');
+  win.close();
+
+  // --- window 2: challenge countdown -> soft warning -> gentle auto-submit --
+  const { win: w2, doc: d2 } = await loadPage('quiz.html');
+  await frames(w2, 2);
+  const bank2 = w2.EMC_QUIZ;
+  click(w2, d2.querySelector('#quiz-timer-mode [data-value="down"]'));
+  ok('challenge mode reveals the duration chips', d2.getElementById('timer-mins').hidden === false);
+  click(w2, d2.querySelector('#timer-mins [data-mins="15"]'));
+  const c1 = d2.querySelector('.q-card');
+  const cq = bank2.find(x => x.id === Number(c1.dataset.qid));
+  c1.querySelector(`.opt[data-opt="${cq.answer}"]`).dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+  ok('the countdown panel shows Remaining time from the chosen limit',
+    d2.getElementById('floatTimer').hidden === false &&
+    d2.querySelector('.ft-title').textContent === 'Remaining' &&
+    /^(15:00|14:5\d)$/.test(txt(w2, 'quiz-timer')), txt(w2, 'quiz-timer'));
+  const real2 = w2.performance.now.bind(w2.performance);
+  w2.performance.now = () => real2() + 14.5 * 60 * 1000;   // 30 s left
+  await new Promise(r => setTimeout(r, 1200));
+  ok('the last minute turns the panel soft amber (never red panic)',
+    d2.getElementById('floatTimer').classList.contains('warn'));
+  ok('the warning alone does not submit', d2.getElementById('quiz-score').hidden === true);
+  w2.performance.now = () => real2() + 16 * 60 * 1000;     // past zero
+  await new Promise(r => setTimeout(r, 1200));
+  ok('time\u2019s up grades the quiz gently (auto-submit)', d2.getElementById('quiz-score').hidden === false);
+  ok('the auto-submit announces itself', /Time\u2019s up/.test(d2.body.textContent));
+  ok('a failing score reports the weakest areas', /Weakest/.test(txt(w2, 'quiz-score')));
+  ok('no confetti below the pass mark', d2.querySelectorAll('#quiz-score .confetti').length === 0);
+  w2.close();
+
+  // --- window 3: resume an autosaved session (explicit choice) -------------
+  const seed = JSON.stringify({
+    v: 1, answers: [[1, 1], [2, 1]], marked: [], flagged: [3],
+    instant: false, filter: 'all', startedWall: 0, timerMode: 'off', timerMins: 10
+  });
+  const { win: w3, doc: d3 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': seed } });
+  await frames(w3, 2);
+  ok('a saved session OFFERS to resume (never a silent restore)',
+    d3.getElementById('resume-wrap').hidden === false &&
+    /2 of 24 answered/.test(txt(w3, 'resume-summary')) &&
+    /1 flagged/.test(txt(w3, 'resume-summary')));
+  eq('nothing is restored before the choice', txt(w3, 'quiz-progress-text'), '0 of 24 answered');
+  click(w3, d3.getElementById('resume-yes'));
+  eq('resume restores the answers', txt(w3, 'quiz-progress-text'), '2 of 24 answered');
+  ok('resume restores the flags and hides the banner',
+    d3.querySelector('#q-3 .q-flag').getAttribute('aria-pressed') === 'true' &&
+    d3.getElementById('resume-wrap').hidden === true);
+  ok('the restored answer is checked on its card',
+    d3.querySelector('#q-1 .opt[data-opt="1"]').getAttribute('aria-checked') === 'true');
+  w3.close();
+
+  // --- window 4: "start fresh" wipes the saved session ----------------------
+  const { win: w4, doc: d4 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': seed } });
+  await frames(w4, 2);
+  click(w4, d4.getElementById('resume-no'));
+  ok('start fresh clears the banner and the storage',
+    d4.getElementById('resume-wrap').hidden === true &&
+    w4.localStorage.getItem('emc.quiz.session.v1') === null);
+  w4.close();
+}
+
 /* ---------------- cross-page checks ---------------- */
 {
   console.log('\n[cross-page]');
@@ -772,6 +926,8 @@ console.log('\u2500'.repeat(66));
     ok(`${p}: ships the pre-paint Detail pref + 6 s boot-overlay failsafe`,
       /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 6000\)/.test(html) &&
       /document\.documentElement\.dataset\.detail = \(__p\.detail === 'off' \? 'off' : 'on'\)/.test(html));
+    ok(`${p}: pre-paint script gates the .reveal entrance with html.js`,
+      /document\.documentElement\.classList\.add\('js'\)/.test(html));
     ok(`${p}: every canvas has an accessible label`,
       [...html.matchAll(/<canvas[^>]*>/g)].every(m => /aria-label=/.test(m[0])));
     ok(`${p}: links the compiled Tailwind pipeline (site.css) + font faces`,

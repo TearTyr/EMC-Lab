@@ -543,6 +543,97 @@
   @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   #quiz-progress-text { font-variant-numeric: tabular-nums; }
 
+  /* ---- soft section entrance (fade + small rise) -------------------------
+     Gated on html.js (set by the pre-paint inline script) so with JavaScript
+     off every .reveal simply stays visible - content is never held hostage by
+     an animation. initReveal() adds .in via IntersectionObserver; under
+     prefers-reduced-motion it adds .in to everything immediately. */
+  html.js .reveal { opacity: 0; transform: translateY(12px); transition: opacity .45s ease, transform .45s cubic-bezier(.22, .9, .35, 1); }
+  html.js .reveal.in { opacity: 1; transform: none; }
+  /* interactive cards that ALSO ride the reveal gate keep their full hover
+     transition stack (the reveal rule above only lists opacity/transform) */
+  html.js .card-hover.reveal { transition: opacity .45s ease, transform .24s cubic-bezier(.34, 1.4, .64, 1), box-shadow .24s ease, border-color .15s ease; }
+
+  /* ---- question navigator strip ------------------------------------------
+     One chip per question in the current order: answered chips tint emerald,
+     flagged chips grow a soft amber dot, the card nearest the viewport centre
+     wears a sky ring. Chips are buttons, so the strip doubles as a jump list. */
+  .qnav-body { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .qnav { display: flex; flex-wrap: wrap; gap: .34rem; flex: 1 1 auto; min-width: 0; }
+  .qnav-chip {
+    position: relative; width: 32px; height: 32px; border-radius: 10px; flex: none;
+    display: grid; place-items: center; padding: 0; cursor: pointer;
+    background: var(--panel-2); border: 1.5px solid var(--line);
+    font-family: theme('fontFamily.mono'); font-size: .78rem; font-weight: 700; color: var(--text-faint);
+    transition: transform .2s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .qnav-chip:hover { transform: translateY(-2px); border-color: var(--edge); color: var(--text); }
+  .qnav-chip.done { background: var(--mi-t); border-color: var(--mi-e); color: var(--mi); }
+  .qnav-chip.flag::after { content: ""; position: absolute; top: 2.5px; right: 2.5px; width: 6px; height: 6px; border-radius: 50%; background: var(--ye); }
+  .qnav-chip.cur { border-color: var(--sk); box-shadow: 0 0 0 3px var(--sk-t); color: var(--text); }
+  .qnav-arrow { flex: none; }
+
+  /* ---- flag-for-review button on each question card ----------------------- */
+  .q-flag {
+    margin-left: auto; flex: none; width: 30px; height: 30px; border-radius: 10px;
+    display: grid; place-items: center; padding: 0; cursor: pointer;
+    background: transparent; border: 1.5px solid var(--line); color: var(--text-faint);
+    transition: transform .2s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .q-flag:hover { color: var(--ye); border-color: var(--ye-e); transform: translateY(-1px); }
+  .q-flag.on { color: #221d07; background: var(--ye); border-color: var(--ye); }
+  .q-card { transition: border-color .15s ease; }
+  .q-card:not(.answered-correct):not(.answered-wrong):hover { border-color: var(--edge); }
+  .q-card.flagged { border-color: var(--ye-e); }
+
+  /* ---- always-visible progress pill (bottom-left, away from the timer) ---- */
+  .quiz-pill {
+    position: fixed; left: 14px; bottom: 14px; z-index: 90;
+    display: flex; align-items: center; gap: .55rem;
+    background: var(--panel); border: 1.5px solid var(--line); border-radius: 999px;
+    padding: .42rem .8rem; box-shadow: 0 10px 22px -14px rgb(0 0 0 / .65);
+    animation: fadeIn .3s ease both;
+  }
+  .pill-track { display: block; width: 54px; height: 6px; border-radius: 999px; background: #2c2f36; overflow: hidden; }
+  .pill-fill { display: block; height: 100%; width: 0%; border-radius: 999px; background: var(--mi); transition: width .4s ease; }
+  .pill-text { font-family: theme('fontFamily.mono'); font-size: .76rem; font-weight: 700; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .pill-flags { display: inline-flex; align-items: center; gap: .25rem; font-family: theme('fontFamily.mono'); font-size: .72rem; font-weight: 700; color: var(--ye); }
+  .pill-flags svg { width: 11px; height: 11px; }
+
+  /* ---- floating timer: soft amber "nearly done" state (never red panic) --- */
+  .float-timer.warn { border-color: var(--ye-e); }
+  .float-timer.warn .ft-time { color: var(--ye); }
+
+  /* ---- resume card: a gentle welcome-back, dashed like the feedback boxes - */
+  .resume-card { border-style: dashed; border-color: var(--sk-e); background: var(--sk-t); }
+  .resume-card .mreact { width: 44px; }
+
+  /* ---- results: cheer face + a tiny pastel confetti puff on a pass --------
+     Transform/opacity only, one-shot, ends fully transparent so the global
+     reduced-motion flatten leaves nothing on screen. */
+  #quiz-score { position: relative; }
+  .score-cheer { flex: none; }
+  .score-cheer .mreact { width: 56px; }
+  .score-enter .score-cheer { animation: gradePop .5s cubic-bezier(.2, .85, .3, 1.15) .12s both; }
+  .confetti { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .confetti i {
+    position: absolute; top: 10px; width: 7px; height: 7px; border-radius: 2px;
+    background: var(--cc, var(--pk)); opacity: 0;
+    animation: confettiPop 1.1s ease-out var(--cd, 0s) 1 both;
+  }
+  @keyframes confettiPop {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+    14%  { opacity: .95; }
+    100% { opacity: 0; transform: translate(var(--cx, 0px), 96px) rotate(230deg); }
+  }
+
+  /* ---- subtle glow on interactive elements (focus + primary hover) -------- */
+  .btn:focus-visible, .seg-btn:focus-visible, .opt:focus-visible,
+  .qnav-chip:focus-visible, .q-flag:focus-visible, .detail-toggle:focus-visible {
+    box-shadow: 0 0 0 4px var(--sk-t);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 18px -8px rgba(246, 211, 107, .5); }
+
   /* -- mascot, hero, footer, pager ---------------------------------------- */
   /* Mascot: predictable slot, capped so it can never dominate the hero or a
      short viewport (projectors, split screens); gentle idle bob only. */
@@ -632,6 +723,10 @@
     .section { padding-block: 2.3rem; }
     .float-timer { width: 150px; }
     .ft-time { font-size: 1.25rem; }
+    .quiz-pill { padding: .34rem .65rem; gap: .45rem; }
+    .pill-track { width: 40px; }
+    .qnav-chip { width: 29px; height: 29px; font-size: .72rem; }
+    .qnav-arrow .btn-label { display: none; }
     .quiz-end-cta .btn { width: 100%; min-width: 0; }
     .topic-head { padding-block: 2rem 1.2rem; }
     /* tighter rhythm on phones, still airier than a wall of text */
@@ -677,7 +772,10 @@
     .score-enter .progress-fill, .opt.pick::after, .float-timer.show { animation-delay: 0ms !important; }  }
   @media print {
     .site-header, .site-footer, .nav-toggle, .panel-actions, .btn, .sim-canvas,
-    .scroll-progress, #p5-gen-host, .legend, .mascot, .float-timer, noscript { display: none !important; }
+    .scroll-progress, #p5-gen-host, .legend, .mascot, .float-timer, .quiz-pill,
+    .confetti, noscript { display: none !important; }
+    /* entrances must never hide content on paper */
+    .reveal { opacity: 1 !important; transform: none !important; }
     body { background: #fff; color: #000; }
     .card, .panel, .q-card { border-color: #bbb; background: #fff; }
     .prose p, .prose li, .lede, .muted { color: #222; }

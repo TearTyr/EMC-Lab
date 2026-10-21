@@ -1,9 +1,9 @@
-/* Quiz engine: exam/instant marking, automatic scoring with per-topic breakdown and grade bands, timer + per-question splits, streak counter, keyboard flow, Chart.js analytics (vendored in vendor/chart/) with a CSS-bar fallback if the library fails to load, ?topic= deep links, progress persisted through EMC.Progress. */
+/* Quiz engine: exam/instant marking, automatic scoring with per-topic breakdown, weak-area summary and grade bands, optional timer (Off / Practice count-up / Challenge count-down with a gentle auto-submit), question navigator + flag-for-review, autosave & resume, submit confirmation, per-question splits, streak counter, keyboard flow, Chart.js analytics (vendored in vendor/chart/) with a CSS-bar fallback if the library fails to load, ?topic= deep links, progress persisted through EMC.Progress. */
 (function () {
   const host = document.getElementById('quiz-questions');
   if (!host || !window.EMC_QUIZ) return;
 
-  const { Progress, toast } = EMC;
+  const { Progress, toast, store, Prefs } = EMC;
   const BANK = window.EMC_QUIZ.slice();
   // Four options per question, so exactly four key labels. (A stray 'E' here used
   // to print an empty fifth key chip on the keyboard hint row.)
@@ -12,21 +12,44 @@
   /* ---- state ---------------------------------------------------------- */
   let activeCharts = [];          // Chart.js instances (destroyed on re-grade)
   let timerHandle = 0;            // 1 s ticker for the quiz clock
+  let confirmHandle = 0;          // auto-cancel for the "click again" submit phase
+  let saveHandle = 0;             // autosave throttle
+  let resumePending = false;      // a saved session is waiting for a choice
 
   /* Denki-chan reaction faces for graded feedback (inline SVG, no library) */
   const FACE_HAPPY = '<svg class="mreact" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg>';
   const FACE_OOPS = '<svg class="mreact" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><circle cx="23" cy="29" r="2.4" fill="#2b2d33"/><circle cx="37" cy="29" r="2.4" fill="#2b2d33"/><path d="M26 39 q4 -3 8 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/><path d="M46 18 q3 5 0 7 q-3 -2 0 -7" fill="#a8d3e0"/></svg>';
 
+  /* A tiny pastel confetti puff over the score card when the attempt passes.
+     CSS owns the motion (one-shot, ends transparent); under reduced motion it
+     is simply never rendered. */
+  const CONFETTI_COLORS = ['#f8aebe', '#f6d36b', '#b5d777', '#a8d3e0', '#d5b8d8'];
+  function confettiHTML() {
+    if (EMC.reducedMotion) return '';
+    let out = '';
+    for (let i = 0; i < 14; i++) {
+      const cx = Math.round((i / 13 - 0.5) * 260);
+      const left = 6 + Math.round((i * 88) / 13);
+      out += `<i style="left:${left}%;--cx:${cx}px;--cd:${((i % 7) * 0.05).toFixed(2)}s;--cc:${CONFETTI_COLORS[i % CONFETTI_COLORS.length]}"></i>`;
+    }
+    return `<span class="confetti" aria-hidden="true">${out}</span>`;
+  }
+
   const S = {
     order: BANK.slice(),          // current question order (shuffle changes this)
-    filter: 'all',                // 'all' | topic id | 'wrong' | 'unanswered'
+    filter: 'all',                // 'all' | topic id | 'wrong' | 'unanswered' | 'flagged'
     answers: new Map(),           // question id -> chosen option index
     marked: new Map(),            // question id -> true/false (only once graded)
+    flagged: new Set(),           // question ids flagged for review before submit
     submitted: false,
     instant: false,
     blankWarned: false,
+    confirmAsk: false,            // gentle "click again to confirm" submit phase
     enterPhase: 'enter',          // first paint gets the staggered entrance, later swaps a shorter fade
+    timerMode: 'off',             // 'off' (calm default) | 'up' practice | 'down' challenge
+    timerMins: 10,                // challenge duration: 10 / 15 / 20
     t0: 0,                 // quiz clock start (ms, 0 = not started)
+    startedWall: 0,        // Date.now() at first answer - lets a resume continue the clock
     lastMark: 0,           // timestamp of the previously answered question
     times: new Map(),      // question id -> seconds spent on it
     streak: 0,             // live streak (instant mode)
@@ -40,6 +63,7 @@
     if (S.filter === 'all') return true;
     if (S.filter === 'wrong') return S.marked.get(q.id) === false;
     if (S.filter === 'unanswered') return !S.answers.has(q.id);
+    if (S.filter === 'flagged') return S.flagged.has(q.id);
     return q.topic === S.filter;
   });
 
@@ -67,7 +91,8 @@
 
     let fb = '';
     if (isMarked) {
-      const secs = S.times.get(q.id);
+      // per-question splits stay hidden while the optional timer is off: calm by default
+      const secs = S.timerMode === 'off' ? undefined : S.times.get(q.id);
       fb = `<div class="feedback ${correct ? 'good' : 'bad'}">
               ${correct ? FACE_HAPPY : FACE_OOPS}
               <span><b>${correct ? 'Correct.' : 'Not quite.'}</b> ${q.explain}${
@@ -79,18 +104,23 @@
     }
 
     const cardClass = isMarked ? (correct ? 'answered-correct' : 'answered-wrong') : (chosen >= 0 ? 'answered' : '');
+    const isFlagged = S.flagged.has(q.id);
     // Entrance motion: the first paint staggers cards in; every later repaint
     // (filter, shuffle, grading) uses a short cross-fade instead. The delay
     // lives in a custom property so CSS owns the animation entirely.
     const enterCls = S.enterPhase === 'enter' ? 'q-enter' : 'q-swap';
     const enterStyle = S.enterPhase === 'enter' ? ` style="--qi:${Math.min(index, 9)}"` : '';
-    return `<article class="q-card ${cardClass} ${enterCls}" data-qid="${q.id}" id="q-${q.id}"${enterStyle}>` +
+    return `<article class="q-card ${cardClass}${isFlagged ? ' flagged' : ''} ${enterCls}" data-qid="${q.id}" id="q-${q.id}"${enterStyle}>` +
       `<div class="q-head">
         <span class="q-num">${index + 1}</span>
         <div style="min-width:0">
           <p class="q-text">${q.q}</p>
           <span class="tag ${topicClass} q-topic">${q.label}</span>
         </div>
+        <button type="button" class="q-flag${isFlagged ? ' on' : ''}" data-flag="${q.id}" aria-pressed="${isFlagged}"
+                title="Flag for review" aria-label="${isFlagged ? 'Remove the review flag from' : 'Flag'} question ${index + 1}">
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
       <div class="opts" role="radiogroup" aria-label="Answer options for question ${index + 1}">${opts}</div>
       ${fb}
@@ -102,7 +132,8 @@
     if (!list.length) {
       host.innerHTML = `<div class="card center muted">No questions match this filter
         ${S.filter === 'wrong' ? '(nothing was incorrect \u2014 well done!)'
-          : S.filter === 'unanswered' ? '(every question already has an answer \u2014 nice work!)' : ''}.</div>`;
+          : S.filter === 'unanswered' ? '(every question already has an answer \u2014 nice work!)'
+          : S.filter === 'flagged' ? '(nothing flagged yet \u2014 tap the little flag on a question, or press F, to review it later)' : ''}.</div>`;
     } else {
       host.innerHTML = list.map((q, i) => questionHTML(q, i)).join('');
     }
@@ -136,29 +167,122 @@
     submitBtns.forEach(b => {
       // one shared workflow: every submit control mirrors the same state
       b.disabled = S.submitted;
-      b.textContent = S.submitted ? 'Quiz submitted' : `Submit quiz (${total})`;
+      b.textContent = S.submitted ? 'Quiz submitted'
+        : S.confirmAsk ? 'Confirm submission'
+        : `Submit quiz (${total})`;
     });
+
+    // the always-visible pill mirrors the SAME single progress state
+    const pill = el('quizPill');
+    if (pill !== null && pill !== undefined) {
+      pill.hidden = S.submitted;
+      const pText = el('pillText');
+      if (pText !== null && pText !== undefined) pText.textContent = `${answered}/${total}`;
+      const pFill = el('pillFill');
+      if (pFill !== null && pFill !== undefined) pFill.style.width = pct.toFixed(1) + '%';
+      const pFlags = el('pillFlags');
+      if (pFlags !== null && pFlags !== undefined) pFlags.hidden = S.flagged.size === 0;
+      const pCount = el('pillFlagCount');
+      if (pCount !== null && pCount !== undefined) pCount.textContent = String(S.flagged.size);
+    }
+    renderNav();
   }
 
-  /* ---- clock, streaks, keyboard ---------------------------------------- */
+  /* ---- clock, streaks, keyboard ----------------------------------------
+     ONE internal clock (S.t0) powers everything: the Practice count-up, the
+     Challenge count-down, per-question splits and the results time tag. With
+     the timer Off (the calm default) the clock still runs internally but
+     nothing time-related is displayed and the float panel stays hidden. */
   const fmtTime = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-  function startTimer() {
-    if (S.t0) return;
-    S.t0 = performance.now(); S.lastMark = S.t0;
+  const elapsedSec = () => (S.t0 ? (performance.now() - S.t0) / 1000 : 0);
+
+  function tickTimer() {
+    if (S.t0 === 0 || S.submitted || S.timerMode === 'off') return;
     const elT = el('quiz-timer');
-    if (elT) elT.hidden = false;
-    // the floating panel surfaces the same single clock - no second timer
+    if (S.timerMode === 'down') {
+      const remaining = Math.round(S.timerMins * 60 - elapsedSec());
+      if (elT !== null && elT !== undefined) elT.textContent = fmtTime(Math.max(0, remaining));
+      const ft = el('floatTimer');
+      // soft amber in the last minute - a colour shift, not an alarm
+      if (ft !== null && ft !== undefined) ft.classList.toggle('warn', remaining <= 60 && remaining > 0);
+      if (remaining <= 0) {
+        stopTick();
+        if (elT !== null && elT !== undefined) elT.textContent = '0:00';
+        timeUp();
+      }
+    } else if (elT !== null && elT !== undefined) {
+      elT.textContent = fmtTime(Math.round(elapsedSec()));
+    }
+  }
+  function startTick() {
+    if (timerHandle) return;
+    timerHandle = setInterval(tickTimer, 1000);
+    tickTimer();                        // paint the right value immediately
+  }
+  function stopTick() { clearInterval(timerHandle); timerHandle = 0; }
+
+  function showTimerPanel() {
     const ft = el('floatTimer');
-    if (ft) { ft.hidden = false; ft.classList.add('show'); ftPlace(); }
+    if (ft === null || ft === undefined) return;
+    ft.hidden = false; ft.classList.add('show'); ftPlace();
+    const title = ft.querySelector('.ft-title');
+    if (title !== null && title !== undefined) title.textContent = S.timerMode === 'down' ? 'Remaining' : 'Elapsed';
     const hint = el('floatTimerHint');
-    if (hint) hint.textContent = 'since your first answer';
-    timerHandle = setInterval(() => {
-      if (elT && S.t0 && !S.submitted) elT.textContent = fmtTime(Math.round((performance.now() - S.t0) / 1000));
-    }, 1000);
+    if (hint !== null && hint !== undefined) {
+      hint.textContent = S.timerMode === 'down'
+        ? `${S.timerMins} min challenge \u00B7 grades itself at 0:00`
+        : 'since your first answer';
+    }
+  }
+  function hideTimerPanel() {
+    const ft = el('floatTimer');
+    if (ft === null || ft === undefined) return;
+    ft.hidden = true; ft.classList.remove('show', 'warn');
+  }
+  function startTimer() {
+    if (S.t0 === 0) {
+      S.t0 = performance.now(); S.lastMark = S.t0; S.startedWall = Date.now();
+    }
+    const elT = el('quiz-timer');
+    if (elT !== null && elT !== undefined) elT.hidden = S.timerMode === 'off';
+    if (S.timerMode !== 'off') { showTimerPanel(); startTick(); }
+    saveSession();
   }
   function stopTimer() {
-    clearInterval(timerHandle); timerHandle = 0;
+    stopTick();
     if (S.t0) S.totalTime = Math.round((performance.now() - S.t0) / 1000);
+  }
+  function timeUp() {
+    if (S.submitted) return;
+    toast('Time\u2019s up \u2014 grading your quiz now; blanks count as incorrect', 'warn');
+    gradeNow();
+  }
+  /* The Timer segment: Off / Practice / Challenge, persisted as a preference
+     so the quiz opens the way the student last liked it. */
+  function applyTimerMode(mode, quiet) {
+    S.timerMode = mode === 'up' || mode === 'down' ? mode : 'off';
+    Prefs.set('quizTimerMode', S.timerMode);
+    const mins = el('timer-mins');
+    if (mins !== null && mins !== undefined) mins.hidden = S.timerMode !== 'down';
+    if (S.submitted) return;
+    if (S.timerMode === 'off') {
+      stopTick();
+      hideTimerPanel();
+      const elT = el('quiz-timer');
+      if (elT !== null && elT !== undefined) elT.hidden = true;
+    } else if (S.t0) {
+      const elT = el('quiz-timer');
+      if (elT !== null && elT !== undefined) elT.hidden = false;
+      showTimerPanel(); startTick();
+    } else {
+      hideTimerPanel();               // armed but calm: appears on the first answer
+    }
+    if (quiet !== true) {
+      toast(S.timerMode === 'off' ? 'Timer off \u2014 no clock, no pressure'
+        : S.timerMode === 'up' ? 'Practice timer: counts up from your first answer'
+        : `Challenge timer: ${S.timerMins} minutes, then the quiz grades itself`);
+    }
+    saveSession();
   }
   function recordTime(qid) {
     if (!S.t0) return;
@@ -171,6 +295,173 @@
     S.bestStreak = Math.max(S.bestStreak, S.streak);
     const elS = el('quiz-streak');
     if (elS) { elS.hidden = S.streak < 2; elS.textContent = `streak \u00D7${S.streak}`; }
+  }
+
+  /* ---- flag for review ---------------------------------------------------
+     Flags are light-touch review markers: they never change grading, they show
+     on the card, in the navigator strip and as a count in the progress pill,
+     and the "Flagged" filter collects them before submitting. */
+  function toggleFlag(qid) {
+    if (S.submitted) return;
+    if (resumePending) dismissResume(false);
+    if (S.flagged.has(qid)) S.flagged.delete(qid); else S.flagged.add(qid);
+    const on = S.flagged.has(qid);
+    const card = document.getElementById(`q-${qid}`);
+    if (card !== null && card !== undefined) {
+      card.classList.toggle('flagged', on);
+      const btn = card.querySelector('.q-flag');
+      if (btn !== null && btn !== undefined) {
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', String(on));
+      }
+    }
+    renderMeta();                            // pill count + navigator chip
+    if (S.filter === 'flagged') render();    // the view's membership changed
+    saveSession();
+  }
+
+  /* ---- question navigator ------------------------------------------------
+     One chip per question in the current order, always the FULL bank (filters
+     are views): answered chips tint emerald, flagged chips grow an amber dot,
+     and the card nearest the viewport centre wears a sky ring. */
+  function renderNav() {
+    const nav = el('qnav');
+    if (nav === null || nav === undefined) return;
+    const curId = (S.activeCard !== null && S.activeCard !== undefined) ? Number(S.activeCard.dataset.qid) : 0;
+    nav.innerHTML = S.order.map((q, i) => {
+      const cls = ['qnav-chip'];
+      if (S.answers.has(q.id)) cls.push('done');
+      if (S.flagged.has(q.id)) cls.push('flag');
+      if (q.id === curId) cls.push('cur');
+      const state = `${S.answers.has(q.id) ? ', answered' : ''}${S.flagged.has(q.id) ? ', flagged' : ''}`;
+      return `<button type="button" class="${cls.join(' ')}" data-goto="${q.id}" aria-label="Question ${i + 1}${state}">${i + 1}</button>`;
+    }).join('');
+    syncNavArrows(curId);
+  }
+  function syncNavArrows(curId) {
+    const idx = S.order.findIndex(q => q.id === curId);
+    const prev = el('qnav-prev');
+    if (prev !== null && prev !== undefined) prev.disabled = idx <= 0;
+    const next = el('qnav-next');
+    if (next !== null && next !== undefined) next.disabled = idx >= S.order.length - 1;
+  }
+  function updateNavCur(qid) {
+    const nav = el('qnav');
+    if (nav === null || nav === undefined) return;
+    nav.querySelectorAll('.qnav-chip.cur').forEach(c => c.classList.remove('cur'));
+    const chip = nav.querySelector(`[data-goto="${qid}"]`);
+    if (chip !== null && chip !== undefined) chip.classList.add('cur');
+    syncNavArrows(qid);
+  }
+  function gotoQuestion(qid) {
+    const inView = visible().some(q => q.id === qid);
+    if (inView === false) {                  // jumping beats filtering: show it
+      S.filter = 'all'; syncFilterButtons(); render();
+    }
+    const target = document.getElementById(`q-${qid}`);
+    if (target !== null && target !== undefined) {
+      EMC.scrollToEl(target);
+      S.activeCard = target;
+      updateNavCur(qid);
+    }
+  }
+  function navStep(delta) {
+    const curId = (S.activeCard !== null && S.activeCard !== undefined) ? Number(S.activeCard.dataset.qid) : 0;
+    let idx = S.order.findIndex(q => q.id === curId);
+    if (idx < 0) idx = delta > 0 ? -1 : S.order.length;
+    const target = S.order[Math.min(Math.max(idx + delta, 0), S.order.length - 1)];
+    if (target !== null && target !== undefined) gotoQuestion(target.id);
+  }
+
+  /* ---- autosave / resume --------------------------------------------------
+     Every answer, flag and preference writes one small session document (400 ms
+     throttle) through the same safe store as the rest of the site. A refresh
+     OFFERS to resume - never a silent restore - and submitting, retaking or
+     choosing "Start fresh" clears it. */
+  const SESSION_KEY = 'emc.quiz.session.v1';
+  function saveSession() {
+    if (S.submitted) return;
+    if (saveHandle) return;
+    saveHandle = setTimeout(() => {
+      saveHandle = 0;
+      if (S.submitted) return;
+      try {
+        store.set(SESSION_KEY, JSON.stringify({
+          v: 1,
+          answers: [...S.answers],
+          marked: [...S.marked],
+          flagged: [...S.flagged],
+          order: S.order.map(q => q.id),
+          instant: S.instant,
+          filter: S.filter,
+          startedWall: S.startedWall,
+          timerMode: S.timerMode,
+          timerMins: S.timerMins
+        }));
+      } catch (err) { /* storage full or locked - the quiz itself still works */ }
+    }, 400);
+  }
+  function readSession() {
+    try {
+      const raw = store.get(SESSION_KEY);
+      if (raw === null || raw === undefined) return null;
+      const d = JSON.parse(raw);
+      if (d === null || typeof d !== 'object' || d.v !== 1) return null;
+      if (Array.isArray(d.answers) === false || d.answers.length === 0) return null;
+      const ids = new Set(BANK.map(q => q.id));
+      const answers = new Map(d.answers
+        .filter(a => Array.isArray(a) && ids.has(a[0]))
+        .map(a => [Number(a[0]), Number(a[1])]));
+      if (answers.size === 0) return null;
+      return { d, answers };
+    } catch (err) { return null; }          // corrupt JSON is simply ignored
+  }
+  function dismissResume(clearStorage) {
+    resumePending = false;
+    const wrap = el('resume-wrap');
+    if (wrap !== null && wrap !== undefined) wrap.hidden = true;
+    if (clearStorage === true) store.remove(SESSION_KEY);
+  }
+  function syncSegQuiet(group, value) {
+    if (group === null || group === undefined) return;
+    group.querySelectorAll('.seg-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === value)));
+  }
+  function syncMinsChips() {
+    document.querySelectorAll('#timer-mins [data-mins]').forEach(x => {
+      const on = Number(x.dataset.mins) === S.timerMins;
+      x.classList.toggle('active', on);
+      x.setAttribute('aria-pressed', String(on));
+    });
+  }
+  function applySession(d, answers) {
+    S.answers = answers;
+    S.marked = new Map(Array.isArray(d.marked) ? d.marked.filter(m => Array.isArray(m)).map(m => [Number(m[0]), m[1] === true]) : []);
+    S.flagged = new Set(Array.isArray(d.flagged) ? d.flagged.filter(x => typeof x === 'number') : []);
+    if (Array.isArray(d.order)) {
+      const byId = new Map(BANK.map(q => [q.id, q]));
+      const order = d.order.map(id => byId.get(id)).filter(q => q !== undefined);
+      if (order.length === BANK.length) S.order = order;
+    }
+    S.instant = d.instant === true;
+    syncSegQuiet(el('quiz-mode'), S.instant ? 'instant' : 'exam');
+    if (typeof d.filter === 'string') S.filter = d.filter;
+    if ([10, 15, 20].indexOf(Number(d.timerMins)) >= 0) S.timerMins = Number(d.timerMins);
+    syncMinsChips();
+    syncSegQuiet(el('quiz-timer-mode'), d.timerMode === 'up' || d.timerMode === 'down' ? d.timerMode : 'off');
+    applyTimerMode(d.timerMode, true);
+    if (Number(d.startedWall) > 0) {
+      // the clock kept running while the page was away - resume from wall time
+      S.startedWall = Number(d.startedWall);
+      S.t0 = performance.now() - (Date.now() - S.startedWall);
+      S.lastMark = performance.now();
+      if (S.timerMode !== 'off') {
+        const elT = el('quiz-timer');
+        if (elT !== null && elT !== undefined) elT.hidden = false;
+        showTimerPanel(); startTick();
+      }
+    }
+    syncFilterButtons();
+    render();
   }
 
   /* ---- floating timer panel: position, drag, keys, minimise -------------
@@ -236,7 +527,7 @@
       minBtn.setAttribute('aria-label', min ? 'Expand timer panel' : 'Minimize timer panel');
       const icMin = minBtn.querySelector('.ic-min'), icPlus = minBtn.querySelector('.ic-plus');
       if (icMin) icMin.hidden = min;
-      if (icPlus) icPlus.hidden = !min;
+      if (icPlus) icPlus.hidden = min === false;   // explicit: a bang-negated identifier compiles to a phantom !utility
       requestAnimationFrame(ftPlace);        // re-clamp for the new size
     });
     const resetBtn = el('floatTimerReset');
@@ -253,7 +544,18 @@
   function initKeyboardAndFocus() {
     if (typeof IntersectionObserver === 'function') {
       const io = new IntersectionObserver(entries => {
-        for (const en of entries) if (en.isIntersecting && en.intersectionRatio >= 0.4) S.activeCard = en.target;
+        // several cards can cross a threshold in one batch (fast scrolls, chip
+        // jumps): keep the DEEPEST intersection so the ring settles on the card
+        // actually centred in the viewport, not the last one to notify
+        let best = null;
+        for (const en of entries) {
+          if (en.isIntersecting && en.intersectionRatio >= 0.4 &&
+              (best === null || en.intersectionRatio > best.intersectionRatio)) best = en;
+        }
+        if (best !== null) {
+          S.activeCard = best.target;
+          updateNavCur(Number(best.target.dataset.qid));
+        }
       }, { threshold: [0.4, 0.7] });
       const watch = () => host.querySelectorAll('.q-card').forEach(c => io.observe(c));
       watch();
@@ -284,12 +586,17 @@
         const blank = visible().find(q => !S.answers.has(q.id));
         if (blank) EMC.scrollToEl(document.getElementById(`q-${blank.id}`));
         e.preventDefault();
+      } else if (key === 'f' && !S.submitted) {
+        toggleFlag(Number(card.dataset.qid));   // flag the question on screen
+        e.preventDefault();
       }
     });
   }
 
   /* ---- answering ------------------------------------------------------- */
   host.addEventListener('click', e => {
+    const flagBtn = e.target.closest('.q-flag');
+    if (flagBtn !== null) { toggleFlag(Number(flagBtn.dataset.flag)); return; }
     const btn = e.target.closest('.opt');
     if (btn === null || btn.disabled) return;
     const card = btn.closest('.q-card');
@@ -297,6 +604,7 @@
     const q = BANK.find(x => x.id === qid);
     if (!q || S.marked.has(qid)) return;
 
+    if (resumePending) dismissResume(false);   // answering IS choosing "fresh"
     S.answers.set(qid, Number(btn.dataset.opt));
     startTimer();
     recordTime(qid);
@@ -362,7 +670,8 @@
     // One-time guard so a stray click cannot silently cost marks.
     if (blanks.length && !S.blankWarned) {
       S.blankWarned = true;
-      toast(`${blanks.length} question${blanks.length === 1 ? ' is' : 's are'} still blank (across all topics) \u2014 click Submit again to grade them as incorrect`, 'warn');
+      const flagNote = S.flagged.size ? ` \u00B7 ${S.flagged.size} flagged for review` : '';
+      toast(`${blanks.length} question${blanks.length === 1 ? ' is' : 's are'} still blank (across all topics)${flagNote} \u2014 click Submit again to grade them as incorrect`, 'warn');
       // jump to the first blank one the user can actually see
       S.filter = 'all'; syncFilterButtons(); render();
       const first = document.getElementById(`q-${blanks[0].id}`);
@@ -382,13 +691,40 @@
       return;
     }
 
+    // Nothing blank: ask once, gently, before answers lock in. The buttons
+    // flip to "Confirm submission" and calm back down after five seconds.
+    if (blanks.length === 0 && !S.confirmAsk) {
+      S.confirmAsk = true;
+      renderMeta();
+      toast(S.flagged.size
+        ? `Submit for grading? Your ${S.flagged.size} flagged question${S.flagged.size === 1 ? '' : 's'} grade as they are \u2014 click Submit again to confirm`
+        : 'Submit for grading? Click Submit again to confirm \u2014 answers lock in');
+      clearTimeout(confirmHandle);
+      confirmHandle = setTimeout(() => {
+        if (!S.submitted) { S.confirmAsk = false; renderMeta(); }
+      }, 5000);
+      return;
+    }
+
+    gradeNow();
+  }
+
+  function gradeNow() {
+    clearTimeout(confirmHandle);
+    S.confirmAsk = false;
     S.submitted = true;
     stopTimer();
+    store.remove(SESSION_KEY);        // the attempt is over: nothing to resume
+    dismissResume(false);
     S.filter = 'all';
     syncFilterButtons();
     S.order.forEach(q => { S.marked.set(q.id, S.answers.has(q.id) && S.answers.get(q.id) === q.answer); });
     if (!S.instant) S.bestStreak = computeBestStreak();
     render();
+
+    // the challenge timer's amber state must not survive into the results
+    const ft = el('floatTimer');
+    if (ft !== null && ft !== undefined) ft.classList.remove('warn');
 
     // grading disables the option buttons and the submit button; a focused
     // disabled control drops keyboard users to <body>, so hand focus to the
@@ -418,20 +754,39 @@
     const band = bandFor(pct);
     const prog = Progress.read();
 
-    // per-chapter breakdown (registry order)
+    // per-chapter breakdown (registry order) + the weak-area summary line
     const topics = EMC_REGISTRY.chapters.map(c => c.id);
-    const rows = topics.map(t => {
+    const topicStats = topics.map(t => {
       const qs = scored.filter(q => q.topic === t);
-      if (!qs.length) return '';
-      const ok = qs.filter(q => S.marked.get(q.id) === true).length;
-      const p = Math.round((ok / qs.length) * 100);
-      const lbl = qs[0].label;
-      return `<div class="grid gap-2 items-center" style="grid-template-columns:minmax(120px,1fr) 2fr auto">
-                <span class="small muted">${lbl}</span>
-                <span class="progress-track"><span class="progress-fill" style="width:${p}%"></span></span>
-                <span class="mono small">${ok}/${qs.length}</span>
-              </div>`;
-    }).join('');
+      if (!qs.length) return null;
+      const okN = qs.filter(q => S.marked.get(q.id) === true).length;
+      const ch = EMC_REGISTRY.chapter(t);
+      return { id: t, n: qs.length, ok: okN, pct: Math.round((okN / qs.length) * 100),
+               label: qs[0].label, path: ch ? ch.path : 'index.html' };
+    }).filter(s => s !== null);
+    const rows = topicStats.map(s => `<div class="grid gap-2 items-center" style="grid-template-columns:minmax(120px,1fr) 2fr auto">
+                <span class="small muted">${s.label}</span>
+                <span class="progress-track"><span class="progress-fill" style="width:${s.pct}%"></span></span>
+                <span class="mono small">${s.ok}/${s.n}</span>
+              </div>`).join('');
+    const weak = topicStats.filter(s => s.pct < 70).sort((a, b) => a.pct - b.pct);
+    const weakRow = weak.length === 0
+      ? `<p class="small muted" style="margin:.75rem 0 0">${pct === 100
+          ? 'Every topic at 100% \u2014 flawless!'
+          : 'No weak spots this time \u2014 every topic is at 70% or above.'}</p>`
+      : `<p class="small muted" style="margin:.75rem 0 0">Weakest ${weak.length === 1 ? 'area' : 'areas'}:
+          ${weak.map(s => `${s.label} (${s.ok}/${s.n})`).join(' \u00B7 ')} \u2014
+          <a class="link" href="${weak[0].path}">revisit ${weak[0].label}</a></p>`;
+
+    // time tags only appear when the student actually opted into a timer
+    const usedTimer = S.timerMode !== 'off';
+    const timeTags = usedTimer
+      ? `<span class="tag">${S.timerMode === 'down' ? 'challenge time' : 'time'} ${fmtTime(S.totalTime)}</span>` : '';
+    const perQTag = usedTimer
+      ? `<span class="tag tag-cyan">${total ? Math.round(S.totalTime / total) : 0}s per question</span>` : '';
+    const passed = pct >= 70;
+    const cheer = passed ? `<div class="score-cheer">${FACE_HAPPY}</div>` : '';
+    const confetti = passed ? confettiHTML() : '';
 
     box.hidden = false;
     box.classList.remove('score-enter');
@@ -447,11 +802,13 @@
       : '';
 
     box.innerHTML = `
+      ${confetti}
       <div class="score-card">
         <div>
           <div class="grade ${band.cls}">${pct}%</div>
           <div class="small muted mono">${right} / ${total} correct</div>
         </div>
+        ${cheer}
         <div class="score-bar">
           <div class="tag ${pct >= 75 ? 'tag-emerald' : pct >= 50 ? 'tag-amber' : 'tag-rose'}">${band.text}</div>
           <p class="small muted" style="margin:.5rem 0 .8rem">${band.note}</p>
@@ -478,10 +835,11 @@
         </div>
       </div>
       <div class="flex flex-wrap gap-2 mt-3">
-        <span class="tag">time ${fmtTime(S.totalTime)}</span>
+        ${timeTags}
         <span class="tag tag-amber">best streak \u00D7${S.bestStreak}</span>
-        <span class="tag tag-cyan">${total ? Math.round(S.totalTime / total) : 0}s per question</span>
+        ${perQTag}
       </div>
+      ${weakRow}
       <div class="flex flex-wrap gap-2 mt-4">
         <button class="btn btn-primary" id="quiz-retake" type="button">Retake the quiz</button>
         <button class="btn" id="quiz-wrong" type="button">Review incorrect only</button>
@@ -503,12 +861,17 @@
     }
     const retake = el('quiz-retake');
     if (retake) retake.addEventListener('click', () => {
-      S.answers.clear(); S.marked.clear(); S.submitted = false; S.blankWarned = false;
+      S.answers.clear(); S.marked.clear(); S.flagged.clear();
+      S.submitted = false; S.blankWarned = false; S.confirmAsk = false;
+      clearTimeout(confirmHandle);
       S.t0 = 0; S.lastMark = 0; S.times.clear(); S.streak = 0; S.bestStreak = 0; S.totalTime = 0;
+      S.startedWall = 0;
+      store.remove(SESSION_KEY);
+      dismissResume(false);
       clearInterval(timerHandle); timerHandle = 0;
       const elT = el('quiz-timer'); if (elT) { elT.hidden = true; elT.textContent = '0:00'; }
       const ft = el('floatTimer');
-      if (ft) { ft.hidden = true; ft.classList.remove('show', 'min', 'dragging'); ftPos = null; }
+      if (ft) { ft.hidden = true; ft.classList.remove('show', 'min', 'dragging', 'warn'); ftPos = null; }
       const minB = el('floatTimerMin');
       if (minB) { minB.setAttribute('aria-pressed', 'false'); minB.setAttribute('aria-label', 'Minimize timer panel'); }
       const hint = el('floatTimerHint'); if (hint) hint.textContent = 'starts on your first answer';
@@ -672,6 +1035,7 @@
       if (S.filter !== 'wrong') S.blankWarned = false;
       syncFilterButtons();
       render();
+      saveSession();
     });
   });
 
@@ -685,6 +1049,7 @@
     }
     S.order = a;
     render();
+    saveSession();
     toast('Questions shuffled');
   });
 
@@ -700,8 +1065,42 @@
       });
     }
     render();
+    saveSession();
     toast(S.instant ? 'Instant mode: answers are marked as you go' : 'Exam mode: nothing is marked until you submit');
   });
+
+  /* ---- optional timer controls + question navigator wiring --------------- */
+  const timerGroup = el('quiz-timer-mode');
+  if (timerGroup) EMC.bindSegment(timerGroup, v => applyTimerMode(v, false));
+
+  document.querySelectorAll('#timer-mins [data-mins]').forEach(b => {
+    b.addEventListener('click', () => {
+      S.timerMins = Number(b.dataset.mins);
+      Prefs.set('quizTimerMins', S.timerMins);
+      syncMinsChips();
+      const ft = el('floatTimer');
+      if (S.timerMode === 'down' && S.t0 && !S.submitted) {
+        showTimerPanel();               // refresh the hint + remaining readout
+        startTick();
+      } else if (ft !== null && ft !== undefined && ft.hidden === false) {
+        showTimerPanel();
+      }
+      saveSession();
+    });
+  });
+
+  const navEl = el('qnav');
+  if (navEl !== null && navEl !== undefined) {
+    navEl.addEventListener('click', e => {
+      const chip = e.target.closest('.qnav-chip');
+      if (chip === null) return;
+      gotoQuestion(Number(chip.dataset.goto));
+    });
+  }
+  const prevBtn = el('qnav-prev');
+  if (prevBtn !== null && prevBtn !== undefined) prevBtn.addEventListener('click', () => navStep(-1));
+  const nextBtn = el('qnav-next');
+  if (nextBtn !== null && nextBtn !== undefined) nextBtn.addEventListener('click', () => navStep(1));
 
   /* Top and bottom controls, one workflow: every [data-quiz-submit] button
      calls the same submit(), and renderMeta() keeps their labels and disabled
@@ -716,11 +1115,48 @@
   if (el('quiz-total-end')) el('quiz-total-end').textContent = String(BANK.length);
 
   /* ---- boot ------------------------------------------------------------ */
+  // optional timer: restore the saved preference (calm default: Off)
+  const savedMins = Number(Prefs.get('quizTimerMins', 10));
+  S.timerMins = [10, 15, 20].indexOf(savedMins) >= 0 ? savedMins : 10;
+  syncMinsChips();
+  const savedMode = Prefs.get('quizTimerMode', 'off');
+  syncSegQuiet(timerGroup, savedMode === 'up' || savedMode === 'down' ? savedMode : 'off');
+  applyTimerMode(savedMode, true);
+
   const deepTopic = topicFromURL();
   if (deepTopic) {
     S.filter = deepTopic;
     toast(`Filtered to ${TOPIC_NAMES[deepTopic]} \u2014 your score still covers all ${BANK.length} questions`);
   }
+
+  // a saved in-progress attempt OFFERS to resume - never a silent restore
+  const saved = readSession();
+  if (saved !== null) {
+    const wrap = el('resume-wrap');
+    if (wrap !== null && wrap !== undefined) {
+      const sum = el('resume-summary');
+      if (sum !== null && sum !== undefined) {
+        const nA = saved.answers.size;
+        const nF = Array.isArray(saved.d.flagged) ? saved.d.flagged.length : 0;
+        sum.textContent = `You had ${nA} of ${BANK.length} answered${nF ? ` and ${nF} flagged` : ''} \u2014 pick up where you left off?`;
+      }
+      wrap.hidden = false;
+      resumePending = true;
+      const yes = el('resume-yes');
+      if (yes !== null && yes !== undefined) yes.addEventListener('click', () => {
+        applySession(saved.d, saved.answers);
+        if (deepTopic) { S.filter = deepTopic; syncFilterButtons(); render(); }
+        dismissResume(false);
+        toast('Welcome back \u2014 quiz resumed');
+      });
+      const no = el('resume-no');
+      if (no !== null && no !== undefined) no.addEventListener('click', () => {
+        dismissResume(true);
+        toast('Fresh quiz \u2014 the saved session was cleared');
+      });
+    }
+  }
+
   syncFilterButtons();
   render();
   initKeyboardAndFocus();

@@ -8,6 +8,7 @@
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+    document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
     setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
   </script>
   <title>Quiz · EMC Lab</title>
@@ -175,6 +176,26 @@
       </div>
     </div>
 
+    <!-- Resume card: shown only when an autosaved in-progress session exists.
+         A gentle welcome-back with an explicit choice - never a silent restore. -->
+    <div class="wrap section-tight" id="resume-wrap" hidden>
+      <div class="card resume-card" role="status">
+        <div class="flex flex-wrap items-center gap-3 justify-between">
+          <div class="flex items-center gap-3" style="min-width:0">
+            <svg class="mreact" viewBox="0 0 60 56" aria-hidden="true" style="width:44px;flex:none"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg>
+            <div style="min-width:0">
+              <p class="font-bold">Welcome back!</p>
+              <p class="small muted" id="resume-summary" style="margin:.15rem 0 0">You have an unfinished quiz on this device.</p>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary btn-sm" type="button" id="resume-yes">Resume quiz</button>
+            <button class="btn btn-sm" type="button" id="resume-no">Start fresh</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="wrap section-tight">
       <div class="panel rise-2 quiz-sweep">
         <div class="panel-body">
@@ -186,13 +207,27 @@
                 <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Circuits</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="efield" aria-pressed="false">Fields</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="unanswered" aria-pressed="false">Unanswered</button></div>
+                <button class="btn btn-sm" type="button" data-quiz-filter="unanswered" aria-pressed="false">Unanswered</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="flagged" aria-pressed="false">Flagged</button></div>
             </div>
             <div>
               <span class="ctl-label" style="margin-bottom:.4rem">Marking</span>
               <div class="seg" id="quiz-mode" role="group" aria-label="Marking mode">
                 <button class="seg-btn" type="button" data-value="exam" aria-pressed="true">Exam mode</button>
                 <button class="seg-btn" type="button" data-value="instant" aria-pressed="false">Instant feedback</button>
+              </div>
+            </div>
+            <div>
+              <span class="ctl-label" style="margin-bottom:.4rem">Timer <span class="tiny faint" style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></span>
+              <div class="seg" id="quiz-timer-mode" role="group" aria-label="Timer mode">
+                <button class="seg-btn" type="button" data-value="off" aria-pressed="true">Off</button>
+                <button class="seg-btn" type="button" data-value="up" aria-pressed="false">Practice</button>
+                <button class="seg-btn" type="button" data-value="down" aria-pressed="false">Challenge</button>
+              </div>
+              <div class="btn-group mt-2" id="timer-mins" role="group" aria-label="Challenge duration" hidden>
+                <button class="btn btn-sm active" type="button" data-mins="10" aria-pressed="true">10 min</button>
+                <button class="btn btn-sm" type="button" data-mins="15" aria-pressed="false">15 min</button>
+                <button class="btn btn-sm" type="button" data-mins="20" aria-pressed="false">20 min</button>
               </div>
             </div>
           </div>
@@ -209,7 +244,8 @@
 
           <p class="tiny faint mt-2">
             Keyboard: <span class="mono">1–4</span> or <span class="mono">A–D</span> answer the question on screen,
-            <span class="mono">Enter</span> submits, <span class="mono">N</span> jumps to the next blank.
+            <span class="mono">Enter</span> submits, <span class="mono">N</span> jumps to the next blank,
+            <span class="mono">F</span> flags the question on screen for review.
           </p>
           <p class="tiny faint mt-3" data-detail="plain">Exam mode grades everything at the end. Instant feedback grades each answer right away — better while learning.</p>
           <p class="tiny faint mt-3" data-detail="tech">
@@ -218,6 +254,24 @@
             explanation, which is better when you are learning. Submitting always grades the
             full bank; filters are a revision aid only, and blank answers count as incorrect.
           </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question navigator: jump strip + prev/next. Chips show answered state,
+         flags and the question nearest the viewport centre; rendered by quiz.js. -->
+    <div class="wrap section-tight">
+      <div class="panel">
+        <div class="panel-body qnav-body" style="padding:.75rem 1rem">
+          <button class="btn btn-sm qnav-arrow" type="button" id="qnav-prev" disabled>
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 1.5 3 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="btn-label">Prev</span>
+          </button>
+          <div class="qnav" id="qnav" role="group" aria-label="Jump to question"><!-- chips injected by js/quiz.js --></div>
+          <button class="btn btn-sm qnav-arrow" type="button" id="qnav-next">
+            <span class="btn-label">Next</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 1.5 7 5l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -259,6 +313,18 @@
       </div>
     </div>
   </main>
+
+  <!-- Always-visible progress pill: "x of 24" + a mini completion bar + flag
+       count, parked bottom-left so it never collides with the draggable
+       float timer (bottom-right). Mirrors the toolbar progress - one state. -->
+  <div class="quiz-pill" id="quizPill" hidden role="status" aria-label="Quiz progress">
+    <span class="pill-track"><span class="pill-fill" id="pillFill"></span></span>
+    <span class="pill-text" id="pillText">0/24</span>
+    <span class="pill-flags" id="pillFlags" hidden>
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="pillFlagCount">0</span>
+    </span>
+  </div>
 
   <!-- Floating elapsed-time panel: fixed to the viewport so it survives any
        scroll position, draggable by its header (pointer or arrow keys),
