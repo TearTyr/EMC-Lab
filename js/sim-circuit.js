@@ -272,7 +272,7 @@
   const benchSection = canvas.closest('section') || canvas.parentElement;
   if (benchSection) {
     ['pointerdown', 'input', 'click'].forEach(ev =>
-      benchSection.addEventListener(ev, () => stage.start(), { passive: true }));
+      stage.listen(benchSection, ev, () => stage.start(), { passive: true }));
   }
 
   /* ---- HTML readouts + resistor table ---------------------------------- */
@@ -345,20 +345,20 @@
     state.resistors.forEach((r, i) => {
       const input = el(`circ-r${i}`);
       if (input) {
-        input.addEventListener('input', () => {
+        stage.listen(input, 'input', () => {
           state.resistors[i] = parseFloat(input.value);
           const v = el(`circ-r${i}-v`); if (v) v.textContent = `${fixed(state.resistors[i], 0)} \u03A9`;
           refresh();
         });
       }
       const row = host.querySelector(`[data-row="${i}"]`);
-      if (row) row.addEventListener('click', e => {
+      if (row) stage.listen(row, 'click', e => {
         if (e.target.closest('input,button')) return;
         state.selected = i; renderRows(); stage.invalidate();
       });
     });
     host.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => {
+      stage.listen(b, 'click', () => {
         const i = Number(b.dataset.del);
         if (state.resistors.length <= LIMITS[state.topology][0]) return;
         state.resistors.splice(i, 1);
@@ -372,7 +372,7 @@
 
   /* ---- buttons --------------------------------------------------------- */
   const topo = el('circ-topology');
-  if (topo) EMC.bindSegment(topo, value => {
+  if (topo) stage.bindSegment(topo, value => {
     state.topology = value;
     const [lo, hi] = LIMITS[value];
     // reshape the resistor list to fit the new topology
@@ -386,7 +386,7 @@
   });
 
   const addBtn = el('circ-add');
-  if (addBtn) addBtn.addEventListener('click', () => {
+  if (addBtn) stage.listen(addBtn, 'click', () => {
     if (state.resistors.length >= LIMITS[state.topology][1]) return;
     state.resistors.push(20);
     state.selected = state.resistors.length - 1;
@@ -394,10 +394,10 @@
     renderRows(); refresh();
   });
 
-  EMC.bindRange('circ-V', 'circ-Vv', v => { state.V = v; refresh(); }, v => `${fixed(v, 1)} V`);
-  EMC.bindRange('circ-bulbR', 'circ-bulbv', v => { state.bulbR = v; refresh(); }, v => `${fixed(v, 0)} \u03A9`);
+  stage.bindRange('circ-V', 'circ-Vv', v => { state.V = v; refresh(); }, v => `${fixed(v, 1)} V`);
+  stage.bindRange('circ-bulbR', 'circ-bulbv', v => { state.bulbR = v; refresh(); }, v => `${fixed(v, 0)} \u03A9`);
   const bulbToggle = el('circ-includeBulb');
-  if (bulbToggle) bulbToggle.addEventListener('change', () => {
+  if (bulbToggle) stage.listen(bulbToggle, 'change', () => {
     state.includeBulb = bulbToggle.checked;
     const s = el('circ-bulbR'); if (s) s.disabled = !state.includeBulb;
     refresh();
@@ -413,7 +413,7 @@
       EMC.scrollToEl(document.querySelector(`[data-row="${hit.idx}"]`), { behavior: 'smooth', block: 'nearest' });
     }
   });
-  canvas.addEventListener('pointermove', e => {
+  stage.listen(canvas, 'pointermove', e => {
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
     const over = lastHits.some(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
@@ -488,7 +488,7 @@
     if (chal.opts) {
       chal.opts.innerHTML = DIRS.map((d, k) =>
         `<button class="btn btn-sm" type="button" data-k="${k}" aria-pressed="false">${d}</button>`).join('');
-      chal.opts.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      chal.opts.querySelectorAll('button').forEach(b => stage.listen(b, 'click', () => {
         if (chalDone) return;
         chalDone = true;
         const k = Number(b.dataset.k);
@@ -509,8 +509,8 @@
   if (chal.text) {
     showChallenge(0);
     const newBtn = el('circ-chal-new');
-    if (newBtn) newBtn.addEventListener('click', () => showChallenge(chalIdx + 1));
-    if (chal.tryBtn) chal.tryBtn.addEventListener('click', () => { if (chal.current) chal.current.apply(); });
+    if (newBtn) stage.listen(newBtn, 'click', () => showChallenge(chalIdx + 1));
+    if (chal.tryBtn) stage.listen(chal.tryBtn, 'click', () => { if (chal.current) chal.current.apply(); });
   }
 
   /* ---- boot ------------------------------------------------------------ */

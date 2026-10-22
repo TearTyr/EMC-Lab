@@ -275,7 +275,7 @@
   /* ---- controls -------------------------------------------------------- */
   const brushGroup = el('ef-brush');
   if (brushGroup) {
-    EMC.bindSegment(brushGroup, value => {
+    stage.bindSegment(brushGroup, value => {
       state.brush = value;
       canvas.style.cursor = value === 'move' ? 'grab' : value === 'erase' ? 'not-allowed' : 'copy';
       const hint = el('ef-hint');
@@ -290,16 +290,16 @@
     });
   }
   const modeGroup = el('ef-mode');
-  if (modeGroup) EMC.bindSegment(modeGroup, v => { state.mode = v; refresh(); });
+  if (modeGroup) stage.bindSegment(modeGroup, v => { state.mode = v; refresh(); });
 
   const sizeSlider = el('ef-size');
-  if (sizeSlider) EMC.bindRange(sizeSlider, 'ef-sizev', v => { state.size = v; }, v => `${v.toFixed(1)} \u00B5C`);
+  if (sizeSlider) stage.bindRange(sizeSlider, 'ef-sizev', v => { state.size = v; }, v => `${v.toFixed(1)} \u00B5C`);
 
   document.querySelectorAll('[data-ef-preset]').forEach(btn => {
-    btn.addEventListener('click', () => { loadPreset(btn.dataset.efPreset); });
+    stage.listen(btn, 'click', () => { loadPreset(btn.dataset.efPreset); });
   });
   const clearBtn = el('ef-clear');
-  if (clearBtn) clearBtn.addEventListener('click', () => { state.charges = []; refresh(); });
+  if (clearBtn) stage.listen(clearBtn, 'click', () => { state.charges = []; refresh(); });
 
   /* ---- pointer tools --------------------------------------------------- */
   function nearest(x, y, w, h, maxDist = 26) {

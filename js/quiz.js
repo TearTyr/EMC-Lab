@@ -35,6 +35,12 @@
     return `<span class="confetti" aria-hidden="true">${out}</span>`;
   }
 
+  /* Pager chip glyphs - every chip state reads as colour AND icon, so the
+     strip never relies on hue alone (answered: emerald check in the corner,
+     flagged: amber flag in the other corner, current: sky tick under number) */
+  const CHIP_CHECK = '<svg class="chip-ic chip-ic-done" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.4 4.1 7.5 8 2.9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const CHIP_FLAG = '<svg class="chip-ic chip-ic-flag" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
   const S = {
     order: BANK.slice(),          // current question order (shuffle changes this)
     filter: 'all',                // 'all' | topic id | 'wrong' | 'unanswered' | 'flagged'
@@ -196,6 +202,21 @@
       b.textContent = S.submitted ? 'Quiz submitted'
         : S.confirmAsk ? 'Confirm submission'
         : `Submit quiz (${total})`;
+    });
+
+    // The two-step confirm says how many questions are still blank. The button
+    // label stays short ("Confirm submission"), the hint line carries count.
+    const blanks = total - answered;
+    document.querySelectorAll('[data-submit-hint]').forEach(h => {
+      if (S.submitted || (S.confirmAsk === false && (S.blankWarned === false || blanks === 0))) {
+        h.hidden = true; h.textContent = '';
+      } else if (S.confirmAsk === true) {
+        h.hidden = false;
+        h.textContent = `No unanswered questions \u00B7 click Submit again to confirm \u2014 answers lock in`;
+      } else {
+        h.hidden = false;
+        h.textContent = `${blanks} of ${total} unanswered \u00B7 blanks grade as incorrect \u00B7 click Submit again to grade`;
+      }
     });
 
     // the always-visible pill mirrors the SAME single progress state
@@ -408,11 +429,18 @@
     const curId = (S.activeCard !== null && S.activeCard !== undefined) ? Number(S.activeCard.dataset.qid) : 0;
     nav.innerHTML = S.order.map((q, i) => {
       const cls = ['qnav-chip'];
-      if (S.answers.has(q.id)) cls.push('done');
-      if (S.flagged.has(q.id)) cls.push('flag');
-      if (q.id === curId) cls.push('cur');
-      const state = `${S.answers.has(q.id) ? ', answered' : ''}${S.flagged.has(q.id) ? ', flagged' : ''}`;
-      return `<button type="button" class="${cls.join(' ')}" data-goto="${q.id}" aria-label="Question ${i + 1}${state}">${i + 1}</button>`;
+      const done = S.answers.has(q.id);
+      const flag = S.flagged.has(q.id);
+      const cur = q.id === curId;
+      if (done) cls.push('done');
+      if (flag) cls.push('flag');
+      if (cur) cls.push('cur');
+      // state reads twice on purpose: tint AND glyph, so colour is never the
+      // only channel (answered = emerald check, flagged = amber flag,
+      // current = sky ring + sky tick under the number)
+      const icons = `${done ? CHIP_CHECK : ''}${flag ? CHIP_FLAG : ''}${cur ? '<i class="chip-cur" aria-hidden="true"></i>' : ''}`;
+      const state = `${done ? ', answered' : ''}${flag ? ', flagged' : ''}${cur ? ', current question' : ''}`;
+      return `<button type="button" class="${cls.join(' ')}" data-goto="${q.id}" aria-label="Question ${i + 1}${state}">${i + 1}${icons}</button>`;
     }).join('');
     syncNavArrows(curId);
   }
@@ -422,13 +450,31 @@
     if (prev !== null && prev !== undefined) prev.disabled = idx <= 0;
     const next = el('qnav-next');
     if (next !== null && next !== undefined) next.disabled = idx >= S.order.length - 1;
+    // the mobile dock mirrors the same arrows and reads the position aloud-free
+    const dPrev = document.querySelector('.qnav-dock-prev');
+    if (dPrev !== null && dPrev !== undefined) dPrev.disabled = idx <= 0;
+    const dNext = document.querySelector('.qnav-dock-next');
+    if (dNext !== null && dNext !== undefined) dNext.disabled = idx >= S.order.length - 1;
+    const pos = el('qnav-dock-pos');
+    if (pos !== null && pos !== undefined) {
+      pos.textContent = idx < 0 ? `\u2014 / ${S.order.length}` : `${idx + 1} / ${S.order.length}`;
+    }
   }
   function updateNavCur(qid) {
     const nav = el('qnav');
     if (nav === null || nav === undefined) return;
-    nav.querySelectorAll('.qnav-chip.cur').forEach(c => c.classList.remove('cur'));
+    nav.querySelectorAll('.qnav-chip.cur').forEach(c => {
+      c.classList.remove('cur');
+      const tick = c.querySelector('.chip-cur');
+      if (tick !== null && tick !== undefined) tick.remove();
+      c.setAttribute('aria-label', (c.getAttribute('aria-label') || '').replace(', current question', ''));
+    });
     const chip = nav.querySelector(`[data-goto="${qid}"]`);
-    if (chip !== null && chip !== undefined) chip.classList.add('cur');
+    if (chip !== null && chip !== undefined) {
+      chip.classList.add('cur');
+      if (chip.querySelector('.chip-cur') === null) chip.insertAdjacentHTML('beforeend', '<i class="chip-cur" aria-hidden="true"></i>');
+      chip.setAttribute('aria-label', `${chip.getAttribute('aria-label') || ''}, current question`);
+    }
     syncNavArrows(qid);
   }
   function gotoQuestion(qid) {
@@ -1210,6 +1256,11 @@
   if (prevBtn !== null && prevBtn !== undefined) prevBtn.addEventListener('click', () => navStep(-1));
   const nextBtn = el('qnav-next');
   if (nextBtn !== null && nextBtn !== undefined) nextBtn.addEventListener('click', () => navStep(1));
+  // mobile dock mirrors the same two arrows (one workflow, two placements)
+  const dockPrev = document.querySelector('.qnav-dock-prev');
+  if (dockPrev !== null && dockPrev !== undefined) dockPrev.addEventListener('click', () => navStep(-1));
+  const dockNext = document.querySelector('.qnav-dock-next');
+  if (dockNext !== null && dockNext !== undefined) dockNext.addEventListener('click', () => navStep(1));
 
   /* Top and bottom controls, one workflow: every [data-quiz-submit] button
      calls the same submit(), and renderMeta() keeps their labels and disabled

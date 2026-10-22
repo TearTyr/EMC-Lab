@@ -12,8 +12,8 @@
     setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
   </script>
   <title>EMC Lab · Interactive Electromagnetics Tutorial</title>
-  <link rel="canonical" href="https://emc-physics.vercel.app/">
-  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
+  <link rel="canonical" href="https://emc-lab.vercel.app/">
+  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-lab.vercel.app is the
        production origin; if the deploy URL ever changes, update it in all six pages
        (tools/smoke-test.mjs asserts they all agree). -->
   <meta property="og:type" content="website">
@@ -21,15 +21,15 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Interactive Electromagnetics Tutorial">
   <meta property="og:description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
-  <meta property="og:url" content="https://emc-physics.vercel.app/">
-  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
+  <meta property="og:url" content="https://emc-lab.vercel.app/">
+  <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Interactive Electromagnetics Tutorial">
   <meta name="twitter:description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
-  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
+  <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
 
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
@@ -151,6 +151,9 @@
   </header>
 
   <main class="emc-main" id="main" tabindex="-1">
+    <!-- Shell: home view and the mounted topic view are sibling sections;
+         the inactive one is hidden AND inert. js/shell.js owns switching. -->
+    <section id="shell-home">
     <div class="wrap section-tight">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
     </div>
@@ -448,6 +451,10 @@
         </div>
       </div>
     </section>
+    </section>
+    <section id="shell-topic" hidden inert aria-label="Chapter reader">
+      <div id="shell-topic-body"></div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -494,6 +501,7 @@
   <script defer src="js/quiz-data.js"></script>
   <script defer src="js/common.js"></script>
   <script defer src="js/home.js"></script>
+  <script defer src="js/shell.js"></script>
   <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
        site is actually served from Vercel, so local runs, file:// and the test
        suite stay zero-third-party-request and console-clean. On Vercel the

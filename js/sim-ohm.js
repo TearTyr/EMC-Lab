@@ -308,7 +308,7 @@
   function refresh() { stage.invalidate(); if (chart) chart.invalidate(); updateReadouts(); }
 
   /* ---- controls -------------------------------------------------------- */
-  EMC.bindRange('ohm-V', 'ohm-Vv', v => { state.V = v; refresh(); }, v => `${fixed(v, 1)} V`);
+  stage.bindRange('ohm-V', 'ohm-Vv', v => { state.V = v; refresh(); }, v => `${fixed(v, 1)} V`);
 
   // Resistance uses a LOGARITHMIC slider (0..1000 -> 1 ohm..1000 ohm) so that
   // low values are still easy to select precisely.
@@ -323,21 +323,21 @@
       if (num && document.activeElement !== num) num.value = String(Math.round(state.R * 10) / 10);
       refresh();
     };
-    rSlider.addEventListener('input', apply);
+    stage.listen(rSlider, 'input', apply);
     rSlider.value = String(toSlider(state.R));
     apply();
 
     // exact numeric entry
     const num = el('ohm-Rnum');
     if (num) {
-      num.addEventListener('change', () => {
+      stage.listen(num, 'change', () => {
         const v = parseFloat(num.value);
         if (isFinite(v) && v >= 0.1) { state.R = clamp(v, 0.1, 1e6); rSlider.value = String(toSlider(clamp(state.R, 1, 1000))); apply(); }
         else num.value = String(Math.round(state.R * 10) / 10);
       });
     }
     document.querySelectorAll('[data-ohm-preset]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      stage.listen(btn, 'click', () => {
         const [V, R] = btn.dataset.ohmPreset.split(',').map(Number);
         const vEl = el('ohm-V');
         // Drive the real controls so readouts and state can never drift apart.
@@ -350,10 +350,10 @@
   }
 
   const rated = el('ohm-rated');
-  if (rated) EMC.bindRange(rated, 'ohm-ratedv', v => { state.ratedP = v; refresh(); }, v => `${fixed(v, 2)} W`);
+  if (rated) stage.bindRange(rated, 'ohm-ratedv', v => { state.ratedP = v; refresh(); }, v => `${fixed(v, 2)} W`);
 
   const flowToggle = el('ohm-electrons');
-  if (flowToggle) flowToggle.addEventListener('change', () => { state.electrons = flowToggle.checked; refresh(); });
+  if (flowToggle) stage.listen(flowToggle, 'change', () => { state.electrons = flowToggle.checked; refresh(); });
 
   refresh();
   }

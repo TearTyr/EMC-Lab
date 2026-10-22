@@ -159,13 +159,13 @@
   function refresh() { stage.draw(); updateReadouts(); }
 
   /* ---- controls -------------------------------------------------------- */
-  bindRange('coul-q1', 'coul-q1v', v => { state.q1 = v; refresh(); },
+  stage.bindRange('coul-q1', 'coul-q1v', v => { state.q1 = v; refresh(); },
     v => `${v > 0 ? '+' : ''}${v.toFixed(1)} \u00B5C`);
-  bindRange('coul-q2', 'coul-q2v', v => { state.q2 = v; refresh(); },
+  stage.bindRange('coul-q2', 'coul-q2v', v => { state.q2 = v; refresh(); },
     v => `${v > 0 ? '+' : ''}${v.toFixed(1)} \u00B5C`);
 
   // The r slider moves BOTH charges symmetrically about their midpoint.
-  bindRange('coul-r', null, v => {
+  stage.bindRange('coul-r', null, v => {
     const mid = (state.x1n + state.x2n) / 2;
     const half = (clamp(v, R_MIN, R_MAX) / SPAN_M) / 2;
     state.x1n = clamp(mid - half, 0.035, 0.965);
@@ -174,11 +174,11 @@
   });
 
   const eToggle = document.getElementById('coul-showE');
-  if (eToggle) eToggle.addEventListener('change', () => { state.showE = eToggle.checked; refresh(); });
+  if (eToggle) stage.listen(eToggle, 'change', () => { state.showE = eToggle.checked; refresh(); });
 
   // Presets: data-coul-preset="q1,q2,r"
   document.querySelectorAll('[data-coul-preset]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    stage.listen(btn, 'click', () => {
       const p = btn.dataset.coulPreset.split(',').map(Number);
       if (p.length !== 3 || p.some(Number.isNaN)) return;
       const setVal = (id, val) => {

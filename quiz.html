@@ -12,8 +12,8 @@
     setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
   </script>
   <title>Quiz · EMC Lab</title>
-  <link rel="canonical" href="https://emc-physics.vercel.app/quiz.html">
-  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-physics.vercel.app is the
+  <link rel="canonical" href="https://emc-lab.vercel.app/quiz.html">
+  <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-lab.vercel.app is the
        production origin; if the deploy URL ever changes, update it in all six pages
        (tools/smoke-test.mjs asserts they all agree). -->
   <meta property="og:type" content="website">
@@ -21,15 +21,15 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Quiz">
   <meta property="og:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
-  <meta property="og:url" content="https://emc-physics.vercel.app/quiz.html">
-  <meta property="og:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
+  <meta property="og:url" content="https://emc-lab.vercel.app/quiz.html">
+  <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Quiz">
   <meta name="twitter:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
-  <meta name="twitter:image" content="https://emc-physics.vercel.app/img/og-card.png?v=2">
+  <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
        home screens. All three carry the same Denki-chan artwork as the header
@@ -227,12 +227,16 @@
 
           <div class="qopts-grid" id="qopts-fields">
             <div class="qopts-cell">
-              <span class="ctl-label">Filter by topic</span>
+              <span class="ctl-label">Topic</span>
               <div class="btn-group" role="group" aria-label="Filter questions by topic">
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Circuits</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="efield" aria-pressed="false">Fields</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button></div>
+            </div>
+            <div class="qopts-cell">
+              <span class="ctl-label">Status</span>
+              <div class="btn-group" role="group" aria-label="Filter questions by answer status">
                 <button class="btn btn-sm" type="button" data-quiz-filter="unanswered" aria-pressed="false">Unanswered</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="flagged" aria-pressed="false">Flagged</button></div>
             </div>
@@ -242,6 +246,8 @@
                 <button class="seg-btn" type="button" data-value="exam" aria-pressed="true">Exam mode</button>
                 <button class="seg-btn" type="button" data-value="instant" aria-pressed="false">Instant feedback</button>
               </div>
+              <p class="tiny faint qopts-hint" data-detail="plain">Exam grades at the end · Instant grades as you go.</p>
+              <p class="tiny faint qopts-hint" data-detail="tech">Exam defers every mark to submission; Instant marks each answer and shows its worked explanation right away.</p>
             </div>
             <div class="qopts-cell">
               <span class="ctl-label">Timer <span class="tiny faint" style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></span>
@@ -255,6 +261,7 @@
                 <button class="btn btn-sm" type="button" data-mins="15" aria-pressed="false">15 min</button>
                 <button class="btn btn-sm" type="button" data-mins="20" aria-pressed="false">20 min</button>
               </div>
+              <p class="tiny faint qopts-hint">Practice counts up · Challenge counts down and submits itself at 0:00.</p>
             </div>
           </div>
 
@@ -262,20 +269,27 @@
             <button class="btn btn-primary" type="button" id="quiz-submit" data-quiz-submit>Submit quiz</button>
             <button class="btn" type="button" id="quiz-shuffle">Shuffle order</button>
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
+            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">24</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
+            <p class="tiny faint qopts-submit-hint" id="quiz-submit-hint" data-submit-hint role="status" hidden></p>
           </div>
 
-          <p class="tiny faint mt-2">
-            Keyboard: <span class="mono">1–4</span> or <span class="mono">A–D</span> answer the question on screen,
-            <span class="mono">Enter</span> submits, <span class="mono">N</span> jumps to the next blank,
-            <span class="mono">F</span> flags the question on screen for review.
-          </p>
-          <p class="tiny faint mt-3" data-detail="plain">Exam mode grades everything at the end. Instant feedback grades each answer right away — better while learning.</p>
-          <p class="tiny faint mt-3" data-detail="tech">
-            <strong>Exam mode</strong> marks nothing until you submit — good for a real test.
-            <strong>Instant feedback</strong> marks each answer immediately and shows the
-            explanation, which is better when you are learning. Submitting always grades the
-            full bank; filters are a revision aid only, and blank answers count as incorrect.
-          </p>
+          <!-- Copy is DRY: one one-line hint per control (the mode hint swaps
+               wording with the site-wide Details level), every longer text
+               lives once inside this details. Nothing is said twice. -->
+          <details class="quiz-help">
+            <summary>Keyboard shortcuts &amp; choosing a mode</summary>
+            <div class="quiz-help-body">
+              <p class="tiny faint">
+                <span class="mono">1–4</span> or <span class="mono">A–D</span> answer the question on screen,
+                <span class="mono">Enter</span> submits, <span class="mono">N</span> jumps to the next blank,
+                <span class="mono">F</span> flags the question on screen for review.
+              </p>
+              <p class="tiny faint">
+                Learning something new? Instant feedback teaches as you go.
+                Rehearsing for the real test? Exam mode feels like the exam hall.
+              </p>
+            </div>
+          </details>
         </div>
       </div>
     </div>
@@ -306,16 +320,33 @@
       <div id="quiz-questions"><!-- questions injected by js/quiz.js --></div>
     </div>
 
+    <!-- Mobile dock: Prev/Next stay reachable at the thumb line while the
+         question list scrolls. Sticky (not fixed) so it parks in flow once
+         you reach the end CTA; hidden on wider screens where the strip above
+         the list is already in view. Mirrors #qnav-prev / #qnav-next. -->
+    <div class="qnav-dock" id="qnav-dock" aria-label="Question navigation">
+      <button class="btn btn-sm qnav-dock-prev" type="button" disabled>
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 1.5 3 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="btn-label">Prev</span>
+      </button>
+      <span class="qnav-dock-pos mono" id="qnav-dock-pos" aria-live="off"></span>
+      <button class="btn btn-sm qnav-dock-next" type="button">
+        <span class="btn-label">Next</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 1.5 7 5l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
     <!-- Second submission point: same workflow as the top button (one shared
          [data-quiz-submit] handler, synced label + disabled state), placed
          where a student naturally ends up after answering the last card. -->
+    <!-- Second submission point, deliberately secondary-styled: the page has
+         ONE primary Submit (top). Same [data-quiz-submit] workflow, synced
+         label + disabled state, placed where a student finishes the list. -->
     <div class="wrap quiz-end-cta">
-      <button class="btn btn-primary" type="button" data-quiz-submit
+      <button class="btn" type="button" data-quiz-submit
               aria-label="Submit quiz — bottom of the question list">Submit quiz</button>
-      <p class="tiny faint center" style="margin:0">
-        Submitting grades the whole bank of <span id="quiz-total-end">24</span> questions —
-        filters are a revision aid only, and blank answers count as incorrect.
-      </p>
+      <p class="tiny faint qopts-submit-hint center" data-submit-hint role="status" hidden></p>
+      <p class="tiny faint center" style="margin:0">Same workflow as the Submit button above — one path, two placements.</p>
     </div>
 
     <div class="wrap section-tight">

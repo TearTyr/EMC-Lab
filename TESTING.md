@@ -378,3 +378,31 @@ inventory in `docs/BUGLIST.md`.
       console marker stays silent and `data-licensed-font="bundled"`.
 - [ ] Audio: play a tone, stop it, leave the page open — WebAudio state shows the
       context suspended; playing again resumes from the same gesture.
+
+## Shell: same-page topic switching (manual smoke — no Playwright in this repo)
+
+Automated cover: `node tools/shell-stress.mjs` (jsdom: 50 rapid switches in
+normal and forced reduced-motion, stats-vs-baseline, chain cap, page errors).
+In a real browser, serve the site (`bun run build` + serve, or `vercel dev`)
+and walk this list:
+
+- [ ] Home loads with zero sims: console `EMC.stats()` → `{stages:0, listeners:0, rafs:0}`.
+- [ ] Click a topic card: same-page switch (no navigation), title updates, focus
+      lands on the chapter h1, section fades/rises once (no fade with reduced motion).
+- [ ] Deep link `index.html#/magind` on a fresh tab mounts Magnetism directly;
+      `#/nonsense` shows home; `#sim-ohm-panel`-style plain anchors still jump natively.
+- [ ] Back/Forward across home ↔ two topics keeps sections, title and scroll sane;
+      the leaving topic's sims stop (`EMC.stats().stages` returns to 0 on home).
+- [ ] Only on-screen sims run: scroll a topic, watch `EMC.debugStages()` — at most
+      two `raf:true` chains; a third visible sim waits, and never the one you watch.
+- [ ] Rapid-switch torture: paste
+      `for (let i=0;i<50;i++) location.hash = ['#/current','#/efield','#/magind','#/'][i%4]`
+      in the console, settle on `#/current`, compare `EMC.stats()` with a calm load;
+      console stays clean. Repeat with OS reduced-motion on: sims paint static frames,
+      controls and dragging still work.
+- [ ] Offline/throttled fetch failure: DevTools → Network → block `topics/*.html`,
+      switch topic — the reader offers a link to the standalone page.
+- [ ] Standalone pages (`topics/current.html` etc.) behave exactly as before:
+      eager script tags, lazy paint via `whenNear`, no shell chrome.
+- [ ] Hover lift only on hover-capable devices (touch: press feedback instead);
+      with reduced motion, nothing translates or fades anywhere on the page.

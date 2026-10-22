@@ -200,7 +200,7 @@
        reduced-motion flattens every transition globally (see below) */
     transition: transform .22s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, box-shadow .22s ease;
   }
-  .btn:hover { border-color: #4b4e57; background: #262830; transform: translateY(-1.5px); box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }
+  .btn:hover { border-color: #4b4e57; background: #262830; box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }
   .btn:active:not(:disabled) { transform: translateY(0) scale(.975); }   /* gentle press */
   .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
   .btn-primary { background: var(--ye); border-color: var(--ye); color: #221d07; }
@@ -241,7 +241,7 @@
   }
   .card > p, .card > .small, .card > .lede { margin: 0; }
   .card-flat { background: var(--bg-soft); }
-  .card-hover:hover { border-color: var(--edge); transform: translateY(-3px) scale(1.004); box-shadow: 0 14px 30px -16px rgb(0 0 0 / .6); }
+  .card-hover:hover { border-color: var(--edge); box-shadow: 0 14px 30px -16px rgb(0 0 0 / .6); }
   .panel { background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-card); overflow: hidden; }
   .panel-head {
     display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
@@ -561,17 +561,39 @@
   .qnav-body { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
   .qnav { display: flex; flex-wrap: wrap; gap: .34rem; flex: 1 1 auto; min-width: 0; }
   .qnav-chip {
-    position: relative; width: 32px; height: 32px; border-radius: 10px; flex: none;
+    position: relative; width: 40px; height: 40px; border-radius: 10px; flex: none;
     display: grid; place-items: center; padding: 0; cursor: pointer;
     background: var(--panel-2); border: 1.5px solid var(--line);
     font-family: theme('fontFamily.mono'); font-size: .78rem; font-weight: 700; color: var(--text-faint);
     transition: transform .2s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, color .15s ease;
   }
-  .qnav-chip:hover { transform: translateY(-2px); border-color: var(--edge); color: var(--text); }
+  .qnav-chip:hover { border-color: var(--edge); color: var(--text); }
+  /* three states, each colour AND glyph: answered emerald check (top-right),
+     flagged amber flag (top-left), current sky ring + sky tick (bottom) */
   .qnav-chip.done { background: var(--mi-t); border-color: var(--mi-e); color: var(--mi); }
-  .qnav-chip.flag::after { content: ""; position: absolute; top: 2.5px; right: 2.5px; width: 6px; height: 6px; border-radius: 50%; background: var(--ye); }
+  .qnav-chip.flag { border-color: var(--ye-e); }
+  .qnav-chip.flag:not(.done) { background: var(--ye-t); color: var(--ye); }
   .qnav-chip.cur { border-color: var(--sk); box-shadow: 0 0 0 3px var(--sk-t); color: var(--text); }
+  .chip-ic { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; }
+  .chip-ic-done { color: var(--mi); }
+  .chip-ic-flag { color: var(--ye); right: auto; left: 2px; }
+  .chip-cur { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 12px; height: 3px; border-radius: 999px; background: var(--sk); }
   .qnav-arrow { flex: none; }
+
+  /* Mobile prev/next dock: sticky at the thumb line while the list scrolls,
+     parks in flow at the end CTA. Hidden where the strip stays in view. */
+  .qnav-dock { display: none; }
+  .qnav-dock-pos { font-size: .8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; flex: none; }
+  @media (max-width: 640px) {
+    .qnav-dock {
+      display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+      position: sticky; bottom: 0; z-index: 85;
+      background: var(--bg); border-top: 1.5px solid var(--line);
+      padding: .5rem .9rem calc(.55rem + env(safe-area-inset-bottom, 0px));
+    }
+    .qnav-dock .btn { flex: 1 1 0; min-height: 44px; }
+    .qnav-dock .btn-label { display: inline; }
+  }
 
   /* ---- flag-for-review button on each question card ----------------------- */
   .q-flag {
@@ -580,7 +602,7 @@
     background: transparent; border: 1.5px solid var(--line); color: var(--text-faint);
     transition: transform .2s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, color .15s ease;
   }
-  .q-flag:hover { color: var(--ye); border-color: var(--ye-e); transform: translateY(-1px); }
+  .q-flag:hover { color: var(--ye); border-color: var(--ye-e); }
   .q-flag.on { color: #221d07; background: var(--ye); border-color: var(--ye); }
   .q-card { transition: border-color .15s ease; }
   .q-card:not(.answered-correct):not(.answered-wrong):hover { border-color: var(--edge); }
@@ -610,7 +632,27 @@
   }
   .qopts-cell { display: grid; gap: .45rem; justify-items: start; align-content: start; }
   .qopts-actions { margin-top: 1rem; }
-  @media (min-width: 900px) { .qopts-grid { grid-template-columns: 1.35fr 1fr 1fr; } }
+  .qopts-submit-hint { flex: 1 1 100%; margin: .1rem 0 0; }
+  .qopts-submit-note { flex: 1 1 100%; margin: .1rem 0 0; }
+  .qopts-hint { margin: 0; }
+  /* long copy lives once, inside a flat sticker details with a "?" badge */
+  .quiz-help { margin-top: .95rem; padding-top: .8rem; border-top: 1.5px solid var(--line-soft); }
+  .quiz-help summary {
+    display: flex; align-items: center; gap: .45rem; width: max-content; cursor: pointer;
+    font-family: theme('fontFamily.ui'); font-size: .85rem; font-weight: 700; color: var(--text-dim);
+    list-style: none; border-radius: var(--r-ctl);
+  }
+  .quiz-help summary::-webkit-details-marker { display: none; }
+  .quiz-help summary::before {
+    content: "?"; display: grid; place-items: center; width: 18px; height: 18px; flex: none;
+    border-radius: 50%; background: var(--sk-t); border: 1.5px solid var(--sk-e);
+    color: var(--sk); font-family: theme('fontFamily.mono'); font-size: .72rem; font-weight: 700;
+  }
+  .quiz-help[open] summary::before { content: "\00D7"; }
+  .quiz-help-body { display: grid; gap: .35rem; margin-top: .55rem; }
+  .quiz-help-body p { margin: 0; }
+  @media (min-width: 640px) { .qopts-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 900px) { .qopts-grid { grid-template-columns: 1.4fr 1fr 1.1fr 1.1fr; } }
 
   /* ---- the ONE progress indicator: bar + count + flags (was bar + line + pill) ---- */
   .quiz-pill {
@@ -655,7 +697,7 @@
   /* ---- subtle glow on interactive elements (focus + primary hover) -------- */
   .btn:focus-visible, .seg-btn:focus-visible, .opt:focus-visible,
   .qnav-chip:focus-visible, .q-flag:focus-visible, .detail-toggle:focus-visible,
-  .qopts-toggle:focus-visible {
+  .qopts-toggle:focus-visible, .quiz-help summary:focus-visible {
     box-shadow: 0 0 0 4px var(--sk-t);
   }
   .btn-primary:hover { box-shadow: 0 6px 18px -8px rgba(246, 211, 107, .5); }
@@ -699,7 +741,7 @@
   .breadcrumb a:hover { color: var(--sk); text-decoration: underline; }
   .pager { display: grid; gap: .8rem; grid-template-columns: 1fr; margin-top: 1.6rem; }
   .pager a { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-card); padding: 1rem 1.25rem; }
-  .pager a:hover { border-color: var(--edge); transform: translateY(-1px); }
+  .pager a:hover { border-color: var(--edge); }
   .pager .dir { font-family: theme('fontFamily.ui'); font-size: .7rem; text-transform: uppercase; letter-spacing: .16em; color: var(--text-faint); font-weight: 700; }
   .pager .ttl { color: var(--text); font-weight: 700; }
   .pager .next { text-align: right; }
@@ -711,6 +753,35 @@
   @keyframes burst { 0% { opacity: .9; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.06); } }
 
   /* -- responsive: three breakpoints only (640 / 900 / 1200) -------------- */
+  /* ---- motion charm layer: transform + opacity only ---------------------
+     Hover lifts are pointer-device only; touch devices get a soft press
+     instead of a hover that never comes. Every animation below carries its
+     own reduced-motion override next to it (the global block is a backstop). */
+  @media (hover: hover) {
+    .btn:hover { transform: translateY(-1.5px); }
+    .card-hover:hover { transform: translateY(-3px) scale(1.004); }
+    .qnav-chip:hover { transform: translateY(-2px); }
+    .q-flag:hover { transform: translateY(-1px); }
+    .pager a:hover { transform: translateY(-1px); }
+    .topic-card:hover { transform: translateY(-3px); }
+  }
+  @media (hover: none) {
+    .btn:active:not(:disabled), .opt:active, .qnav-chip:active, .seg-btn:active,
+    .topic-card:active, .card-hover:active { transform: scale(.975); }
+    .opt, .seg-btn, .topic-card, .card-hover { transition: transform .12s ease; }
+  }
+  .topic-card { transition: transform .18s ease; }   /* transform only: rule 1 */
+  /* mounted topic sections arrive with a soft fade + 8px rise (320ms) */
+  @keyframes shellIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .shell-enter { animation: shellIn .32s ease both; }
+  @media (prefers-reduced-motion: reduce) {
+    .btn:hover, .card-hover:hover, .qnav-chip:hover, .q-flag:hover, .pager a:hover,
+    .topic-card:hover, .btn:active:not(:disabled), .opt:active, .qnav-chip:active,
+    .seg-btn:active, .topic-card:active, .card-hover:active { transform: none; }
+    .topic-card { transition: none; }
+    .shell-enter { animation: none; }
+  }
+
   @media (min-width: 640px) {
     .stat-strip { grid-template-columns: repeat(3, 1fr); }
     .stat-strip .stat:nth-child(3):last-child { grid-column: auto; }
@@ -751,7 +822,9 @@
     .ft-time { font-size: 1.25rem; }
     .quiz-pill { padding: .34rem .65rem; gap: .45rem; }
     .pill-track { width: 40px; }
-    .qnav-chip { width: 29px; height: 29px; font-size: .72rem; }
+    /* pager becomes one horizontally scrollable row; 40px chips stay tappable */
+    .qnav-body { flex-wrap: nowrap; }
+    .qnav { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; scrollbar-width: thin; scroll-padding-inline: .5rem; overscroll-behavior-x: contain; }
     .qnav-arrow .btn-label { display: none; }
     .quiz-end-cta .btn { width: 100%; min-width: 0; }
     .topic-head { padding-block: 2rem 1.2rem; }

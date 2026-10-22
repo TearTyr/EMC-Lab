@@ -275,7 +275,7 @@
 
   /* ---- controls -------------------------------------------------------- */
   const partGroup = el('lor-particle');
-  if (partGroup) EMC.bindSegment(partGroup, v => { state.particle = v; refresh(); });
+  if (partGroup) stage.bindSegment(partGroup, v => { state.particle = v; refresh(); });
 
   // speed: logarithmic slider 1e4 .. 1e7 m/s
   const vSlider = el('lor-v');
@@ -288,16 +288,16 @@
         ? `${(state.v / 1e6).toFixed(2)}\u00D710^6 m/s`
         : `${(state.v / 1000).toFixed(0)} km/s`;
     };
-    vSlider.addEventListener('input', () => { state.v = fromS(parseFloat(vSlider.value)); show(); refresh(); });
+    stage.listen(vSlider, 'input', () => { state.v = fromS(parseFloat(vSlider.value)); show(); refresh(); });
     vSlider.value = String(toS(state.v));
     show();
   }
-  EMC.bindRange('lor-B', 'lor-Bv', v => { state.B = Math.max(0.05, v); refresh(); }, v => `${fixed(v, 2)} T`);
-  const bdir = el('lor-bdir'); if (bdir) EMC.bindSegment(bdir, v => { state.Bdir = v; refresh(); });
-  const vdir = el('lor-vdir'); if (vdir) EMC.bindSegment(vdir, v => { state.vdir = v; refresh(); });
+  stage.bindRange('lor-B', 'lor-Bv', v => { state.B = Math.max(0.05, v); refresh(); }, v => `${fixed(v, 2)} T`);
+  const bdir = el('lor-bdir'); if (bdir) stage.bindSegment(bdir, v => { state.Bdir = v; refresh(); });
+  const vdir = el('lor-vdir'); if (vdir) stage.bindSegment(vdir, v => { state.vdir = v; refresh(); });
 
   const playBtn = el('lor-play');
-  if (playBtn) playBtn.addEventListener('click', () => {
+  if (playBtn) stage.listen(playBtn, 'click', () => {
     state.playing = !state.playing;
     playBtn.textContent = state.playing ? 'Pause' : 'Play';
     playBtn.setAttribute('aria-pressed', String(!state.playing));
@@ -306,9 +306,9 @@
     if (state.playing) stage.start();
   });
   const resetBtn = el('lor-reset');
-  if (resetBtn) resetBtn.addEventListener('click', () => { state.rkSig = ''; state.swept = 0; stage.draw(); });
+  if (resetBtn) stage.listen(resetBtn, 'click', () => { state.rkSig = ''; state.swept = 0; stage.draw(); });
 
-  EMC.bindToggles('lor-toggles', (key, on) => {
+  stage.bindToggles('lor-toggles', (key, on) => {
     if (key === 'vectors') state.showVectors = on;
     if (key === 'path') state.showPath = on;
     stage.draw();
@@ -333,7 +333,7 @@
   }
 
   document.querySelectorAll('[data-lor-answer]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    stage.listen(btn, 'click', () => {
       const answer = forceLabel();
       const chosen = btn.dataset.lorAnswer;
       const fb = el('lor-challenge-feedback');
@@ -353,7 +353,7 @@
   });
 
   const newBtn = el('lor-challenge-new');
-  if (newBtn) newBtn.addEventListener('click', () => {
+  if (newBtn) stage.listen(newBtn, 'click', () => {
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
     const bd = pick(['out', 'in']), vd = pick(Object.keys(DIRS));
     const setSeg = (groupId, value) => {

@@ -1153,12 +1153,12 @@ console.log('\u2500'.repeat(66));
         .every(k => new RegExp(`(property|name)="${k}"`).test(html)));
     ok(`${p}: canonical/og:url point at the production origin and this page`,
       [...html.matchAll(/(?:rel="canonical"|property="og:url")[^>]*href="([^"]+)"/g)]
-        .every(m => m[1].startsWith('https://emc-physics.vercel.app')) &&
+        .every(m => m[1].startsWith('https://emc-lab.vercel.app')) &&
       [...html.matchAll(/property="og:url"[^>]*href="([^"]+)"/g)]
         .every(m => m[1] === ([...html.matchAll(/rel="canonical" href="([^"]+)"/g)][0] || [])[1]));
     ok(`${p}: no third-party <script>/<link> (all assets same-origin)`,
       ![...html.matchAll(/<(?:script|link)[^>]+(?:src|href)="(https?:\/\/[^"]+)"/g)]
-        .some(m => !/emc-physics\.vercel\.app/.test(m[1])));
+        .some(m => !/emc-lab\.vercel\.app/.test(m[1])));
 
     // ---- #15 favicon artwork must equal the header brand mark -------------
     const brandMark = (html.match(/<svg class="brand-mark"[\s\S]*?<\/svg>/) || ['', ''])[0];

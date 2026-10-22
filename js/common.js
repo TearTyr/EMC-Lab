@@ -130,18 +130,71 @@ window.EMC = (function () {
 
   /* ------------------------------------------------------------------------ 4. Stage — HiDPI canvas wrapper with an optional rAF loop ------------------------------------------------------------------------ */
   /* * @param {HTMLCanvasElement} canvas * @param {(ctx:CanvasRenderingContext2D, w:number, h:number, stage:Stage)=>void} render * @param {{animate?:boolean}} [opts] animate=true keeps a rAF loop running * (it auto-pauses when the canvas scrolls out of view to save CPU). */
+  /* ---- Stage registry, budget and dev diagnostics -----------------------
+     ONE cleanup path: every Stage owns an AbortController plus tracked timer
+     and observer sets. Sims register listeners, timers and observers through
+     the stage (stage.listen / timer / interval / observe / bind*) and write no
+     teardown of their own; stage.destroy() releases everything. The budget
+     keeps at most TWO animation chains running - a third pauses the chain
+     farthest from the viewport centre (offscreen chains are already paused
+     by each stage's own IntersectionObserver). */
+  const STAGES = new Set();
+  const DEBUGQS = typeof location !== 'undefined' && /[?&]debug/.test(location.search || '');
+  let TRACKED = 0;                  // live listeners+timers+observers registered via stages
+  let TRACK = null;                 // counter hook while control binders run under a stage
+  function stageViewDist(s) {
+    const r = s.canvas.getBoundingClientRect();
+    const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
+    return Math.abs(r.top + r.height / 2 - vh / 2);
+  }
+  function refreshBudget() {
+    const wants = st => st.animate && st._running && !st._idle && st._visible && !st._hidden;
+    let active = [...STAGES].filter(st => wants(st) && !st._budgetPaused);
+    for (const st of STAGES) {
+      if (st._budgetPaused && wants(st) && active.length < 2) {
+        st._budgetPaused = false; st._budgetResume = true; active.push(st); st._last = 0; st._tick();
+        if (DEBUGQS) console.info('[emc] stage budget: resumed #' + st.canvas.id);
+      }
+    }
+    active = [...STAGES].filter(st => wants(st) && !st._budgetPaused);
+    if (active.length <= 2) return;
+    active.sort((a, b) => stageViewDist(a) - stageViewDist(b));
+    for (let i = 2; i < active.length; i++) {
+      const v = active[i];
+      v._budgetPaused = true; v._budgetResume = false;
+      if (v._raf) cancelAnimationFrame(v._raf);
+      v._raf = 0;
+      if (DEBUGQS) console.info('[emc] stage budget: paused farthest #' + v.canvas.id);
+    }
+  }
+  function addL(t, ty, fn, opts) { if (TRACK) TRACK(); t.addEventListener(ty, fn, opts); }
+  function withTrack(stage, fn) {
+    const prev = TRACK; let n = 0; TRACK = () => { n++; };
+    const r = fn(); TRACK = prev;
+    stage._n += n; TRACKED += n; return r;
+  }
+
   class Stage {
     constructor(canvas, render, opts = {}) {
       this.canvas = canvas;
       this.ctx = canvas.getContext('2d');
       this.render = render;
       this.animate = !!opts.animate;
+      this._optsAnimate = this.animate;
       /* prefers-reduced-motion: non-essential continuous motion starts as a
          static frame. Interactions still redraw on demand (invalidate), so
          every sim stays fully usable — only the autonomous motion stops. */
       this._prm = !!(typeof window !== 'undefined' && window.matchMedia &&
                      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
       if (this.animate && this._prm) this.animate = false;
+      /* one cleanup path: everything this stage (or a sim through it)
+         registers hangs off this controller or the tracked sets below */
+      this._ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      this._n = 0;                    // tracked registrations owned by this stage
+      this._timers = new Set();
+      this._observers = new Set();
+      this._budgetPaused = false;     // set by the two-chain budget
+      STAGES.add(this);
       this.w = 0; this.h = 0; this.dpr = 1;
       this.t = 0;                 // accumulated time in seconds (animation)
       this.pointer = { x: 0, y: 0, down: false, inside: false };
@@ -157,8 +210,50 @@ window.EMC = (function () {
       this._observeDPR();
       this._observeVisibility();
       this._observePageVisibility();
+      this._observePRM();
       if (this.animate) this.start(); else this.draw();
     }
+
+    /* Live reduced-motion: decorative loops stop the moment the OS flips the
+       preference; interaction keeps working (invalidate still redraws). */
+    _observePRM() {
+      if (typeof window === 'undefined' || !window.matchMedia) return;
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (!mq || typeof mq.addEventListener !== 'function') return;
+      this._prmHandler = () => {
+        this._prm = mq.matches;
+        if (this._prm) { this.animate = false; this.stop(); this.draw(); }
+        else { this.animate = this._optsAnimate; if (this.animate) this.start(); else this.draw(); }
+        refreshBudget();
+      };
+      this._trackListener(mq, 'change', this._prmHandler);
+    }
+
+    /* -- tracked registration (the only way sims may subscribe) ------------ */
+    _trackListener(t, ty, fn, opts) {
+      t.addEventListener(ty, fn, Object.assign({ signal: this._ac ? this._ac.signal : undefined }, opts));
+      this._n++; TRACKED++;
+    }
+    _trackObserver(o) { this._observers.add(o); this._n++; TRACKED++; }
+    _trackTimer(id) { this._timers.add(id); this._n++; TRACKED++; return id; }
+    _untrack() { this._n--; TRACKED--; }
+    listen(target, type, fn, opts) { this._trackListener(target, type, fn, opts); return fn; }
+    timer(fn, ms) {
+      const id = setTimeout(() => { this._timers.delete(id); this._untrack(); fn(); }, ms);
+      return this._trackTimer(id);
+    }
+    interval(fn, ms) { return this._trackTimer(setInterval(fn, ms)); }
+    clearTimer(id) { if (this._timers.delete(id)) { clearTimeout(id); clearInterval(id); this._untrack(); } }
+    observe(target, cb, opts, kind) {
+      const Ctor = kind === 'resize' ? (typeof ResizeObserver === 'function' ? ResizeObserver : null)
+        : kind === 'mutation' ? (typeof MutationObserver === 'function' ? MutationObserver : null)
+        : (typeof IntersectionObserver === 'function' ? IntersectionObserver : null);
+      if (Ctor === null) return null;
+      const o = new Ctor(cb); o.observe(target, opts); this._trackObserver(o); return o;
+    }
+    bindRange(a, b, c, d) { return withTrack(this, () => bindRange(a, b, c, d, this._ac ? this._ac.signal : undefined)); }
+    bindSegment(a, b) { return withTrack(this, () => bindSegment(a, b, this._ac ? this._ac.signal : undefined)); }
+    bindToggles(a, b) { return withTrack(this, () => bindToggles(a, b, this._ac ? this._ac.signal : undefined)); }
 
     /* Re-read the CSS size and scale the backing store for crisp rendering. */
     resize() {
@@ -179,8 +274,9 @@ window.EMC = (function () {
       if (typeof ResizeObserver === 'function') {
         this._ro = new ResizeObserver(() => { this.resize(); this.draw(); });
         this._ro.observe(this.canvas);
+        this._trackObserver(this._ro);
       } else {                                    // graceful fallback
-        window.addEventListener('resize', () => { this.resize(); this.draw(); });
+        this._trackListener(window, 'resize', () => { this.resize(); this.draw(); });
       }
     }
 
@@ -192,8 +288,10 @@ window.EMC = (function () {
           this._visible = en.isIntersecting;
           if (this._visible && this._running) { this._last = 0; this._tick(); }
         }
+        refreshBudget();
       }, { threshold: 0.01 });
       this._io.observe(this.canvas);
+      this._trackObserver(this._io);
     }
 
     /* Re-resize when the device-pixel-ratio changes (browser zoom, moving the
@@ -205,9 +303,9 @@ window.EMC = (function () {
       const arm = () => {
         const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
         if (!mq || typeof mq.addEventListener !== 'function') return;
-        const onchange = () => { this.resize(); this.draw(); mq.removeEventListener('change', onchange); arm(); };
+        const onchange = () => { this.resize(); this.draw(); mq.removeEventListener('change', onchange); this._n--; TRACKED--; arm(); };
         this._dq = mq; this._dqHandler = onchange;
-        mq.addEventListener('change', onchange);
+        mq.addEventListener('change', onchange); this._n++; TRACKED++;
       };
       arm();
     }
@@ -221,8 +319,9 @@ window.EMC = (function () {
       this._onVis = () => {
         this._hidden = document.hidden === true;
         if (!this._hidden && this._running && this._visible) { this._last = 0; this._tick(); }
+        refreshBudget();
       };
-      document.addEventListener('visibilitychange', this._onVis);
+      this._trackListener(document, 'visibilitychange', this._onVis);
     }
 
     /* Full teardown: stop the chain and release observers/listeners. Pages
@@ -232,10 +331,18 @@ window.EMC = (function () {
       this.stop();
       if (this._drawRaf) cancelAnimationFrame(this._drawRaf);
       if (this._pmRaf) cancelAnimationFrame(this._pmRaf);
+      this._drawRaf = 0; this._pmRaf = 0;
       if (this._ro) this._ro.disconnect();
       if (this._io) this._io.disconnect();
+      this._observers.forEach(o => o.disconnect());
+      this._observers.clear();
+      this._timers.forEach(id => { clearTimeout(id); clearInterval(id); });
+      this._timers.clear();
+      TRACKED -= this._n; this._n = 0;
+      STAGES.delete(this);
       if (this._dq && this._dqHandler) this._dq.removeEventListener('change', this._dqHandler);
-      if (this._onVis && typeof document !== 'undefined') document.removeEventListener('visibilitychange', this._onVis);
+      if (this._ac) this._ac.abort();          // every tracked listener dies here
+      refreshBudget();
     }
 
     draw() { if (this.w && this.h) this.render(this.ctx, this.w, this.h, this); }
@@ -249,6 +356,7 @@ window.EMC = (function () {
       if (this._idle === v) return;
       this._idle = v;
       if (!v && this._running && this._visible && !this._hidden) { this._last = 0; this._tick(); }
+      refreshBudget();
     }
     /* Ask for a redraw without doing it synchronously: multiple invalidations
        inside one input burst collapse into a single draw on the next frame.
@@ -264,11 +372,19 @@ window.EMC = (function () {
       if (this._running) return;
       this._running = true; this._last = 0;
       this._tick();
+      refreshBudget();
     }
-    stop() { this._running = false; if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0; }
+    stop() {
+      this._running = false; if (this._raf) cancelAnimationFrame(this._raf); this._raf = 0;
+      refreshBudget();
+    }
 
     _tick() {
       if (!this._running || this._raf) return;   // a frame is already scheduled: never spawn a second chain
+      // the budget owns the wheel: a paused chain stays paused until a slot
+      // frees (stop/destroy/idle/visibility), never until a same-tick resume
+      if (this._budgetPaused && !this._budgetResume) return;
+      this._budgetResume = false;
       this._raf = requestAnimationFrame(now => {
         this._raf = 0;
         if (!this._running) return;
@@ -296,7 +412,7 @@ window.EMC = (function () {
         const r = this.canvas.getBoundingClientRect();
         return { x: e.clientX - r.left, y: e.clientY - r.top };
       };
-      this.canvas.addEventListener('pointerdown', e => {
+      this._trackListener(this.canvas, 'pointerdown', e => {
         const p = toLocal(e);
         this.pointer = { ...p, down: true, inside: true };
         // Own the gesture only once a drag actually starts on this canvas, so
@@ -308,7 +424,7 @@ window.EMC = (function () {
         handler({ ...p, down: true, type: 'down', e });
         e.preventDefault();
       });
-      this.canvas.addEventListener('pointermove', e => {
+      this._trackListener(this.canvas, 'pointermove', e => {
         const p = toLocal(e);
         this.pointer = { ...p, down: this.pointer.down, inside: true };
         // Coalesce: a 120 Hz mouse or a fast finger must not trigger more than
@@ -332,9 +448,9 @@ window.EMC = (function () {
         this.canvas.classList.remove('dragging');
         handler({ ...p, down: false, type: 'up', e });
       };
-      this.canvas.addEventListener('pointerup', up);
-      this.canvas.addEventListener('pointercancel', up);
-      this.canvas.addEventListener('pointerleave', () => {
+      this._trackListener(this.canvas, 'pointerup', up);
+      this._trackListener(this.canvas, 'pointercancel', up);
+      this._trackListener(this.canvas, 'pointerleave', () => {
         this.pointer.inside = false; this.pointer.down = false;
         handler({ ...this.pointer, type: 'leave', e: null });
       });
@@ -670,7 +786,7 @@ window.EMC = (function () {
 
   /* ------------------------------------------------------------------------ 8. Control binding helper (slider <-> readout <-> state) ------------------------------------------------------------------------ */
   /* * Wire an <input type="range"> to a display element and a callback. * @param {string|HTMLInputElement} el slider (or its id) * @param {string|HTMLElement} out element that shows the value (or id) * @param {(value:number)=>void} onChange * @param {(value:number)=>string} [format] formatter for the readout */
-  function bindRange(el, out, onChange, format) {
+  function bindRange(el, out, onChange, format, signal) {
     const input = typeof el === 'string' ? document.getElementById(el) : el;
     const target = typeof out === 'string' ? document.getElementById(out) : out;
     if (!input) return null;
@@ -680,13 +796,13 @@ window.EMC = (function () {
       if (target) target.textContent = fmt(v);
       if (onChange) onChange(v);
     };
-    input.addEventListener('input', apply);
+    addL(input, 'input', apply, signal ? { signal } : undefined);
     apply();
     return { input, set(v) { input.value = String(v); apply(); }, get: () => parseFloat(input.value) };
   }
 
   /* Radio-style segmented control: buttons inside a container with data-value. */
-  function bindSegment(container, onChange) {
+  function bindSegment(container, onChange, signal) {
     const root = typeof container === 'string' ? document.getElementById(container) : container;
     if (!root) return null;
     const btns = Array.from(root.querySelectorAll('.seg-btn'));
@@ -695,7 +811,7 @@ window.EMC = (function () {
       if (onChange) onChange(btn.dataset.value, btn);
     };
     btns.forEach(b => {
-      b.addEventListener('click', () => select(b));
+      addL(b, 'click', () => select(b), signal ? { signal } : undefined);
       if (b.getAttribute('aria-pressed') === 'true') { /* keep initial */ }
     });
     return {
@@ -706,11 +822,11 @@ window.EMC = (function () {
   }
 
   /* Toggle button group (aria-pressed) */
-  function bindToggles(rootSel, onChange) {
+  function bindToggles(rootSel, onChange, signal) {
     const root = typeof rootSel === 'string' ? document.getElementById(rootSel) : rootSel;
     if (!root) return;
     root.querySelectorAll('[data-toggle]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      addL(btn, 'click', () => {
         const on = btn.getAttribute('aria-pressed') !== 'true';
         btn.setAttribute('aria-pressed', String(on));
         if (onChange) onChange(btn.dataset.toggle, on, btn);
@@ -1166,6 +1282,38 @@ window.EMC = (function () {
     eng, unit, fixed, setText, throttle,
     Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
     typeScale: () => canvasTypeScale,
+    stats() {
+      let rafs = 0;
+      STAGES.forEach(st => { rafs += (st._raf ? 1 : 0) + (st._drawRaf ? 1 : 0) + (st._pmRaf ? 1 : 0); });
+      return { stages: STAGES.size, listeners: TRACKED, rafs };
+    },
+    /* Dev introspection (?debug & tests): per-stage lifecycle snapshot. */
+    debugStages() {
+      return [...STAGES].map(st => ({
+        id: st.canvas ? st.canvas.id : '?',
+        animate: st.animate, running: st._running, visible: st._visible,
+        hidden: st._hidden, idle: st._idle, budgetPaused: st._budgetPaused,
+        raf: !!st._raf, drawRaf: !!st._drawRaf, pmRaf: !!st._pmRaf, tracked: st._n
+      }));
+    },
+    /* Shell helpers: one cleanup path stays with the Stage - the shell never
+       reaches into a sim, it only asks stages inside a root to leave (or to
+       re-measure once their section becomes visible again). */
+    destroyStagesIn(root) {
+      if (!root) return 0;
+      let n = 0;
+      [...STAGES].forEach(st => { if (root.contains(st.canvas)) { st.destroy(); n++; } });
+      return n;
+    },
+    resizeStagesIn(root) {
+      if (!root) return 0;
+      let n = 0;
+      STAGES.forEach(st => {
+        if (root.contains(st.canvas) && st.resize()) { st.draw(); n++; }
+      });
+      refreshBudget();
+      return n;
+    },
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
     get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,

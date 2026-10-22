@@ -391,7 +391,7 @@
     }
   }
   document.querySelectorAll('[data-ind-mode]').forEach(b => {
-    b.addEventListener('click', () => {
+    stage.listen(b, 'click', () => {
       const mode = b.dataset.indMode;
       if (mode === 'push') { state.z = -Z_MAX; state.v = 0; setMode('push'); }
       else if (mode === 'pull') { state.z = Z_MAX; state.v = 0; setMode('pull'); }
@@ -405,18 +405,18 @@
   });
 
   /* ---- controls -------------------------------------------------------- */
-  EMC.bindRange('ind-N', 'ind-Nv', v => { state.N = Math.round(v); stage.draw(); }, v => `${Math.round(v)} turns`);
-  EMC.bindRange('ind-a', 'ind-av', v => { state.a = v / 100; stage.draw(); }, v => `${v.toFixed(1)} cm`);
-  EMC.bindRange('ind-R', 'ind-Rv', v => { state.R = v; stage.draw(); }, v => `${v.toFixed(0)} \u03A9`);
-  EMC.bindRange('ind-speed', 'ind-speedv', v => { state.speed = v; }, v => `${v.toFixed(2)} m/s`);
-  EMC.bindRange('ind-osc', 'ind-oscv', v => { state.oscFreq = v; }, v => `${v.toFixed(1)} Hz`);
+  stage.bindRange('ind-N', 'ind-Nv', v => { state.N = Math.round(v); stage.draw(); }, v => `${Math.round(v)} turns`);
+  stage.bindRange('ind-a', 'ind-av', v => { state.a = v / 100; stage.draw(); }, v => `${v.toFixed(1)} cm`);
+  stage.bindRange('ind-R', 'ind-Rv', v => { state.R = v; stage.draw(); }, v => `${v.toFixed(0)} \u03A9`);
+  stage.bindRange('ind-speed', 'ind-speedv', v => { state.speed = v; }, v => `${v.toFixed(2)} m/s`);
+  stage.bindRange('ind-osc', 'ind-oscv', v => { state.oscFreq = v; }, v => `${v.toFixed(1)} Hz`);
 
   // magnet strength: log slider 0.05 .. 2.0 A m^2
   const mSlider = el('ind-m');
   if (mSlider) {
     const fromS = s => Math.pow(10, -1.3 + (s / 1000) * (Math.log10(2) + 1.3));
     const toS = m => clamp((Math.log10(clamp(m, 0.05, 2)) + 1.3) / (Math.log10(2) + 1.3) * 1000, 0, 1000);
-    mSlider.addEventListener('input', () => {
+    stage.listen(mSlider, 'input', () => {
       state.m = fromS(parseFloat(mSlider.value));
       if (el('ind-mv')) el('ind-mv').textContent = `${state.m.toFixed(2)} A\u00B7m\u00B2`;
       stage.draw();
@@ -426,10 +426,10 @@
   }
 
   const symToggle = el('ind-symbols');
-  if (symToggle) symToggle.addEventListener('change', () => { state.showSymbols = symToggle.checked; stage.draw(); });
+  if (symToggle) stage.listen(symToggle, 'change', () => { state.showSymbols = symToggle.checked; stage.draw(); });
 
   const resetBtn = el('ind-reset');
-  if (resetBtn) resetBtn.addEventListener('click', () => {
+  if (resetBtn) stage.listen(resetBtn, 'click', () => {
     state.z = -0.075; state.v = 0; state.history = []; state.oscPhase = 0;
     setMode('manual'); stage.draw();
   });
@@ -500,7 +500,7 @@
     if (tryB) tryB.hidden = true;
     opts.innerHTML = c.options.map((o, k) =>
       `<button class="btn btn-sm" type="button" data-k="${k}" aria-pressed="false">${o}</button>`).join('');
-    opts.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    opts.querySelectorAll('button').forEach(b => stage.listen(b, 'click', () => {
       if (indChalDone) return;
       indChalDone = true;
       const k = Number(b.dataset.k), okk = k === c.answer;
@@ -516,9 +516,9 @@
   if (el('ind-chal-text')) {
     showIndChallenge(0);
     const nb = el('ind-chal-new');
-    if (nb) nb.addEventListener('click', () => showIndChallenge(indChalIdx + 1));
+    if (nb) stage.listen(nb, 'click', () => showIndChallenge(indChalIdx + 1));
     const tb = el('ind-chal-try');
-    if (tb) tb.addEventListener('click', () => IND_CHALLENGES[indChalIdx].apply());
+    if (tb) stage.listen(tb, 'click', () => IND_CHALLENGES[indChalIdx].apply());
   }
 
   setMode('manual');
