@@ -152,6 +152,7 @@
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="index.html">Home</a><span aria-hidden="true">/</span><span>Quiz</span>
       </nav>
+      <div class="quiz-head">
       <svg class="mascot mascot-sm" aria-hidden="true" viewBox="0 0 120 112">
   <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
   <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
@@ -161,14 +162,19 @@
   <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
-      <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Assessment</span>
-      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Electromagnetics quiz</h1>
+        <div class="quiz-head-text">
+          <span class="eyebrow eyebrow-amber">Assessment</span>
+          <h1 class="h-topic">Electromagnetics quiz</h1>
+        </div>
+      </div>
       <p class="lede">
         <span id="quiz-total">24</span> multiple-choice questions covering all three chapters, each
         with a worked explanation. Scoring is automatic; your best result is saved in this browser.
       </p>
 
-      <div class="stat-strip stat-strip-4" style="max-width:640px">
+      <!-- Stat tiles: hidden by js/quiz.js while an attempt is in progress,
+           so the first question card lands inside the first viewport. -->
+      <div class="stat-strip stat-strip-4" id="quiz-stats" style="max-width:640px">
         <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">24</span></div>
         <div class="stat"><span class="stat-label">Best score</span><span class="stat-value hl-emerald" id="quiz-best">—</span></div>
         <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="quiz-attempts">0</span></div>
@@ -199,9 +205,29 @@
     <div class="wrap section-tight">
       <div class="panel rise-2 quiz-sweep">
         <div class="panel-body">
-          <div class="flex flex-wrap items-center gap-3 justify-between">
-            <div>
-              <span class="ctl-label" style="margin-bottom:.4rem">Filter by topic</span>
+          <!-- One compact "Options" row: toggle + live settings summary + the
+               single progress indicator (bar, count and flags merged). -->
+          <div class="qopts-head">
+            <button class="qopts-toggle" id="qopts-toggle" type="button" aria-expanded="true" aria-controls="qopts-fields">
+              <span class="ctl-label">Options</span>
+              <span class="qopts-summary" id="qopts-summary">Exam mode · All topics · Timer off</span>
+              <svg class="qopts-chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="quiz-pill" id="quizPill" hidden role="status" aria-label="Quiz progress">
+              <span class="pill-track"><span class="pill-fill" id="quiz-progress-fill"></span></span>
+              <span class="pill-text" id="pillText">0/24</span>
+              <span class="pill-sr" id="quiz-progress-text">0 of 24 answered</span>
+              <span id="quiz-live" hidden></span>
+              <span class="pill-flags" id="pillFlags" hidden>
+                <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="pillFlagCount">0</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="qopts-grid" id="qopts-fields">
+            <div class="qopts-cell">
+              <span class="ctl-label">Filter by topic</span>
               <div class="btn-group" role="group" aria-label="Filter questions by topic">
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Circuits</button>
@@ -210,15 +236,15 @@
                 <button class="btn btn-sm" type="button" data-quiz-filter="unanswered" aria-pressed="false">Unanswered</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="flagged" aria-pressed="false">Flagged</button></div>
             </div>
-            <div>
-              <span class="ctl-label" style="margin-bottom:.4rem">Marking</span>
+            <div class="qopts-cell">
+              <span class="ctl-label">Marking</span>
               <div class="seg" id="quiz-mode" role="group" aria-label="Marking mode">
                 <button class="seg-btn" type="button" data-value="exam" aria-pressed="true">Exam mode</button>
                 <button class="seg-btn" type="button" data-value="instant" aria-pressed="false">Instant feedback</button>
               </div>
             </div>
-            <div>
-              <span class="ctl-label" style="margin-bottom:.4rem">Timer <span class="tiny faint" style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></span>
+            <div class="qopts-cell">
+              <span class="ctl-label">Timer <span class="tiny faint" style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></span>
               <div class="seg" id="quiz-timer-mode" role="group" aria-label="Timer mode">
                 <button class="seg-btn" type="button" data-value="off" aria-pressed="true">Off</button>
                 <button class="seg-btn" type="button" data-value="up" aria-pressed="false">Practice</button>
@@ -232,14 +258,10 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 mt-4">
+          <div class="flex flex-wrap items-center gap-3 qopts-actions">
             <button class="btn btn-primary" type="button" id="quiz-submit" data-quiz-submit>Submit quiz</button>
             <button class="btn" type="button" id="quiz-shuffle">Shuffle order</button>
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
-            <div style="flex:1 1 180px;min-width:160px">
-              <div class="progress-track"><div class="progress-fill" id="quiz-progress-fill"></div></div>
-              <p class="tiny faint" style="margin:.35rem 0 0"><span id="quiz-progress-text">0 of 24 answered</span><span id="quiz-live" hidden></span></p>
-            </div>
           </div>
 
           <p class="tiny faint mt-2">
@@ -314,17 +336,6 @@
     </div>
   </main>
 
-  <!-- Always-visible progress pill: "x of 24" + a mini completion bar + flag
-       count, parked bottom-left so it never collides with the draggable
-       float timer (bottom-right). Mirrors the toolbar progress - one state. -->
-  <div class="quiz-pill" id="quizPill" hidden role="status" aria-label="Quiz progress">
-    <span class="pill-track"><span class="pill-fill" id="pillFill"></span></span>
-    <span class="pill-text" id="pillText">0/24</span>
-    <span class="pill-flags" id="pillFlags" hidden>
-      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span id="pillFlagCount">0</span>
-    </span>
-  </div>
 
   <!-- Floating elapsed-time panel: fixed to the viewport so it survives any
        scroll position, draggable by its header (pointer or arrow keys),

@@ -586,14 +586,39 @@
   .q-card:not(.answered-correct):not(.answered-wrong):hover { border-color: var(--edge); }
   .q-card.flagged { border-color: var(--ye-e); }
 
-  /* ---- always-visible progress pill (bottom-left, away from the timer) ---- */
-  .quiz-pill {
-    position: fixed; left: 14px; bottom: 14px; z-index: 90;
-    display: flex; align-items: center; gap: .55rem;
-    background: var(--panel); border: 1.5px solid var(--line); border-radius: 999px;
-    padding: .42rem .8rem; box-shadow: 0 10px 22px -14px rgb(0 0 0 / .65);
-    animation: fadeIn .3s ease both;
+  /* ---- quiz head: mascot sits beside the eyebrow + title, not stacked ---- */
+  .quiz-head { display: flex; align-items: center; gap: .8rem; margin-top: .5rem; }
+  .quiz-head .mascot-sm { margin: 0; flex: none; }
+  .quiz-head .eyebrow { margin: 0 0 .15rem; }
+  .quiz-head .h-topic { margin: 0; }
+
+  /* ---- compact Options panel: one head row, collapsible field grid ------- */
+  .qopts-head { display: flex; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; }
+  .qopts-toggle {
+    display: flex; align-items: center; gap: .55rem; min-height: 34px;
+    background: none; border: 0; padding: 0 .1rem; margin: 0;
+    color: inherit; font: inherit; text-align: left; cursor: pointer;
+    border-radius: var(--r-ctl);
   }
+  .qopts-summary { font-size: .8rem; color: var(--text-faint); }
+  .qopts-chev { color: var(--text-dim); flex: none; transition: transform .2s ease; }
+  .qopts-toggle[aria-expanded="false"] .qopts-chev { transform: rotate(-90deg); }
+  .qopts-grid {
+    display: grid; grid-template-columns: 1fr; align-items: start;
+    gap: 1rem 1.4rem; margin-top: .85rem; padding-top: .9rem;
+    border-top: 1.5px solid var(--line-soft);
+  }
+  .qopts-cell { display: grid; gap: .45rem; justify-items: start; align-content: start; }
+  .qopts-actions { margin-top: 1rem; }
+  @media (min-width: 900px) { .qopts-grid { grid-template-columns: 1.35fr 1fr 1fr; } }
+
+  /* ---- the ONE progress indicator: bar + count + flags (was bar + line + pill) ---- */
+  .quiz-pill {
+    display: flex; align-items: center; gap: .55rem; margin-left: auto; flex: none;
+    background: var(--panel-2); border: 1.5px solid var(--line); border-radius: 999px;
+    padding: .42rem .8rem;
+  }
+  .pill-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .pill-track { display: block; width: 54px; height: 6px; border-radius: 999px; background: #2c2f36; overflow: hidden; }
   .pill-fill { display: block; height: 100%; width: 0%; border-radius: 999px; background: var(--mi); transition: width .4s ease; }
   .pill-text { font-family: theme('fontFamily.mono'); font-size: .76rem; font-weight: 700; color: var(--text-dim); font-variant-numeric: tabular-nums; }
@@ -629,7 +654,8 @@
 
   /* ---- subtle glow on interactive elements (focus + primary hover) -------- */
   .btn:focus-visible, .seg-btn:focus-visible, .opt:focus-visible,
-  .qnav-chip:focus-visible, .q-flag:focus-visible, .detail-toggle:focus-visible {
+  .qnav-chip:focus-visible, .q-flag:focus-visible, .detail-toggle:focus-visible,
+  .qopts-toggle:focus-visible {
     box-shadow: 0 0 0 4px var(--sk-t);
   }
   .btn-primary:hover { box-shadow: 0 6px 18px -8px rgba(246, 211, 107, .5); }

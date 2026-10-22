@@ -204,14 +204,51 @@
       pill.hidden = S.submitted;
       const pText = el('pillText');
       if (pText !== null && pText !== undefined) pText.textContent = `${answered}/${total}`;
-      const pFill = el('pillFill');
-      if (pFill !== null && pFill !== undefined) pFill.style.width = pct.toFixed(1) + '%';
       const pFlags = el('pillFlags');
       if (pFlags !== null && pFlags !== undefined) pFlags.hidden = S.flagged.size === 0;
       const pCount = el('pillFlagCount');
       if (pCount !== null && pCount !== undefined) pCount.textContent = String(S.flagged.size);
     }
+    syncQuizChrome();
     renderNav();
+  }
+
+  /* ---- compact chrome while an attempt is running ------------------------
+     Phase-1 layout: the stat tiles and the open Options field grid are
+     pre-quiz affordances. Once the attempt starts (any answer, flag, running
+     clock, or a saved session waiting on the resume choice) they step away so
+     the first question card sits inside the first viewport. A manual
+     expand/collapse by the student is never fought over. */
+  let optsTouched = false;
+  function quizInProgress() {
+    return !S.submitted && (S.answers.size > 0 || S.flagged.size > 0 || S.clockOn || resumePending);
+  }
+  function setOptsOpen(open) {
+    const body = el('qopts-fields');
+    const tog = el('qopts-toggle');
+    if (body === null || body === undefined || tog === null || tog === undefined) return;
+    // NB: spelled as an explicit comparison - tailwind scans this file, and a
+    // negated bare identifier here would compile to a phantom important util.
+    body.hidden = open === false;
+    tog.setAttribute('aria-expanded', String(open));
+  }
+  function syncQuizChrome() {
+    const inProg = quizInProgress();
+    const stats = el('quiz-stats');
+    if (stats !== null && stats !== undefined) stats.hidden = inProg;
+    if (inProg && !optsTouched) setOptsOpen(false);
+    const sum = el('qopts-summary');
+    if (sum !== null && sum !== undefined) {
+      const mode = S.instant ? 'Instant feedback' : 'Exam mode';
+      const timer = S.timerMode === 'up' ? 'Practice timer'
+        : S.timerMode === 'down' ? `Challenge ${S.timerMins} min` : 'Timer off';
+      const filter = S.filter === 'all' ? 'All topics'
+        : S.filter === 'unanswered' ? 'Unanswered only'
+        : S.filter === 'flagged' ? 'Flagged only'
+        : S.filter === 'wrong' ? 'Incorrect only'
+        : (TOPIC_NAMES[S.filter] || 'All topics');
+      sum.textContent = `${mode} \u00B7 ${filter} \u00B7 ${timer}`;
+    }
   }
 
   /* ---- clock, streaks, keyboard ----------------------------------------
@@ -473,6 +510,7 @@
     const wrap = el('resume-wrap');
     if (wrap !== null && wrap !== undefined) wrap.hidden = true;
     if (clearStorage === true) store.remove(SESSION_KEY);
+    syncQuizChrome();
   }
   function syncSegQuiet(group, value) {
     if (group === null || group === undefined) return;
@@ -1116,6 +1154,14 @@
     toast('Questions shuffled');
   });
 
+  /* Options panel: manual open/close is a deliberate choice - once touched,
+     the auto-collapse on "quiz started" stops overriding the student. */
+  const optsToggle = el('qopts-toggle');
+  if (optsToggle) optsToggle.addEventListener('click', () => {
+    optsTouched = true;
+    setOptsOpen(optsToggle.getAttribute('aria-expanded') !== 'true');
+  });
+
   const modeGroup = el('quiz-mode');
   if (modeGroup) EMC.bindSegment(modeGroup, v => {
     S.instant = v === 'instant';
@@ -1134,7 +1180,7 @@
 
   /* ---- optional timer controls + question navigator wiring --------------- */
   const timerGroup = el('quiz-timer-mode');
-  if (timerGroup) EMC.bindSegment(timerGroup, v => applyTimerMode(v, false));
+  if (timerGroup) EMC.bindSegment(timerGroup, v => { applyTimerMode(v, false); syncQuizChrome(); });
 
   document.querySelectorAll('#timer-mins [data-mins]').forEach(b => {
     b.addEventListener('click', () => {
