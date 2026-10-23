@@ -1,0 +1,18 @@
+
+> perf:guard
+> node tools/perf-measure.mjs guard
+
+browser: Chrome/148.0.7778.97
+
+[animation-loop guard]
+  ✗ home boot-visible chains = 1: 0 (expected 1)
+  ✓ home hidden chains = 0: 0 (expected 0)
+  ℹ home heap (informational): 2.67 MB
+  ✗ live lorentz sim keeps exactly 1 chain when visible: 0 (expected 1)
+  ✓ magind hidden chains = 0: 0 (expected 0)
+  ✗ essential motion keeps 1 chain: 0 (expected 1)
+  ✓ unexpected CLS on index.html: 0 (< 0.01)
+  ✓ anchor targets clear the sticky header on index.html
+  ✓ unexpected CLS on topics/current.html: 0 (< 0.01)
+  ✓ anchor targets clear the sticky header on topics/current.html
+guard FAILED: home boot-visible chains = 1, live lorentz sim keeps exactly 1 chain when visible, essential motion keeps 1 chain

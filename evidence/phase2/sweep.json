@@ -1,0 +1,129 @@
+[
+ {
+  "page": "/",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 508,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0.0011879488415188258,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "skip-link right=-9772",
+    "detailToggle right=362",
+    "navToggle right=400"
+   ],
+   "768": [
+    "skip-link right=-9765",
+    "[object SVGAnimatedString] right=6814"
+   ],
+   "1440": [
+    "skip-link right=-9750",
+    "[object SVGAnimatedString] right=7358"
+   ]
+  }
+ },
+ {
+  "page": "/quiz.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 558,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0.046319661458333335,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "skip-link right=-9772",
+    "detailToggle right=362",
+    "navToggle right=400"
+   ],
+   "768": [
+    "skip-link right=-9765"
+   ],
+   "1440": [
+    "skip-link right=-9750"
+   ]
+  }
+ },
+ {
+  "page": "/topics/fields.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 560,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "skip-link right=-9772",
+    "DIV right=377",
+    "canvas-wrap right=377",
+    "toy-balloon right=377"
+   ],
+   "768": [
+    "skip-link right=-9765"
+   ],
+   "1440": [
+    "skip-link right=-9750"
+   ]
+  }
+ },
+ {
+  "page": "/topics/current.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 199,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "skip-link right=-9772",
+    "detailToggle right=362",
+    "navToggle right=400"
+   ],
+   "768": [
+    "skip-link right=-9765"
+   ],
+   "1440": [
+    "skip-link right=-9750"
+   ]
+  }
+ },
+ {
+  "page": "/topics/magind.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 549,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "skip-link right=-9772",
+    "detailToggle right=362",
+    "navToggle right=400"
+   ],
+   "768": [
+    "skip-link right=-9765"
+   ],
+   "1440": [
+    "skip-link right=-9750"
+   ]
+  }
+ }
+]

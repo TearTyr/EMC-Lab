@@ -1,0 +1,46 @@
+
+> perf
+> node tools/perf-audit.mjs
+
+[11886:11901:1023/111939.407850:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11886:11901:1023/111939.434699:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11901:1023/111939.434758:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11886:11901:1023/111939.434792:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11886:11886:1023/111939.451248:ERROR:chrome/browser/net/system_network_context_manager.cc:982] Cannot use V8 Proxy resolver in single process mode.
+[11886:11901:1023/111939.494615:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11886:1023/111939.495416:ERROR:chrome/browser/net/system_network_context_manager.cc:982] Cannot use V8 Proxy resolver in single process mode.
+[11886:11901:1023/111939.516200:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11886:1023/111939.516665:ERROR:chrome/browser/net/system_network_context_manager.cc:982] Cannot use V8 Proxy resolver in single process mode.
+
+DevTools listening on ws://127.0.0.1:43417/devtools/browser/1bd645cd-1c74-4363-b155-9b0badfc9259
+[11886:11886:1023/111939.521037:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11901:1023/111939.521119:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11886:1023/111939.525732:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11886:1023/111939.531027:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11901:1023/111939.531279:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11901:1023/111939.627990:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11886:11901:1023/111939.628045:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11886:11886:1023/111939.628088:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11886:1023/111939.629325:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11901:1023/111939.629380:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11886:1023/111939.633375:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+[11886:11886:1023/111939.635235:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11901:1023/111939.635286:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11886:1023/111939.637339:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[11886:11901:1023/111939.637390:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[11886:11886:1023/111939.638253:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+
+page                      transfer   fonts    DCL     blocking-scripts
+────────────────────────────────────────────────────────────────────────
+index.html                  239K     100K   231ms  0
+topics/fields.html          266K      91K   193ms  0
+[11886:11901:1023/111946.468539:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[11886:11901:1023/111946.474271:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[11886:11901:1023/111946.474347:ERROR:google_apis/gcm/engine/mcs_client.cc:702]   Error code: 401  Error message: Authentication Failed: wrong_secret
+[11886:11901:1023/111946.474350:ERROR:google_apis/gcm/engine/mcs_client.cc:704] Failed to log in to GCM, resetting connection.
+[11886:11901:1023/111946.475109:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+topics/current.html         227K      73K   152ms  0
+topics/magind.html          230K      86K   240ms  0
+quiz.html                   178K      31K    69ms  0
+────────────────────────────────────────────────────────────────────────
+✅ all performance budgets met

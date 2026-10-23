@@ -34,7 +34,21 @@
   function routeFromHash() {
     const h = location.hash || '';
     if (h.indexOf('#/') !== 0) return null;     // plain anchor: leave it native
-    return byId(h.slice(2)) ? h.slice(2) : 'home';
+    const raw = h.slice(2);
+    if (byId(raw)) return raw;
+    /* Legacy routes (#/charge, #/current, #/magind, #/efield …) resolve
+       through the registry alias map onto the chapter that owns them now, and
+       the URL is normalised to the chapter route so reloads and shares keep a
+       meaningful address. A legacy lesson id doubles as the section anchor on
+       the merged ch2 page. */
+    const resolved = REG.resolve ? REG.resolve(raw) : null;
+    if (resolved && CHAPTERS.indexOf(resolved) !== -1) {
+      const isSection = (resolved.sections || []).some(sec => sec.id === raw);
+      if (isSection) pendingAnchor = raw;
+      if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#/' + resolved.id);
+      return resolved.id;
+    }
+    return 'home';
   }
 
   /* ---- mount / unmount --------------------------------------------------- */
@@ -61,8 +75,9 @@
     return '<div class="wrap section-tight"><div class="card">' +
       '<p class="font-bold">This chapter could not be loaded here.</p>' +
       '<p class="small muted" style="margin:.3rem 0 .8rem">The same-page reader fetches chapters from the site; ' +
-      'the request did not complete. The standalone page always works.</p>' +
-      '<div class="btn-group"><a class="btn btn-primary" href="' + ch.path + '">Open the standalone page</a>' +
+      'the request did not complete. Retry, open the standalone page, or go home.</p>' +
+      '<div class="btn-group"><button class="btn btn-primary" type="button" data-shell-retry>Retry</button>' +
+      '<a class="btn" href="' + ch.path + '">Open the standalone page</a>' +
       '<a class="btn" href="#/">Back to home</a></div></div></div>';
   }
 
@@ -148,6 +163,10 @@
       // blocks get observed now, and bare relative chapter links (field.html)
       // are re-based into topics/ so they resolve (and same-page switch) here
       if (EMC.UI && EMC.UI.initReveal) EMC.UI.initReveal();
+      /* the mounted chapter carries its own [data-complete-topic] button —
+         boot() bound none (the shell was empty then), so rebind here or the
+         keyboard/click does nothing (found by a11y-verify A4). */
+      if (EMC.UI && EMC.UI.initTopicButtons) EMC.UI.initTopicButtons();
       body.querySelectorAll('a[href]').forEach(a => {
         const h = a.getAttribute('href') || '';
         if (/^(https?:|#|\/|mailto:)/.test(h)) return;
@@ -172,6 +191,16 @@
     } catch (err) {
       if (token !== loadToken) return;
       body.innerHTML = failCard(ch);
+      /* Retry re-runs this chapter's activation: clear `active` so the guard in
+         activate() does not short-circuit, drop the cached main (the fetch that
+         failed may have poisoned nothing, but a stale miss must not stick) and
+         re-enter. Never leaves the reader on a dead "Loading…". */
+      const retry = body.querySelector('[data-shell-retry]');
+      if (retry) retry.addEventListener('click', () => {
+        active = null;
+        mainCache.delete(ch.id);
+        activate(id, {});
+      });
       focusTitle();
     }
   }
@@ -185,7 +214,11 @@
   window.addEventListener('hashchange', () => { go(routeFromHash(), {}); });
 
   /* Same-origin topic links become same-page switches; the href stays real so
-     middle-click, copy-link and no-JS visits still reach the standalone page. */
+     middle-click, copy-link and no-JS visits still reach the standalone page.
+     CAPTURE phase: the page-transition fade in common.js listens on the bubble
+     phase and bails on defaultPrevented — capturing guarantees the shell owns
+     topic links on EVERY engine (before this, engines without native view
+     transitions full-navigated instead of same-page switching). */
   document.addEventListener('click', e => {
     if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest ? e.target.closest('a[href]') : null;
@@ -209,7 +242,7 @@
     }
     pendingAnchor = anchor;
     location.hash = '#/' + ch.id;               // hashchange drives the switch
-  });
+  }, { capture: true });
 
   /* ---- boot: honour a deep link ------------------------------------------ */
   const bootRoute = routeFromHash();

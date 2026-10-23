@@ -35,7 +35,7 @@
   "redirects": [
     {
       "source": "/topics/efield.html",
-      "destination": "/topics/field.html",
+      "destination": "/topics/fields.html",
       "permanent": true
     }
   ]

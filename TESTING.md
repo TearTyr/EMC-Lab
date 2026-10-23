@@ -1,3 +1,9 @@
+> **HISTORICAL RECORD (pre-audit).** This checklist describes the site as of the
+> lessons+Extra redesign. The current, brief-aligned command surface lives in
+> `README.md` §7 (`check`, `test`, `test:interact`, `test:shell`, `loader-verify`,
+> `nav-verify`, `quiz-verify`, `lecture-values`, `a11y-verify`, `perf`, `perf:guard`,
+> `shots`); gate definitions are in `BUG_AUDIT.md`/`SCOPE_TRACE.md`.
+
 # Testing checklist — EMC Lab
 
 Two layers: **automated** checks you can run in seconds, and a **manual** checklist for the

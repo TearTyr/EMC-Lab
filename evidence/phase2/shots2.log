@@ -1,0 +1,17 @@
+
+> shots
+> node tools/screenshots.mjs
+
+shot home-hero.png
+shot home-cards.png
+shot home-360.png
+shot topic-sim.png
+shot topic-charge.png
+shot topic-coulomb.png
+shot topic-field.png
+shot shell-sim.png
+shot quiz.png
+shot quiz-360.png
+shot home-reduced.png
+404 misses: none
+console/page errors: none

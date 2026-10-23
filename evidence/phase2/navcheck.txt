@@ -1,0 +1,11 @@
+stats: 3 | 13 | 24 | 0 of 3 chapters studied
+ch2 route: { hidden: false, h1: 'Electric Fields & Coulomb’s Law', hash: '#/ch2' }
+legacy #/charge: { h1: 'Electric Fields & Coulomb’s Law', hash: '#/ch2' }
+home: { topicHidden: true, homeHidden: false }
+detail: {
+  attr: 'off',
+  pressed: 'false',
+  toast: 'Details OFF — simplified explanations'
+}
+progress: 1 of 3 chapters studied | pill: completed
+errors: none

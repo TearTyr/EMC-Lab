@@ -1,4 +1,4 @@
-/* Quiz engine: exam/instant marking, automatic scoring with per-topic breakdown, weak-area summary and grade bands, optional timer (Off / Practice count-up / Challenge count-down with a gentle auto-submit), question navigator + flag-for-review, autosave & resume, submit confirmation, per-question splits, streak counter, keyboard flow, Chart.js analytics (vendored in vendor/chart/) with a CSS-bar fallback if the library fails to load, ?topic= deep links, progress persisted through EMC.Progress. */
+/* Quiz engine: exam/instant marking, automatic scoring with per-chapter breakdown, weak-area summary and grade bands, optional timer (Off / Practice count-up / Challenge count-down with a gentle auto-submit), question navigator + flag-for-review, autosave & resume, submit confirmation, per-question splits, streak counter, keyboard flow, Chart.js analytics (vendored in vendor/chart/) with a CSS-bar fallback if the library fails to load, ?topic= deep links, progress persisted through EMC.Progress. */
 (function () {
   const host = document.getElementById('quiz-questions');
   if (!host || !window.EMC_QUIZ) return;
@@ -16,9 +16,10 @@
   let saveHandle = 0;             // autosave throttle
   let resumePending = false;      // a saved session is waiting for a choice
 
-  /* Denki-chan reaction faces for graded feedback (inline SVG, no library) */
-  const FACE_HAPPY = '<svg class="mreact" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg>';
-  const FACE_OOPS = '<svg class="mreact" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><circle cx="23" cy="29" r="2.4" fill="#2b2d33"/><circle cx="37" cy="29" r="2.4" fill="#2b2d33"/><path d="M26 39 q4 -3 8 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/><path d="M46 18 q3 5 0 7 q-3 -2 0 -7" fill="#a8d3e0"/></svg>';
+  /* Graded-feedback badges: flat word chips (the site fonts lack reliable
+     \u2713/\u2717 glyphs, and state must never ride on colour alone). */
+  const FACE_HAPPY = '<span class="fbadge fbadge-ok" aria-hidden="true">Correct</span>';
+  const FACE_OOPS = '<span class="fbadge fbadge-no" aria-hidden="true">Not quite</span>';
 
   /* A tiny pastel confetti puff over the score card when the attempt passes.
      CSS owns the motion (one-shot, ends transparent); under reduced motion it
@@ -43,7 +44,7 @@
 
   const S = {
     order: BANK.slice(),          // current question order (shuffle changes this)
-    filter: 'all',                // 'all' | 'lessons' | topic id | 'wrong' | 'unanswered' | 'flagged'
+    filter: 'all',                // 'all' | chapter id (ch1/ch2/ch3) | 'wrong' | 'unanswered' | 'flagged'
     answers: new Map(),           // question id -> chosen option index
     marked: new Map(),            // question id -> true/false (only once graded)
     flagged: new Set(),           // question ids flagged for review before submit
@@ -67,13 +68,8 @@
   };
 
   const el = id => document.getElementById(id);
-  /* The three graded-lecture lessons (registry chapters without extra:true),
-     so lecture students can filter the Extra material away in one click. */
-  const LESSON_IDS = (window.EMC_REGISTRY && window.EMC_REGISTRY.lessons)
-    ? EMC_REGISTRY.lessons.map(c => c.id) : [];
   const visible = () => S.order.filter(q => {
     if (S.filter === 'all') return true;
-    if (S.filter === 'lessons') return LESSON_IDS.includes(q.topic);
     if (S.filter === 'wrong') return S.marked.get(q.id) === false;
     if (S.filter === 'unanswered') return !S.answers.has(q.id);
     if (S.filter === 'flagged') return S.flagged.has(q.id);
@@ -271,12 +267,11 @@
       const mode = S.instant ? 'Instant feedback' : 'Exam mode';
       const timer = S.timerMode === 'up' ? 'Practice timer'
         : S.timerMode === 'down' ? `Challenge ${S.timerMins} min` : 'Timer off';
-      const filter = S.filter === 'all' ? 'All topics'
-        : S.filter === 'lessons' ? 'Lessons 1\u20133'
+      const filter = S.filter === 'all' ? 'All chapters'
         : S.filter === 'unanswered' ? 'Unanswered only'
         : S.filter === 'flagged' ? 'Flagged only'
         : S.filter === 'wrong' ? 'Incorrect only'
-        : (TOPIC_NAMES[S.filter] || 'All topics');
+        : (TOPIC_NAMES[S.filter] || 'All chapters');
       sum.textContent = `${mode} \u00B7 ${filter} \u00B7 ${timer}`;
     }
   }
@@ -328,10 +323,22 @@
   }
   function stopTick() { clearInterval(timerHandle); timerHandle = 0; }
 
+  /* On phone-width screens the floating panel would sit on top of the answer
+     options (§3.5 forbids that), so it docks as an opaque full-width bottom
+     bar and the question list reserves matching padding — same contract as
+     the sticky header: the widget owns its strip, no answer is ever
+     permanently covered. Wider screens keep the draggable panel. */
+  function ftDock() {
+    const ft = el('floatTimer');
+    if (ft === null || ft === undefined) return;
+    const dock = window.innerWidth < 480;
+    ft.classList.toggle('docked', dock);
+    document.body.classList.toggle('timer-docked', dock && ft.hidden === false);
+  }
   function showTimerPanel() {
     const ft = el('floatTimer');
     if (ft === null || ft === undefined) return;
-    ft.hidden = false; ft.classList.add('show'); ftPlace();
+    ft.hidden = false; ft.classList.add('show'); ftDock(); ftPlace();
     const title = ft.querySelector('.ft-title');
     if (title !== null && title !== undefined) title.textContent = S.timerMode === 'down' ? 'Remaining' : 'Elapsed';
     const hint = el('floatTimerHint');
@@ -342,6 +349,7 @@
     }
   }
   function hideTimerPanel() {
+    document.body.classList.remove('timer-docked');
     const ft = el('floatTimer');
     if (ft === null || ft === undefined) return;
     ft.hidden = true; ft.classList.remove('show', 'warn');
@@ -486,6 +494,10 @@
     }
     syncNavArrows(qid);
   }
+  /* Set by gotoQuestion, read by the active-card observer (see
+     initKeyboardAndFocus): while a programmatic jump is in flight, the
+     observer must not fight it for the active-card targeting. */
+  let lastJump = 0;
   function gotoQuestion(qid) {
     const inView = visible().some(q => q.id === qid);
     if (inView === false) {                  // jumping beats filtering: show it
@@ -493,6 +505,7 @@
     }
     const target = document.getElementById(`q-${qid}`);
     if (target !== null && target !== undefined) {
+      lastJump = performance.now();
       EMC.scrollToEl(target);
       S.activeCard = target;
       updateNavCur(qid);
@@ -512,6 +525,17 @@
      OFFERS to resume - never a silent restore - and submitting, retaking or
      choosing "Start fresh" clears it. */
   const SESSION_KEY = 'emc.quiz.session.v1';
+  /* Bank fingerprint (§3.5): a saved session may only resume against the
+     exact bank it was started on. Numeric ids COLLIDE across curations
+     (old bank 1..35 vs current 1..24 mean different questions), so neither
+     the ids nor the count alone can detect staleness — the fingerprint
+     mixes every id with its question length. */
+  function bankFingerprint() {
+    let h = BANK.length | 0;
+    for (const q of BANK) { h = (h * 31 + q.id) | 0; h = (h * 31 + String(q.q).length) | 0; }
+    return 'b' + h;
+  }
+  let staleSessionCleared = false;
   function writeSession() {
     if (S.submitted) return;
     // While the resume banner is up the stored session is the user's PENDING
@@ -521,7 +545,8 @@
     if (S.answers.size === 0 && S.flagged.size === 0) { store.remove(SESSION_KEY); return; }
     try {
       store.set(SESSION_KEY, JSON.stringify({
-        v: 2,
+        v: 3,
+        bank: bankFingerprint(),
         answers: [...S.answers],
         marked: [...S.marked],
         flagged: [...S.flagged],
@@ -550,7 +575,14 @@
       const raw = store.get(SESSION_KEY);
       if (raw === null || raw === undefined) return null;
       const d = JSON.parse(raw);
-      if (d === null || typeof d !== 'object' || d.v !== 2) return null;
+      if (d === null || typeof d !== 'object') return null;
+      if (d.v !== 3 || d.bank !== bankFingerprint()) {
+        /* Explicit stale-bank handling: drop it, keep the quiz honest, and
+           tell the reader why their resume offer disappeared. */
+        store.remove(SESSION_KEY);
+        staleSessionCleared = true;
+        return null;
+      }
       if (Array.isArray(d.answers) === false || d.answers.length === 0) return null;
       const ids = new Set(BANK.map(q => q.id));
       const answers = new Map(d.answers
@@ -687,7 +719,7 @@
     });
     const resetBtn = el('floatTimerReset');
     if (resetBtn) resetBtn.addEventListener('click', () => { ftPos = null; ftPlace(); });
-    window.addEventListener('resize', ftPlace);   // stay inside a changed viewport
+    window.addEventListener('resize', () => { ftDock(); ftPlace(); });   // stay inside a changed viewport
   }
   function computeBestStreak() {
     let run = 0, best = 0;
@@ -697,8 +729,14 @@
     return best;
   }
   function initKeyboardAndFocus() {
+    /* Programmatic jumps (nav chips, prev/next, the 'n' shortcut) own the
+       active-card targeting: their smooth scroll crosses IO thresholds on the
+       way and the observer used to overwrite the jump target mid-flight, so
+       the number keys answered the wrong card (a11y-verify A8). IO stays in
+       charge for free user scrolling outside the jump window. */
     if (typeof IntersectionObserver === 'function') {
       const io = new IntersectionObserver(entries => {
+        if (performance.now() - lastJump < 900) return;
         // several cards can cross a threshold in one batch (fast scrolls, chip
         // jumps): keep the DEEPEST intersection so the ring settles on the card
         // actually centred in the viewport, not the last one to notify
@@ -739,7 +777,11 @@
         const sb = el('quiz-submit'); if (sb && !sb.disabled) { sb.click(); e.preventDefault(); }
       } else if (key === 'n' && !S.submitted) {
         const blank = visible().find(q => !S.answers.has(q.id));
-        if (blank) EMC.scrollToEl(document.getElementById(`q-${blank.id}`));
+        /* gotoQuestion re-targets the active card EXPLICITLY: the observer
+           fires on threshold crossings only, so jumping to a card that is
+           already on screen would leave the number keys answering the
+           previous card (found by a11y-verify A8). */
+        if (blank) gotoQuestion(blank.id);
         e.preventDefault();
       } else if (key === 'f' && !S.submitted) {
         toggleFlag(Number(card.dataset.qid));   // flag the question on screen
@@ -929,7 +971,7 @@
       const okN = qs.filter(q => S.marked.get(q.id) === true).length;
       const ch = EMC_REGISTRY.chapter(t);
       return { id: t, n: qs.length, ok: okN, pct: Math.round((okN / qs.length) * 100),
-               label: qs[0].label, path: ch ? ch.path : 'index.html' };
+               label: ch ? ch.title : qs[0].label, path: ch ? ch.path : 'index.html' };
     }).filter(s => s !== null);
     const rows = topicStats.map(s => `<div class="grid gap-2 items-center" style="grid-template-columns:minmax(120px,1fr) 2fr auto">
                 <span class="small muted">${s.label}</span>
@@ -939,8 +981,8 @@
     const weak = topicStats.filter(s => s.pct < 70).sort((a, b) => a.pct - b.pct);
     const weakRow = weak.length === 0
       ? `<p class="small muted" style="margin:.75rem 0 0">${pct === 100
-          ? 'Every topic at 100% \u2014 flawless!'
-          : 'No weak spots this time \u2014 every topic is at 70% or above.'}</p>`
+          ? 'Every chapter at 100% \u2014 flawless!'
+          : 'No weak spots this time \u2014 every chapter is at 70% or above.'}</p>`
       : `<p class="small muted" style="margin:.75rem 0 0">Weakest ${weak.length === 1 ? 'area' : 'areas'}:
           ${weak.map(s => `${s.label} (${s.ok}/${s.n})`).join(' \u00B7 ')} \u2014
           <a class="link" href="${weak[0].path}">revisit ${weak[0].label}</a></p>`;
@@ -959,12 +1001,12 @@
     box.classList.remove('score-enter');
     void box.offsetWidth;               // restart the entrance on every retake
     box.classList.add('score-enter');
-    // The home dashboard promises that a pass (>= 70%) ticks all three lessons.
+    // The home dashboard promises that a pass (>= 70%) ticks all three chapters.
     // Say so out loud at the moment it happens instead of letting it be silent.
     const passNote = pct >= 70
-      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all three lessons
+      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all three chapters
            as studied on your dashboard \u2014 a pass means the whole course has been covered.
-           Un-tick any topic with the button at the end of its page if you would rather keep
+           Un-tick any chapter with the button at the end of its page if you would rather keep
            working on it.</p>`
       : '';
 
@@ -991,7 +1033,7 @@
             aria-label="Doughnut chart of correct versus incorrect answers"></canvas></div>
         </div>
         <div class="card card-flat">
-          <span class="tag tag-cyan">Score by topic</span>
+          <span class="tag tag-cyan">Score by chapter</span>
           <div style="height:170px;position:relative"><canvas id="chart-topics" role="img"
             aria-label="Bar chart of the percentage score in each topic"></canvas></div>
         </div>
@@ -1184,7 +1226,12 @@
   function topicFromURL() {
     try {
       const t = new URLSearchParams(window.location.search).get('topic');
-      return TOPIC_IDS.indexOf(t) >= 0 ? t : null;
+      if (!t) return null;
+      if (TOPIC_IDS.indexOf(t) >= 0) return t;
+      /* Legacy deep links (?topic=charge, ?topic=current, ?topic=magind …)
+         resolve through the registry alias map onto the owning chapter. */
+      const ch = EMC_REGISTRY.resolve ? EMC_REGISTRY.resolve(t) : null;
+      return (ch && TOPIC_IDS.indexOf(ch.id) >= 0) ? ch.id : null;
     } catch (err) { return null; }
   }
 
@@ -1313,6 +1360,9 @@
 
   // a saved in-progress attempt OFFERS to resume - never a silent restore
   const saved = readSession();
+  if (saved === null && staleSessionCleared) {
+    toast('Saved session from an older question bank was cleared \u2014 starting fresh');
+  }
   if (saved !== null) {
     const wrap = el('resume-wrap');
     if (wrap !== null && wrap !== undefined) {

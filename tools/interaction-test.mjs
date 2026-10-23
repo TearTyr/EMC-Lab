@@ -61,7 +61,7 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
 
 /* ---- Arena: mouse drag moves a charge and updates the real readouts ---- */
 {
-  const { ctx, pg } = await page(B + '/topics/coulomb.html');
+  const { ctx, pg } = await page(B + '/topics/fields.html');
   await pg.click('[data-sb-preset="pair"]');
   await pg.locator('#sim-arena').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(300);
@@ -93,7 +93,7 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
 
 /* ---- Arena: touch drag (real touch events via CDP) ---- */
 {
-  const { ctx, pg } = await page(B + '/topics/coulomb.html', { hasTouch: true, viewport: { width: 390, height: 844 } });
+  const { ctx, pg } = await page(B + '/topics/fields.html', { hasTouch: true, viewport: { width: 390, height: 844 } });
   await pg.click('[data-sb-preset="pair"]');
   await pg.locator('#sim-arena').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(300);
@@ -112,7 +112,7 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
 
 /* ---- Field Painter: rapid preset switching ---- */
 {
-  const { ctx, pg } = await page(B + '/topics/field.html');
+  const { ctx, pg } = await page(B + '/topics/fields.html');
   for (const p of ['single', 'dipole', 'like', 'dipole']) await pg.click(`[data-sb-preset="${p}"]`, { delay: 20 });
   await pg.waitForTimeout(250);
   ok('fieldpaint: last preset wins after rapid clicks',
@@ -144,6 +144,81 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
   await ctx.close();
 }
 
+/* ---- circuit builder: real drag & drop (R1: place / rewire / delete / disconnect) ---- */
+{
+  const { ctx, pg } = await page(B + '/topics/current.html');
+  await pg.locator('#sim-circuit').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(500);
+  const bb = await pg.locator('#sim-circuit').boundingBox();
+  const w = bb.width, h = bb.height;
+  const BX = Math.max(40, w * 0.075), RX = w - BX;
+  const TY = Math.max(38, h * 0.16), BY = h - Math.max(40, h * 0.17);
+  const rows0 = await pg.locator('#circ-rows .row-item').count();
+
+  /* 1. drag the resistor chip from the palette onto the bench */
+  const chip = await pg.locator('[data-circ-chip="resistor"]').boundingBox();
+  await pg.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2);
+  await pg.mouse.down();
+  await pg.mouse.move(bb.x + w * 0.5, bb.y + TY, { steps: 8 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(250);
+  ok('circuit: dragging the palette chip onto the bench places a resistor',
+    (await pg.locator('#circ-rows .row-item').count()) === rows0 + 1);
+
+  /* 2. drag two resistors from the top wire into the parallel lane. The
+        layout re-flows after every rewire, so positions are recomputed from
+        the live state (exposed as window.__CIRC) before each grab. */
+  const serPos = () => pg.evaluate(() => {
+    const st = window.__CIRC.state;
+    const c = document.getElementById('sim-circuit');
+    const w = c.clientWidth, h = c.clientHeight;
+    const BX = Math.max(40, w * 0.075), RX = w - BX;
+    const TY = Math.max(38, h * 0.16);
+    const serIdx = st.resistors.map((r, i) => i).filter(i => st.lanes[i] !== 'parallel');
+    const hasPar = st.lanes.some(l => l === 'parallel');
+    const x0 = BX + 64, x1 = hasPar ? BX + (RX - BX) * 0.50 : RX - 30;
+    const k = serIdx.length - 1;                       // the last series resistor
+    return { x: x0 + (x1 - x0) * ((k + 0.5) / serIdx.length), y: TY, idx: serIdx[k] };
+  });
+  for (let n = 0; n < 2; n++) {
+    const pos = await serPos();
+    await pg.mouse.move(bb.x + pos.x, bb.y + pos.y);
+    await pg.mouse.down();
+    await pg.mouse.move(bb.x + pos.x, bb.y + h * 0.78, { steps: 6 });
+    await pg.mouse.up();
+    await pg.waitForTimeout(250);
+  }
+  const req = (await pg.textContent('#circ-req')).trim();
+  const lanes = await pg.evaluate(() => window.__CIRC.state.lanes.join(','));
+  ok('circuit: dropping resistors low rewires them into parallel (10+22 + 47||20 = 46.03)',
+    /46\.0/.test(req) && lanes === 'series,series,parallel,parallel', req + ' ' + lanes);
+
+  /* 3. drag a resistor off the bench -> deleted */
+  const pos3 = await serPos();
+  await pg.mouse.move(bb.x + pos3.x, bb.y + pos3.y);
+  await pg.mouse.down();
+  await pg.mouse.move(bb.x - 60, bb.y + pos3.y, { steps: 6 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(250);
+  ok('circuit: dragging a resistor off the bench deletes it',
+    (await pg.locator('#circ-rows .row-item').count()) === rows0);
+
+  /* 4. drag the battery off -> honest zero current; chip click reconnects */
+  await pg.mouse.move(bb.x + BX, bb.y + (TY + BY) / 2);
+  await pg.mouse.down();
+  await pg.mouse.move(bb.x - 60, bb.y + (TY + BY) / 2, { steps: 6 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(250);
+  const dead = await pg.textContent('#circ-itotal');
+  ok('circuit: dragging the battery off kills the current (no fake numbers)',
+    /no battery/.test(dead), dead);
+  await pg.click('[data-circ-chip="battery"]');
+  await pg.waitForTimeout(250);
+  const alive = await pg.textContent('#circ-itotal');
+  ok('circuit: the battery chip reconnects it and current returns', /\d/.test(alive) && !/no battery/.test(alive), alive);
+  await ctx.close();
+}
+
 /* ---- resize mid-entrance + navigation away mid-init ---- */
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -167,6 +242,22 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
   const st = await pg2.evaluate(() => window.EMC.stats());
   ok('navigation away mid-init leaves no stages behind', st.stages === 0 && st.listeners === 0, JSON.stringify(st));
   await ctx2.close();
+}
+
+/* ---- legacy lesson URLs redirect into the merged chapter ---------------- */
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => errs.push('redirect: ' + String(e).slice(0, 120)));
+  await pg.goto(B + '/topics/charge.html', { waitUntil: 'load' });
+  await pg.waitForURL(/fields\.html/, { timeout: 5000 });
+  ok('legacy /topics/charge.html redirects into fields.html',
+    pg.url().includes('fields.html'), pg.url());
+  await pg.goto(B + '/topics/field.html#sim-fieldpaint-panel', { waitUntil: 'load' });
+  await pg.waitForURL(/fields\.html/, { timeout: 5000 });
+  ok('legacy redirect preserves the sim-panel anchor',
+    pg.url().includes('#sim-fieldpaint-panel'), pg.url());
+  await ctx.close();
 }
 
 console.log('404 misses:', misses.length ? misses.slice(0, 5) : 'none');

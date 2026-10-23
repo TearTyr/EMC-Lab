@@ -1,70 +1,60 @@
-/* EMC Lab — single authoritative topic registry (the one place subjects are
+/* EMC Lab — single authoritative chapter registry (the one place chapters are
    defined). Navigation, chapter counts, progress topics, quiz categories, the
-   simulation index, formula categories, the production page list and the
-   sitemap are all derived from this object — never hand-copied.
-   Structure follows the graded lecture "Electric Forces and Electric Field":
-   three lessons (charge → Coulomb → field). Circuits and Magnetism are beyond
-   that lecture, so they live in the second subject, flagged extra: true —
-   still built, shipped and quiz-filterable, but out of the main flow and out
-   of the progress ring. Adding a future subject = adding an entry here + its
-   content files. */
+   simulation index, the production page list and sitemap.xml are all derived
+   from this object — never hand-copied.
+   Scope follows the course brief exactly: THREE principal chapters, with no
+   optional or beyond-scope tier —
+     ch1 Circuits & Ohm's Law            (brief R1–R3)
+     ch2 Electric Fields & Coulomb's Law (the graded lecture: charge,
+         Coulomb's law and electric field as its three sections)
+     ch3 Magnetism & Induction           (project-approved scope: Lorentz
+         force, magnetic motion, flux, Faraday, Lenz, induction).
+   `aliases` maps every id used by earlier site generations (charge, coulomb,
+   field, efield, charges, current, circuits, magind, magnetism) onto the
+   chapter that owns it now, so old hash routes, old quiz deep links and old
+   progress records all resolve instead of 404ing or losing data.
+   The object below must stay pure JSON: tools/build-public.mjs parses it
+   directly to derive the production page list. */
 window.EMC_REGISTRY = {
   "origin": "https://emc-lab.vercel.app",
-  "subjects": [
+  "chapters": [
     {
-      "id": "lecture",
-      "title": "Electric Forces & Electric Field",
-      "blurb": "The lecture in three lessons: charge, Coulomb’s law, electric field.",
-      "chapters": [
-        {
-          "id": "charge", "num": 1, "title": "Electric Charge", "short": "Charge",
-          "path": "topics/charge.html", "quizTag": "charge", "tagClass": "tag-amber",
-          "summary": "Two kinds of charge, quantisation, conservation, conductors and insulators.",
-          "sims": ["sim-static-room", "toy-balloon", "toy-ledger"],
-          "points": ["Like repels, unlike attracts", "q = n·e and charge conservation", "Conductors vs insulators, live"]
-        },
-        {
-          "id": "coulomb", "num": 2, "title": "Coulomb’s Law", "short": "Coulomb",
-          "path": "topics/coulomb.html", "quizTag": "coulomb", "tagClass": "tag-rose",
-          "summary": "The inverse-square force, superposition in 1-D and 2-D, and the Bohr atom.",
-          "sims": ["sim-arena", "toy-pinforce", "toy-bohr"],
-          "points": ["F = k|q₁q₂|/r², computed live", "Forces add as arrows (superposition)", "Bohr orbit: v = √(ke²/mₑr)"]
-        },
-        {
-          "id": "field", "num": 3, "title": "Electric Field", "short": "Field",
-          "path": "topics/field.html", "quizTag": "field", "tagClass": "tag-cyan",
-          "summary": "E = F/|q₀|, the direction rule, field lines and the lecture’s y-axis example.",
-          "sims": ["sim-fieldpaint", "toy-dipole", "toy-zerohunt"],
-          "points": ["E = F/|q₀| with the +test-charge direction rule", "Field lines & superposition, paintable", "Find the zero-field point, live"]
-        }
-      ]
+      "id": "ch1", "num": 1, "title": "Circuits & Ohm’s Law", "short": "Circuits",
+      "path": "topics/current.html", "quizTag": "ch1", "tagClass": "tag-amber",
+      "summary": "Voltage, current, resistance, power and real resistor networks.",
+      "sims": ["sim-ohm", "sim-circuit"],
+      "points": ["Ohm’s law V = IR and P = VI", "Series & parallel reduction", "Build and solve live circuits"]
     },
     {
-      "id": "extra",
-      "title": "Extra",
-      "blurb": "Beyond this lecture: circuits and magnetism, kept for the curious.",
-      "chapters": [
-        {
-          "id": "current", "num": 1, "title": "Circuits & Ohm’s Law", "short": "Circuits",
-          "path": "topics/current.html", "quizTag": "current", "tagClass": "tag-amber",
-          "summary": "Voltage, current, resistance, power and real resistor networks.",
-          "sims": ["sim-ohm", "sim-circuit"], "extra": true,
-          "points": ["Ohm’s law V = IR and P = VI", "Series & parallel reduction", "Build and solve live circuits"]
-        },
-        {
-          "id": "magind", "num": 2, "title": "Magnetism & Induction", "short": "Magnetism",
-          "path": "topics/magind.html", "quizTag": "magind", "tagClass": "tag-violet",
-          "summary": "Fields from moving charge, the Lorentz force, flux, Faraday and Lenz.",
-          "sims": ["sim-lorentz", "sim-induction"], "extra": true,
-          "points": ["F = qv × B and cyclotron motion", "Flux Φ and Faraday’s law", "Lenz’s law, live on the coil"]
-        }
-      ]
+      "id": "ch2", "num": 2, "title": "Electric Fields & Coulomb’s Law", "short": "Fields",
+      "path": "topics/fields.html", "quizTag": "ch2", "tagClass": "tag-cyan",
+      "summary": "The lecture in three sections: charge, Coulomb’s law with superposition, and the electric field.",
+      "sims": ["sim-static-room", "toy-balloon", "toy-ledger", "sim-arena", "toy-pinforce", "toy-bohr", "sim-fieldpaint", "toy-dipole", "toy-zerohunt"],
+      "sections": [
+        { "id": "charge", "num": "2.1", "title": "Electric Charge", "anchor": "#charge" },
+        { "id": "coulomb", "num": "2.2", "title": "Coulomb’s Law", "anchor": "#coulomb" },
+        { "id": "field", "num": "2.3", "title": "Electric Field", "anchor": "#field" }
+      ],
+      "points": ["Like repels, unlike attracts; q = n·e, conserved", "F = k|q₁q₂|/r² — forces add as arrows", "E = F/|q₀| and the +test-charge direction rule"]
+    },
+    {
+      "id": "ch3", "num": 3, "title": "Magnetism & Induction", "short": "Magnetism",
+      "path": "topics/magind.html", "quizTag": "ch3", "tagClass": "tag-violet",
+      "summary": "Fields from moving charge, the Lorentz force, flux, Faraday and Lenz.",
+      "sims": ["sim-lorentz", "sim-induction"],
+      "points": ["F = qv × B and cyclotron motion", "Flux Φ and Faraday’s law", "Lenz’s law, live on the coil"]
     }
-  ]
+  ],
+  "aliases": {
+    "charge": "ch2", "coulomb": "ch2", "field": "ch2", "efield": "ch2", "charges": "ch2",
+    "current": "ch1", "circuits": "ch1",
+    "magind": "ch3", "magnetism": "ch3"
+  }
 };
-/* Convenience flatteners shared by every consumer. */
-window.EMC_REGISTRY.chapters = window.EMC_REGISTRY.subjects.reduce((a, s) => a.concat(s.chapters.map(c => Object.assign({ subject: s.id }, c))), []);
-/* The graded lecture: every chapter NOT flagged extra. Progress, the home
-   counters and the quiz "Lessons" filter all count these three only. */
-window.EMC_REGISTRY.lessons = window.EMC_REGISTRY.chapters.filter(c => !c.extra);
+/* Convenience helpers shared by every consumer. */
 window.EMC_REGISTRY.chapter = id => window.EMC_REGISTRY.chapters.find(c => c.id === id) || null;
+/* chapter id OR any legacy id → the chapter object (or null). */
+window.EMC_REGISTRY.resolve = id => {
+  const R = window.EMC_REGISTRY;
+  return R.chapter(id) || R.chapter(R.aliases[id] || '') || null;
+};

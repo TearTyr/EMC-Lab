@@ -3,32 +3,21 @@
 
 window.EMC = (function () {
 
-  /* ------------------------------------------------------------------------ 1. Physical constants (SI units, CODATA 2018 exact values where defined) ------------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------------ 1. Physical constants (SI units) ------------------------------------------------------------------------ */
   const CONST = {
-    /* Coulomb constant k = 1/(4*pi*eps0) [N m^2 C^-2]. Simulations run on this
-       full-precision value; anything PRINTED rounds to 8.988e9. */
-    K: 8.987551787e9,
+    /* Coulomb constant k = 1/(4*pi*eps0) [N m^2 C^-2]. The lecture (and the
+       course brief) compute with k = 8.99e9; the more precise CODATA value is
+       8.9875e9. Per the documents' precedence the site uses 8.99e9 EVERYWHERE
+       — computed and printed — so every readout reproduces the lecture's
+       worked answers exactly (e.g. +/-1 C at 1 km -> 8990 N). */
+    K: 8.99e9,
     /* Permeability of free space mu0 [T m/A] */
     MU0: 1.25663706212e-6,
     /* Electron mass [kg] */ M_ELECTRON: 9.1093837015e-31,
     /* Proton mass [kg] */  M_PROTON: 1.67262192369e-27,
     /* Elementary charge e [C] (exact) — used by the electricity sims to
        express a current as a charge-carrier rate. */
-    E: 1.602176634e-19,
-    /* Standard gravitational acceleration g [m/s^2] */
-    G: 9.80665,
-    /* Density of pure water at 4 degC [kg/m^3] */
-    RHO_WATER: 1000,
-    /* Density of dry air at sea level, 15 degC [kg/m^3] */
-    RHO_AIR: 1.225,
-    /* Specific heat capacity of liquid water [J/(kg K)] */
-    C_WATER: 4186,
-    /* Speed of sound in dry air at 20 degC [m/s] */
-    V_SOUND: 343,
-    /* Standard atmospheric pressure [Pa] */
-    P_ATM: 101325,
-    /* Absolute zero on the Celsius scale [degC] */
-    T_ABS_ZERO: -273.15
+    E: 1.602176634e-19
   };
 
   /* ------------------------------------------------------------------------ 2. Math helpers ------------------------------------------------------------------------ */
@@ -181,8 +170,8 @@ window.EMC = (function () {
       if (!this.ctx) {
         /* Canvas 2D unsupported: leave the friendly flat message standing in
            the skeleton plate and stay inert — never a blank screen, never a
-           throw. The splash's "first sim" signal still fires, so the loading
-           contract holds even on this path. */
+           throw. The loader never waits on sims, so the loading contract
+           holds even on this path. */
         this._dead = true;
         this._timers = new Set(); this._observers = new Set(); this._n = 0;
         this._raf = 0; this._drawRaf = 0; this._pmRaf = 0; this._running = false;
@@ -195,7 +184,6 @@ window.EMC = (function () {
           const msg = plate.querySelector('.sim-plate-msg');
           if (msg) msg.textContent = 'This browser can\u2019t draw the lab bench \u2014 the written lesson is unaffected';
         }
-        bootStage('sims');
         return;
       }
       this.render = render;
@@ -285,8 +273,18 @@ window.EMC = (function () {
     resize() {
       if (this._dead) return false;
       const rect = this.canvas.getBoundingClientRect();
-      const w = Math.max(1, Math.round(rect.width));
-      const h = Math.max(1, Math.round(rect.height));
+      const cs = window.getComputedStyle ? window.getComputedStyle(this.canvas) : null;
+      const px = v => (parseFloat(v) || 0);
+      /* Measure the CONTENT box, never the border box: the canvas bitmap
+         attributes are content-box sizes and .sim-canvas carries a 1.5px
+         border-bottom. Feeding border-box rects back into the attributes made
+         every ResizeObserver pass add the border to the layout height — the
+         canvas grew ~3px per frame, forever (unbounded layout + bitmap growth
+         on every grid-layout sim page; also broke Playwright stability). */
+      const bx = cs ? px(cs.borderLeftWidth) + px(cs.borderRightWidth) : 0;
+      const by = cs ? px(cs.borderTopWidth) + px(cs.borderBottomWidth) : 0;
+      const w = Math.max(1, Math.round(rect.width - bx));
+      const h = Math.max(1, Math.round(rect.height - by));
       const dpr = clamp(window.devicePixelRatio || 1, 1, 2);
       if (w === this.w && h === this.h && dpr === this.dpr) return false;
       this.w = w; this.h = h; this.dpr = dpr;
@@ -386,7 +384,7 @@ window.EMC = (function () {
       } else {
         this.render(this.ctx, this.w, this.h, this);
       }
-      /* First real paint: announce the Stage (splash signal + plate handover). */
+      /* First real paint: announce the Stage (plate handover). */
       if (!this._readySent) {
         this._readySent = true;
         try { this.canvas.dispatchEvent(new CustomEvent('emc:stage-ready', { bubbles: true })); } catch (e) { /* older envs */ }
@@ -650,100 +648,184 @@ window.EMC = (function () {
     set(k, v) { const p = this.read(); p[k] = v; store.set(PREFS_KEY, JSON.stringify(p)); }
   };
 
-  /* ------------------------------------------------------------------------ 6c. Boot stages (honest, event-driven loading indicator) ------------------------------------------------------------------------ */
-  /* Stages flip only when the REAL work completes - never a fake percentage.
-     The first-visit splash tracks three real signals: webfonts ready, the
-     above-fold equations typeset (KaTeX), and the first simulation Stage
-     constructed (or window load on pages without one). sessionStorage gates
-     it to once per session; the inline head script hides it pre-paint on
-     every later navigation, and its own failsafe deletes it even if no
-     script here ever runs. The in-page strip keeps tracking the lazy work
-     afterwards under its own stage names. */
-  const BOOT_STAGES = ['equations-rest', 'sims-rest'];
-  const OVERLAY_STAGES = ['fonts', 'equations', 'sims'];
-  const OVERLAY_MIN_MS = 400;          // long enough to read as a screen; the splash shows once per session only, so it never taxes repeat views
-  const SPLASH_KEY = 'emc.splash.v1';
-  const TIPS = [
-    'Like repels, unlike attracts.',
-    'e = 1.602\u00D710\u207B\u00B9\u2079 C \u2014 charge comes in parcels.',
-    '1 C = 6.24\u00D710\u00B9\u2078 electrons.',
-    'Charge only moves; the total never changes.',
-    'Double the distance \u2192 a quarter of the force.',
-    'k = 8.99\u00D710\u2079 N\u00B7m\u00B2/C\u00B2.',
-    'E = F/|q\u2080| \u2014 the push a positive test charge would feel.',
-    'Field lines start on + and end on \u2212.'
-  ];
-  const bootDone = {};
-  let bootMark = 0, overlayClosing = false, tipTimer = 0, tipIdx = 0;
-  function splashSuppressed() {
-    return document.documentElement.classList.contains('no-splash');
-  }
-  function closeOverlay() {
-    /* cleanup runs even when the inline 4 s failsafe already removed the DOM:
-       the busy flag and the tip rotator must never outlive the splash */
-    if (tipTimer) { clearInterval(tipTimer); tipTimer = 0; }
-    document.documentElement.removeAttribute('aria-busy');
-    const st = document.getElementById('boStatus');
-    if (st) st.textContent = 'Ready';
-    const ov = document.getElementById('bootOverlay');
-    if (!ov || overlayClosing) return;
-    overlayClosing = true;
-    const wait = Math.max(0, OVERLAY_MIN_MS - (performance.now() - bootMark));
-    setTimeout(() => {
-      ov.classList.add('hide');
-      ov.setAttribute('aria-hidden', 'true');
-      setTimeout(() => ov.remove(), 320);
-    }, wait);
-  }
-  function startTips() {
-    const el = document.getElementById('boTip');
-    if (!el || splashSuppressed() || EMC.reducedMotion) return;   // reduced motion: the static first tip stays
-    el.textContent = TIPS[0];
-    tipTimer = setInterval(() => {
-      if (!el.isConnected) { clearInterval(tipTimer); tipTimer = 0; return; }
-      tipIdx = (tipIdx + 1) % TIPS.length;
-      el.textContent = TIPS[tipIdx];
-    }, 1200);
-  }
+  /* ------------------------------------------------------------------------ 6c. Boot loader — ONE lifecycle, ONE owner, ONE watchdog ------------------------------------------------------------------------ */
+  /* Contract (§3.1):
+     - Page content renders immediately: there is NO static overlay in the
+       HTML. This module builds one only if boot has not finished ~150 ms
+       after navigation start, so a fast load never paints it at all.
+     - Stages are real signals only (fonts ready, above-the-fold equations
+       typeset, critical UI booted). A page that does not use a stage never
+       waits for it: `start()` is told which stages exist.
+     - Ready -> the overlay exits in 200-300 ms (EXIT_MS below).
+     - The watchdog is a hard 1500 ms ceiling. At expiry the page is usable:
+       the overlay goes away and non-essential work (below-the-fold equations,
+       lazy sims, optional fonts) keeps running in the background. A failed
+       CRITICAL dependency (no registry, no KaTeX on a page that needs it)
+       gets a visible card with Retry and Home. Never a permanent spinner.
+     - Nothing here touches storage, so blocked localStorage/sessionStorage
+       cannot wedge it. Reduced motion drops the transitions but keeps every
+       state change.
+     - Every timer is tracked and cleared on dismissal.
+     The inline head script on each page carries a dead-man switch for the one
+     case this module cannot cover — common.js itself never executing. */
+  const LOADER = (function () {
+    const SHOW_AFTER_MS = 150;    // before this, boot finishing means no overlay at all
+    const EXIT_MS = 240;          // spec window: 200-300 ms
+    const WATCHDOG_MS = 1500;     // hard ceiling
+    const STAGE_LABEL = { fonts: 'fonts', equations: 'equations', ui: 'interface' };
+
+    let stages = [];
+    let segs = [];
+    let overlay = null, srStatus = null;
+    let showTimer = 0, watchdogTimer = 0, exitTimer = 0;
+    let started = false, painted = false, finished = false;
+    const done = {};
+
+    function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0; }
+
+    function build() {
+      if (overlay || !document.body) return;
+      const el = document.createElement('div');
+      el.id = 'bootOverlay';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-label', 'Loading EMC Lab');
+      const bar = document.createElement('span');
+      bar.className = 'bo-bar';
+      bar.setAttribute('aria-hidden', 'true');
+      segs = stages.map(() => { const i = document.createElement('i'); i.className = 'bo-seg'; bar.appendChild(i); return i; });
+      const sr = document.createElement('span');
+      sr.className = 'sr-only';
+      sr.id = 'boStatus';
+      sr.textContent = 'Loading EMC Lab: ' + stages.map(s => STAGE_LABEL[s] || s).join(', ');
+      el.appendChild(bar); el.appendChild(sr);
+      document.body.appendChild(el);
+      overlay = el; srStatus = sr; painted = true;
+      document.documentElement.setAttribute('aria-busy', 'true');
+      paint();
+    }
+
+    function paint() {
+      stages.forEach((s, i) => { if (segs[i]) segs[i].classList.toggle('done', !!done[s]); });
+    }
+
+    function clearTimers() {
+      if (showTimer) { clearTimeout(showTimer); showTimer = 0; }
+      if (watchdogTimer) { clearTimeout(watchdogTimer); watchdogTimer = 0; }
+      if (exitTimer) { clearTimeout(exitTimer); exitTimer = 0; }
+    }
+
+    /* Critical-failure card: Retry + Home, content stays usable behind it. */
+    function failCard(reason) {
+      if (document.getElementById('bootFatal')) return;
+      const home = (location.pathname.indexOf('/topics/') >= 0 ? '../index.html' : 'index.html');
+      const d = document.createElement('div');
+      d.id = 'bootFatal';
+      d.setAttribute('role', 'alert');
+      d.innerHTML = '<p><strong>EMC Lab did not finish starting.</strong> ' + reason + '</p>' +
+        '<p><button type="button" id="bootFatalRetry">Retry</button> <a href="' + home + '">Home</a></p>';
+      document.body.appendChild(d);
+      const r = d.querySelector('#bootFatalRetry');
+      if (r) r.addEventListener('click', () => location.reload());
+    }
+
+    /* A dependency is CRITICAL when the page is meaningfully broken without
+       it: no registry (nav/dashboard/shell dead) or no KaTeX on a page that
+       carries equations (the fallback text stays readable, so the card is a
+       report, not a wall — content remains usable behind it). */
+    function criticalMissing() {
+      const missing = [];
+      if (!window.EMC_REGISTRY) missing.push('the chapter registry did not load');
+      if (document.querySelector('[data-tex]') && !window.katex) missing.push('the equation typesetter did not load');
+      return missing;
+    }
+
+    function finish(reason) {
+      if (finished) return;
+      finished = true;
+      clearTimers();
+      const missing = criticalMissing();
+      if (missing.length && document.body) failCard(missing.join(', and ') + '.');
+      document.documentElement.removeAttribute('aria-busy');
+      if (srStatus) srStatus.textContent = 'Ready';
+      const drop = () => { if (exitTimer) { clearTimeout(exitTimer); exitTimer = 0; } if (overlay) { overlay.remove(); overlay = null; } segs = []; srStatus = null; };
+      if (!painted || EMC.reducedMotion) { drop(); return; }
+      overlay.classList.add('hide');
+      exitTimer = setTimeout(() => { exitTimer = 0; drop(); }, EXIT_MS);
+      void reason;
+    }
+
+    function start(stageList) {
+      if (started) return;
+      started = true;
+      stages = (stageList || []).filter(s => STAGE_LABEL[s]);
+      const wait = Math.max(0, SHOW_AFTER_MS - now());
+      showTimer = setTimeout(build, wait);
+      watchdogTimer = setTimeout(expire, Math.max(0, WATCHDOG_MS - now()));
+    }
+
+    function signal(name) {
+      if (!started || finished || done[name] || stages.indexOf(name) === -1) return;
+      done[name] = true;
+      paint();
+      if (stages.every(s => done[s])) finish('complete');
+    }
+
+    /* Watchdog expiry: the page must be usable from here on — finish() runs
+       the critical-dependency check and gets the overlay out of the way. */
+    function expire() {
+      if (finished) return;
+      finish('watchdog');
+    }
+
+    return {
+      start, signal, finish, expire,
+      /* introspection for the gates and tests */
+      state() { return { started, painted, finished, stages: stages.slice(), done: Object.keys(done), timers: [showTimer, watchdogTimer, exitTimer].filter(Boolean).length }; }
+    };
+  })();
+
+  /* Legacy alias kept for callers that signalled the old boot stages. */
   function bootStage(name) {
-    if (bootDone[name]) return;
-    bootDone[name] = true;
-    if (!bootMark) bootMark = performance.now();
-    document.querySelectorAll(`[data-stage="${name}"]`).forEach(c => c.classList.add('done'));
-    /* deterministic bar: one segment per real overlay signal */
-    const doneN = OVERLAY_STAGES.filter(s => bootDone[s]).length;
-    document.querySelectorAll('#bootOverlay .bo-seg').forEach((seg, i) =>
-      seg.classList.toggle('done', i < doneN));
-    if (OVERLAY_STAGES.every(s => bootDone[s])) {
-      document.dispatchEvent(new CustomEvent('emc:booted'));
-      closeOverlay();
-    }
-    const strip = document.getElementById('bootStrip');
-    if (strip && BOOT_STAGES.every(s => bootDone[s])) {
-      strip.classList.add('done');
-      setTimeout(() => { strip.hidden = true; }, 500);
-    }
+    if (name === 'equations' || name === 'fonts' || name === 'ui') LOADER.signal(name);
   }
 
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
-  /* The graded lecture: the three lesson ids from the registry (chapters
-     flagged extra are deliberately NOT part of required progress). */
-  const TOPICS = (window.EMC_REGISTRY && window.EMC_REGISTRY.lessons && window.EMC_REGISTRY.lessons.length
-    ? window.EMC_REGISTRY.lessons.map(c => c.id)
-    : (window.EMC_REGISTRY ? window.EMC_REGISTRY.chapters.map(c => c.id) : ['charge', 'coulomb', 'field']));
-  const PROGRESS_KEY = 'emc.progress.v3';
-  const LEGACY_KEYS = ['emc.progress.v2', 'emc.progress.v1'];
+  /* Progress tracks exactly the three principal chapters from the registry —
+     no more, no less. The ids are derived, never hand-typed here. */
+  const TOPICS = (window.EMC_REGISTRY && Array.isArray(window.EMC_REGISTRY.chapters) && window.EMC_REGISTRY.chapters.length
+    ? window.EMC_REGISTRY.chapters.map(c => c.id)
+    : ['ch1', 'ch2', 'ch3']);
+  const PROGRESS_KEY = 'emc.progress.v4';
+  const LEGACY_KEYS = ['emc.progress.v3', 'emc.progress.v2', 'emc.progress.v1'];
 
-  /* Map an older record onto the v3 shape. The old "efield" chapter covered
-     charge + Coulomb + field, so finishing it credits all three lessons;
-     circuits and magnetism moved to Extra and are no longer tracked (Extra
-     pages stay freely readable). Old v1 pairs (charges, magnetism+induction)
-     follow the same rule. Unmappable topics are dropped, never reinterpreted.
-     Idempotent: migrating an already-migrated record changes nothing. */
+  /* Every topic id this site has ever shipped, mapped onto the chapter that
+     owns that material now:
+       v1  current, charges, magnetism, induction
+       v2  current, efield, magind
+       v3  charge, coulomb, field  (circuits and magnetism were untracked then)
+       v4  ch1, ch2, ch3
+     Migration ORs the old flags into the new chapters, so marking any one of
+     charge/coulomb/field credits ch2 — a reader who studied a section has not
+     lost it. The v1 magnetism/induction pair still needs BOTH halves, exactly
+     as the v1→v2 rule required, so a half-finished old pair cannot fake a
+     finished chapter. Nothing is deleted: the raw record is copied to
+     `<key>.legacy` before the migrated one is written. Idempotent. */
+  const TOPIC_TO_CHAPTER = {
+    current: 'ch1', circuits: 'ch1',
+    charges: 'ch2', efield: 'ch2', charge: 'ch2', coulomb: 'ch2', field: 'ch2',
+    magind: 'ch3'
+  };
   function migrateLegacy(p) {
     const t = (p && p.topics) || {};
-    const lectured = !!(t.efield || t.charges);
-    const topics = TOPICS.reduce((o, id) => (o[id] = lectured, o), {});
+    const topics = TOPICS.reduce((o, id) => (o[id] = false, o), {});
+    const credit = id => { if (TOPICS.indexOf(id) !== -1) topics[id] = true; };
+    for (const old of Object.keys(t)) {
+      if (!t[old]) continue;
+      const ch = TOPIC_TO_CHAPTER[old];
+      if (ch) credit(ch); else credit(old);        // already a current chapter id
+    }
+    /* the v1 split pair: both halves required (mirrors the historical rule) */
+    if (t.magnetism && t.induction) credit('ch3');
     return {
       topics,
       quizBest: Number(p.quizBest) || 0,
@@ -777,8 +859,8 @@ window.EMC = (function () {
           };
         } catch (e) { return blank; }
       }
-      // No v3 yet: migrate an older record (v2, then v1) if present, keeping a
-      // recoverable copy and leaving the original untouched.
+      // No v4 yet: migrate an older record (v3, then v2, then v1) if present,
+      // keeping a recoverable copy and leaving the original untouched.
       let legacy = null;
       for (const k of LEGACY_KEYS) { legacy = store.get(k); if (legacy) break; }
       if (!legacy) return blank;
@@ -804,7 +886,7 @@ window.EMC = (function () {
       p.quizBest = Math.max(p.quizBest, pct);
       p.quizHistory = (p.quizHistory || []).concat([{ pct, at: new Date().toISOString() }]).slice(-20);
       // as promised on the home dashboard: a passing score counts as having
-      // studied all five topics
+      // studied all three chapters
       if (pct >= 70) TOPICS.forEach(t => { p.topics[t] = true; });
       this.write(p);
       return p;
@@ -844,8 +926,9 @@ window.EMC = (function () {
 
       const num = (v, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0; };
       if (src.topics && ('charges' in src.topics || 'vectors' in src.topics || 'magnetism' in src.topics ||
-                         'efield' in src.topics || 'current' in src.topics || 'magind' in src.topics)) {
-        src = migrateLegacy(src);          // importing an older (v1/v2) export file
+                         'efield' in src.topics || 'charge' in src.topics || 'coulomb' in src.topics ||
+                         'field' in src.topics || 'magind' in src.topics)) {
+        src = migrateLegacy(src);          // importing an older (v1/v2/v3) export file
       }
       // An object with NO recognised field is not a progress file - importing
       // it used to silently wipe the stored scores ("Imported: 0 of 3").
@@ -871,7 +954,7 @@ window.EMC = (function () {
       const done = TOPICS.filter(t => p.topics[t]).length;
       return {
         ok: true,
-        message: `Imported: ${done} of ${TOPICS.length} topics` +
+        message: `Imported: ${done} of ${TOPICS.length} chapters` +
                  (p.quizAttempts ? `, best score ${p.quizBest}%` : '')
       };
     },
@@ -1004,18 +1087,6 @@ window.EMC = (function () {
       items.forEach(el => io.observe(el));
     },
 
-    /* The mascot's bob is an infinite compositor animation on every page;
-       pause it while the mascot is out of view so offscreen pages/sections
-       keep zero animation work. */
-    initMascotPause() {
-      const mascots = document.querySelectorAll('.mascot, .mascot-sm');
-      if (!mascots.length || typeof IntersectionObserver !== 'function') return;
-      const io = new IntersectionObserver(entries => {
-        for (const en of entries) en.target.classList.toggle('offscreen', !en.isIntersecting);
-      }, { threshold: 0 });
-      mascots.forEach(m => io.observe(m));
-    },
-
     initReadingBar() {
       const bar = document.getElementById('readingProgress');
       if (!bar) return;
@@ -1064,8 +1135,8 @@ window.EMC = (function () {
           const done = Progress.isTopicDone(id);
           btn.classList.toggle('btn-primary', !done);
           btn.innerHTML = done
-            ? '<svg class="mascot-cheer" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg> Topic completed!'
-            : 'Mark topic as complete';
+            ? 'Chapter completed \u2713'
+            : 'Mark chapter as complete';
           btn.setAttribute('aria-pressed', String(done));
         };
         topicSyncs.push(sync);
@@ -1081,8 +1152,8 @@ window.EMC = (function () {
     },
 
     /* Re-render every topic button from storage. Called after a Reset or an
-       Import, so the buttons (cheering mascot included) always tell the truth
-       without duplicating the markup rules from initTopicButtons(). */
+       Import, so the buttons always tell the truth without duplicating the
+       markup rules from initTopicButtons(). */
     syncTopicButtons() { topicSyncs.forEach(fn => fn()); },
 
     /* Show a warning banner when localStorage is unavailable. */
@@ -1112,7 +1183,10 @@ window.EMC = (function () {
       const apply = () => {
         const on = root.dataset.detail !== 'off';
         if (btn) {
-          btn.setAttribute('aria-checked', String(on));
+          /* §3.2.2: the label, aria-pressed, the data-detail attribute and the
+             visible content must always agree — one source (dataset.detail),
+             rendered into all three. */
+          btn.setAttribute('aria-pressed', String(on));
           const s = btn.querySelector('.dt-state');
           if (s) s.textContent = on ? 'ON' : 'OFF';
         }
@@ -1133,6 +1207,12 @@ window.EMC = (function () {
           root.dataset.detail = root.dataset.detail === 'off' ? 'on' : 'off';
           Prefs.set('detail', root.dataset.detail);
           apply();
+          /* Announce the state change (§3.2.2): the toast host is aria-live
+             polite, so screen readers get the new level, and the visible
+             chip confirms it for everyone else. */
+          UI.toast(root.dataset.detail === 'off'
+            ? 'Details OFF — simplified explanations'
+            : 'Details ON — full technical explanations');
           if (anchorEl && anchorEl.isConnected) {
             const d = anchorEl.getBoundingClientRect().top - topBefore;
             if (Math.abs(d) > 1) window.scrollTo(0, Math.max(0, sy + d));
@@ -1161,21 +1241,6 @@ window.EMC = (function () {
           settle();
         }, 80);
       });
-    },
-
-    /* The strip stays invisible unless some stage is still pending ~160 ms in,
-       so warm repeat visits (everything done pre-paint) never flash it. */
-    initBootStrip() {
-      const strip = document.getElementById('bootStrip');
-      if (!strip) return;
-      setTimeout(() => {
-        if (strip.classList.contains('done')) return;
-        // sit exactly under whatever the header's real height is (it wraps on
-        // small screens); one layout read, only when the strip actually shows
-        const hdr = document.querySelector('.site-header');
-        if (hdr) strip.style.top = Math.round(hdr.getBoundingClientRect().bottom) + 'px';
-        strip.classList.add('show');
-      }, 160);
     },
 
     /* Stage 5 background preparation: prefetch the pager's next page once idle,
@@ -1212,19 +1277,16 @@ window.EMC = (function () {
       }, { passive: true });
     },
 
-    /* Page transitions: browsers with the View Transition API get the CSS
-       cross-document handoff (@view-transition in input.css — the header and
-       Denki-chan keep their names and stand still while the content fades).
-       Everywhere else ONE small class swap gives the same 200 ms fade. The
-       fallback never intercepts modified clicks, new tabs, downloads, bare
-       in-page anchors or foreign origins, and a bfcache restore clears the
-       fade immediately, so back/forward keeps working untouched. */
+    /* Page transitions: ONE small class swap gives a 200 ms cross-fade on
+       every engine (the cross-document @view-transition opt-in was removed —
+       see the note in input.css: traversal-abort console noise + one motion
+       implementation for all browsers). The fade never intercepts modified
+       clicks, new tabs, downloads, bare in-page anchors or foreign origins,
+       and a bfcache restore clears it immediately, so back/forward keeps
+       working untouched. */
     initPageTransitions() {
       const clear = () => document.documentElement.classList.remove('vt-leaving');
       window.addEventListener('pageshow', e => { if (e.persisted) clear(); });
-      const nativeVT = typeof CSS !== 'undefined' && CSS.supports &&
-        CSS.supports('view-transition-name', 'none');
-      if (nativeVT) return;   // the CSS pipeline owns the handoff there
       document.addEventListener('click', e => {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const a = e.target.closest && e.target.closest('a[href]');
@@ -1285,7 +1347,7 @@ window.EMC = (function () {
   function whenNear(el, init, rootMargin) {
     if (!el) return;
     const panel = el.closest ? el.closest('.panel') : null;
-    const run = () => { if (panel) panel.removeAttribute('data-sim-pending'); init(); bootStage('sims'); };
+    const run = () => { if (panel) panel.removeAttribute('data-sim-pending'); init(); };
     if (panel) panel.setAttribute('data-sim-pending', '');
     if (typeof IntersectionObserver !== 'function') { run(); return; }
     let done = false;
@@ -1411,64 +1473,48 @@ window.EMC = (function () {
   function boot() {
     UI.initNav();
     UI.initReveal();
-    UI.initMascotPause();
     UI.initReadingBar();
     UI.initTopicButtons();
     UI.initStorageNotice();
     UI.initYear();
     UI.initDetailToggle();
-    UI.initBootStrip();
     UI.initPrefetch();
     UI.initPageTransitions();
     UI.initPlates();
-    /* The splash shows once per session: on every later navigation the inline
-       head script hides it pre-paint (html.no-splash). Claim the session flag
-       here; storage failures fall back to "always show", which is safe. */
-    if (splashSuppressed()) {
-      const ov0 = document.getElementById('bootOverlay');
-      if (ov0) ov0.remove();
-    } else {
-      try { sessionStorage.setItem(SPLASH_KEY, '1'); } catch (e) { /* blocked: show every time */ }
-      document.documentElement.setAttribute('aria-busy', 'true');
-      const st = document.getElementById('boStatus');
-      if (st) st.textContent = 'Loading EMC Lab';
-      startTips();
-    }
-    /* Real signal 1: the webfonts. */
+    /* ---- loader (single lifecycle; see LOADER in §6c) ---------------------
+       Applicable stages only: 'equations' exists solely on pages that carry
+       [data-tex] markup; 'fonts' and 'ui' apply everywhere. Sims are NOT a
+       boot stage — below-the-fold sims lazy-init through whenNear and must
+       never gate the loader (§3.1.5). */
+    const hasTex = !!document.querySelector('[data-tex]');
+    LOADER.start(hasTex ? ['fonts', 'equations', 'ui'] : ['fonts', 'ui']);
+    /* Real signal: the webfonts. Optional by contract — if the promise never
+       settles, the watchdog still releases the page. */
     if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
-      document.fonts.ready.then(() => bootStage('fonts'), () => bootStage('fonts'));
-    } else bootStage('fonts');
+      document.fonts.ready.then(() => LOADER.signal('fonts'), () => LOADER.signal('fonts'));
+    } else LOADER.signal('fonts');
     loadLicensedFont();
-    /* Real signal 3: the first simulation Stage. Stages announce themselves
-       through emc:stage-ready (and whenNear); pages without a sim canvas are
-       complete right away. The load fallback below still guarantees the exit. */
-    document.addEventListener('emc:stage-ready', () => bootStage('sims'), { once: true });
-    if (!document.querySelector('canvas.sim-canvas')) bootStage('sims');
-    /* Real signal 2: KaTeX. Typeset what the reader can see right now; the
-       rest waits for idle time so boot never pays for equations below it. */
+    /* Real signal: the above-the-fold equations. KaTeX missing is survivable
+       (every [data-tex] carries hand-readable fallback text), so this signal
+       fires after the pass regardless; the watchdog names KaTeX in its error
+       card when a page needs it and it never arrived. */
     katexify(document, true);
-    bootStage('equations');
+    if (hasTex) LOADER.signal('equations');
     const idle = cb => (typeof window.requestIdleCallback === 'function'
       ? window.requestIdleCallback(cb, { timeout: 1500 })
       : setTimeout(cb, 400));
     window.addEventListener('load', () => idle(() => {
-      katexifyRest(); bootStage('equations-rest');
-      bootStage('sims-rest');          // every defer script has now executed
-      bootStage('sims');               // failsafe: the splash must always close
+      katexifyRest();                 // below-the-fold maths: background work, never gates the loader
     }));
-    /* Hard timeout (spec): even if a signal never lands and `load` stalls, the
-       splash is history by ~4.2 s on the JS side — the inline 4 s DOM failsafe
-       covers the case where this script never runs at all. */
-    setTimeout(() => { OVERLAY_STAGES.forEach(name => bootStage(name)); }, 4200);
     // Let individual pages react to progress changes (home dashboard).
     document.dispatchEvent(new CustomEvent('emc:ready', { detail: Progress.read() }));
+    /* Real signal: critical UI is bound (nav, Detail toggle, dashboard,
+       plates). Fires last so the overlay can only close on a usable page. */
+    LOADER.signal('ui');
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
-
   /* ------------------------------------------------------------------------ 10. Public API ------------------------------------------------------------------------ */
-  return {
+  const api = {
     CONST, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, roundTo, mapRange, damp,
     eng, unit, fixed, setText, throttle,
@@ -1510,6 +1556,22 @@ window.EMC = (function () {
     get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,
     bindRange, bindSegment, bindToggles, bootStage,
+    loader: LOADER,
     UI, toast: UI.toast
   };
+
+  /* Publish the API on window BEFORE boot() runs. `defer` scripts execute at
+     readyState 'interactive', so the `else boot()` branch below fires
+     synchronously inside this IIFE — before the outer `window.EMC = (…)`
+     assignment has completed. Anything boot() reaches through the bare global
+     `EMC` (initPlates reads EMC.debugStages) therefore saw `undefined` and
+     threw a ReferenceError, which aborted boot() and left window.EMC unset for
+     every later script on every page. Assigning here removes the ordering
+     hazard at its source rather than guarding each individual read site. */
+  window.EMC = api;
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  return api;
 })();

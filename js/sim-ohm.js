@@ -294,6 +294,13 @@
     if (el('ohm-sub')) {
       el('ohm-sub').textContent = `I = V \u00F7 R = ${fixed(state.V, 1)} V \u00F7 ${eng(state.R, 3)} \u03A9 = ${eng(I, 4)} A`;
     }
+    /* Detail Mode parity (§3.2.3): the simplified view keeps the same physics
+       in words instead of symbols — never both lines, never neither. */
+    if (el('ohm-sub-plain')) {
+      el('ohm-sub-plain').textContent = I === 0
+        ? `No push, no flow: ${fixed(state.V, 1)} V across ${eng(state.R, 3)} \u03A9 gives no current.`
+        : `${fixed(state.V, 1)} volts pushing through ${eng(state.R, 3)} ohms drives ${eng(I, 4)} amperes.`;
+    }
     const warn = el('ohm-warn');
     if (warn) {
       const over = P > state.ratedP;

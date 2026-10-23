@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chapter 2 — Electric Fields &amp; Coulomb’s Law: charge, Coulomb’s law with 1-D and 2-D superposition, the Bohr atom, electric field and field lines, with live sandboxes reproducing every lecture worked example (k = 8.99×10⁹ N·m²/C²).">
+  <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+    document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
+    /* Boot dead-man switch — part of the ONE loader lifecycle owned by js/common.js.
+       If the engine never comes up (a script failed to load or threw during
+       startup), show an error card with Retry and Home after 1500 ms. When
+       common.js is alive this does nothing: its loader owns the experience and
+       the page content is already on screen either way. */
+    setTimeout(function () {
+      if (window.EMC) return;
+      var home = location.pathname.indexOf('/topics/') >= 0 ? '../index.html' : 'index.html';
+      var d = document.createElement('div');
+      d.id = 'bootFatal'; d.setAttribute('role', 'alert');
+      var p1 = document.createElement('p');
+      p1.innerHTML = '<strong>EMC Lab did not start.</strong> A required script failed to load or threw an error.';
+      var p2 = document.createElement('p');
+      var rb = document.createElement('button');
+      rb.type = 'button'; rb.id = 'bootFatalRetry'; rb.textContent = 'Retry';
+      var ha = document.createElement('a'); ha.textContent = 'Home'; ha.href = home;
+      p2.appendChild(rb); p2.appendChild(document.createTextNode(' ')); p2.appendChild(ha);
+      d.appendChild(p1); d.appendChild(p2);
+      (document.body || document.documentElement).appendChild(d);
+      rb.addEventListener('click', function () { location.reload(); });
+    }, 1500);
+  </script>
+  <title>2 · Electric Fields &amp; Coulomb's Law — EMC Lab</title>
+  <link rel="canonical" href="https://emc-lab.vercel.app/topics/fields.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EMC Lab">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Electric Fields &amp; Coulomb's Law — EMC Lab">
+  <meta property="og:description" content="Electric charge in minutes: like repels unlike, q = n·e, conservation, conductors and insulators — with a free-play Static Room, a balloon-rubbing toy and an unbreakable charge ledger.">
+  <meta property="og:url" content="https://emc-lab.vercel.app/topics/fields.html">
+  <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Electric Fields &amp; Coulomb's Law — EMC Lab">
+  <meta name="twitter:description" content="Electric charge in minutes: like repels unlike, q = n·e, conservation, conductors and insulators — with a free-play Static Room, a balloon-rubbing toy and an unbreakable charge ledger.">
+  <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
+  <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
+       and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
+       home screens. All three carry the same artwork as the header
+       brand mark — tools/smoke-test.mjs asserts they stay identical. -->
+  <link rel="icon" href="../favicon.ico" type="image/x-icon">
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+  <script>if (window.tailwind) { tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#22d3ee', deep: '#0e1a2e', line: '#1e2f4d' } } } } }; }</script>
+  <link rel="stylesheet" href="../css/site.css">
+  <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-700.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-400.woff2" crossorigin>
+  <!-- KaTeX: the LaTeX formatter for every equation on the page -->
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
+  <style id="bootLoader">
+    /* Loader visuals: ONE segmented accent bar that advances on real stage
+       completion, plus a screen-reader status line — nothing else. The overlay
+       is built dynamically by js/common.js only when startup exceeds ~150 ms,
+       so these rules cost nothing on fast loads. Flat tokens, transform/opacity
+       only; self-contained so it paints even if site.css is slow. */
+    #bootOverlay {
+      position: fixed; inset: 0; z-index: 200; background: #101116;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      opacity: 1; transition: opacity .24s ease;
+    }
+    #bootOverlay.hide { opacity: 0; pointer-events: none; }
+    #bootOverlay .bo-bar { display: flex; gap: 5px; width: 192px; height: 5px; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #23252c; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg::after {
+      content: ""; position: absolute; inset: 0; background: #e9ff47; border-radius: 999px;
+      transform: scaleX(0); transform-origin: left; transition: transform .2s ease;
+    }
+    #bootOverlay .bo-seg.done::after { transform: scaleX(1); }
+    #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    #bootFatal {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 210; width: min(92vw, 34rem);
+      margin: 0 auto 1rem; background: #17181c; color: #e8eefb;
+      border: 1.5px solid #e9ff47; border-radius: .75rem; padding: 1rem 1.2rem;
+      font: 600 .95rem/1.45 system-ui, sans-serif;
+    }
+    #bootFatal button, #bootFatal a {
+      font: inherit; font-weight: 700; color: #101116; background: #e9ff47;
+      border: 0; border-radius: .5rem; padding: .4rem .9rem; cursor: pointer; text-decoration: none;
+    }
+    #bootFatal a { display: inline-block; margin-left: .4rem; }
+    @media (prefers-reduced-motion: reduce) {
+      #bootOverlay, #bootOverlay .bo-seg::after { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="emc">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <noscript>
+    <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>
+  </noscript>
+
+  <header class="site-header">
+    <div class="wrap nav-inner">
+      <a class="brand" href="../index.html" aria-label="EMC Lab — home">
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
+          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
+        </svg>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
+      </a>
+      <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
+              title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+      <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
+        <a class="nav-link" href="../index.html">Home</a>
+        <div class="nav-drop">
+          <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
+                  aria-expanded="false" aria-controls="topicsMenu">Chapters
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="nav-drop-menu" id="topicsMenu">
+            <span class="dd-head">The three chapters</span>
+            <a class="dd-link" href="current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · P = VI · series &amp; parallel · circuit builder</small></a>
+            <a class="dd-link" href="fields.html" aria-current="page"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charge · Coulomb + superposition · E-field &amp; field lines</small></a>
+            <a class="dd-link" href="magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
+          </div>
+        </div>
+        <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
+      </nav>
+    </div>
+    <div class="scroll-progress"><i id="readingProgress"></i></div>
+  </header>
+
+  <main class="emc-main" id="main" tabindex="-1">
+    <div class="wrap wrap-narrow section-tight topic-head">
+      <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Chapter 2 · Electric Fields &amp; Coulomb’s Law</span>
+      </nav>
+    </div>
+    <header class="wrap wrap-narrow" style="padding-top:.4rem">
+      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 2 of 3</span>
+      <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Electric Fields &amp; Coulomb’s Law</h1>
+      <p class="lede" data-detail="plain">Charges push and pull on each other across empty space. This chapter is the lecture in three sections: what charge is, how hard it pushes (Coulomb's law), and how to map that push around it (the electric field).</p>
+      <p class="lede" data-detail="tech">
+        The lecture's own arc: charge and its two rules, Coulomb's law with
+        superposition in 1-D and 2-D and the Bohr atom, then the electric field
+        E = F/|q₀|, field lines and the two-charge y-axis example. Every worked
+        number is computed live with k = 8.99×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup>,
+        the lecture's value.
+      </p>
+      <nav class="btn-row reveal rv-d3" aria-label="Chapter sections" style="margin:.6rem 0 .2rem">
+        <a class="btn btn-sm" href="#charge">2.1 · Electric Charge</a>
+        <a class="btn btn-sm" href="#coulomb">2.2 · Coulomb's Law</a>
+        <a class="btn btn-sm" href="#field">2.3 · Electric Field</a>
+      </nav>
+    </header>
+
+
+    <section class="lesson-section" aria-labelledby="charge" id="section-charge">
+      <div class="wrap wrap-narrow" style="padding-top:1.2rem">
+      <h2 class="h-topic reveal rv-d2" id="charge" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.1</span>Electric Charge</h2>
+      <p class="lede" data-detail="plain">Everything is full of tiny charged bits. Rub two things together and some bits move — that moved charge is static electricity, and it follows two rules that never break.</p>
+      <p class="lede" data-detail="tech">
+        Charge is the property of matter behind every electric push and pull. It comes in two
+        signs, it arrives in indivisible parcels of e, and it is never created or destroyed —
+        only moved. This lesson names the players (proton, electron, neutron), the two rules
+        (like/unlike, conservation) and the two material families (conductors, insulators) that
+        the rest of the lecture builds on.
+      </p>
+      <div class="card mt-4 reveal">
+        <h3 class="h-sub" style="margin-top:0">Learning objectives</h3>
+        <ul class="objectives">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>State the two kinds of charge, who carries them, and the attract/repel rule.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Use q = n·e and the conversions e = 1.602×10<sup>−19</sup> C, 1 C = 6.24×10<sup>18</sup> electrons.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Apply conservation of charge to rubbing and to conductors touching.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Distinguish conductors from insulators and explain polarisation.</span></li>
+        </ul>
+      </div>
+      </div>
+<section class="section wrap wrap-narrow prose reveal" id="charge-summary" style="scroll-margin-top:5rem">
+      <div class="card">
+        <h3 class="h-sub" style="margin-top:0">30-second summary</h3>
+        <ul class="topic-list">
+          <li>Two kinds of charge: proton <b>+</b>, electron <b>−</b>, neutron <b>0</b>.</li>
+          <li><b>Like repels, unlike attracts.</b></li>
+          <li>Charge is <b>quantised</b> (whole multiples of e) and <b>conserved</b> (it only ever moves).</li>
+          <li><b>Conductors</b> let charge roam; <b>insulators</b> hold it where you put it.</li>
+        </ul>
+        <div class="formula">
+          <span class="eq" data-display data-tex="q = n\,e">q = n · e</span>
+          <span class="eq" data-display data-tex="e = 1.602\times 10^{-19}\ \mathrm{C}" style="font-size:.95rem">e = 1.602×10<sup>−19</sup> C &nbsp;→&nbsp; 1 C = 6.24×10<sup>18</sup> electrons</span>
+          <span class="where">q in coulombs (C) · n = a whole-number count of electrons · e = the elementary charge</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose" id="charge-easy" style="scroll-margin-top:5rem">
+      <div data-detail="plain">
+        <h3 class="h-sub">The easy version</h3>
+        <p>
+          Everything around you is packed with tiny charged bits. Usually the positives and
+          negatives balance exactly, so nothing happens. Rub a balloon on your hair and it
+          <em>scoops</em> some negatives off — the balloon takes, the hair gives. Now the balloon
+          behaves like a sticky sock on a wall: opposites pull together, likes push apart.
+        </p>
+        <p>
+          Here is the secret worth remembering: rubbing never <em>makes</em> charge. It only moves
+          charge that was already there. Whatever the balloon gains, your hair loses — the total
+          never changes, no matter what you do. That is why the playground below has a tally that
+          literally cannot be broken.
+        </p>
+        <p>
+          Some materials, like metal, let charge wander freely — those are conductors. Rubber,
+          glass and dry hair grip it tight — insulators. That is why static cling survives a
+          whole winter day.
+        </p>
+        <figure class="fig">
+          <div class="fig-box">
+            <svg viewBox="0 0 460 190" width="460" height="190" role="img"
+                 aria-label="A balloon rubbed on hair takes minus stickers from it; a wall shows small plus patches under a stuck balloon">
+              <circle cx="90" cy="80" r="42" fill="#a8d3e0" stroke="#3a3d45" stroke-width="3"/>
+              <path d="M84 120 L96 120 L90 132 Z" fill="#3a3d45"/>
+              <text x="78" y="70" font-size="18" font-weight="700" fill="#17181c">−</text>
+              <text x="96" y="88" font-size="18" font-weight="700" fill="#17181c">−</text>
+              <text x="80" y="100" font-size="18" font-weight="700" fill="#17181c">−</text>
+              <g stroke="#b9b7ae" stroke-width="3" stroke-linecap="round" fill="none">
+                <path d="M170 120 q6 -30 -4 -52"/><path d="M186 120 q6 -34 -2 -58"/>
+                <path d="M202 120 q6 -30 -4 -52"/><path d="M218 120 q6 -34 -2 -58"/>
+              </g>
+              <text x="176" y="140" font-size="14" font-weight="700" fill="#f8aebe">+ +</text>
+              <text x="206" y="140" font-size="14" font-weight="700" fill="#f8aebe">+ +</text>
+              <rect x="270" y="30" width="150" height="130" rx="10" fill="#22242b" stroke="#2e3138" stroke-width="2"/>
+              <text x="292" y="66" font-size="15" font-weight="700" fill="#f8aebe">+</text>
+              <text x="330" y="92" font-size="15" font-weight="700" fill="#f8aebe">+</text>
+              <text x="370" y="60" font-size="15" font-weight="700" fill="#f8aebe">+</text>
+              <text x="300" y="130" font-size="15" font-weight="700" fill="#f8aebe">+</text>
+              <text x="360" y="120" font-size="15" font-weight="700" fill="#f8aebe">+</text>
+              <ellipse cx="345" cy="95" rx="26" ry="22" fill="#a8d3e0" stroke="#3a3d45" stroke-width="2.5"/>
+              <text x="338" y="102" font-size="16" font-weight="700" fill="#17181c">−</text>
+            </svg>
+          </div>
+          <figcaption>Rubbing moves “−” stickers from the hair to the balloon; the wall’s surface
+          shifts its charges and the balloon sticks. Nobody made charge — it only moved.</figcaption>
+        </figure>
+      </div>
+
+      <div data-detail="tech">
+        <h3 class="h-sub">The full version</h3>
+        <dl class="defs">
+          <div><dt>Charge (q)</dt><dd>The property of matter that feels electric pushes and pulls. SI unit: the <strong>coulomb (C)</strong>. The proton carries +e, the electron −e, the neutron 0.</dd></div>
+          <div><dt>Elementary charge (e)</dt><dd>e = 1.602×10<sup>−19</sup> C — the smallest free-standing parcel of charge. <strong>Quantisation:</strong> every observable charge is q = n·e with n a whole number.</dd></div>
+          <div><dt>Conservation</dt><dd>In any process — rubbing, touching, separating — the total charge before equals the total after. Charge moves between objects; it is never created.</dd></div>
+          <div><dt>Conductor</dt><dd>A material where charge moves easily (metals, salt water, your body). Excess charge on a conductor spreads over its surface.</dd></div>
+          <div><dt>Insulator</dt><dd>A material where charge stays put (rubber, glass, dry air, plastic).</dd></div>
+          <div><dt>Charging by friction</dt><dd>Contact plus rubbing transfers electrons; the material higher on the triboelectric series loses them and ends up positive.</dd></div>
+          <div><dt>Polarisation</dt><dd>A charged object <em>near</em> a neutral one shifts that object’s charges slightly — the nearer, opposite charge wins because the force is stronger up close — so the pair attracts. This is why a rubbed balloon sticks to an uncharged wall.</dd></div>
+        </dl>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example — how big is a coulomb?</div>
+          <p class="mono small">n = q / e = 1 C ÷ 1.602×10<sup>−19</sup> C = <b>6.24×10<sup>18</sup> electrons</b></p>
+          <p>A coulomb is enormous. Ordinary static involves microcoulombs (µC = 10<sup>−6</sup> C),
+          and even a lightning strike moves only a few tens of coulombs.</p>
+        </div>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example — conservation when conductors touch</div>
+          <p>Two identical spheres carry +6 µC and −2 µC. They are touched together, then separated.
+          What does each carry?</p>
+          <p class="mono small">total = (+6) + (−2) = +4 µC &nbsp;→&nbsp; identical spheres share equally: <b>+2 µC each</b></p>
+          <p>The Charge Ledger below plays this exact move — and the big tally never changes.</p>
+        </div>
+
+        <details class="dig dig-trap" open>
+          <summary>Common mistakes</summary>
+          <div class="dig-body">
+            <p>1. “Neutral means no charges.” Neutral means <strong>equal</strong> + and − — a crowded balance, not an empty room.</p>
+            <p>2. “Rubbing creates charge.” It transfers electrons; the two objects end up equal and opposite.</p>
+            <p>3. “Conductors can’t hold static charge.” They can — when isolated on an insulating handle. Held in your hand, your body drains them.</p>
+            <p>4. “Protons move around.” In solids only <strong>electrons</strong> move; protons stay locked in nuclei.</p>
+          </div>
+        </details>
+
+        <details class="dig dig-real">
+          <summary>Real world</summary>
+          <div class="dig-body">
+            <p>The spark from a door handle after a carpet walk is a few thousand volts driving
+            charge across a millimetre of air. Lightning is the same process at kilometre scale:
+            collisions between ice particles separate charge inside a storm cloud until the field
+            exceeds about <strong>3×10<sup>6</sup> V/m</strong>, the breakdown strength of air.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose reveal" id="symbols" style="scroll-margin-top:5rem">
+      <div class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title"><span class="dot"></span> Symbols &amp; units — defined once, used in all three lessons</h3>
+        </div>
+        <div class="panel-body">
+          <div class="table-scroll">
+            <table class="data">
+              <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit / value</th></tr></thead>
+              <tbody>
+                <tr><td class="txt">q, q₁, q₂ …</td><td class="txt">a charge (subscripts just count them)</td><td class="txt">coulomb, C</td></tr>
+                <tr><td class="txt">q₀</td><td class="txt">test charge (small, positive by convention)</td><td class="txt">C</td></tr>
+                <tr><td class="txt">e</td><td class="txt">elementary charge — the quantum of charge</td><td class="txt">1.602×10<sup>−19</sup> C</td></tr>
+                <tr><td class="txt">n</td><td class="txt">whole number of elementary charges</td><td class="txt">— (a count)</td></tr>
+                <tr><td class="txt">F</td><td class="txt">electric force</td><td class="txt">newton, N</td></tr>
+                <tr><td class="txt">r</td><td class="txt">centre-to-centre distance</td><td class="txt">metre, m</td></tr>
+                <tr><td class="txt">k</td><td class="txt">Coulomb constant</td><td class="txt">8.99×10<sup>9</sup> N·m²/C²</td></tr>
+                <tr><td class="txt">E</td><td class="txt">electric field</td><td class="txt">N/C</td></tr>
+                <tr><td class="txt">v</td><td class="txt">speed</td><td class="txt">m/s</td></tr>
+                <tr><td class="txt">mₑ</td><td class="txt">electron mass</td><td class="txt">9.109×10<sup>−31</sup> kg</td></tr>
+                <tr><td class="txt">µ</td><td class="txt">prefix micro = 10<sup>−6</sup></td><td class="txt">1 µC = 10<sup>−6</sup> C</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose reveal">
+      <h3 class="h-sec" id="charge-tryit">Try it — one sandbox, two toys</h3>
+      <p class="lede" style="margin-top:.35rem">Goal-free by default. The ★ challenges are optional; nothing ever blocks your play, and every setup copies to a shareable link.</p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="sim-static-room-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal sb-root" id="sr-panel">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot"></span> Static Room — free-play sandbox</h4>
+          <p class="panel-sub">like repels · unlike attracts · the tally never changes</p>
+          <div class="panel-actions">
+            <button class="btn btn-sm" type="button" data-sb-preset="cling">Balloon &amp; sock</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="touch">Two metal balls</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="mix">Insulator mix</button>
+          </div>
+        </div>
+        <p class="sim-hint tiny faint">Drag anything. Long-press an object to flip its sign or edit its charge; the scroll wheel works too. Pinch to zoom, two fingers to pan.</p>
+        <div class="sb-toolbar" role="group" aria-label="Tools">
+          <button class="btn btn-sm" type="button" data-sb-tool="move" aria-pressed="true">Move</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="add+" aria-pressed="false">+ charge</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="add-" aria-pressed="false">− charge</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="balloon" aria-pressed="false">Balloon</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="sock" aria-pressed="false">Sock</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="ball" aria-pressed="false">Metal ball</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="rod" aria-pressed="false">Rod</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="erase" aria-pressed="false">Erase</button>
+        </div>
+        <div class="sb-toolbar" role="group" aria-label="Actions and display switches">
+          <button class="btn btn-sm" type="button" data-sb-act="undo">Undo</button>
+          <button class="btn btn-sm" type="button" data-sb-act="random">Random</button>
+          <button class="btn btn-sm" type="button" data-sb-act="clear">Clear</button>
+          <button class="btn btn-sm" type="button" data-sb-act="copy">Copy setup link</button>
+          <button class="btn btn-sm" type="button" data-sb-act="predict">Predict…</button>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="forces" checked style="accent-color:#f8aebe"> force arrows</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="numbers" checked style="accent-color:#f6d36b"> numbers</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="trails" style="accent-color:#a8d3e0"> trails</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="slowmo" style="accent-color:#d5b8d8"> slow motion</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="release" style="accent-color:#b5d777"> let go (release)</label>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="sim-static-room" class="sim-canvas tall grab" role="img"
+                      aria-label="Free-play room of charges, balloons, socks and metal balls showing attraction, repulsion and charge sharing"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Warming up the room…</span></div>
+            </div>
+            <div class="legend">
+              <span><i class="swatch" style="background:#f8aebe"></i> positive</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> negative</span>
+              <span><i class="swatch" style="background:#c9c6bb"></i> neutral metal</span>
+              <span><i class="swatch" style="background:#d5b8d8"></i> insulator</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">|q|</span> size of a new charge</span>
+              <span class="ctl-value" id="sr-qv">3.0 µC</span>
+              <input class="range ctl-range" type="range" data-sb-q min="0.5" max="20" step="0.5" value="3" aria-label="Magnitude of newly placed charges in microcoulombs">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">Objects</span><span class="stat-value" id="sr-count">0</span></div>
+              <div class="stat"><span class="stat-label">Room total (conserved)</span><span class="stat-value hl-emerald" id="sr-net">+0 C</span></div>
+              <div class="stat"><span class="stat-label">Selected · net force</span><span class="stat-value hl-cyan sb-full" id="sr-sel">—</span><span class="stat-sub sb-easy" id="sr-sel-easy">select an object to read its force</span></div>
+            </div>
+            <p class="sb-tally tiny" id="sr-tally" role="status">Room total +0 C — it never changes, whatever you do</p>
+            <p class="sim-note mono sb-full" id="sr-sub" style="overflow-wrap:anywhere">Tap any object: dashed green arrows are its individual pulls, the thick arrow is the vector sum.</p>
+            <p class="tiny faint sb-full" id="sr-hover">move the pointer over the room for live force readouts</p>
+            <p class="callout callout-warn tiny" id="sr-warn" role="status" hidden></p>
+            <div class="sb-chalhost" data-sb-chal role="group" aria-label="Optional challenges"></div>
+            <div class="card sb-predict" data-sb-predict hidden></div>
+            <div class="callout callout-key sb-discover" data-sb-discover hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="toy-balloon-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Tiny toy · Rub the Balloon</h4>
+          <p class="panel-sub">q = n·e — one electron parcel at a time</p>
+        </div>
+        <p class="sim-hint tiny faint">Drag the balloon onto the hair and rub back and forth. Each stroke moves whole electrons; the counters tick in exact lockstep. Then park it near the paper bits.</p>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="toy-balloon" class="sim-canvas short grab" role="img"
+                      aria-label="A balloon rubbed on a hair strip transfers electrons; paper bits are pulled to it"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Inflating the balloon…</span></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">strokes</span> rub strength</span>
+              <span class="ctl-value" id="bl-ratev">2×10¹² e⁻ / stroke</span>
+              <input class="range ctl-range" type="range" id="bl-rate" min="1" max="9" step="1" value="2" aria-label="Electrons transferred per rub stroke, in units of 10 to the 12">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">Balloon</span><span class="stat-value hl-cyan" id="bl-q">−0 C</span></div>
+              <div class="stat"><span class="stat-label">Hair</span><span class="stat-value hl-rose" id="bl-h">+0 C</span></div>
+              <div class="stat"><span class="stat-label">Balloon + hair</span><span class="stat-value hl-emerald" id="bl-total">0 C</span></div>
+            </div>
+            <p class="tiny faint" id="bl-n" role="status">0 electrons moved</p>
+            <p class="sim-note mono sb-full" id="bl-sub" style="overflow-wrap:anywhere">q = n·e</p>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" type="button" id="bl-reset">Discharge (reset)</button>
+            </div>
+            <p class="callout callout-key tiny" style="margin-top:.8rem">What you just discovered: rubbing only <b>moves</b> electrons — the two counters are always exact opposites. <a class="link" href="#charge-summary">Back to the summary</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="toy-ledger-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#b5d777"></span> Tiny toy · Charge Ledger</h4>
+          <p class="panel-sub">conservation you cannot break</p>
+        </div>
+        <p class="sim-hint tiny faint">Tap one ball, then another: identical conductors touch and split their total equally. Randomise re-splits the same total.</p>
+        <div id="toy-ledger" class="panel-body">
+          <div class="lg-totalwrap">
+            <span class="lg-total" id="lg-total">+3.00 µC</span>
+            <span class="tiny faint">room total — computed from the balls, never typed in</span>
+          </div>
+          <div class="lg-tray" id="lg-tray" role="group" aria-label="Charged balls — tap two to touch them together"></div>
+          <p class="tiny faint" id="lg-merges" role="status">0 touches — total unchanged</p>
+          <div class="btn-group mt-2">
+            <button class="btn btn-sm" type="button" id="lg-random">Randomise (same total)</button>
+            <button class="btn btn-sm" type="button" id="lg-reset">Reset tray</button>
+          </div>
+          <p class="callout callout-key tiny" style="margin-top:.8rem">What you just discovered: conductors share charge as (q₁+q₂)/2, and the total survives every move. <a class="link" href="#charge-summary">Back to the summary</a></p>
+        </div>
+      </div>
+    </section>
+
+    
+    </section>
+
+
+    <section class="lesson-section" aria-labelledby="coulomb" id="section-coulomb">
+      <div class="wrap wrap-narrow" style="padding-top:1.2rem">
+      <h2 class="h-topic reveal rv-d2" id="coulomb" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.2</span>Coulomb’s Law</h2>
+      <p class="lede" data-detail="plain">Charges push and pull on each other across empty space. One equation says exactly how hard — and the arena below lets you feel it with your hands.</p>
+      <p class="lede" data-detail="tech">
+        The force between two point charges is the lecture’s workhorse: inverse-square in the
+        separation, linear in each charge, attractive or repulsive by sign, and always a
+        Newton’s-third-law pair. With three or more charges the forces superpose <em>as vectors</em>
+        — the skill the arena’s component ghosts train live, all the way to the Bohr atom.
+      </p>
+      <div class="card mt-4 reveal">
+        <h3 class="h-sub" style="margin-top:0">Learning objectives</h3>
+        <ul class="objectives">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>State Coulomb’s law with units, and apply it to point charges.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Predict how F changes when a charge or the separation changes.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Compute net forces by vector superposition in 1-D and 2-D.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Derive the Bohr electron speed from Coulomb force = centripetal force.</span></li>
+        </ul>
+      </div>
+      </div>
+<section class="section wrap wrap-narrow prose reveal" id="coulomb-summary" style="scroll-margin-top:5rem">
+      <div class="card">
+        <h3 class="h-sub" style="margin-top:0">30-second summary</h3>
+        <ul class="topic-list">
+          <li>Every charge pushes or pulls every other charge (the Lesson 1 rule — now with a number).</li>
+          <li>The force dies with the <b>square</b> of distance: 2× r → ¼ F.</li>
+          <li>Signs pick the <b>direction only</b>; the magnitude uses |q₁q₂| and is never negative.</li>
+          <li>Several forces on one charge add <b>as arrows</b> (components), never as plain numbers.</li>
+        </ul>
+        <div class="formula">
+          <span class="eq" data-display data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k · |q₁q₂| / r²</span>
+          <span class="eq" data-display data-tex="k = 8.99\times 10^{9}\ \mathrm{N\,m^2/C^2}" style="font-size:.95rem">k = 8.99×10<sup>9</sup> N·m²/C²</span>
+          <span class="where">Symbols: <a class="link" href="#symbols">Lesson 1’s table</a> · r is centre-to-centre, in metres</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose" id="coulomb-easy" style="scroll-margin-top:5rem">
+      <div data-detail="plain">
+        <h3 class="h-sub">The easy version</h3>
+        <p>
+          Two charges are like two skaters facing each other. Same-style skaters push apart;
+          opposite ones pull together — and the interesting part is <em>distance</em>. Step back
+          to twice the distance and the push does not halve — it drops to a quarter. Three times
+          away, a ninth. Up close is where all the drama lives.
+        </p>
+        <p>
+          Bigger charges shove harder: double one charge, double the force. And the push is
+          always mutual — a tiny charge shoves a huge one exactly as hard as the huge one shoves
+          it, just the other way round, like skaters pushing off each other.
+        </p>
+        <p>
+          With three or more charges around, each one tugs or pushes on its own. To find the
+          total effect on any single charge, add the pushes <em>as arrows with direction</em> —
+          like the tug-of-war arena below, where you can feel the rope change as you drag.
+        </p>
+        <figure class="fig">
+          <div class="fig-box">
+            <svg viewBox="0 0 460 190" width="460" height="190" role="img"
+                 aria-label="Two charges haul a rope with equal arrows; a dashed ruler marks r and 2r, where the far arrow is a quarter length">
+              <line x1="120" y1="90" x2="250" y2="90" stroke="#b9b7ae" stroke-width="3"/>
+              <circle cx="110" cy="90" r="22" fill="#f8aebe" stroke="#3a3d45" stroke-width="2.5"/>
+              <path d="M102 90h16M110 82v16" stroke="#2b2d33" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="260" cy="90" r="22" fill="#a8d3e0" stroke="#3a3d45" stroke-width="2.5"/>
+              <path d="M252 90h16" stroke="#2b2d33" stroke-width="3" stroke-linecap="round"/>
+              <path d="M140 70 L200 70 L192 63 M200 70 L192 77" stroke="#b5d777" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M230 110 L170 110 L178 103 M170 110 L178 117" stroke="#b5d777" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <line x1="110" y1="140" x2="260" y2="140" stroke="#9a988e" stroke-width="1.6" stroke-dasharray="5 5"/>
+              <text x="175" y="160" font-size="13" fill="#b9b7ae" text-anchor="middle">r</text>
+              <line x1="110" y1="30" x2="410" y2="30" stroke="#9a988e" stroke-width="1.6" stroke-dasharray="5 5"/>
+              <text x="260" y="22" font-size="13" fill="#b9b7ae" text-anchor="middle">2r → the force drops to ¼</text>
+              <circle cx="410" cy="90" r="14" fill="#a8d3e0" stroke="#3a3d45" stroke-width="2" opacity=".6"/>
+              <path d="M370 78 L385 78 L380 73 M385 78 L380 83" stroke="#b5d777" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <figcaption>The rope pulls equally on both skaters (Newton’s third law), and moving to
+          2r shrinks the pull to a quarter — not a half.</figcaption>
+        </figure>
+      </div>
+
+      <div data-detail="tech">
+        <h3 class="h-sub">The full version</h3>
+        <p>
+          In 1785 Coulomb measured the force between small charged spheres with a torsion balance
+          and found an inverse-square law that looks exactly like Newton’s gravitation — but
+          roughly 10<sup>36</sup> times stronger, and able to repel as well as attract. It holds
+          for <strong>point charges</strong> (and for uniform spheres, with r measured
+          centre-to-centre). Three things to notice:
+        </p>
+        <ol>
+          <li><strong>Inverse-square:</strong> double r → F/4; triple r → F/9.</li>
+          <li><strong>Magnitude uses |q₁q₂|:</strong> F is never negative; the signs only steer the arrow (like → repel, unlike → attract).</li>
+          <li><strong>Newton’s third law:</strong> the two forces are equal and opposite even if one charge is a thousand times bigger.</li>
+        </ol>
+        <p>
+          With three or more charges, each pair interacts independently and the net force on any
+          one charge is the <strong>vector sum</strong> — resolve each force into x/y components,
+          add components, then rebuild:
+        </p>
+        <div class="formula">
+          <span class="eq" data-display data-tex="|\vec{F}_{net}| = \sqrt{F_x^2 + F_y^2},\qquad \theta = \tan^{-1}\!\left(\frac{F_y}{F_x}\right)">|F<sub>net</sub>| = √(F<sub>x</sub>² + F<sub>y</sub>²), &nbsp; θ = tan⁻¹(F<sub>y</sub>/F<sub>x</sub>)</span>
+          <span class="where">add as vectors (components), never as magnitudes</span>
+        </div>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example 1 (lecture) — one coulomb is huge</div>
+          <p>q₁ = +1 C, q₂ = −1 C, r = 1 km = 10³ m:</p>
+          <p class="mono small">F = (8.99×10<sup>9</sup>)(1)(1)/(10³)² = 8.99×10<sup>9</sup>/10<sup>6</sup> = <b>8.99×10³ N</b>, attractive</p>
+          <p>That is the weight of about 900 kg, produced by two charges a kilometre apart — which
+          is why real static is measured in microcoulombs.</p>
+        </div>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example 2 (lecture) — net force on a line</div>
+          <p>q₂ = −4.0 µC at x = 0; q₁ = +3.0 µC at x = 0.20 m; q₃ = −7.0 µC at x = 0.35 m. Net force on q₁?</p>
+          <p class="mono small">
+            from q₂ (unlike → attract, −x): F₁₂ = (8.99×10<sup>9</sup>)(3×10<sup>−6</sup>)(4×10<sup>−6</sup>)/(0.20)² = <b>2.70 N</b><br>
+            from q₃ (unlike → attract, +x): F₁₃ = (8.99×10<sup>9</sup>)(3×10<sup>−6</sup>)(7×10<sup>−6</sup>)/(0.15)² = <b>8.39 N</b><br>
+            net = 8.39 − 2.70 = <b>5.69 N toward +x</b>
+          </p>
+          <p>Directions first, arithmetic second. Load the arena’s <em>Lecture line</em> preset, select q₁
+          and the live readout says the same thing.</p>
+        </div>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example 3 (lecture) — net force in 2-D</div>
+          <p>q₁ = +4.0 µC at the origin; q₂ = −6.0 µC 0.15 m away, 73° above the +x axis;
+          q₃ = −5.0 µC on the +x axis, 0.10 m away. Net force on q₁? The method is the whole lesson:</p>
+          <p class="mono small">
+            F(from −6) = (8.99×10<sup>9</sup>)(4×10<sup>−6</sup>)(6×10<sup>−6</sup>)/(0.15)² = 9.6 N, toward it (at 73°)<br>
+            F(from −5) = (8.99×10<sup>9</sup>)(4×10<sup>−6</sup>)(5×10<sup>−6</sup>)/(0.10)² = 18.0 N, toward it (along +x)<br>
+            Fₓ = 9.6·cos 73° + 18.0 = 20.8 N; &nbsp;F_y = 9.6·sin 73° = 9.2 N<br>
+            |F<sub>net</sub>| = √(20.8² + 9.2²) = <b>22.7 N</b> (the lecture rounds to 23 N), &nbsp;θ = tan⁻¹(9.2/20.8) ≈ <b>24° above +x</b>
+          </p>
+          <p>The arena’s <em>Lecture 2-D</em> preset reproduces it; its ★ challenge accepts any hand-built
+          arrangement that lands on ≈23 N.</p>
+        </div>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example 4 (lecture) — the Bohr hydrogen atom</div>
+          <p>The electron (−e) circles the proton (+e) at r = 5.29×10<sup>−11</sup> m with the Coulomb
+          pull supplying the centripetal force:</p>
+          <p class="mono small">
+            k e²/r² = mₑ v²/r &nbsp;→&nbsp; v = √(k e²/(mₑ r)) = √(2.31×10<sup>−28</sup> / 4.82×10<sup>−41</sup>) = <b>2.19×10⁶ m/s</b>
+          </p>
+          <p>About 0.7 % of the speed of light. The Bohr Tuner toy derives it live — tune r and watch v follow 1/√r.</p>
+        </div>
+
+        <details class="dig dig-trap" open>
+          <summary>Common mistakes</summary>
+          <div class="dig-body">
+            <p>1. Adding force <strong>magnitudes</strong> in 2-D — 2.70 + 1.57 is not the vector answer.</p>
+            <p>2. Forgetting that r is <strong>squared</strong>, or leaving r in centimetres (0.20 m, not 20).</p>
+            <p>3. Believing the bigger charge exerts the bigger force — the third law says no.</p>
+            <p>4. Substituting signed charges and reporting a “negative force”: F is a magnitude; signs only steer the arrow.</p>
+            <p>5. Using the point-charge form on an extended, irregular object — that needs an integral (where calculus enters this topic).</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose reveal">
+      <h3 class="h-sec" id="coulomb-tryit">Try it — one sandbox, two toys</h3>
+      <p class="lede" style="margin-top:.35rem">Goal-free by default. The ★ challenges are optional, presets are shortcuts, and every setup copies to a shareable link.</p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="sim-arena-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal sb-root" id="ar-panel">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#f8aebe"></span> Tug-of-War Arena — free-play sandbox</h4>
+          <p class="panel-sub">F = k·|q₁q₂|/r² · any number of charges, anywhere</p>
+          <div class="panel-actions">
+            <button class="btn btn-sm" type="button" data-sb-preset="pair">Two on a line</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="lecture-line">Lecture line</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="lecture-2d">Lecture 2-D</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="orbit">Orbit seed</button>
+          </div>
+        </div>
+        <p class="sim-hint tiny faint">Drag charges; select one to see its dashed per-pair pulls and the thick net arrow. Long-press or scroll-wheel edits a charge. Pinch to zoom.</p>
+        <div class="sb-toolbar" role="group" aria-label="Tools">
+          <button class="btn btn-sm" type="button" data-sb-tool="move" aria-pressed="true">Move</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="add+" aria-pressed="false">+ charge</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="add-" aria-pressed="false">− charge</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="ruler" aria-pressed="false">Ruler</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="erase" aria-pressed="false">Erase</button>
+        </div>
+        <div class="sb-toolbar" role="group" aria-label="Actions and display switches">
+          <button class="btn btn-sm" type="button" data-sb-act="undo">Undo</button>
+          <button class="btn btn-sm" type="button" data-sb-act="random">Random</button>
+          <button class="btn btn-sm" type="button" data-sb-act="clear">Clear</button>
+          <button class="btn btn-sm" type="button" data-sb-act="copy">Copy setup link</button>
+          <button class="btn btn-sm" type="button" data-sb-act="predict">Predict…</button>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="forces" checked style="accent-color:#f8aebe"> force arrows</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="numbers" checked style="accent-color:#f6d36b"> numbers</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="trails" style="accent-color:#a8d3e0"> trails</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="slowmo" style="accent-color:#d5b8d8"> slow motion</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="release" style="accent-color:#b5d777"> let go (release)</label>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="sim-arena" class="sim-canvas tall grab" role="img"
+                      aria-label="Free-play arena of point charges with live net-force arrows, per-pair components and an optional release mode"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Stringing the ropes…</span></div>
+            </div>
+            <div class="legend">
+              <span><i class="swatch" style="background:#f8aebe"></i> positive / net force</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> negative</span>
+              <span><i class="swatch" style="background:#b5d777"></i> per-pair ghosts</span>
+              <span><i class="swatch" style="background:#f6d36b"></i> ruler / maxed force</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">|q|</span> size of a new charge</span>
+              <span class="ctl-value" id="ar-qv">3.0 µC</span>
+              <input class="range ctl-range" type="range" data-sb-q min="0.5" max="20" step="0.5" value="3" aria-label="Magnitude of newly placed charges in microcoulombs">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">Charges</span><span class="stat-value" id="ar-count">0</span></div>
+              <div class="stat"><span class="stat-label">Net charge</span><span class="stat-value" id="ar-net">+0 C</span></div>
+              <div class="stat"><span class="stat-label">Selected · |F net|</span><span class="stat-value hl-cyan sb-full" id="ar-sel">—</span><span class="stat-sub sb-easy" id="ar-sel-easy">select a charge to read its force</span></div>
+            </div>
+            <p class="sim-note mono sb-full" id="ar-sub" style="overflow-wrap:anywhere">Tap any charge: dashed green arrows are its individual pulls, the thick arrow is the vector sum.</p>
+            <p class="tiny faint sb-full" id="ar-hover">move the pointer over the arena for live readouts</p>
+            <p class="callout callout-warn tiny" id="ar-warn" role="status" hidden></p>
+            <div class="sb-chalhost" data-sb-chal role="group" aria-label="Optional challenges"></div>
+            <div class="card sb-predict" data-sb-predict hidden></div>
+            <div class="callout callout-key sb-discover" data-sb-discover hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="toy-pinforce-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#f6d36b"></span> Tiny toy · Pin the Force</h4>
+          <p class="panel-sub">the 1/r² curve, traced live by dragging</p>
+        </div>
+        <p class="sim-hint tiny faint">Drag charge B along the rail — the hyperbola below is recomputed every frame, with ghost points at 2r and 3r printing the exact ratios.</p>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="toy-pinforce" class="sim-canvas short grab" role="img"
+                      aria-label="Two charges on a rail with a live graph of force against distance showing the inverse-square curve"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Sharpening the pencils…</span></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">q<sub>A</sub></span> pinned charge</span>
+              <span class="ctl-value" id="pf-qav">+4.0 µC</span>
+              <input class="range ctl-range" type="range" id="pf-qa" min="-20" max="20" step="0.5" value="4" aria-label="Charge A in microcoulombs">
+            </div>
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">q<sub>B</sub></span> dragged charge</span>
+              <span class="ctl-value" id="pf-qbv">−6.0 µC</span>
+              <input class="range ctl-range" type="range" id="pf-qb" min="-20" max="20" step="0.5" value="-6" aria-label="Charge B in microcoulombs">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">r</span><span class="stat-value" id="pf-r">0.300 m</span></div>
+              <div class="stat"><span class="stat-label">F now</span><span class="stat-value hl-amber" id="pf-f">—</span></div>
+            </div>
+            <p class="tiny faint" id="pf-ratio" role="status">F(2r)/F(r) = 0.250 · F(3r)/F(r) = 0.111</p>
+            <p class="sim-note mono sb-full" id="pf-sub" style="overflow-wrap:anywhere">F = k·|q<sub>A</sub>q<sub>B</sub>|/r²</p>
+            <p class="callout callout-key tiny" style="margin-top:.8rem">What you just discovered: the first centimetres hold almost all the force — 2× r is always ¼ F. <a class="link" href="#coulomb-summary">Back to the summary</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="toy-bohr-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Tiny toy · Bohr Tuner</h4>
+          <p class="panel-sub">v = √(k e²/(mₑ r)) — tune the radius, read the speed</p>
+        </div>
+        <p class="sim-hint tiny faint">Drag the electron or use the slider. Hit the lecture radius (5.29×10⁻¹¹ m) and the speed lands on 2.19×10⁶ m/s — ★.</p>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="toy-bohr" class="sim-canvas short grab" role="img"
+                      aria-label="A Bohr hydrogen atom: the electron orbits the proton at the tuned radius with velocity and force arrows"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Spinning up the atom…</span></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">r</span> orbit radius</span>
+              <span class="ctl-value" id="bo-rv">5.29×10⁻¹¹ m</span>
+              <input class="range ctl-range" type="range" id="bo-r" min="2" max="12" step="0.01" value="5.29" aria-label="Orbit radius in units of 10 to the minus 11 metres">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">electron speed</span><span class="stat-value hl-cyan" id="bo-v">—</span></div>
+              <div class="stat"><span class="stat-label">Coulomb pull</span><span class="stat-value hl-rose" id="bo-f">—</span></div>
+              <div class="stat"><span class="stat-label">orbit period</span><span class="stat-value" id="bo-t">—</span></div>
+            </div>
+            <p class="tiny faint" id="bo-slow">visual time ≈ 1/1.6×10¹⁶ of real</p>
+            <p class="sim-note mono sb-full" id="bo-sub" style="overflow-wrap:anywhere">v = √(k e²/(mₑ r))</p>
+            <p class="callout callout-key" id="bo-discover" hidden>★ Lecture speed! You just showed that a smaller orbit means a faster electron (v ∝ 1/√r). <a class="link" href="#coulomb-summary">Back to the summary</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    </section>
+
+
+    <section class="lesson-section" aria-labelledby="field" id="section-field">
+      <div class="wrap wrap-narrow" style="padding-top:1.2rem">
+      <h2 class="h-topic reveal rv-d2" id="field" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.3</span>Electric Field</h2>
+      <p class="lede" data-detail="plain">A charge changes the space around it — that condition is the field. Hold up a tiny test charge anywhere and it points the way the push goes. The painter below lets you draw fields and feel them.</p>
+      <p class="lede" data-detail="tech">
+        Rather than charges reaching across empty space, physics says each charge modifies the
+        space around it, creating a vector at every point: the <strong>electric field E</strong>.
+        A second charge responds to the field <em>at its own location</em>. This lesson defines E
+        operationally, fixes its direction convention, and superposes fields to find null points
+        — ending on the lecture’s own ±4 µC y-axis example, measured live.
+      </p>
+      <div class="card mt-4 reveal">
+        <h3 class="h-sub" style="margin-top:0">Learning objectives</h3>
+        <ul class="objectives">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Define E = F/|q₀| in N/C and state the positive-test-charge direction rule.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Compute E = kq/r² for a point charge and superpose fields by components.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Draw field lines and state their five rules.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Use F = |q₀|E for positive and negative charges, and locate zero-field points.</span></li>
+        </ul>
+      </div>
+      </div>
+<section class="section wrap wrap-narrow prose reveal" id="field-summary" style="scroll-margin-top:5rem">
+      <div class="card">
+        <h3 class="h-sub" style="margin-top:0">30-second summary</h3>
+        <ul class="topic-list">
+          <li>A charge changes the space around it — that condition is the <b>electric field E</b>.</li>
+          <li>E at a point = force per unit <b>positive</b> test charge, in N/C.</li>
+          <li><b>Direction rule:</b> E points the way a positive test charge would be pushed — out of +, into −.</li>
+          <li>Fields add as vectors; between two like charges there is a point where <b>E = 0</b>.</li>
+        </ul>
+        <div class="formula">
+          <span class="eq" data-display data-tex="E = \dfrac{F}{|q_0|}">E = F / |q₀|</span>
+          <span class="eq" data-display data-tex="E = \dfrac{kq}{r^2}" style="font-size:1rem">point charge: E = k·q / r²</span>
+          <span class="where">Units: N/C · Symbols: <a class="link" href="#symbols">Lesson 1’s table</a></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose" id="field-easy" style="scroll-margin-top:5rem">
+      <div data-detail="plain">
+        <h3 class="h-sub">The easy version</h3>
+        <p>
+          Picture the space around a charge as a room with an invisible wind. Near a positive
+          charge the wind blows outward; near a negative one it sucks inward. You cannot see the
+          wind, but hold up a tiny leaf and it points whichever way the push goes. That is the
+          electric field: a push <em>waiting</em> at every spot, whether or not anything is there
+          to feel it.
+        </p>
+        <p>
+          Closer to the source the wind is stronger; twice as far, four times weaker — the same
+          inverse-square habit from Lesson 2.
+        </p>
+        <p>
+          Drop two charges into the room and their winds mix. Between two matching charges there
+          is one quiet spot where the leaf floats perfectly still: equal pushes, opposite
+          directions, net zero. The zero-hunt toy below turns finding that spot into a game of
+          hot and cold.
+        </p>
+        <p>
+          Field lines are the smoke trails of this wind — they show where it blows and how hard.
+        </p>
+        <figure class="fig">
+          <div class="fig-box">
+            <svg viewBox="0 0 460 190" width="460" height="190" role="img"
+                 aria-label="Flat arrows blow out of a plus disc; dashed arrows converge into a minus disc; a calm dot sits between two pluses where the field is zero">
+              <g stroke="#a8d3e0" stroke-width="2" fill="none" stroke-linecap="round">
+                <path d="M96 90 H56 M64 84 L56 90 L64 96"/><path d="M124 62 L152 40 M146 40 L152 40 L152 46"/>
+                <path d="M124 118 L152 140 M152 134 L152 140 L146 140"/><path d="M96 62 L70 40 M76 40 L70 40 L70 46"/>
+                <path d="M96 118 L70 140 M70 134 L70 140 L76 140"/>
+              </g>
+              <circle cx="110" cy="90" r="21" fill="#f8aebe" stroke="#3a3d45" stroke-width="2.5"/>
+              <path d="M102 90h16M110 82v16" stroke="#2b2d33" stroke-width="3" stroke-linecap="round"/>
+              <g stroke="#a8d3e0" stroke-width="2" fill="none" stroke-dasharray="5 4" stroke-linecap="round">
+                <path d="M216 90 H252 M244 84 L252 90 L244 96"/><path d="M232 52 L252 74"/><path d="M232 128 L252 106"/>
+                <path d="M296 52 L272 74"/><path d="M296 128 L272 106"/>
+              </g>
+              <circle cx="262" cy="90" r="21" fill="#a8d3e0" stroke="#3a3d45" stroke-width="2.5"/>
+              <path d="M254 90h16" stroke="#2b2d33" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="352" cy="70" r="14" fill="#f8aebe" stroke="#3a3d45" stroke-width="2"/>
+              <path d="M347 70h10M352 65v10" stroke="#2b2d33" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="418" cy="70" r="14" fill="#f8aebe" stroke="#3a3d45" stroke-width="2"/>
+              <path d="M413 70h10M418 65v10" stroke="#2b2d33" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="385" cy="70" r="5" fill="#b5d777"/>
+              <text x="385" y="100" font-size="12" fill="#b5d777" text-anchor="middle">E = 0 — the calm spot</text>
+            </svg>
+          </div>
+          <figcaption>The wind map: arrows blow out of +, into −, and between two likes there is
+          one perfectly calm dot.</figcaption>
+        </figure>
+      </div>
+
+      <div data-detail="tech">
+        <h3 class="h-sub">The full version</h3>
+        <dl class="defs">
+          <div><dt>Test charge (q₀)</dt><dd>A small <strong>positive</strong> charge used to probe a point without disturbing the sources.</dd></div>
+          <div><dt>Electric field (E)</dt><dd>E = F/|q₀| — newtons per coulomb, a vector defined at <em>every</em> point of space, whether or not a test charge is there.</dd></div>
+          <div><dt>Point-charge field</dt><dd>E = kq/r², radially outward for q &gt; 0 and inward for q &lt; 0.</dd></div>
+          <div><dt>Superposition</dt><dd>E⃗ = Σ kqᵢ r̂ᵢ/rᵢ² — the net field is the vector sum of every charge’s contribution.</dd></div>
+          <div><dt>Force in a field</dt><dd>F = q₀E. For a <strong>negative</strong> q₀ the force points <em>opposite</em> E.</dd></div>
+        </dl>
+
+        <div class="callout callout-key">
+          <div class="callout-title">The direction rule</div>
+          <p><strong>E points in the direction a positive test charge would be pushed.</strong>
+          So the field of a positive charge points radially <strong>outward</strong>, and the field
+          of a negative charge points radially <strong>inward</strong>.</p>
+        </div>
+
+        <figure class="fig">
+          <div class="fig-box">
+            <svg viewBox="0 0 460 200" width="460" height="200" role="img"
+                 aria-label="Field arrows radiate outward from a positive charge and inward toward a negative charge">
+              <defs>
+                <marker id="arw" markerWidth="7" markerHeight="7" refX="5.4" refY="3" orient="auto">
+                  <path d="M0 0 L6 3 L0 6 z" fill="#22d3ee"/>
+                </marker>
+              </defs>
+              <g stroke="#22d3ee" stroke-width="1.9" fill="none" marker-end="url(#arw)">
+                <line x1="139" y1="100" x2="171" y2="100"/><line x1="132" y1="117" x2="154" y2="139"/>
+                <line x1="115" y1="124" x2="115" y2="156"/><line x1="98" y1="117" x2="76" y2="139"/>
+                <line x1="91" y1="100" x2="59" y2="100"/><line x1="98" y1="83" x2="76" y2="61"/>
+                <line x1="115" y1="76" x2="115" y2="44"/><line x1="132" y1="83" x2="154" y2="61"/>
+              </g>
+              <circle cx="115" cy="100" r="19" fill="#fb7185" stroke="#fff" stroke-opacity=".5"/>
+              <path d="M106 100h18M115 91v18" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+              <text x="115" y="185" fill="#fda4af" font-size="13" text-anchor="middle">+q : field points OUT</text>
+              <g stroke="#22d3ee" stroke-width="1.9" fill="none" marker-end="url(#arw)">
+                <line x1="403" y1="100" x2="371" y2="100"/><line x1="386" y1="139" x2="364" y2="117"/>
+                <line x1="345" y1="156" x2="345" y2="124"/><line x1="304" y1="139" x2="326" y2="117"/>
+                <line x1="287" y1="100" x2="319" y2="100"/><line x1="304" y1="61" x2="326" y2="83"/>
+                <line x1="345" y1="44" x2="345" y2="76"/><line x1="386" y1="61" x2="364" y2="83"/>
+              </g>
+              <circle cx="345" cy="100" r="19" fill="#38bdf8" stroke="#fff" stroke-opacity=".5"/>
+              <path d="M336 100h18" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+              <text x="345" y="185" fill="#7dd3fc" font-size="13" text-anchor="middle">−q : field points IN</text>
+            </svg>
+          </div>
+          <figcaption>Figure 1 — The direction convention: arrows show the force on a positive test charge.</figcaption>
+        </figure>
+
+        <h4 class="h-sub">Field-line rules</h4>
+        <ul>
+          <li>Lines <strong>start on positive</strong> charge and <strong>end on negative</strong> charge (or go off to infinity).</li>
+          <li>Lines <strong>never cross</strong> — if they did, the field at that point would have two directions.</li>
+          <li>The <strong>density</strong> of lines represents field strength: closer together means stronger.</li>
+          <li>The <strong>tangent</strong> to a line at any point is the direction of E there.</li>
+          <li>The number of lines leaving a charge is <strong>proportional to |q|</strong> — a +2q charge gets twice as many lines as +q.</li>
+        </ul>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example 1 (lecture) — force from a known field</div>
+          <p>In a uniform field E = 2.0×10³ N/C:</p>
+          <p class="mono small">
+            q₀ = +18×10<sup>−8</sup> C → F = |q₀|E = (18×10<sup>−8</sup>)(2.0×10³) = <b>3.6×10⁻⁴ N</b>, along E<br>
+            q₀ = −24×10<sup>−8</sup> C → F = (24×10<sup>−8</sup>)(2.0×10³) = <b>4.8×10⁻⁴ N</b>, opposite E
+          </p>
+          <p>The sign of q₀ never changes the <em>size</em> — only which way the arrow points.</p>
+        </div>
+
+        <div class="callout callout-key">
+          <div class="callout-title">Worked example 2 (lecture) — two charges, symmetric about the y-axis</div>
+          <p>q₊ = +4.00 µC and q₋ = −4.00 µC, each 0.700 m from point P, the lines from P to the charges
+          making 31.0° with the x-axis (so the charges sit at y = ±0.700·sin 31.0° = ±0.3605 m and P at
+          x = 0.700·cos 31.0° = 0.600 m). Find E at P.</p>
+          <p class="mono small">
+            each contributes E₁ = E₂ = kq/r² = (8.99×10<sup>9</sup>)(4.00×10<sup>−6</sup>)/(0.700)² = <b>73,388 N/C</b><br>
+            x-components: equal and opposite → cancel, <b>Eₓ = 0</b><br>
+            y-components: both point +y (away from the lower +, toward the upper −):<br>
+            E_y = 2 × 73,388 × sin 31.0° = <b>75,595 N/C along +y</b>
+          </p>
+          <p>The lecture prints 75.6×10³ N/C. Load the Field Painter’s
+          <em>Lecture replica</em> preset — the probe sits at P and the readout agrees.</p>
+        </div>
+
+        <details class="dig dig-trap" open>
+          <summary>Common mistakes</summary>
+          <div class="dig-body">
+            <p>1. Taking E’s direction from the force on whatever charge is handy — the rule is defined for a <strong>positive</strong> test charge; electrons feel it backwards.</p>
+            <p>2. “No test charge, no field.” The field belongs to the sources and to space.</p>
+            <p>3. “E = 0 means nothing is there.” It means the vectors <strong>cancel</strong> (the null point).</p>
+            <p>4. Treating field lines as tracks charges slide along — a released charge follows its velocity <em>and</em> the force, generally not the line.</p>
+          </div>
+        </details>
+
+        <details class="dig dig-real">
+          <summary>Going further: the uniform field between parallel plates</summary>
+          <div class="dig-body">
+            <p>Between two large oppositely charged plates the field is essentially uniform, and
+            E = V/d (V = potential difference, d = separation). A 5000 V supply across plates
+            2 cm apart gives E = 2.5×10⁵ V/m; inside a uniform field a charge feels a
+            <em>constant</em> force, so its motion is projectile motion with qE/m in place of g.
+            This is also why N/C and V/m are the same unit.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose reveal">
+      <h3 class="h-sec" id="field-tryit">Try it — one sandbox, two toys</h3>
+      <p class="lede" style="margin-top:.35rem">Goal-free by default. Paint first, read the numbers second; the ★ challenges and the lecture preset are optional shortcuts.</p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="sim-fieldpaint-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal sb-root" id="fp-panel">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Field Painter — free-play sandbox</h4>
+          <p class="panel-sub">E(P) = Σ kq r̂/r² · arrows, lines and the ghost</p>
+          <div class="panel-actions">
+            <button class="btn btn-sm" type="button" data-sb-preset="single">Single +</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="dipole">Dipole</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="like">Two like</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="unequal">+8 / −2</button>
+            <button class="btn btn-sm" type="button" data-sb-preset="lecture-y">Lecture replica</button>
+          </div>
+        </div>
+        <p class="sim-hint tiny faint">Paint charges anywhere; drag the ghost (q₀ = +1 nC) to feel F = q₀E, or park the green E-probe for exact numbers. Pinch to zoom.</p>
+        <div class="sb-toolbar" role="group" aria-label="Tools">
+          <button class="btn btn-sm" type="button" data-sb-tool="move" aria-pressed="true">Move</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="add+" aria-pressed="false">+ charge</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="add-" aria-pressed="false">− charge</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="test" aria-pressed="false">Ghost q₀</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="probe" aria-pressed="false">E probe</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="ruler" aria-pressed="false">Ruler</button>
+          <button class="btn btn-sm" type="button" data-sb-tool="erase" aria-pressed="false">Erase</button>
+        </div>
+        <div class="sb-toolbar" role="group" aria-label="Actions and display switches">
+          <button class="btn btn-sm" type="button" data-sb-act="undo">Undo</button>
+          <button class="btn btn-sm" type="button" data-sb-act="random">Random</button>
+          <button class="btn btn-sm" type="button" data-sb-act="clear">Clear</button>
+          <button class="btn btn-sm" type="button" data-sb-act="copy">Copy setup link</button>
+          <button class="btn btn-sm" type="button" data-sb-act="predict">Predict…</button>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="arrows" checked style="accent-color:#a8d3e0"> field arrows</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="lines" checked style="accent-color:#f8aebe"> field lines</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="forces" style="accent-color:#f8aebe"> force arrows</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="numbers" checked style="accent-color:#f6d36b"> numbers</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="trails" style="accent-color:#a8d3e0"> trails</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="slowmo" style="accent-color:#d5b8d8"> slow motion</label>
+          <label class="sb-tog"><input type="checkbox" data-sb-toggle="release" style="accent-color:#b5d777"> let go (ghost rides the field)</label>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="sim-fieldpaint" class="sim-canvas tall" role="img"
+                      aria-label="Paintable electric field: user-placed charges with live field arrows, integrated field lines, a draggable ghost test charge and an E probe"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Mixing the field paint…</span></div>
+            </div>
+            <div class="legend">
+              <span><i class="swatch" style="background:#f8aebe"></i> positive</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> negative</span>
+              <span><i class="swatch" style="background:#f6d36b"></i> ghost q₀ / force on it</span>
+              <span><i class="swatch" style="background:#b5d777"></i> E probe / ruler</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">|q|</span> size of a new charge</span>
+              <span class="ctl-value" id="fp-qv">3.0 µC</span>
+              <input class="range ctl-range" type="range" data-sb-q min="0.5" max="10" step="0.5" value="3" aria-label="Magnitude of newly placed charges in microcoulombs">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">Charges</span><span class="stat-value" id="fp-count">0</span></div>
+              <div class="stat"><span class="stat-label">Net charge</span><span class="stat-value" id="fp-net">+0 C</span></div>
+              <div class="stat"><span class="stat-label">E at probe</span><span class="stat-value hl-cyan" id="fp-probe-e">place the E probe</span></div>
+              <div class="stat"><span class="stat-label">Direction</span><span class="stat-value hold2" id="fp-probe-dir">—</span></div>
+              <div class="stat"><span class="stat-label">F on +1 nC ghost</span><span class="stat-value hl-amber" id="fp-probe-f">—</span></div>
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">Selected · readout</span><span class="stat-value hl-cyan sb-full" id="fp-sel">—</span><span class="stat-sub sb-easy" id="fp-sel-easy">select an object to read it</span></div>
+            </div>
+            <p class="sim-note mono sb-full" id="fp-sub" style="overflow-wrap:anywhere">Tap any object: dashed green arrows are its individual pulls, the thick arrow is the vector sum.</p>
+            <p class="tiny faint sb-full" id="fp-hover">move the pointer over the field for live E readouts</p>
+            <p class="callout callout-warn tiny" id="fp-warn" role="status" hidden></p>
+            <div class="sb-chalhost" data-sb-chal role="group" aria-label="Optional challenges"></div>
+            <div class="card sb-predict" data-sb-predict hidden></div>
+            <div class="callout callout-key sb-discover" data-sb-discover hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="toy-dipole-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#d5b8d8"></span> Tiny toy · Dipole Builder</h4>
+          <p class="panel-sub">stretch, squeeze and spin a ± pair — lines re-trace live</p>
+        </div>
+        <p class="sim-hint tiny faint">Drag the sliders: separation, angle and magnitude. The lines you see are the two point-charge fields added, nothing else.</p>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="toy-dipole" class="sim-canvas short" role="img"
+                      aria-label="An electric dipole with live field lines traced from the superposed fields of its two charges"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Charging the dipole…</span></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">d</span> bond length</span>
+              <span class="ctl-value" id="dp-sepv">0.70 m</span>
+              <input class="range ctl-range" type="range" id="dp-sep" min="0.1" max="1.5" step="0.01" value="0.7" aria-label="Dipole separation in metres">
+            </div>
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">θ</span> pair angle</span>
+              <span class="ctl-value" id="dp-angv">0°</span>
+              <input class="range ctl-range" type="range" id="dp-ang" min="0" max="180" step="1" value="0" aria-label="Dipole axis angle in degrees">
+            </div>
+            <div class="ctl">
+              <span class="ctl-label"><span class="sym">|q|</span> charge magnitude</span>
+              <span class="ctl-value" id="dp-qv">5.0 µC</span>
+              <input class="range ctl-range" type="range" id="dp-q" min="1" max="8" step="0.5" value="5" aria-label="Dipole charge magnitude in microcoulombs">
+            </div>
+            <div class="readouts mt-3">
+              <div class="stat"><span class="stat-label">E at bisector point</span><span class="stat-value hl-cyan" id="dp-e">—</span></div>
+              <div class="stat"><span class="stat-label">Direction</span><span class="stat-value" id="dp-dir">—</span></div>
+            </div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" type="button" id="dp-flip" aria-pressed="false">Flip polarity</button>
+            </div>
+            <p class="sim-note mono sb-full" id="dp-sub" style="overflow-wrap:anywhere">E = |Σ kqᵢ r̂ᵢ/rᵢ²|</p>
+            <p class="callout callout-key tiny" style="margin-top:.8rem">What you just discovered: the dipole picture is only superposition — lines leave + and end on −, whatever the angle. <a class="link" href="#field-summary">Back to the summary</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-tight wrap wrap-sim reveal" id="toy-zerohunt-panel" style="scroll-margin-top:5rem">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <h4 class="panel-title"><span class="dot" style="background:#b5d777"></span> Tiny toy · Zero-Field Hunt</h4>
+          <p class="panel-sub">find the still point — hot and cold, flat colour steps</p>
+        </div>
+        <p class="sim-hint tiny faint">Mystery charges hide under the arrow fog. Drag the green E-meter probe; the chip tells you cold → cool → warm → ★ zero. “New hunt” re-hides them; “show me” reveals the answer.</p>
+        <div class="sim-grid">
+          <div>
+            <div class="canvas-wrap">
+              <canvas id="toy-zerohunt" class="sim-canvas short grab" role="img"
+                      aria-label="A treasure-hunt field map with hidden charges, faint field arrows and a draggable electric-field meter probe"></canvas>
+              <div class="sim-plate" aria-hidden="true"><span class="sim-plate-msg">Hiding the charges…</span></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="readouts">
+              <div class="stat"><span class="stat-label">|E| at probe</span><span class="stat-value hl-cyan" id="zh-e">—</span></div>
+            </div>
+            <p class="zh-chip zh-cold" id="zh-chip" role="status">cold — the field is strong here</p>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" type="button" id="zh-new">New hunt</button>
+              <button class="btn btn-sm" type="button" id="zh-reveal">Show me</button>
+            </div>
+            <p class="callout callout-key" id="zh-discover" hidden>★ You just showed that E = 0 does not mean empty — the vectors cancel exactly where the probe floats. <a class="link" href="#field-summary">Back to the summary</a></p>
+            <p class="tiny faint sb-full">For two like charges on a line, the null point sits at x = D/(1 + √(q₂/q₁)) — closer to the smaller charge.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    </section>
+
+
+    <section class="section wrap wrap-narrow prose">
+      <div class="card mt-4 reveal" id="finish">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold">Finished with Chapter 2?</h3>
+            <p class="small muted" style="margin:.25rem 0 0">Next: magnetism and induction — fields from moving charge.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" type="button" data-complete-topic="ch2" aria-pressed="false">Mark chapter as complete</button>
+            <a class="btn" href="../quiz.html?topic=ch2">Quiz this chapter</a>
+          </div>
+        </div>
+      </div>
+
+      <nav class="pager" aria-label="Chapter navigation">
+        <a href="current.html"><span class="dir">← Previous</span><span class="ttl">1 · Circuits &amp; Ohm's law</span></a>
+        <a class="next" href="magind.html"><span class="dir">Next chapter →</span><span class="ttl">3 · Magnetism &amp; induction</span></a>
+      </nav>
+    </section>
+
+  </main>
+
+<footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <span class="brand" style="pointer-events:none">
+          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
+          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
+          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
+        </svg>
+          <span class="brand-name">EMC<em>Lab</em></span>
+        </span>
+        <p class="small muted" style="margin-top:.6rem">Chapter 2 of 3.</p>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Chapters</h3>
+        <ul class="footer-links">
+          <li><a href="../topics/current.html">1 · Circuits & Ohm’s Law</a></li>
+          <li><a href="../topics/fields.html">2 · Electric Fields & Coulomb’s Law</a></li>
+          <li><a href="../topics/magind.html">3 · Magnetism & Induction</a></li>
+          <li><a href="../quiz.html">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">On this page</h3>
+        <ul class="footer-links">
+          <li><a href="#charge">2.1 · Electric charge</a></li>
+          <li><a href="#coulomb">2.2 · Coulomb’s law</a></li>
+          <li><a href="#field">2.3 · Electric field</a></li>
+          <li><a href="#symbols">Symbols &amp; units</a></li>
+          <li><a href="#finish">Finish &amp; quiz</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top:1.6rem">
+      <hr class="hr">
+      <p class="tiny faint center" style="margin-top:1rem">© <span data-year>2026</span> EMC Lab</p>
+    </div>
+  </footer>
+  <script defer src="../vendor/katex/katex.min.js"></script>
+  <script defer src="../js/registry.js"></script>
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/sandbox-core.js"></script>
+  <script defer src="../js/sim-static-room.js"></script>
+  <script defer src="../js/toy-balloon.js"></script>
+  <script defer src="../js/toy-ledger.js"></script>
+  <script defer src="../js/sim-arena.js"></script>
+  <script defer src="../js/toy-pinforce.js"></script>
+  <script defer src="../js/toy-bohr.js"></script>
+  <script defer src="../js/sim-fieldpaint.js"></script>
+  <script defer src="../js/toy-dipole.js"></script>
+  <script defer src="../js/toy-zerohunt.js"></script>
+</body>
+</html>

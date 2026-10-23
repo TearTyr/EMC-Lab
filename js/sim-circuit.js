@@ -9,58 +9,77 @@
   const { clamp, lerp, label, eng, unit, fixed } = EMC;
 
   /* ---- state ---------------------------------------------------------- */
+  /* Drag-and-drop bench (brief R1): every resistor lives in a wiring LANE —
+     'series' (the top wire) or 'parallel' (a vertical branch). Dragging a
+     resistor between lanes REWIRES the circuit; dragging it off the bench
+     deletes it; the battery and the bulb can be dragged off (disconnect) and
+     back on from the palette. The topology segment control is a shortcut that
+     moves every resistor at once; state.topology is the derived label. */
   const LIMITS = { series: [1, 4], parallel: [2, 4], combo: [3, 3] };
+  const MAX_R = 4;
   const state = {
     topology: 'series',
     V: 12,
     resistors: [10, 22, 47],
+    lanes: ['series', 'series', 'series'],
+    batteryIn: true,
     bulbR: 15,
     includeBulb: true,
     selected: 0
   };
+  const drag = { active: null };        // {kind:'R'|'battery'|'bulb', idx, x, y}
+
+  function syncTopology() {
+    const n = state.lanes.length;
+    const ser = state.lanes.filter(l => l === 'series').length;
+    state.topology = n === 0 ? 'series' : ser === n ? 'series' : ser === 0 ? 'parallel' : 'combo';
+    document.querySelectorAll('#circ-topology .seg-btn').forEach(b => {
+      const on = b.dataset.value === state.topology;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    const addBtn = document.getElementById('circ-add');
+    if (addBtn) addBtn.disabled = state.resistors.length >= MAX_R;
+  }
 
   /* ---- circuit analysis ------------------------------------------------ */
+  /* Lane-general series-parallel reduction (the brief's "circuit reduction"):
+     R(eq) = ΣR(series) + 1/Σ(1/R(parallel)); exact per-element V/I/P follow.
+     Battery dragged off => no EMF => everything is honestly zero. No
+     resistors AND bulb bypassed => a short: flagged, never Infinity/NaN. */
   function analyze() {
-    const R = state.resistors.slice();
-    const top = state.topology;
-    let Rbank = 0, breakdown = '', per = [];
+    const R = state.resistors.slice(), lanes = state.lanes;
+    const ser = [], par = [];
+    R.forEach((r, i) => (lanes[i] === 'parallel' ? par : ser).push({ r, i }));
+    const Rser = ser.reduce((a, c) => a + c.r, 0);
+    const sumG = par.reduce((a, c) => a + 1 / c.r, 0);
+    const Rpar = par.length ? 1 / sumG : 0;
+    const Rbank = Rser + Rpar;
 
-    if (top === 'series') {
-      Rbank = R.reduce((a, b) => a + b, 0);
-      breakdown = `R(eq) = ${R.map(r => fixed(r, 0)).join(' + ')} = ${fixed(Rbank, 2)} \u03A9`;
-    } else if (top === 'parallel') {
-      const sumG = R.reduce((a, b) => a + 1 / b, 0);
-      Rbank = 1 / sumG;
-      breakdown = `1/R(eq) = ${R.map(r => `1/${fixed(r, 0)}`).join(' + ')} = ${fixed(sumG, 4)} S  \u21D2  R(eq) = ${fixed(Rbank, 2)} \u03A9`;
-    } else { // combo: R1 in series with (R2 || R3)
-      const [r1, r2, r3] = R;
-      const Rp = (r2 * r3) / (r2 + r3);
-      Rbank = r1 + Rp;
-      breakdown = `R\u209A = (${fixed(r2, 0)} \u00D7 ${fixed(r3, 0)}) / (${fixed(r2, 0)} + ${fixed(r3, 0)}) = ${fixed(Rp, 2)} \u03A9   \u21D2   R(eq) = ${fixed(r1, 0)} + ${fixed(Rp, 2)} = ${fixed(Rbank, 2)} \u03A9`;
+    let breakdown;
+    if (!R.length) breakdown = 'no resistors connected \u2014 wires only';
+    else if (!par.length) breakdown = `R(eq) = ${R.map(r => fixed(r, 0)).join(' + ')} = ${fixed(Rbank, 2)} \u03A9`;
+    else if (!ser.length) breakdown = `1/R(eq) = ${R.map(r => `1/${fixed(r, 0)}`).join(' + ')} = ${fixed(sumG, 4)} S  \u21D2  R(eq) = ${fixed(Rbank, 2)} \u03A9`;
+    else {
+      const parTxt = par.length === 2
+        ? `R\u209A = (${fixed(par[0].r, 0)} \u00D7 ${fixed(par[1].r, 0)}) / (${fixed(par[0].r, 0)} + ${fixed(par[1].r, 0)}) = ${fixed(Rpar, 2)} \u03A9`
+        : `1/R\u209A = ${par.map(c => `1/${fixed(c.r, 0)}`).join(' + ')} = ${fixed(sumG, 4)} S  \u21D2  R\u209A = ${fixed(Rpar, 2)} \u03A9`;
+      breakdown = `${parTxt}   \u21D2   R(eq) = ${fixed(Rser, 2)} + ${fixed(Rpar, 2)} = ${fixed(Rbank, 2)} \u03A9`;
     }
 
     const Rbulb = state.includeBulb ? state.bulbR : 0;
     const Rtotal = Rbank + Rbulb;
-    const Itotal = state.V / Rtotal;
+    const short = !(Rtotal > 0.01);
+    const Veff = state.batteryIn ? state.V : 0;
+    const Itotal = short ? 0 : Veff / Rtotal;
     const Vbank = Itotal * Rbank;
+    const Vpar = Itotal * Rpar;
     const Vbulb = Itotal * Rbulb;
     const Pbulb = Itotal * Itotal * Rbulb;
-
-    if (top === 'series') {
-      per = R.map((r, i) => ({ i, r, I: Itotal, V: Itotal * r, P: Itotal * Itotal * r }));
-    } else if (top === 'parallel') {
-      per = R.map((r, i) => ({ i, r, I: Vbank / r, V: Vbank, P: (Vbank * Vbank) / r }));
-    } else {
-      const [r1, r2, r3] = R;
-      const V1 = Itotal * r1;
-      const Vp = Vbank - V1;
-      per = [
-        { i: 0, r: r1, I: Itotal, V: V1, P: Itotal * Itotal * r1 },
-        { i: 1, r: r2, I: Vp / r2, V: Vp, P: (Vp * Vp) / r2 },
-        { i: 2, r: r3, I: Vp / r3, V: Vp, P: (Vp * Vp) / r3 }
-      ];
-    }
-    return { Rbank, Rtotal, Itotal, Vbank, Vbulb, Pbulb, per, breakdown };
+    const per = R.map((r, i) => lanes[i] === 'parallel'
+      ? { i, r, I: Vpar / r, V: Vpar, P: (Vpar * Vpar) / r }
+      : { i, r, I: Itotal, V: Itotal * r, P: Itotal * Itotal * r });
+    return { Rbank, Rtotal, Itotal, Vbank, Vbulb, Pbulb, per, breakdown, short };
   }
 
   /* ---- layout ---------------------------------------------------------- */
@@ -72,48 +91,48 @@
     const frame = { bx, rx, ty, by, bulbX };
     const comps = [], hits = [], paths = [];
 
-    comps.push({ type: 'battery', x: bx, y: (ty + by) / 2, V: state.V });
-    if (state.includeBulb) comps.push({ type: 'bulb', x: bulbX, y: by, P: A.Pbulb });
+    comps.push({ type: 'battery', x: bx, y: (ty + by) / 2, V: state.V, connected: state.batteryIn });
+    hits.push({ kind: 'battery', idx: -1, x: bx - 32, y: (ty + by) / 2 - 36, w: 64, h: 80 });
+    if (state.includeBulb) {
+      comps.push({ type: 'bulb', x: bulbX, y: by, P: A.Pbulb });
+      hits.push({ kind: 'bulb', idx: -1, x: bulbX - 26, y: by - 26, w: 52, h: 52 });
+    }
 
-    const branchPath = xi => ({ points: [[bx, ty], [xi, ty], [xi, by], [bx, by], [bx, ty]] });
+    const serIdx = [], parIdx = [];
+    state.resistors.forEach((r, i) => (state.lanes[i] === 'parallel' ? parIdx : serIdx).push(i));
 
-    if (state.topology === 'series') {
-      const n = state.resistors.length;
-      const start = bx + 64, end = rx - 30;
-      A.per.forEach((p, i) => {
-        const x = lerp(start, end, (i + 0.5) / n);
-        comps.push({ type: 'R', x, y: ty, angle: 0, idx: i, R: p.r, I: p.I, V: p.V });
-        hits.push({ idx: i, x: x - 52, y: ty - 26, w: 104, h: 52 });
+    if (serIdx.length) {
+      const x0 = bx + 64, x1 = parIdx.length ? bx + (rx - bx) * 0.50 : rx - 30;
+      serIdx.forEach((ri, k) => {
+        const x = lerp(x0, x1, (k + 0.5) / serIdx.length);
+        const p = A.per[ri];
+        comps.push({ type: 'R', x, y: ty, angle: 0, idx: ri, R: p.r, I: p.I, V: p.V });
+        hits.push({ kind: 'R', idx: ri, x: x - 52, y: ty - 26, w: 104, h: 52 });
       });
-      paths.push({ points: branchPath(rx).points, current: A.Itotal });
-
-    } else if (state.topology === 'parallel') {
-      const n = state.resistors.length;
-      const x1 = bx + (rx - bx) * 0.34, x2 = rx - 26;
-      A.per.forEach((p, i) => {
-        const x = lerp(x1, x2, (i + 0.5) / n);
-        comps.push({ type: 'R', x, y: (ty + by) / 2, angle: Math.PI / 2, idx: i, R: p.r, I: p.I, V: p.V });
+    }
+    if (parIdx.length) {
+      const x0 = serIdx.length ? bx + (rx - bx) * 0.58 : bx + (rx - bx) * 0.34;
+      const x1 = rx - 26;
+      parIdx.forEach((ri, k) => {
+        const x = lerp(x0, x1, (k + 0.5) / parIdx.length);
+        const p = A.per[ri];
+        comps.push({ type: 'R', x, y: (ty + by) / 2, angle: Math.PI / 2, idx: ri, R: p.r, I: p.I, V: p.V });
         comps.push({ type: 'node', x, y: ty }); comps.push({ type: 'node', x, y: by });
-        hits.push({ idx: i, x: x - 24, y: (ty + by) / 2 - 46, w: 48, h: 92 });
-        paths.push({ points: branchPath(x).points, current: p.I });
+        hits.push({ kind: 'R', idx: ri, x: x - 24, y: (ty + by) / 2 - 46, w: 48, h: 92 });
+        paths.push({ points: [[x, ty], [x, by]], current: p.I });   // branch current, vertical run
       });
+    }
+    paths.unshift({ points: [[bx, ty], [rx, ty], [rx, by], [bx, by], [bx, ty]], current: A.Itotal });
 
-    } else { // combo: R1 in series with (R2 || R3)
-      const xR1 = bx + (rx - bx) * 0.24;
-      const jx = bx + (rx - bx) * 0.44;
-      const b1 = jx + (rx - 26 - jx) * 0.33;
-      const b2 = jx + (rx - 26 - jx) * 0.75;
-      const p = A.per;
-      comps.push({ type: 'R', x: xR1, y: ty, angle: 0, idx: 0, R: p[0].r, I: p[0].I, V: p[0].V });
-      hits.push({ idx: 0, x: xR1 - 52, y: ty - 26, w: 104, h: 52 });
-      [[b1, 1], [b2, 2]].forEach(([x, j]) => {
-        comps.push({ type: 'R', x, y: (ty + by) / 2, angle: Math.PI / 2, idx: j, R: p[j].r, I: p[j].I, V: p[j].V });
-        comps.push({ type: 'node', x, y: ty }); comps.push({ type: 'node', x, y: by });
-        hits.push({ idx: j, x: x - 24, y: (ty + by) / 2 - 46, w: 48, h: 92 });
-        paths.push({ points: branchPath(x).points, current: p[j].I });
-      });
-      // label the series element
-      comps.push({ type: 'note', x: xR1, y: ty + 40, text: 'in series with the bank' });
+    if (drag.active && drag.active.kind === 'R') {
+      comps.push({ type: 'zone', y0: 0, y1: h * 0.55, text: 'drop on the top wire \u2192 SERIES' });
+      comps.push({ type: 'zone', y0: h * 0.55, y1: h, text: 'drop low \u2192 PARALLEL branch' });
+      comps.push({ type: 'zone', off: true, y0: 0, y1: h, text: 'drag off the bench \u2192 remove' });
+    }
+    if (!state.resistors.length) {
+      comps.push({ type: 'note', x: (bx + rx) / 2, y: (ty + by) / 2, text: 'no resistors \u2014 drag one from the palette' });
+    } else if (serIdx.length && parIdx.length) {
+      comps.push({ type: 'note', x: bx + (rx - bx) * 0.30, y: ty + 40, text: 'in series with the parallel bank' });
     }
     return { frame, comps, paths, hits };
   }
@@ -154,8 +173,11 @@
     ctx.restore();
   }
 
-  function drawBattery(ctx, x, y, V) {
+  function drawBattery(ctx, x, y, V, connected) {
     ctx.save();
+    if (connected === false) {
+      ctx.setLineDash([5, 5]); ctx.globalAlpha = 0.45;
+    }
     ctx.strokeStyle = '#e8eefb'; ctx.lineWidth = 3; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(x - 14, y - 10); ctx.lineTo(x + 14, y - 10); ctx.stroke();
     ctx.lineWidth = 4.6;
@@ -164,9 +186,10 @@
     ctx.beginPath(); ctx.moveTo(x - 14, y + 8); ctx.lineTo(x + 14, y + 8); ctx.stroke();
     ctx.lineWidth = 4.6;
     ctx.beginPath(); ctx.moveTo(x - 7, y + 16); ctx.lineTo(x + 7, y + 16); ctx.stroke();
-    ctx.restore();
     label(ctx, '+', x + 21, y - 12, { color: '#f8aebe', size: 13, weight: '800' });
-    label(ctx, `${fixed(V, 1)} V`, x - 8, y + 38, { color: '#f6d36b', size: 12, weight: '700', align: 'center' });
+    label(ctx, connected === false ? 'drag me back on' : `${fixed(V, 1)} V`, x - 8, y + 38,
+      { color: connected === false ? '#7b8db0' : '#f6d36b', size: 12, weight: '700', align: 'center' });
+    ctx.restore();
   }
 
   function drawBulb(ctx, x, y, P) {
@@ -250,10 +273,34 @@
             align: vertical ? 'left' : 'center' });
         label(ctx, `I = ${eng(c.I, 2)} A`, lx, ly + (vertical ? 16 : -16),
           { color: '#f6d36b', size: 10.5, weight: '600', align: vertical ? 'left' : 'center' });
-      } else if (c.type === 'battery') drawBattery(ctx, c.x, c.y, c.V);
+      } else if (c.type === 'battery') drawBattery(ctx, c.x, c.y, c.V, c.connected);
       else if (c.type === 'bulb') drawBulb(ctx, c.x, c.y, c.P);
       else if (c.type === 'node') drawNode(ctx, c.x, c.y);
       else if (c.type === 'note') label(ctx, c.text, c.x, c.y, { color: 'rgba(148,163,184,.75)', size: 10.5, weight: '500' });
+      else if (c.type === 'zone' && !c.off) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(34,211,238,.05)';
+        ctx.fillRect(0, c.y0, w, c.y1 - c.y0);
+        ctx.strokeStyle = 'rgba(34,211,238,.25)'; ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.moveTo(0, c.y1); ctx.lineTo(w, c.y1); ctx.stroke();
+        label(ctx, c.text, w / 2, (c.y0 + c.y1) / 2 - (c.y0 === 0 ? -18 : 8),
+          { color: 'rgba(167,243,208,.8)', size: 11, weight: '700', align: 'center' });
+        ctx.restore();
+      }
+    }
+
+    // the dragged component rides with the pointer
+    if (drag.active) {
+      const d = drag.active;
+      ctx.save(); ctx.globalAlpha = 0.85;
+      if (d.kind === 'R') drawResistor(ctx, d.x, d.y, 0, state.resistors[d.idx], true, false);
+      else if (d.kind === 'battery') drawBattery(ctx, d.x, d.y, state.V, true);
+      else if (d.kind === 'bulb') drawBulb(ctx, d.x, d.y, 0);
+      ctx.restore();
+      if (d.x < 0 || d.y < 0 || d.x > w || d.y > h) {
+        label(ctx, 'release to disconnect', clamp(d.x, 70, w - 70), clamp(d.y, 16, h - 8),
+          { color: '#f8aebe', size: 11.5, weight: '800', align: 'center' });
+      }
     }
 
     // headline numbers on the canvas
@@ -281,8 +328,8 @@
     const A = analyze();
     const set = (id, v) => { if (el(id)) el(id).textContent = v; };
     set('circ-req', `${fixed(A.Rbank, 2)} \u03A9`);
-    set('circ-rtotal', `${fixed(A.Rtotal, 2)} \u03A9`);
-    set('circ-itotal', unit(A.Itotal, 'A', 3));
+    set('circ-rtotal', A.short ? 'SHORT (\u2248 0 \u03A9)' : `${fixed(A.Rtotal, 2)} \u03A9`);
+    set('circ-itotal', A.short ? '\u221E would flow \u2014 add R!' : state.batteryIn ? unit(A.Itotal, 'A', 3) : '0.00 A (no battery)');
     // 3 significant figures so that Kirchhoff's voltage law visibly adds up:
     // V(bank) + V(bulb) must equal the supply voltage on screen.
     set('circ-vbank', unit(A.Vbank, 'V', 3));
@@ -290,6 +337,13 @@
     set('circ-pbulb', state.includeBulb ? unit(A.Pbulb, 'W', 3) : '\u2014');
     set('circ-ptotal', unit(state.V * A.Itotal, 'W', 3));
     set('circ-breakdown', A.breakdown);
+    /* Detail Mode parity (§3.2.3): plain words for the same reduction. */
+    set('circ-breakdown-plain', A.short
+      ? 'Nothing but wire between the battery terminals — a short circuit. Add a resistor or the bulb.'
+      : (state.topology === 'series' ? 'One path: the resistances add up'
+        : state.topology === 'parallel' ? 'Side-by-side paths: every extra one lowers the total'
+        : 'Simplify the parallel group first, then add the series resistors')
+      + (A.short ? '' : ` \u2014 the bank behaves like a single ${fixed(A.Rbank, 2)} \u03A9 resistor.`));
 
     const tb = el('circ-table');
     if (tb) {
@@ -309,13 +363,17 @@
       const n = el(`circ-r${p.i}-info`);
       if (n) n.textContent = `V = ${eng(p.V, 3)} V   \u00B7   I = ${eng(p.I, 3)} A   \u00B7   P = ${eng(p.P, 3)} W`;
     });
-    // rule reminder that changes with topology
+    // rule reminder that changes with the actual wiring
     const rule = el('circ-rule');
     if (rule) {
-      rule.innerHTML = {
+      rule.innerHTML = !state.batteryIn
+        ? '<b>No supply:</b> the battery is off the bench — without an EMF there is no current anywhere. Drag it back on (or press the Battery chip).'
+        : A.short
+        ? '<b>Short circuit:</b> wires only between the terminals — an ideal battery would drive infinite current. Real batteries melt; add resistance.'
+        : {
         series: '<b>Series:</b> the same <b>current</b> flows through every resistor; voltages <b>divide</b> in proportion to R. R(eq) is always <b>larger</b> than the biggest single resistor.',
         parallel: '<b>Parallel:</b> every branch has the same <b>voltage</b>; currents <b>divide</b> (the smaller R gets more current). R(eq) is always <b>smaller</b> than the smallest branch.',
-        combo: '<b>Combination:</b> simplify the parallel pair first, then add the series resistor. Total current flows through R1, then splits between R2 and R3.'
+        combo: '<b>Combination:</b> simplify the parallel group first, then add the series resistors. The total current flows through the series ones, then splits between the branches.'
       }[state.topology];
     }
   }
@@ -334,10 +392,10 @@
         </div>
         <div style="display:flex;flex-direction:column;gap:.3rem;align-items:flex-end">
           <span class="ctl-value" id="circ-r${i}-v">${fixed(r, 0)} \u03A9</span>
-          ${state.topology === 'combo'
-            ? '<span class="tag tag-amber">' + (i === 0 ? 'series' : 'parallel') + '</span>'
-            : `<button class="btn btn-sm btn-danger" data-del="${i}" aria-label="Remove R${i + 1}"${
-                state.resistors.length <= LIMITS[state.topology][0] ? ' disabled' : ''}>\u00D7</button>`}
+          <div style="display:flex;gap:.3rem;align-items:center">
+            <button class="btn btn-sm" data-lane="${i}" aria-label="R${i + 1} is wired in ${state.lanes[i]}; move it to the other lane">${state.lanes[i]}</button>
+            <button class="btn btn-sm btn-danger" data-del="${i}" aria-label="Remove R${i + 1} from the circuit">\u00D7</button>
+          </div>
         </div>
       </div>`).join('');
 
@@ -358,41 +416,109 @@
       });
     });
     host.querySelectorAll('[data-del]').forEach(b => {
+      stage.listen(b, 'click', () => removeResistor(Number(b.dataset.del)));
+    });
+    host.querySelectorAll('[data-lane]').forEach(b => {
       stage.listen(b, 'click', () => {
-        const i = Number(b.dataset.del);
-        if (state.resistors.length <= LIMITS[state.topology][0]) return;
-        state.resistors.splice(i, 1);
-        state.selected = clamp(state.selected, 0, state.resistors.length - 1);
-        renderRows(); refresh();
+        const i = Number(b.dataset.lane);
+        state.lanes[i] = state.lanes[i] === 'series' ? 'parallel' : 'series';
+        syncTopology(); renderRows(); refresh();
+        EMC.toast(`R${i + 1} rewired into ${state.lanes[i]}`);
       });
     });
   }
 
-  function refresh() { stage.invalidate(); updateReadouts(); }
+  function refresh() { stage.invalidate(); updateReadouts(); syncPalette(); }
+
+  /* ---- palette: drag chips onto the bench, or click/Enter (a11y path) ---- */
+  function addResistor(lane) {
+    if (state.resistors.length >= MAX_R) { EMC.toast('The bench holds four resistors'); return; }
+    state.resistors.push(20);
+    state.lanes.push(lane || (state.topology === 'parallel' ? 'parallel' : 'series'));
+    state.selected = state.resistors.length - 1;
+    syncTopology(); renderRows(); refresh();
+    EMC.toast('Resistor placed — drag it between lanes to rewire');
+  }
+  function setBattery(on) {
+    state.batteryIn = !!on;
+    refresh(); stage.start();
+  }
+  function setBulb(on) {
+    state.includeBulb = !!on;
+    const cb = el('circ-includeBulb'); if (cb) cb.checked = state.includeBulb;
+    const sl = el('circ-bulbR'); if (sl) sl.disabled = !state.includeBulb;
+    refresh(); stage.start();
+  }
+  function syncPalette() {
+    const pal = el('circ-palette');
+    if (!pal) return;
+    pal.querySelectorAll('[data-circ-chip]').forEach(c => {
+      const k = c.dataset.circChip;
+      if (k === 'battery') { c.setAttribute('aria-pressed', String(state.batteryIn)); c.classList.toggle('chip-off', !state.batteryIn); }
+      if (k === 'bulb') { c.setAttribute('aria-pressed', String(state.includeBulb)); c.classList.toggle('chip-off', !state.includeBulb); }
+      if (k === 'resistor') c.disabled = state.resistors.length >= MAX_R;
+    });
+  }
+  const palette = el('circ-palette');
+  if (palette) {
+    palette.querySelectorAll('[data-circ-chip]').forEach(chip => {
+      const k = chip.dataset.circChip;
+      stage.listen(chip, 'click', () => {
+        if (k === 'resistor') addResistor();
+        else if (k === 'battery') { setBattery(!state.batteryIn); EMC.toast(state.batteryIn ? 'Battery connected' : 'Battery disconnected'); }
+        else { setBulb(!state.includeBulb); EMC.toast(state.includeBulb ? 'Bulb connected' : 'Bulb bypassed'); }
+      });
+      /* pointer drag: chip -> bench. A floating ghost follows the pointer; the
+         drop is honoured only over the canvas (resistors pick their lane by
+         drop height). Clicks below the drag threshold keep the a11y path. */
+      let down = false, sx = 0, sy = 0, ghost = null;
+      stage.listen(chip, 'pointerdown', e => { down = true; sx = e.clientX; sy = e.clientY; });
+      stage.listen(window, 'pointermove', e => {
+        if (!down) return;
+        if (!ghost && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) {
+          ghost = document.createElement('div');
+          ghost.className = 'circ-drag-ghost';
+          ghost.textContent = chip.textContent.trim();
+          document.body.appendChild(ghost);
+        }
+        if (ghost) {
+          ghost.style.left = (e.clientX + 12) + 'px';
+          ghost.style.top = (e.clientY + 12) + 'px';
+        }
+      }, { passive: true });
+      stage.listen(window, 'pointerup', e => {
+        if (!down) return;
+        down = false;
+        if (!ghost) return;               // it was a click — the click handler owns it
+        ghost.remove(); ghost = null;
+        const r = canvas.getBoundingClientRect();
+        const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        if (!over) return;
+        if (k === 'resistor') addResistor((e.clientY - r.top) > r.height * 0.55 ? 'parallel' : 'series');
+        else if (k === 'battery') { setBattery(true); EMC.toast('Battery connected'); }
+        else { setBulb(true); EMC.toast('Bulb connected'); }
+      });
+    });
+  }
 
   /* ---- buttons --------------------------------------------------------- */
   const topo = el('circ-topology');
   if (topo) stage.bindSegment(topo, value => {
-    state.topology = value;
-    const [lo, hi] = LIMITS[value];
-    // reshape the resistor list to fit the new topology
-    if (value === 'combo') state.resistors = [state.resistors[0] ?? 22, state.resistors[1] ?? 33, state.resistors[2] ?? 68].slice(0, 3);
-    while (state.resistors.length < lo) state.resistors.push(20);
-    while (state.resistors.length > hi) state.resistors.pop();
-    state.selected = clamp(state.selected, 0, state.resistors.length - 1);
-    const addBtn = el('circ-add');
-    if (addBtn) addBtn.disabled = state.resistors.length >= LIMITS[state.topology][1];
-    renderRows(); refresh();
+    /* a wiring shortcut: move every resistor into the chosen lane layout */
+    if (value === 'combo') {
+      while (state.resistors.length < 3) state.resistors.push(state.resistors.length === 1 ? 33 : 68);
+      state.resistors = state.resistors.slice(0, 3);
+      state.lanes = ['series', 'parallel', 'parallel'];
+    } else {
+      while (state.resistors.length < LIMITS[value][0]) state.resistors.push(20);
+      state.lanes = state.resistors.map(() => value);
+    }
+    state.selected = clamp(state.selected, 0, Math.max(0, state.resistors.length - 1));
+    syncTopology(); renderRows(); refresh();
   });
 
   const addBtn = el('circ-add');
-  if (addBtn) stage.listen(addBtn, 'click', () => {
-    if (state.resistors.length >= LIMITS[state.topology][1]) return;
-    state.resistors.push(20);
-    state.selected = state.resistors.length - 1;
-    addBtn.disabled = state.resistors.length >= LIMITS[state.topology][1];
-    renderRows(); refresh();
-  });
+  if (addBtn) stage.listen(addBtn, 'click', () => addResistor());
 
   stage.bindRange('circ-V', 'circ-Vv', v => { state.V = v; refresh(); }, v => `${fixed(v, 1)} V`);
   stage.bindRange('circ-bulbR', 'circ-bulbv', v => { state.bulbR = v; refresh(); }, v => `${fixed(v, 0)} \u03A9`);
@@ -403,21 +529,67 @@
     refresh();
   });
 
-  /* ---- click a resistor on the canvas to select it --------------------- */
+  /* ---- drag & drop on the canvas (brief R1: place / move / delete /
+         connect resistors, battery and bulb) ------------------------------ */
+  function removeResistor(i) {
+    if (i < 0 || i >= state.resistors.length) return;
+    state.resistors.splice(i, 1); state.lanes.splice(i, 1);
+    state.selected = clamp(state.selected, 0, Math.max(0, state.resistors.length - 1));
+    syncTopology(); renderRows(); refresh();
+    EMC.toast('Resistor removed from the bench');
+  }
   stage.onPointer(p => {
-    if (p.type !== 'down') return;
-    const hit = lastHits.find(h => p.x >= h.x && p.x <= h.x + h.w && p.y >= h.y && p.y <= h.y + h.h);
-    if (hit) {
-      state.selected = hit.idx;
-      renderRows(); refresh();
-      EMC.scrollToEl(document.querySelector(`[data-row="${hit.idx}"]`), { behavior: 'smooth', block: 'nearest' });
+    const hitAt = (x, y) => lastHits.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+    if (p.type === 'down') {
+      const hit = hitAt(p.x, p.y);
+      if (!hit) return;
+      if (hit.kind === 'R') { state.selected = hit.idx; renderRows(); }
+      drag.active = { kind: hit.kind, idx: hit.idx, x: p.x, y: p.y, x0: p.x, y0: p.y };
+      canvas.classList.add('dragging');
+      stage.start(); stage.invalidate();
+    } else if (p.type === 'move') {
+      if (drag.active) {
+        drag.active.x = p.x; drag.active.y = p.y;
+        stage.invalidate();
+      } else {
+        canvas.style.cursor = hitAt(p.x, p.y) ? 'grab' : 'default';
+      }
+    } else if (p.type === 'leave') {
+      /* Pointer capture keeps delivering move/up outside the canvas, so a
+         leave during a drag must NOT cancel it — drag-off-the-bench IS the
+         delete/disconnect gesture. */
+      if (!drag.active) canvas.style.cursor = 'default';
+    } else if (p.type === 'up') {
+      if (!drag.active) return;
+      const d = drag.active;
+      const outside = p.x < -4 || p.y < -4 || p.x > stage.w + 4 || p.y > stage.h + 4;
+      drag.active = null;
+      canvas.classList.remove('dragging');
+      const clickLike = Math.hypot(p.x - d.x0, p.y - d.y0) < 6;
+      if (d.kind === 'R') {
+        if (outside) removeResistor(d.idx);
+        else if (clickLike) {
+          /* a tap selects and reveals the row — but NEVER scroll mid-drag: a
+             smooth-scroll while the pointer is down moves the bench out from
+             under the gesture (found by the interaction test). */
+          EMC.scrollToEl(document.querySelector(`[data-row="${d.idx}"]`), { behavior: 'smooth', block: 'nearest' });
+        } else {
+          const lane = p.y > stage.h * 0.55 ? 'parallel' : 'series';
+          if (state.lanes[d.idx] !== lane) {
+            state.lanes[d.idx] = lane;
+            syncTopology(); renderRows();
+            EMC.toast(lane === 'series' ? 'R rewired onto the series wire' : 'R rewired into a parallel branch');
+          }
+        }
+      } else if (d.kind === 'battery' && outside) {
+        state.batteryIn = false; syncPalette();
+        EMC.toast('Battery disconnected \u2014 no EMF, no current');
+      } else if (d.kind === 'bulb' && outside) {
+        setBulb(false);
+        EMC.toast('Bulb removed from the circuit');
+      }
+      refresh(); stage.start();
     }
-  });
-  stage.listen(canvas, 'pointermove', e => {
-    const r = canvas.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
-    const over = lastHits.some(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
-    canvas.style.cursor = over ? 'pointer' : 'default';
   });
 
   /* ---- predict-then-run challenge -------------------------------------- Each challenge is answered by the SIMULATOR itself: we snapshot the state, apply a hypothetical change, re-run analyze(), and compare total currents. So the "correct" answer can never drift from the physics. */
@@ -426,8 +598,8 @@
                  current: null };
 
   function snapshot() {
-    return { topology: state.topology, resistors: state.resistors.slice(),
-             bulbR: state.bulbR, includeBulb: state.includeBulb, V: state.V };
+    return { topology: state.topology, resistors: state.resistors.slice(), lanes: state.lanes.slice(),
+             batteryIn: state.batteryIn, bulbR: state.bulbR, includeBulb: state.includeBulb, V: state.V };
   }
   function hypothesize(mut) {
     const keep = snapshot();
@@ -435,6 +607,7 @@
     const result = analyze();
     Object.assign(state, keep);
     state.resistors = keep.resistors;
+    state.lanes = keep.lanes;
     return result;
   }
   const DIRS = ['increase', 'decrease', 'stay the same'];
@@ -447,11 +620,15 @@
     const list = [];
     const other = { series: 'parallel', parallel: 'series', combo: 'series' }[state.topology];
     if (!(state.topology === 'combo') && state.resistors.length >= 2) {
-      const H = hypothesize(st => { st.topology = other; });
+      const H = hypothesize(st => {
+        st.topology = other;
+        st.lanes = st.lanes.map(() => (other === 'parallel' ? 'parallel' : 'series'));
+        if (other === 'combo') st.lanes = st.lanes.map((l, i) => (i === 0 ? 'series' : 'parallel'));
+      });
       list.push({
         text: `Predict: rewire the bank from <b>${state.topology}</b> to <b>${other}</b> (same resistors, bulb still in circuit). The total current from the battery will…`,
         answer: dirOf(A.Itotal, H.Itotal),
-        explain: `R<sub>eq</sub> goes ${state.topology === 'series' ? 'down (parallel branches add paths)' : 'up (one long path again)'}: ${fixed(A.Rbank, 2)} Ω → ${fixed(H.Rbank, 2)} Ω, so the total current will ${DIRS[dirOf(A.Itotal, H.Itotal)]}.`,
+        explain: `R<sub>eq</sub> goes ${state.topology === 'series' ? 'down (parallel branches add paths)' : 'up (one long path again)'}: ${fixed(A.Rbank, 2)} \u03A9 \u2192 ${fixed(H.Rbank, 2)} \u03A9, so the total current will ${DIRS[dirOf(A.Itotal, H.Itotal)]}.`,
         apply: () => { const b = document.querySelector(`#circ-topology [data-value="${other}"]`); if (b) b.click(); }
       });
     }
@@ -515,7 +692,8 @@
 
   /* ---- boot ------------------------------------------------------------ */
   renderRows();
-  if (addBtn) addBtn.disabled = state.resistors.length >= LIMITS[state.topology][1];
+  syncTopology();
   refresh();
+  if (typeof window !== 'undefined') window.__CIRC = { state, analyze, stage };   // test hook
   }
 })();

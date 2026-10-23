@@ -1,0 +1,169 @@
+[
+ {
+  "page": "/",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 535,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0.000008509667714436848,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "detailToggle L221 R362",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "390": [
+    "html scrollWidth 400>390",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "640": [
+    "[object SVGAnimatedString] L182 R6567"
+   ],
+   "900": [
+    "[object SVGAnimatedString] L236 R6824"
+   ],
+   "1200": [
+    "math L1114 R1207",
+    "semantics L1114 R1207",
+    "mrow L1114 R1207",
+    "mi L1200 R1207",
+    "[object SVGAnimatedString] L269 R7272"
+   ],
+   "1440": [
+    "[object SVGAnimatedString] L355 R7358"
+   ]
+  }
+ },
+ {
+  "page": "/quiz.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 477,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "detailToggle L221 R362",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "390": [
+    "html scrollWidth 400>390",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "640": [
+    "qnav-chip L627 R667",
+    "qnav-chip L672 R712",
+    "qnav-chip L718 R758",
+    "qnav-chip L763 R803",
+    "qnav-chip L808 R848"
+   ],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ },
+ {
+  "page": "/topics/fields.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 589,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "DIV L20 R377",
+    "canvas-wrap L20 R377",
+    "toy-balloon L20 R377",
+    "sim-plate L20 R377",
+    "panel-body L20 R377"
+   ],
+   "390": [],
+   "640": [],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ },
+ {
+  "page": "/topics/current.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 486,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "detailToggle L221 R362",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "390": [
+    "html scrollWidth 400>390",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "640": [],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ },
+ {
+  "page": "/topics/magind.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 656,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "html scrollWidth 400>360",
+    "detailToggle L221 R362",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "390": [
+    "html scrollWidth 400>390",
+    "navToggle L378 R400",
+    "SPAN L380 R398",
+    "SPAN L380 R398",
+    "SPAN L380 R398"
+   ],
+   "640": [],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ }
+]

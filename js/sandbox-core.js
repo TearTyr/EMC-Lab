@@ -28,6 +28,24 @@
 
   const eps = worldM => Math.min(worldM * SOFTEN, SOFT_MAX);
 
+  /* ---- pre-init input queue ------------------------------------------------
+     Preset buttons are static markup; Sandbox.create() only binds them once
+     the sandbox initialises (whenNear). A click that lands before that — an
+     anchor jump straight to a panel plus a fast tap, or an automated driver —
+     used to be dropped silently. Remember the latest unbound preset click per
+     panel root and replay it once the real handler exists. The listener is
+     registered once per document even though this script re-executes on every
+     shell mount, and the queue lives on window so all executions share it. */
+  if (!window.__emcSbPending) {
+    window.__emcSbPending = new Map();          // root element -> preset id
+    document.addEventListener('click', e => {
+      const b = e.target.closest && e.target.closest('[data-sb-preset]');
+      if (!b || b.dataset.sbBound) return;      // bound buttons take the normal path
+      const root = b.closest('.sb-root');
+      if (root) window.__emcSbPending.set(root, b.dataset.sbPreset);
+    }, true);
+  }
+
   /* Softened inverse-square magnitude between two point charges. */
   function pairF(qa, qb, rm, worldM) {
     const e2 = eps(worldM) * eps(worldM);
@@ -628,7 +646,9 @@
       state.newQ = (+qSlider.value || 3) * 1e-6;
       const v = gid('qv'); if (v) v.textContent = `${(+qSlider.value).toFixed(1)} µC`;
     });
-    root.querySelectorAll('[data-sb-preset]').forEach(b => stage.listen(b, 'click', () => {
+    root.querySelectorAll('[data-sb-preset]').forEach(b => {
+      b.dataset.sbBound = '1';                  // bound: the pre-init capture queue skips it
+      stage.listen(b, 'click', () => {
       const p = (opts.presets || []).find(x => x.id === b.dataset.sbPreset);
       if (!p) return;
       snapshot();
@@ -642,7 +662,8 @@
       state.selected = null; refresh();
       EMC.toast(`Preset: ${p.label}`);
       touch();
-    }));
+      });
+    });
 
     function randomScene() {
       const n = 2 * (2 + Math.floor(Math.random() * 3));   // even: pairs cancel exactly
@@ -1039,6 +1060,15 @@
     setTool('move');
     buildChallenges();
     refresh();
+
+    /* Replay a preset clicked before this sandbox existed (pre-init queue at
+       the top of this file). Runs last so the handler sees a fully built box. */
+    const queued = window.__emcSbPending && window.__emcSbPending.get(root);
+    if (queued) {
+      window.__emcSbPending.delete(root);
+      const qb = root.querySelector(`[data-sb-preset="${queued}"]`);
+      if (qb) qb.click();
+    }
 
     return {
       stage, state, api, refresh, shareCode,

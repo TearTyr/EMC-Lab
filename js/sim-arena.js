@@ -25,16 +25,23 @@
           { type: 'pos', q: 3e-6, x: 1.2, y: 0.6 },
           { type: 'neg', q: -2e-6, x: 1.5, y: 0.6 }
         ], zoom: 2, cx: 1.35, cy: 0.6 },
-        { id: 'lecture-line', label: 'Lecture: −4 / +3 / −7 µC on a line', objects: [
+        { id: 'lecture-line', label: 'Lecture: −4 / +3 / −7 µC, 0.20 + 0.15 m', objects: [
+          /* the lecture's own layout: q₂ = −4 µC at x = 0, q₁ = +3 µC at
+             x = 0.20 m, q₃ = −7 µC at x = 0.35 m — F₁₂ = 2.70 N (−x),
+             F₁₃ = 8.39 N (+x), net on q₁ = 5.69 N (+x). */
           { type: 'neg', q: -4e-6, x: 1.30, y: 0.6 },
           { type: 'pos', q: 3e-6, x: 1.50, y: 0.6 },
-          { type: 'neg', q: -7e-6, x: 1.70, y: 0.6 }
-        ], zoom: 2, cx: 1.5, cy: 0.6 },
-        { id: 'lecture-2d', label: 'Lecture: +4 / −6 / −5 µC in 2-D', objects: [
+          { type: 'neg', q: -7e-6, x: 1.65, y: 0.6 }
+        ], zoom: 2, cx: 1.475, cy: 0.6 },
+        { id: 'lecture-2d', label: 'Lecture: +4 / −6 / −5 µC, 0.15 m @ 73° + 0.10 m', objects: [
+          /* the lecture's own layout: q₁ = +4 µC, q₂ = −6 µC 0.15 m away at
+             73° above +x (canvas y grows downward, so "above" = smaller y),
+             q₃ = −5 µC 0.10 m along +x — net on q₁ = 22.7 N at ≈24°
+             above +x, matching the lecture figure's orientation. */
           { type: 'pos', q: 4e-6, x: 1.40, y: 0.50 },
-          { type: 'neg', q: -6e-6, x: 1.50, y: 0.50 },
-          { type: 'neg', q: -5e-6, x: 1.40, y: 0.64 }
-        ], zoom: 3, cx: 1.45, cy: 0.57 },
+          { type: 'neg', q: -6e-6, x: 1.4439, y: 0.3566 },   // screen-up = lecture's "73° above +x"
+          { type: 'neg', q: -5e-6, x: 1.50, y: 0.50 }
+        ], zoom: 3, cx: 1.45, cy: 0.43 },
         { id: 'orbit', label: 'Orbit seed (+8 µC, fast −1 µC)', objects: [
           { type: 'pos', q: 8e-6, x: 1.5, y: 0.7 },
           { type: 'neg', q: -1e-6, x: 2.2, y: 0.7 }
@@ -61,8 +68,8 @@
         {
           id: 'ar-lecture',
           text: 'Reproduce the lecture 2-D answer (\u2248 23 N)',
-          hint: 'Load the 2-D preset (or build it): +4 \u00B5C with −6 \u00B5C 0.10 m away and −5 \u00B5C 0.14 m away, at right angles.',
-          won: 'That is the lecture example: F\u2093 = 21.6 N and F\u1E67 = 9.2 N add as arrows to \u2248 23 N.',
+          hint: 'Load the 2-D preset (or build it): +4 \u00B5C with −6 \u00B5C 0.15 m away at 73°, −5 \u00B5C 0.10 m along +x.',
+          won: 'That is the lecture example: 9.6 N at 73° and 18.0 N along +x add as arrows to \u2248 22.7 N at \u224824°.',
           test: api => api.objects.some(o => Math.abs(o.q - 4e-6) < 1e-9 &&
             api.forceOn(o).mag > 22 && api.forceOn(o).mag < 25 &&
             api.objects.filter(b => b.q).length >= 3)
@@ -78,7 +85,7 @@
       ],
       discovery: {
         text: 'forces are arrows: they add by direction, fall as 1/r\u00B2, and always come in equal-and-opposite pairs.',
-        href: '#summary'
+        href: '#coulomb-summary'
       }
     });
     if (box) window.__AR = box;

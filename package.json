@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/check-links.mjs",
+    "check": "node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs",
     "test": "node tools/smoke-test.mjs",
     "build:css": "tailwindcss -c tailwind.config.js -i css/input.css -o css/site.css --minify",
     "build:public": "node tools/build-public.mjs",
@@ -16,10 +16,17 @@
     "og:card": "node tools/make-og-card.mjs",
     "test:shell": "node tools/shell-stress.mjs",
     "shots": "node tools/screenshots.mjs",
-    "test:interact": "node tools/interaction-test.mjs"
+    "test:interact": "node tools/interaction-test.mjs",
+    "loader-verify": "node tools/loader-verify.mjs",
+    "nav-verify": "node tools/nav-verify.mjs",
+    "quiz-verify": "node tools/quiz-verify.mjs",
+    "lecture-values": "node tools/lecture-values.mjs",
+    "a11y-verify": "node tools/a11y-verify.mjs"
   },
   "devDependencies": {
     "jsdom": "^27.4.0",
+    "playwright": "^1.64.1",
+    "puppeteer": "^24.43.1",
     "tailwindcss": "^3.4.19"
   },
   "description": "Interactive electromagnetics tutorial for Calculus-based Physics II. Fully static: zero runtime dependencies; jsdom is a dev-only test dependency."

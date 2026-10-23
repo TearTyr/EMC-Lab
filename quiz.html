@@ -9,8 +9,27 @@
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
-    try { if (sessionStorage.getItem('emc.splash.v1')) document.documentElement.classList.add('no-splash'); } catch (e) { /* storage blocked: show the splash */ }
-    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 4000); /* failsafe: never trap a user on the shell */
+    /* Boot dead-man switch — part of the ONE loader lifecycle owned by js/common.js.
+       If the engine never comes up (a script failed to load or threw during
+       startup), show an error card with Retry and Home after 1500 ms. When
+       common.js is alive this does nothing: its loader owns the experience and
+       the page content is already on screen either way. */
+    setTimeout(function () {
+      if (window.EMC) return;
+      var home = location.pathname.indexOf('/topics/') >= 0 ? '../index.html' : 'index.html';
+      var d = document.createElement('div');
+      d.id = 'bootFatal'; d.setAttribute('role', 'alert');
+      var p1 = document.createElement('p');
+      p1.innerHTML = '<strong>EMC Lab did not start.</strong> A required script failed to load or threw an error.';
+      var p2 = document.createElement('p');
+      var rb = document.createElement('button');
+      rb.type = 'button'; rb.id = 'bootFatalRetry'; rb.textContent = 'Retry';
+      var ha = document.createElement('a'); ha.textContent = 'Home'; ha.href = home;
+      p2.appendChild(rb); p2.appendChild(document.createTextNode(' ')); p2.appendChild(ha);
+      d.appendChild(p1); d.appendChild(p2);
+      (document.body || document.documentElement).appendChild(d);
+      rb.addEventListener('click', function () { location.reload(); });
+    }, 1500);
   </script>
   <title>Quiz · EMC Lab</title>
   <link rel="canonical" href="https://emc-lab.vercel.app/quiz.html">
@@ -33,7 +52,7 @@
   <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
-       home screens. All three carry the same Denki-chan artwork as the header
+       home screens. All three carry the same artwork as the header
        brand mark — tools/smoke-test.mjs asserts they stay identical. -->
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
@@ -47,63 +66,44 @@
   <!-- KaTeX: the LaTeX formatter for every equation on the page -->
   <link rel="stylesheet" href="vendor/katex/katex.min.css">
   <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
-  <style id="bootShell">
-    /* Boot overlay shell: self-contained (paints even if site.css is slow),
-       flat tokens only, transform/opacity animation only. */
+  <style id="bootLoader">
+    /* Loader visuals: ONE segmented accent bar that advances on real stage
+       completion, plus a screen-reader status line — nothing else. The overlay
+       is built dynamically by js/common.js only when startup exceeds ~150 ms,
+       so these rules cost nothing on fast loads. Flat tokens, transform/opacity
+       only; self-contained so it paints even if site.css is slow. */
     #bootOverlay {
-      position: fixed; inset: 0; z-index: 200; background: #17181c;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 14px; opacity: 1; transition: opacity .28s ease;
-      font-family: G8321, 'Hiragino Maru Gothic ProN', 'Segoe UI', system-ui, sans-serif;
+      position: fixed; inset: 0; z-index: 200; background: #101116;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      opacity: 1; transition: opacity .24s ease;
     }
     #bootOverlay.hide { opacity: 0; pointer-events: none; }
-    #bootOverlay .mascot-bo { width: 84px; height: auto; animation: boBob 3.4s ease-in-out infinite; }
-    #bootOverlay .bo-brand { display: flex; align-items: baseline; gap: 1px; font-weight: 700; color: #e8eefb; font-size: 1.15rem; letter-spacing: .01em; }
-    #bootOverlay .bo-brand em { font-style: normal; color: #f8aebe; }
-    #bootOverlay .bo-sub { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #7b8db0; margin-top: -8px; }
-    #bootOverlay .bo-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-    #bootOverlay .bo-chip { font-size: .66rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #a9bad6; background: #1b1d22; border: 1.5px solid #26282f; border-radius: 999px; padding: .2rem .62rem; }
-    #bootOverlay .bo-chip.done { color: #b5d777; border-color: rgba(181,215,119,.45); }
-    #bootOverlay .bo-chip::after { content: " \2713"; visibility: hidden; }
-    #bootOverlay .bo-chip.done::after { visibility: visible; }
-    html.no-splash #bootOverlay { display: none; }
-    #bootOverlay .bo-bar { display: flex; gap: 4px; width: 180px; height: 4px; }
-    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #26282f; position: relative; overflow: hidden; }
-    #bootOverlay .bo-seg::after { content: ""; position: absolute; inset: 0; background: #a8d3e0; border-radius: 999px; transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+    #bootOverlay .bo-bar { display: flex; gap: 5px; width: 192px; height: 5px; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #23252c; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg::after {
+      content: ""; position: absolute; inset: 0; background: #e9ff47; border-radius: 999px;
+      transform: scaleX(0); transform-origin: left; transition: transform .2s ease;
+    }
     #bootOverlay .bo-seg.done::after { transform: scaleX(1); }
-    #bootOverlay .bo-tip { font-size: .74rem; font-weight: 700; color: #7b8db0; max-width: 30ch; text-align: center; min-height: 2.2em; }
     #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    @keyframes boBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    #bootFatal {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 210; width: min(92vw, 34rem);
+      margin: 0 auto 1rem; background: #17181c; color: #e8eefb;
+      border: 1.5px solid #e9ff47; border-radius: .75rem; padding: 1rem 1.2rem;
+      font: 600 .95rem/1.45 system-ui, sans-serif;
+    }
+    #bootFatal button, #bootFatal a {
+      font: inherit; font-weight: 700; color: #101116; background: #e9ff47;
+      border: 0; border-radius: .5rem; padding: .4rem .9rem; cursor: pointer; text-decoration: none;
+    }
+    #bootFatal a { display: inline-block; margin-left: .4rem; }
     @media (prefers-reduced-motion: reduce) {
-      #bootOverlay .bo-seg::after { transition: none; }
-      #bootOverlay .mascot-bo { animation: none; }
-      #bootOverlay { transition: none; }
+      #bootOverlay, #bootOverlay .bo-seg::after { transition: none; }
     }
   </style>
 </head>
 
 <body class="emc">
-  <div id="bootOverlay" role="status" aria-label="Loading EMC Lab">
-    <svg class="mascot-bo" viewBox="0 0 120 112" aria-hidden="true">
-      <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
-      <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
-      <ellipse cx="60" cy="64" rx="42" ry="40" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3"/>
-      <circle cx="46" cy="58" r="3.6" fill="#2b2d33"/><circle cx="74" cy="58" r="3.6" fill="#2b2d33"/>
-      <path d="M55 68 q5 5 10 0" stroke="#2b2d33" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-      <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
-    </svg>
-    <span class="bo-brand">EMC<em>Lab</em></span>
-    <span class="bo-sub">interactive physics</span>
-    <span class="bo-chips" aria-hidden="true">
-      <span class="bo-chip" data-stage="fonts">fonts</span>
-      <span class="bo-chip" data-stage="equations">equations</span>
-      <span class="bo-chip" data-stage="sims">first sim</span>
-    </span>
-    <span class="bo-bar" aria-hidden="true"><i class="bo-seg"></i><i class="bo-seg"></i><i class="bo-seg"></i></span>
-    <span class="bo-tip" id="boTip" aria-hidden="true">Like repels, unlike attracts.</span>
-    <span class="sr-only" id="boStatus">Loading…</span>
-  </div>
-  <noscript><!-- JavaScript is turned off: hide the boot shell (the tutorial text below still reads fine). --><style>#bootOverlay{display:none}</style></noscript>
   <a class="skip-link" href="#main">Skip to main content</a>
   <noscript>
     <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>
@@ -122,8 +122,8 @@
         </svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electromagnetics</span></span>
       </a>
-      <button class="detail-toggle" id="detailToggle" type="button" role="switch" aria-checked="true"
-              title="Details: full technical explanations (ON) or simplified ones (OFF)">
+      <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
+              title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
         <span class="dt-label" aria-hidden="true">Details</span>
         <span class="dt-state" aria-hidden="true">ON</span>
         <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
@@ -134,27 +134,20 @@
         <a class="nav-link" href="index.html">Home</a>
         <div class="nav-drop">
           <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
-                  aria-expanded="false" aria-controls="topicsMenu">Lessons
+                  aria-expanded="false" aria-controls="topicsMenu">Chapters
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <span class="dd-head">The lecture</span>
-            <a class="dd-link" href="topics/charge.html"><b>1 · Electric Charge</b><small>q = n·e · conservation · conductors</small></a>
-            <a class="dd-link" href="topics/coulomb.html"><b>2 · Coulomb’s Law</b><small>F = k|q₁q₂|/r² · superposition · Bohr</small></a>
-            <a class="dd-link" href="topics/field.html"><b>3 · Electric Field</b><small>E = F/|q₀| · field lines · zero points</small></a>
-            <span class="dd-head">Extra — beyond this lecture</span>
-            <a class="dd-link" href="topics/current.html"><b>Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
-            <a class="dd-link" href="topics/magind.html"><b>Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
+            <span class="dd-head">The three chapters</span>
+            <a class="dd-link" href="topics/current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · P = VI · series &amp; parallel · circuit builder</small></a>
+            <a class="dd-link" href="topics/fields.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charge · Coulomb + superposition · E-field &amp; field lines</small></a>
+            <a class="dd-link" href="topics/magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="quiz.html">Take the quiz</a>
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
-    <div class="boot-strip" id="bootStrip" aria-hidden="true">
-      <span class="boot-chip" data-stage="equations-rest">equations</span>
-      <span class="boot-chip" data-stage="sims-rest">simulations</span>
-    </div>
   </header>
 
   <main class="emc-main" id="main" tabindex="-1">
@@ -164,29 +157,20 @@
         <a href="index.html">Home</a><span aria-hidden="true">/</span><span>Quiz</span>
       </nav>
       <div class="quiz-head">
-      <svg class="mascot mascot-sm" aria-hidden="true" viewBox="0 0 120 112">
-  <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
-  <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
-  <ellipse cx="60" cy="64" rx="42" ry="40" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3"/>
-  <circle cx="46" cy="58" r="3.6" fill="#2b2d33"/><circle cx="74" cy="58" r="3.6" fill="#2b2d33"/>
-  <path d="M55 68 q5 5 10 0" stroke="#2b2d33" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
-  <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
-</svg>
         <div class="quiz-head-text">
           <span class="eyebrow eyebrow-amber">Assessment</span>
           <h1 class="h-topic">Electromagnetics quiz</h1>
         </div>
       </div>
       <p class="lede">
-        <span id="quiz-total">35</span> multiple-choice questions covering the three lessons — plus two
-        optional Extra topics — each with a worked explanation and a hint. Scoring is automatic; your best result is saved in this browser.
+        <span id="quiz-total">24</span> multiple-choice questions — eight per chapter — each with a worked
+        explanation and a hint. Scoring is automatic; your best result is saved in this browser.
       </p>
 
       <!-- Stat tiles: hidden by js/quiz.js while an attempt is in progress,
            so the first question card lands inside the first viewport. -->
       <div class="stat-strip stat-strip-4" id="quiz-stats" style="max-width:640px">
-        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">35</span></div>
+        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">24</span></div>
         <div class="stat"><span class="stat-label">Best score</span><span class="stat-value hl-emerald" id="quiz-best">—</span></div>
         <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="quiz-attempts">0</span></div>
         <div class="stat"><span class="stat-label">Pass mark</span><span class="stat-value hl-amber">70%</span></div>
@@ -199,7 +183,6 @@
       <div class="card resume-card" role="status">
         <div class="flex flex-wrap items-center gap-3 justify-between">
           <div class="flex items-center gap-3" style="min-width:0">
-            <svg class="mreact" viewBox="0 0 60 56" aria-hidden="true" style="width:44px;flex:none"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg>
             <div style="min-width:0">
               <p class="font-bold">Welcome back!</p>
               <p class="small muted" id="resume-summary" style="margin:.15rem 0 0">You have an unfinished quiz on this device.</p>
@@ -226,8 +209,8 @@
             </button>
             <div class="quiz-pill" id="quizPill" hidden role="status" aria-label="Quiz progress">
               <span class="pill-track"><span class="pill-fill" id="quiz-progress-fill"></span></span>
-              <span class="pill-text" id="pillText">0/35</span>
-              <span class="pill-sr" id="quiz-progress-text">0 of 35 answered</span>
+              <span class="pill-text" id="pillText">0/24</span>
+              <span class="pill-sr" id="quiz-progress-text">0 of 24 answered</span>
               <span id="quiz-live" hidden></span>
               <span class="pill-flags" id="pillFlags" hidden>
                 <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -241,12 +224,9 @@
               <span class="ctl-label">Topic</span>
               <div class="btn-group" role="group" aria-label="Filter questions by topic">
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="lessons" aria-pressed="false">Lessons 1–3</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="charge" aria-pressed="false">Charge</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="coulomb" aria-pressed="false">Coulomb</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="field" aria-pressed="false">Field</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Extra: Circuits</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Extra: Magnetism</button></div>
+                <button class="btn btn-sm" type="button" data-quiz-filter="ch1" aria-pressed="false">1 · Circuits</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="ch2" aria-pressed="false">2 · Fields &amp; Coulomb</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="ch3" aria-pressed="false">3 · Magnetism</button></div>
             </div>
             <div class="qopts-cell">
               <span class="ctl-label">Status</span>
@@ -283,7 +263,7 @@
             <button class="btn btn-primary" type="button" id="quiz-submit" data-quiz-submit>Submit quiz</button>
             <button class="btn" type="button" id="quiz-shuffle">Shuffle order</button>
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
-            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">35</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
+            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">24</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
             <p class="tiny faint qopts-submit-hint" id="quiz-submit-hint" data-submit-hint role="status" hidden></p>
           </div>
 
@@ -368,7 +348,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="font-bold">Want to revise before scoring?</h2>
-            <p class="small muted" style="margin:.25rem 0 0">Each lesson ends with a sandbox to play in and self-check questions.</p>
+            <p class="small muted" style="margin:.25rem 0 0">Each chapter ends with sandboxes to play in and self-check questions.</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <a class="btn btn-sm" href="topics/charge.html">Lesson 1</a>
@@ -421,16 +401,15 @@
         </svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
-        <p class="small muted" style="margin-top:.6rem">Thirty-five questions across the three lessons — plus two Extra topics.</p>
+        <p class="small muted" style="margin-top:.6rem">Twenty-four questions — eight per chapter.</p>
       </div>
       <div>
-        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Chapters</h3>
         <ul class="footer-links">
-          <li><a href="topics/charge.html">1 · Electric charge</a></li>
-          <li><a href="topics/coulomb.html">2 · Coulomb’s law</a></li>
-          <li><a href="topics/field.html">3 · Electric field</a></li>
-          <li><a href="topics/current.html">Extra · Circuits &amp; Ohm’s law</a></li>
-          <li><a href="topics/magind.html">Extra · Magnetism &amp; induction</a></li>
+          <li><a href="topics/current.html">1 · Circuits & Ohm’s Law</a></li>
+          <li><a href="topics/fields.html">2 · Electric Fields & Coulomb’s Law</a></li>
+          <li><a href="topics/magind.html">3 · Magnetism & Induction</a></li>
+          <li><a href="quiz.html">Quiz</a></li>
         </ul>
       </div>
     </div>
@@ -448,20 +427,5 @@
   <script defer src="js/common.js"></script>
   <script defer src="js/quiz-data.js"></script>
   <script defer src="js/quiz.js"></script>
-  <!-- Vercel Speed Insights + Web Analytics: injected at runtime ONLY when the
-       site is actually served from Vercel, so local runs, file:// and the test
-       suite stay zero-third-party-request and console-clean. On Vercel the
-       integrations keep reporting exactly as the dashboard expects. -->
-  <script>
-    if (/\.vercel\.app$/.test(location.hostname)) {
-      var wa = document.createElement('script');
-      wa.defer = true;
-      wa.src = 'https://cdn.vercel-insights.com/v1/script.js';
-      document.head.appendChild(wa);
-      import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
-        .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
-        .catch(function () { /* analytics is optional; never break the page */ });
-    }
-  </script>
 </body>
 </html>

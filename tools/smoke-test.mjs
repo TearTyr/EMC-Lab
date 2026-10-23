@@ -46,6 +46,20 @@ function numClose(name, actual, expected, tol = 0.02) {
   ok(name, isFinite(a) && Math.abs(a - e) <= Math.abs(e) * tol, `got ${a}, expected \u2248${e}`);
 }
 
+/* Bank fingerprint — deliberately an INDEPENDENT copy of the algorithm in
+   js/quiz.js, so seeded resume/stale sessions are built from the contract,
+   not from the implementation reaching into itself. */
+const BANK_FOR_FP = (() => {
+  const w = {};
+  new Function('window', readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8'))(w);
+  return w.EMC_QUIZ;
+})();
+function bankFP(B) {
+  let h = B.length | 0;
+  for (const q of B) { h = (h * 31 + q.id) | 0; h = (h * 31 + String(q.q).length) | 0; }
+  return 'b' + h;
+}
+
 /* ---------- canvas + layout mocks --------------------------------------- */
 function installMocks(win) {
   // Give elements a realistic size (jsdom reports zeros for everything).
@@ -103,8 +117,8 @@ async function loadPage(relPath, globals = {}, opts = {}) {
     url: 'http://localhost/' + query,  // enables localStorage + ?topic= links
     virtualConsole: vc,
     beforeParse(window) {
-      // session-scoped state (the first-visit splash gate) must exist BEFORE
-      // the inline head scripts run, so it is seeded during parsing
+      // session-scoped seeds must exist BEFORE the inline head scripts run,
+      // so they are set during parsing
       if (opts.session) {
         for (const [k, v] of Object.entries(opts.session)) window.sessionStorage.setItem(k, v);
       }
@@ -183,8 +197,8 @@ console.log('\u2500'.repeat(66));
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('progress ring shows a percentage', /^\d+%$/.test(txt(win, 'ringPct') || ''), txt(win, 'ringPct'));
   eq('starts at 0% with empty storage', txt(win, 'ringPct'), '0%');
-  eq('lesson counter text', txt(win, 'dashTopicsDone'), '0 of 3 lessons studied');
-  eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 3 lessons studied');
+  eq('chapter counter text', txt(win, 'dashTopicsDone'), '0 of 3 chapters studied');
+  eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 3 chapters studied');
   // the animated dipole canvas was retired in favour of a static KaTeX strip
   ok('the animated hero canvas is gone (replaced by the equation strip)',
     doc.getElementById('heroCanvas') === null && !doc.querySelector('.hero-visual'));
@@ -192,31 +206,31 @@ console.log('\u2500'.repeat(66));
   ok('hero equations are typeset by KaTeX',
     [...doc.querySelectorAll('.eq-strip [data-tex]')].every(e => e.dataset.texDone === '1'));
   // hero counters are derived, never hand-copied (audit 1.2 / 1.5 / 3.2)
-  eq('lessons stat is derived from the registry', txt(win, 'statChapters'),
-    String(win.EMC_REGISTRY.lessons.length));
+  eq('chapters stat is derived from the registry', txt(win, 'statChapters'),
+    String(win.EMC_REGISTRY.chapters.length));
   eq('simulations stat is derived from the registry', txt(win, 'statSims'),
     String(win.EMC_REGISTRY.chapters.reduce((n, c) => n + c.sims.length, 0)));
   eq('quiz stat is derived from the bank', txt(win, 'statQuestions'), String(win.EMC_QUIZ.length));
-  eq('the spelled-out quiz count matches the bank', txt(win, 'quizCountWord'), 'Thirty-five');
-  ok('no stale hand-written "Twenty" survives in the homepage copy',
-    !/Twenty/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
+  eq('the spelled-out quiz count matches the bank', txt(win, 'quizCountWord'), 'Twenty-four');
+  ok('no stale hand-written quiz count survives in the homepage copy',
+    !/Thirty-five|35-question/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
   eq('storage status reported', txt(win, 'storageStatus'), 'enabled \u2014 your progress is saved in this browser');
   eq('year filled in', doc.querySelector('[data-year]').textContent, String(new Date().getFullYear()));
 
   // progress persistence: mark a topic, reload the same storage, re-render
-  win.EMC.Progress.markTopic('charge', true);
+  win.EMC.Progress.markTopic('ch2', true);
   win.EMC.Progress.recordQuiz(85);
-  eq('a passing score (70%+) counts all three lessons as studied',
+  eq('a passing score (70%+) counts all three chapters as studied',
      JSON.stringify(win.EMC.Progress.read().topics),
-     JSON.stringify({ charge: true, coulomb: true, field: true }));
+     JSON.stringify({ ch1: true, ch2: true, ch3: true }));
   eq('percent weights topics (80%) + quiz (20%)', win.EMC.Progress.percent(), Math.round(1 * 80 + 0.85 * 20));
   win.window?.close?.(); win.close();
 }
 
-/* ---------------- topics/charge.html ---------------- */
+/* ---------------- topics/fields.html §2.1 (charge) ---------------- */
 {
-  console.log('\n[topics/charge.html]');
-  const { win, doc, problems } = await loadPage('topics/charge.html');
+  console.log('\n[topics/fields.html · §2.1 charge]');
+  const { win, doc, problems } = await loadPage('topics/fields.html');
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('static room canvas rendered', drawCalls(win, '#sim-static-room') > 100);
@@ -273,27 +287,28 @@ console.log('\u2500'.repeat(66));
   win.close();
 }
 
-/* ---------------- topics/coulomb.html ---------------- */
+/* ---------------- topics/fields.html §2.2 (coulomb) ---------------- */
 {
-  console.log('\n[topics/coulomb.html]');
-  const { win, doc, problems } = await loadPage('topics/coulomb.html');
+  console.log('\n[topics/fields.html · §2.2 coulomb]');
+  const { win, doc, problems } = await loadPage('topics/fields.html');
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('arena canvas rendered', drawCalls(win, '#sim-arena') > 80);
   ok('pin-force canvas rendered', drawCalls(win, '#toy-pinforce') > 50);
   ok('bohr canvas rendered', drawCalls(win, '#toy-bohr') > 30);
-  const K = 8.987551787e9;
+  const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
   const cv = () => doc.getElementById('sim-arena');
 
-  // --- Lecture line example: −4/+3/−7 µC at 0.20/0.40 m -> net on q1 = 1.12 N
+  // --- Lecture line example: q₂=−4 at 0, q₁=+3 at 0.20, q₃=−7 at 0.35 m
+  //     -> F₁₂ = 2.70 N (−x), F₁₃ = 8.39 N (+x), net on q₁ = 5.69 N (+x)
   click(win, doc.querySelector('[data-sb-preset="lecture-line"]'));
   eq('the lecture line preset loads three charges', txt(win, 'ar-count'), '3');
-  // preset zoom x2 about (1.5, cy): q1 at (1.30, 0.60) m -> px (330, 160)
-  pointer(win, cv(), 'pointerdown', 330, 200);
-  pointer(win, cv(), 'pointerup', 330, 200);
+  // preset zoom x2 about (1.475, 0.60): q₁ (+3 µC) at (1.50, 0.60) m -> px (465, 200)
+  pointer(win, cv(), 'pointerdown', 465, 200);
+  pointer(win, cv(), 'pointerup', 465, 200);
   await frames(win, 2);
-  numClose('lecture line example: net force on q1 = 2.70 − 1.57 N',
-    parseSI(txt(win, 'ar-sel')), K * 1.2e-11 / 0.04 - K * 2.8e-11 / 0.16, 0.02);
+  numClose('lecture line example: net force on q₁ = 8.39 − 2.70 N (+x)',
+    parseSI(txt(win, 'ar-sel')), K * 21e-12 / 0.0225 - K * 12e-12 / 0.04, 0.02);
 
   // --- Inverse square: drag one charge to twice the distance -> F/4 --------
   click(win, doc.querySelector('[data-sb-preset="pair"]'));
@@ -308,14 +323,14 @@ console.log('\u2500'.repeat(66));
   numClose('doubling r quarters the force (third law: same |F| on q2)',
     parseSI(txt(win, 'ar-sel')), F1 / 4, 0.02);
 
-  // --- Lecture 2-D example: ≈ 23 N on the +4 µC -----------------------------
+  // --- Lecture 2-D example: ≈ 22.7 N at ≈24° on the +4 µC --------------------
   click(win, doc.querySelector('[data-sb-preset="lecture-2d"]'));
-  // preset zoom x3 about (1.45, 0.57): +4 µC at (1.40, 0.50) m -> px (405, 137)
-  pointer(win, cv(), 'pointerdown', 405, 137);
-  pointer(win, cv(), 'pointerup', 405, 137);
+  // preset zoom x3 about (1.45, 0.43): +4 µC at (1.40, 0.50) m -> px (405, 263)
+  pointer(win, cv(), 'pointerdown', 405, 263);
+  pointer(win, cv(), 'pointerup', 405, 263);
   await frames(win, 2);
-  numClose('lecture 2-D example: net force on the +4 µC ≈ 23 N',
-    parseSI(txt(win, 'ar-sel')), 23.2, 0.03);
+  numClose('lecture 2-D example: net force on the +4 µC ≈ 22.7 N at ≈24°',
+    parseSI(txt(win, 'ar-sel')), 22.7, 0.03);
   ok('the 2-D challenge star lights up from the physics state',
     !!doc.querySelector('#ar-panel .sb-star.got'));
 
@@ -349,28 +364,28 @@ console.log('\u2500'.repeat(66));
   win.close();
 }
 
-/* ---------------- topics/field.html ---------------- */
+/* ---------------- topics/fields.html §2.3 (field) ---------------- */
 {
-  console.log('\n[topics/field.html]');
-  const { win, doc, problems } = await loadPage('topics/field.html');
+  console.log('\n[topics/fields.html · §2.3 field]');
+  const { win, doc, problems } = await loadPage('topics/fields.html');
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('field painter rendered', drawCalls(win, '#sim-fieldpaint') > 300);
   ok('dipole toy rendered', drawCalls(win, '#toy-dipole') > 80);
   ok('zero-hunt toy rendered', drawCalls(win, '#toy-zerohunt') > 50);
-  const K = 8.987551787e9;
+  const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
   const fp = () => doc.getElementById('sim-fieldpaint');
 
   // --- Lecture replica: ±4 µC on the y-axis, probe parked at P -------------
   click(win, doc.querySelector('[data-sb-preset="lecture-y"]'));
   await frames(win, 2);
   eq('the replica preset loads four objects', txt(win, 'fp-count'), '4');
-  numClose('lecture y-axis example: |E| at P ≈ 7.55×10⁴ N/C',
-    parseSI(txt(win, 'fp-probe-e')), 7.55e4, 0.02);
+  numClose('lecture y-axis example: |E| at P ≈ 7.56×10⁴ N/C',
+    parseSI(txt(win, 'fp-probe-e')), 75595, 0.02);
   ok('E at P points along +y (90° from +x)', /^90°/.test(txt(win, 'fp-probe-dir')), txt(win, 'fp-probe-dir'));
   ok('the lecture replica challenge star lights up', !!doc.querySelector('#fp-panel .sb-star.got'));
   // the same number from first principles (softened eps = 0.01 m):
-  const Ey = 2 * (K * 4e-6 / (0.61 + 1e-4)) * (0.5 / Math.sqrt(0.61));
+  const Ey = 2 * (K * 4e-6 / (0.49 + 1e-4)) * (0.3605 / 0.70);
   numClose('…and it matches the component algebra', parseSI(txt(win, 'fp-probe-e')), Ey, 0.005);
   ok('the ghost force readout follows F = q₀E', /N/.test(txt(win, 'fp-probe-f')), txt(win, 'fp-probe-f'));
 
@@ -390,8 +405,8 @@ console.log('\u2500'.repeat(66));
 
   // --- Gesture regression: erase still works right after a drag ------------
   click(win, doc.querySelector('#fp-panel [data-sb-tool="erase"]'));
-  pointer(win, fp(), 'pointerdown', 360, 50);       // the −4 µC charge
-  pointer(win, fp(), 'pointerup', 360, 50);
+  pointer(win, fp(), 'pointerdown', 360, 92);       // the −4 µC charge (y = cy − 0.3605 m)
+  pointer(win, fp(), 'pointerup', 360, 92);
   eq('erase removes exactly one charge', txt(win, 'fp-count'), '4');
   eq('canvas type scale tracks the root font size', win.EMC.typeScale(), 1);
 
@@ -483,6 +498,32 @@ console.log('\u2500'.repeat(66));
   bypass.checked = false;
   bypass.dispatchEvent(new win.Event('change', { bubbles: true }));
   eq('bypassing the bulb makes R_total = R_bank', txt(win, 'circ-rtotal'), txt(win, 'circ-req'));
+
+  // --- drag-and-drop bench (R1): palette, lanes, battery, short guard ---
+  click(win, doc.querySelector('[data-circ-chip="resistor"]'));
+  eq('the palette chip places a fourth resistor', doc.querySelectorAll('#circ-rows .row-item').length, 4);
+  eq('four in series: bank = 50+22+47+20 = 139 ohm', txt(win, 'circ-req'), '139.00 \u03A9');
+  click(win, doc.querySelector('[data-lane="1"]'));
+  click(win, doc.querySelector('[data-lane="2"]'));
+  numClose('lane buttons rewire R2+R3 into parallel (50+20 + 22||47)',
+    parseFloat(txt(win, 'circ-req')), 70 + (22 * 47) / 69, 0.005);
+  ok('the derived topology label follows the wiring',
+    doc.querySelector('#circ-topology [data-value="combo"]').getAttribute('aria-pressed') === 'true');
+  click(win, doc.querySelector('[data-circ-chip="battery"]'));
+  ok('dragging/clicking the battery off zeroes every meter honestly',
+    /no battery/.test(txt(win, 'circ-itotal')) && /No supply/.test(txt(win, 'circ-rule')), txt(win, 'circ-itotal'));
+  eq('the battery chip reports its pressed state', doc.querySelector('[data-circ-chip="battery"]').getAttribute('aria-pressed'), 'false');
+  click(win, doc.querySelector('[data-circ-chip="battery"]'));
+  ok('the battery reconnects and current returns', /A/.test(txt(win, 'circ-itotal')) && !/no battery/.test(txt(win, 'circ-itotal')), txt(win, 'circ-itotal'));
+  for (let i = 0; i < 4; i++) click(win, doc.querySelector('[data-del="0"]'));
+  eq('every resistor can be removed', txt(win, 'circ-req'), '0.00 \u03A9');
+  ok('wires-only + bypassed bulb is flagged as a SHORT, never Infinity/NaN',
+    /would flow/.test(txt(win, 'circ-itotal')) && /SHORT/.test(txt(win, 'circ-rtotal')) &&
+    /Short circuit/.test(txt(win, 'circ-rule')) && isFinite(parseFloat(txt(win, 'circ-req'))),
+    txt(win, 'circ-itotal') + ' | ' + txt(win, 'circ-rtotal'));
+  click(win, doc.querySelector('[data-circ-chip="resistor"]'));
+  ok('the bench recovers: one resistor ends the short',
+    /A/.test(txt(win, 'circ-itotal')) && !/SHORT/.test(txt(win, 'circ-itotal')), txt(win, 'circ-itotal'));
   win.close();
 }
 
@@ -614,7 +655,7 @@ console.log('\u2500'.repeat(66));
   await frames(win, 2);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   const bank = win.EMC_QUIZ;
-  eq('question bank size', bank.length, 35);
+  eq('question bank size', bank.length, 24);
   ok('the bank contains no duplicate questions (audit 3.1 regression guard)',
     new Set(bank.map(q => q.q)).size === bank.length);
   ok('four-stat strip uses the 4-up layout class',
@@ -622,15 +663,15 @@ console.log('\u2500'.repeat(66));
   ok('quiz copy is free of the word "module"',
      !/module/i.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8') +
                      readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')));
-  eq('every question rendered', doc.querySelectorAll('.q-card').length, 35);
+  eq('every question rendered', doc.querySelectorAll('.q-card').length, 24);
   eq('four options each', doc.querySelectorAll('.q-card').length * 4, doc.querySelectorAll('.opt').length);
   ok('every question has a valid answer index',
     bank.every(q => Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length));
   ok('every question has an explanation', bank.every(q => q.explain && q.explain.length > 20));
-  ok('all five topics are covered (3 lessons + 2 Extra)',
-    new Set(bank.map(q => q.topic)).size === 5, [...new Set(bank.map(q => q.topic))].join(','));
-  for (const [t, n] of [['charge', 6], ['coulomb', 6], ['field', 7], ['current', 8], ['magind', 8]]) {
-    eq(`topic filter counts — ${t}`, bank.filter(q => q.topic === t).length, n);
+  ok('all three chapters are covered and nothing else (brief: 8/8/8)',
+    new Set(bank.map(q => q.topic)).size === 3, [...new Set(bank.map(q => q.topic))].join(','));
+  for (const [t, n] of [['ch1', 8], ['ch2', 8], ['ch3', 8]]) {
+    eq(`chapter question counts — ${t}`, bank.filter(q => q.topic === t).length, n);
   }
   ok('every question ships a hint and an Easy/Full level',
     bank.every(q => q.hint && q.hint.length > 8 && (q.level === 'easy' || q.level === 'full')));
@@ -646,13 +687,13 @@ console.log('\u2500'.repeat(66));
   // blank guard: submitting with nothing answered must warn, not grade
   click(win, doc.getElementById('quiz-submit'));
   ok('submitting a blank quiz warns first', doc.getElementById('quiz-score').hidden === true);
-  ok('progress text counts answers', /0 of 35 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
+  ok('progress text counts answers', /0 of 24 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
 
   // all correct -> 100% (the practice timer is enabled first so the clock
   // assertions below exercise the opt-in timer; the default stays Off)
   click(win, doc.querySelector('#quiz-timer-mode [data-value="up"]'));
   answerAll(false);
-  eq('all 35 recorded', txt(win, 'quiz-progress-text'), '35 of 35 answered');
+  eq('all 24 recorded', txt(win, 'quiz-progress-text'), '24 of 24 answered');
   click(win, doc.getElementById('quiz-submit'));
   ok('with no blanks the first submit asks for a gentle confirm',
     doc.getElementById('quiz-score').hidden === true &&
@@ -666,12 +707,12 @@ console.log('\u2500'.repeat(66));
     doc.getElementById('quiz-charts').hidden === true &&
     doc.getElementById('quiz-fallback-bars').hidden === false);
   ok('perfect score is 100%', txt(win, 'quiz-score').includes('100%'), txt(win, 'quiz-score').slice(0, 80));
-  ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 35);
-  ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 35);
-  ok('options are locked after grading', doc.querySelectorAll('.opt:disabled').length === 140);
+  ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 24);
+  ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 24);
+  ok('options are locked after grading', doc.querySelectorAll('.opt:disabled').length === 96);
 
   // stored progress
-  const stored = JSON.parse(win.localStorage.getItem('emc.progress.v3'));
+  const stored = JSON.parse(win.localStorage.getItem('emc.progress.v4'));
   eq('best score saved to localStorage', stored.quizBest, 100);
   eq('attempt counter saved', stored.quizAttempts, 1);
 
@@ -682,15 +723,15 @@ console.log('\u2500'.repeat(66));
   click(win, doc.getElementById('quiz-submit'));   // confirm phase
   click(win, doc.getElementById('quiz-submit'));   // graded
   ok('all-wrong score is 0%', txt(win, 'quiz-score').includes('0%'), txt(win, 'quiz-score').slice(0, 60));
-  ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 35);
-  ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 35);
-  const stored2 = JSON.parse(win.localStorage.getItem('emc.progress.v3'));
+  ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 24);
+  ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 24);
+  const stored2 = JSON.parse(win.localStorage.getItem('emc.progress.v4'));
   eq('best score is kept across attempts', stored2.quizBest, 100);
   eq('attempts incremented', stored2.quizAttempts, 2);
 
   // review-incorrect filter
   click(win, doc.getElementById('quiz-wrong'));
-  eq('review mode shows only the wrong ones', doc.querySelectorAll('.q-card').length, 35);
+  eq('review mode shows only the wrong ones', doc.querySelectorAll('.q-card').length, 24);
 
   // retake and check a partial score: 10 of 24 correct = 42%
   click(win, doc.getElementById('quiz-retake'));
@@ -701,8 +742,8 @@ console.log('\u2500'.repeat(66));
   });
   click(win, doc.getElementById('quiz-submit'));   // confirm phase
   click(win, doc.getElementById('quiz-submit'));   // graded
-  ok('10 of 35 correct scores 29%', txt(win, 'quiz-score').includes('29%'), txt(win, 'quiz-score').slice(0, 60));
-  ok('10 of 35 reported', /10 \/ 35 correct/.test(txt(win, 'quiz-score')), '');
+  ok('10 of 24 correct scores 42%', txt(win, 'quiz-score').includes('42%'), txt(win, 'quiz-score').slice(0, 60));
+  ok('10 of 24 reported', /10 \/ 24 correct/.test(txt(win, 'quiz-score')), '');
   ok('quiz clock was started by answering and frozen at submit',
     doc.getElementById('quiz-timer').hidden === false && /\d+:\d\d/.test(txt(win, 'quiz-timer')));
   ok('score card reports time and best-streak tags',
@@ -711,22 +752,24 @@ console.log('\u2500'.repeat(66));
   // attempt history is stored for the Chart.js line chart
   const hist = win.EMC.Progress.read().quizHistory;
   eq('three attempts recorded in history', hist.length, 3);
-  eq('history keeps the scores in order', hist.map(h => h.pct).join(','), '100,0,29');
+  eq('history keeps the scores in order', hist.map(h => h.pct).join(','), '100,0,42');
 
   // shuffle keeps the bank intact
   click(win, doc.getElementById('quiz-retake'));
   click(win, doc.getElementById('quiz-shuffle'));
-  eq('shuffle keeps all 35 questions', doc.querySelectorAll('.q-card').length, 35);
+  eq('shuffle keeps all 24 questions', doc.querySelectorAll('.q-card').length, 24);
 
   // topic filter
-  click(win, doc.querySelector('[data-quiz-filter="field"]'));
-  eq('field filter shows 7 questions', doc.querySelectorAll('.q-card').length, 7);
-  click(win, doc.querySelector('[data-quiz-filter="lessons"]'));
-  eq('the Lessons 1-3 group filter shows the 19 lecture questions', doc.querySelectorAll('.q-card').length, 19);
+  click(win, doc.querySelector('[data-quiz-filter="ch2"]'));
+  eq('the ch2 filter shows the 8 lecture questions', doc.querySelectorAll('.q-card').length, 8);
+  click(win, doc.querySelector('[data-quiz-filter="ch1"]'));
+  eq('the ch1 filter shows the 8 circuits questions', doc.querySelectorAll('.q-card').length, 8);
+  click(win, doc.querySelector('[data-quiz-filter="ch3"]'));
+  eq('the ch3 filter shows the 8 magnetism questions', doc.querySelectorAll('.q-card').length, 8);
   click(win, doc.querySelector('[data-quiz-filter="all"]'));
-  eq('all filter restores 35', doc.querySelectorAll('.q-card').length, 35);
-  eq('every card carries an Easy/Full level tag', doc.querySelectorAll('.q-card .q-level').length, 35);
-  ok('every question ships a hint button', doc.querySelectorAll('.q-hint-btn').length === 35);
+  eq('all filter restores 24', doc.querySelectorAll('.q-card').length, 24);
+  eq('every card carries an Easy/Full level tag', doc.querySelectorAll('.q-card .q-level').length, 24);
+  ok('every question ships a hint button', doc.querySelectorAll('.q-hint-btn').length === 24);
   const hintBtn = doc.querySelector('.q-hint-btn');
   click(win, hintBtn);
   ok('clicking hint reveals the hint text in place',
@@ -744,21 +787,29 @@ console.log('\u2500'.repeat(66));
   cards2[1].querySelector(`.opt[data-opt="${q2.answer}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   eq('streak chip shows x2', txt(win, 'quiz-streak'), 'streak \u00D72');
   ok('correct option got the burst ring', doc.querySelectorAll('.opt.burst').length >= 1);
-  ok('graded feedback carries a reacting mascot', doc.querySelectorAll('.feedback .mreact').length >= 1);
+  ok('graded feedback carries a word badge (never colour-only)', doc.querySelectorAll('.feedback .fbadge').length >= 1);
   win.close();
 }
 
 /* ---------------- quiz.html, deep link + missing chart lib ---------------- */
 {
-  console.log('\n[quiz.html?topic=field]');
-  const { win, doc, problems } = await loadPage('quiz.html?topic=field');
+  console.log('\n[quiz.html?topic=ch2 + legacy ?topic=field]');
+  const { win, doc, problems } = await loadPage('quiz.html?topic=ch2');
   await frames(win, 2);
   ok('deep link loads without runtime errors', problems.length === 0, problems.join(' | '));
-  eq('?topic= narrows the view to that lesson', doc.querySelectorAll('.q-card').length, 7);
+  eq('?topic=ch2 narrows the view to that chapter', doc.querySelectorAll('.q-card').length, 8);
   ok('the matching filter button is pressed',
-    doc.querySelector('[data-quiz-filter="field"]').getAttribute('aria-pressed') === 'true');
-  ok('the deep link is announced', /Filtered to Electric Field/.test(doc.body.textContent));
+    doc.querySelector('[data-quiz-filter="ch2"]').getAttribute('aria-pressed') === 'true');
+  ok('the deep link is announced', /Filtered to Electric Fields/.test(doc.body.textContent));
   win.close();
+
+  const { win: wl, doc: dl } = await loadPage('quiz.html?topic=field');
+  await frames(wl, 2);
+  eq('a legacy ?topic=field link resolves to ch2 through the alias map',
+    dl.querySelectorAll('.q-card').length, 8);
+  ok('the legacy deep link presses the ch2 filter',
+    dl.querySelector('[data-quiz-filter="ch2"]').getAttribute('aria-pressed') === 'true');
+  wl.close();
 
   console.log('\n[quiz.html without the vendored chart lib]');
   // The graceful-degradation path must survive: pretend the vendored file 404s.
@@ -772,9 +823,10 @@ console.log('\u2500'.repeat(66));
   ok('without the chart lib the CSS-bar fallback is used',
     d2.getElementById('quiz-charts').hidden === true &&
     d2.getElementById('quiz-fallback-bars').hidden === false);
-  ok('the fallback still lists every topic',
-    /Circuits & Ohm’s law/.test(d2.getElementById('quiz-fallback-bars').textContent) &&
-    /Magnetism & induction/.test(d2.getElementById('quiz-fallback-bars').textContent));
+  ok('the fallback still lists every chapter',
+    /Circuits & Ohm’s Law/.test(d2.getElementById('quiz-fallback-bars').textContent) &&
+    /Electric Fields & Coulomb’s Law/.test(d2.getElementById('quiz-fallback-bars').textContent) &&
+    /Magnetism & Induction/.test(d2.getElementById('quiz-fallback-bars').textContent));
   w2.close();
 }
 
@@ -851,9 +903,9 @@ console.log('\u2500'.repeat(66));
   eq('unanswered filter hides answered questions', doc.querySelectorAll('.q-card').length, bank.length - 1);
   eq('unanswered button reports its pressed state',
     doc.querySelector('[data-quiz-filter="unanswered"]').getAttribute('aria-pressed'), 'true');
-  click(win, doc.querySelector('[data-quiz-filter="current"]'));   // also resets the blank warning
+  click(win, doc.querySelector('[data-quiz-filter="ch1"]'));   // also resets the blank warning
   ok('progress text spans the full bank while a filter is active',
-    /1 of 35 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
+    /1 of 24 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
   click(win, doc.querySelector('[data-quiz-filter="all"]'));
 
   // bottom button: warning first, then grading; both controls lock in sync
@@ -867,7 +919,7 @@ console.log('\u2500'.repeat(66));
   ok('score card enters with the results animation class',
     doc.getElementById('quiz-score').classList.contains('score-enter'));
   eq('grading recorded exactly one attempt',
-    JSON.parse(win.localStorage.getItem('emc.progress.v3')).quizAttempts, 1);
+    JSON.parse(win.localStorage.getItem('emc.progress.v4')).quizAttempts, 1);
 
   // floating timer: keyboard move, reset, minimise/expand, clock stops submitted
   const ft = doc.getElementById('floatTimer');
@@ -901,17 +953,17 @@ console.log('\u2500'.repeat(66));
   ok('timer defaults to Off (calm by default)',
     doc.querySelector('#quiz-timer-mode [data-value="off"]').getAttribute('aria-pressed') === 'true' &&
     doc.getElementById('timer-mins').hidden === true);
-  eq('navigator shows one chip per question', doc.querySelectorAll('#qnav .qnav-chip').length, 35);
+  eq('navigator shows one chip per question', doc.querySelectorAll('#qnav .qnav-chip').length, 24);
   ok('prev is disabled before any question is active', doc.getElementById('qnav-prev').disabled === true);
   ok('progress pill is visible from the start', doc.getElementById('quizPill').hidden === false);
-  eq('pill counts answered questions', txt(win, 'pillText'), '0/35');
+  eq('pill counts answered questions', txt(win, 'pillText'), '0/24');
 
   // answer q1 correctly; with the timer Off no clock may appear
   const q1 = bank[0];
   doc.querySelector(`#q-${q1.id} .opt[data-opt="${q1.answer}"]`)
     .dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   ok('with the timer Off no clock panel appears', doc.getElementById('floatTimer').hidden === true);
-  eq('pill tracks the answer', txt(win, 'pillText'), '1/35');
+  eq('pill tracks the answer', txt(win, 'pillText'), '1/24');
   ok('answered chip turns done',
     doc.querySelector(`#qnav [data-goto="${q1.id}"]`).classList.contains('done'));
 
@@ -933,14 +985,14 @@ console.log('\u2500'.repeat(66));
   click(win, doc.querySelector('[data-quiz-filter="unanswered"]'));
   click(win, doc.querySelector(`#qnav [data-goto="${q1.id}"]`));
   ok('jumping to a filtered-away question restores the full list and marks it current',
-    doc.querySelectorAll('.q-card').length === 35 &&
+    doc.querySelectorAll('.q-card').length === 24 &&
     doc.querySelector(`#qnav [data-goto="${q1.id}"]`).classList.contains('cur'));
 
   // autosave (400 ms throttle) -> a resumable session document
   await new Promise(r => setTimeout(r, 500));
   const session = JSON.parse(win.localStorage.getItem('emc.quiz.session.v1') || 'null');
   ok('answering autosaves a resumable session',
-    session !== null && session.v === 2 &&
+    session !== null && session.v === 3 && session.bank === bankFP(win.EMC_QUIZ) &&
     session.answers.length === 1 && session.answers[0][0] === q1.id);
 
   // finish all-correct -> pass: cheer face, tiny confetti, no weak spots
@@ -954,7 +1006,7 @@ console.log('\u2500'.repeat(66));
   click(win, doc.getElementById('quiz-submit'));
   click(win, doc.getElementById('quiz-submit'));
   ok('passing score celebrates with the cheer face + tiny confetti',
-    doc.querySelectorAll('#quiz-score .score-cheer .mreact').length === 1 &&
+    doc.querySelectorAll('#quiz-score .score-cheer .fbadge').length === 1 &&
     doc.querySelectorAll('#quiz-score .confetti i').length === 14);
   ok('a perfect score reports no weak spots', /flawless/i.test(txt(win, 'quiz-score')));
   ok('with the timer Off the score card shows no time tags',
@@ -996,18 +1048,18 @@ console.log('\u2500'.repeat(66));
 
   // --- window 3: resume an autosaved session (explicit choice) -------------
   const seed = JSON.stringify({
-    v: 2, answers: [[1, 1], [2, 1]], marked: [], flagged: [3], optOrder: null,
+    v: 3, bank: bankFP(BANK_FOR_FP), answers: [[1, 1], [2, 1]], marked: [], flagged: [3], optOrder: null,
     instant: false, filter: 'all', baseMs: 0, clockOn: false, timerMode: 'off', timerMins: 10
   });
   const { win: w3, doc: d3 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': seed } });
   await frames(w3, 2);
   ok('a saved session OFFERS to resume (never a silent restore)',
     d3.getElementById('resume-wrap').hidden === false &&
-    /2 of 35 answered/.test(txt(w3, 'resume-summary')) &&
+    /2 of 24 answered/.test(txt(w3, 'resume-summary')) &&
     /1 flagged/.test(txt(w3, 'resume-summary')));
-  eq('nothing is restored before the choice', txt(w3, 'quiz-progress-text'), '0 of 35 answered');
+  eq('nothing is restored before the choice', txt(w3, 'quiz-progress-text'), '0 of 24 answered');
   click(w3, d3.getElementById('resume-yes'));
-  eq('resume restores the answers', txt(w3, 'quiz-progress-text'), '2 of 35 answered');
+  eq('resume restores the answers', txt(w3, 'quiz-progress-text'), '2 of 24 answered');
   ok('resume restores the flags and hides the banner',
     d3.querySelector('#q-3 .q-flag').getAttribute('aria-pressed') === 'true' &&
     d3.getElementById('resume-wrap').hidden === true);
@@ -1100,7 +1152,7 @@ console.log('\u2500'.repeat(66));
   /* --- item 8 (adapted): the arena can never blow up — close-range
          softening + a hard force cap + an honest stability warning ---------- */
   {
-    const { win, doc, problems } = await loadPage('topics/coulomb.html');
+    const { win, doc, problems } = await loadPage('topics/fields.html');
     await frames(win, 3);
     const cv = doc.getElementById('sim-arena');
     const qSlider = doc.querySelector('#ar-panel [data-sb-q]');
@@ -1152,9 +1204,9 @@ console.log('\u2500'.repeat(66));
       res = P.importJSON(JSON.stringify({ app: 'emc-lab', progress: { topics: { charges: true } } }));
     } catch (err) { threw = err; }
     ok('item 5: importing a legacy v1 file no longer throws', threw === null, threw && threw.message);
-    ok('item 5: the legacy topics are migrated (charges -> all three lessons)',
-      res !== null && res.ok === true && P.read().topics.charge === true &&
-      P.read().topics.coulomb === true && P.read().topics.field === true);
+    ok('item 5: the legacy topics are migrated (charges -> ch2, the chapter that owns them)',
+      res !== null && res.ok === true && P.read().topics.ch2 === true &&
+      P.read().topics.ch1 === false && P.read().topics.ch3 === false);
 
     P.recordQuiz(80);
     const junk = P.importJSON('{}');
@@ -1162,8 +1214,8 @@ console.log('\u2500'.repeat(66));
     eq('item 11: a refused import keeps the stored progress', P.read().quizBest, 80);
 
     win.localStorage.setItem('emc.progress.v1', JSON.stringify({ topics: { current: true }, quizBest: 90 }));
-    win.localStorage.removeItem('emc.progress.v3');
-    P.read();                                   // migrates v1 -> v2
+    win.localStorage.removeItem('emc.progress.v4');
+    P.read();                                   // migrates v1 -> v4 (current -> ch1)
     const after = P.reset();
     ok('item 6: reset also drops the legacy key (progress stays reset)',
       after.quizBest === 0 && win.localStorage.getItem('emc.progress.v1') === null);
@@ -1174,7 +1226,7 @@ console.log('\u2500'.repeat(66));
   {
     // item 4: an unaccepted resume session must survive the boot-time saves
     const seeded = JSON.stringify({
-      v: 2, answers: [[1, 1], [2, 1]], marked: [], flagged: [], optOrder: null,
+      v: 3, bank: bankFP(BANK_FOR_FP), answers: [[1, 1], [2, 1]], marked: [], flagged: [], optOrder: null,
       instant: false, filter: 'all', baseMs: 0, clockOn: false, timerMode: 'off', timerMins: 10
     });
     const { win, doc } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': seeded } });
@@ -1185,13 +1237,26 @@ console.log('\u2500'.repeat(66));
       doc.getElementById('resume-wrap').hidden === false);
     win.close();
 
+    // §3.5: a session saved against an OLDER bank must be detected and cleared
+    const staleSeed = JSON.stringify({
+      v: 3, bank: 'b-stale-999', answers: [[1, 1], [2, 1]], marked: [], flagged: [], optOrder: null,
+      instant: false, filter: 'all', baseMs: 0, clockOn: false, timerMode: 'off', timerMins: 10
+    });
+    const { win: w5, doc: d5 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': staleSeed } });
+    await frames(w5, 2);
+    ok('a stale-bank session is detected, cleared and announced — never resumed',
+      d5.getElementById('resume-wrap').hidden === true &&
+      w5.localStorage.getItem('emc.quiz.session.v1') === null &&
+      /older question bank/.test(d5.body.textContent), d5.body.textContent.slice(0, 80));
+    w5.close();
+
     // item 10: the skewed answer key is shuffled per attempt
     const { win: w2, doc: d2 } = await loadPage('quiz.html');
     await frames(w2, 2);
     const orders = [...d2.querySelectorAll('.q-card')].map(c =>
       [...c.querySelectorAll('.opt')].map(b => Number(b.dataset.opt)).join(','));
     ok('item 10: every card still carries all four options',
-      orders.length === 35 && orders.every(o => o.split(',').sort((a, b) => a - b).join(',') === '0,1,2,3'));
+      orders.length === 24 && orders.every(o => o.split(',').sort((a, b) => a - b).join(',') === '0,1,2,3'));
     ok('item 10: display order is shuffled (always-B no longer scores 50%)',
       orders.filter(o => o === '0,1,2,3').length < orders.length);
     eq('item 10: the visible key labels stay A, B, C, D',
@@ -1201,7 +1266,7 @@ console.log('\u2500'.repeat(66));
     // item 12: a stale challenge resume continues from ACTIVE time - it must
     // not auto-grade a quiz that was closed for a day
     const stale = JSON.stringify({
-      v: 2, answers: [[1, 1]], marked: [], flagged: [], optOrder: null,
+      v: 3, bank: bankFP(BANK_FOR_FP), answers: [[1, 1]], marked: [], flagged: [], optOrder: null,
       instant: false, filter: 'all', baseMs: 45000, clockOn: true, timerMode: 'down', timerMins: 10
     });
     const { win: w3, doc: d3 } = await loadPage('quiz.html', {}, { seed: { 'emc.quiz.session.v1': stale } });
@@ -1221,17 +1286,18 @@ console.log('\u2500'.repeat(66));
     /if \(process\.env\.VERCEL\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')) &&
     /process\.exit\(1\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')));
 
-  /* --- item 13: Q14 must point at the electric-fields chapter ------------- */
-  ok('item 13: the neutrality question points at Lesson 1',
+  /* --- item 13: the bank must not point readers at retired structures ----- */
+  ok('item 13: the active bank references no retired topic/lesson structures',
     !/where Topic 1 begins/.test(readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')) &&
-    /where Lesson 1 begins/.test(readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')));
+    !/Lesson \d/.test(readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')) &&
+    !/Extra/.test(readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')));
 }
 
 /* ---------------- cross-page checks ---------------- */
 {
   console.log('\n[cross-page]');
-  const pages = ['index.html', 'quiz.html', 'topics/charge.html', 'topics/coulomb.html',
-    'topics/field.html', 'topics/current.html', 'topics/magind.html'];
+  const pages = ['index.html', 'quiz.html', 'topics/fields.html',
+    'topics/current.html', 'topics/magind.html'];
   // ---- #15 favicon artwork must equal the header brand mark -------------
   // the committed img/favicon.svg is the single artwork source; the ICO and
   // apple-touch PNGs are rasterisations of it (generated, then committed).
@@ -1255,20 +1321,25 @@ console.log('\u2500'.repeat(66));
       // hero plain lede carries the identical class of the tech lede, and
       // in-prose plain paragraphs inherit prose typography instead of
       // .small/.muted
-      ok(`${p}: hero plain lede is class-identical to the tech lede`,
-        (html.match(/<p class="lede" data-detail="plain">/g) || []).length === 1);
+      ok(`${p}: every plain lede is class-identical to a tech lede`,
+        (html.match(/<p class="lede" data-detail="plain">/g) || []).length >= 1 &&
+        (html.match(/<p class="lede" data-detail="plain">/g) || []).length ===
+        (html.match(/<p class="lede" data-detail="tech">/g) || []).length);
     }
     // a bulk data-detail injection once fused an SVG element into
     // `<p data-detail="tech"ath d=...>` — guard against that corruption class
     ok(`${p}: no fused tag/attribute corruption around data-detail`,
       !/<[a-z]+[^>]*data-detail="(?:tech|plain)"[a-z]/i.test(html));
-    // the boot shell (full-screen mascot) must never trap the reader: every
-    // page applies the stored Detail pref before first paint and force-closes
-    // #bootOverlay after 6 s even if the bundle never executes
-    ok(`${p}: ships the pre-paint Detail pref, session gate + 4 s failsafe`,
-      /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 4000\)/.test(html) &&
-      /sessionStorage\.getItem\('emc\.splash\.v1'\)/.test(html) &&
-      /document\.documentElement\.dataset\.detail = \(__p\.detail === 'off' \? 'off' : 'on'\)/.test(html));
+    // the loader must never trap the reader: every page applies the stored
+    // Detail pref before first paint, ships NO static overlay (the loader
+    // builds one only when startup is actually slow) and carries the 1.5 s
+    // dead-man switch for the one case its owner cannot cover (common.js
+    // never executing at all)
+    ok(`${p}: pre-paint Detail pref + 1.5 s dead-man switch, no static overlay`,
+      /if \(window\.EMC\) return;/.test(html) &&
+      /bootFatalRetry/.test(html) && /\}, 1500\);/.test(html) &&
+      /document\.documentElement\.dataset\.detail = \(__p\.detail === 'off' \? 'off' : 'on'\)/.test(html) &&
+      !/<div id="bootOverlay"/.test(html) && !/emc\.splash\.v1/.test(html));
     ok(`${p}: pre-paint script gates the .reveal entrance with html.js`,
       /document\.documentElement\.classList\.add\('js'\)/.test(html));
     ok(`${p}: every canvas has an accessible label`,
@@ -1307,9 +1378,10 @@ console.log('\u2500'.repeat(66));
       ok('index: home nav marks the current page', /nav-link" href="index\.html" aria-current="page"/.test(html));
     }
     if (p.startsWith('topics/')) {
-      const hintCount = /charge|coulomb|field/.test(p) ? 3 : 2;   // lessons: sandbox + two toys
+      const hintCount = p === 'topics/fields.html' ? 9            // ch2: three sections × (sandbox + two toys)
+        : p.startsWith('topics/') ? 2 : 0;                        // ch1/ch3: one sandbox + one lab each
       eq(`${p}: every activity panel ships a first-use hint`, (html.match(/class="sim-hint/g) || []).length, hintCount);
-      ok(`${p}: chapter nav marks the current chapter`, /dd-link" href="[a-z]+\.html" aria-current="page"/.test(html));
+      ok(`${p}: chapter nav marks the current chapter`, /dd-link" href="(?:\.\.\/)?[a-z]+\.html" aria-current="page"/.test(html));
       ok(`${p}: scroll-reveal coverage on lesson blocks`, (html.match(/class="[^"]*reveal/g) || []).length >= 10);
       ok(`${p}: header entrance stagger present`, /eyebrow-amber reveal rv-d1/.test(html) && /h-topic reveal rv-d2/.test(html));
     }
@@ -1321,7 +1393,7 @@ console.log('\u2500'.repeat(66));
 
     // ---- #15 favicon artwork must equal the header brand mark -------------
     const brandMark = (html.match(/<svg class="brand-mark"[\s\S]*?<\/svg>/) || ['', ''])[0];
-    ok(`${p}: favicon artwork matches the header mascot`,
+    ok(`${p}: favicon artwork matches the header brand mark`,
       brandMark.length > 100 && favTokens.every(t => favSvg.includes(t) && brandMark.includes(t)));
     ok(`${p}: ships the full favicon set (ico + svg + apple-touch) with relative hrefs`,
       /rel="icon" href="(?:\.\.\/)?favicon\.ico" type="image\/x-icon"/.test(html) &&
@@ -1356,14 +1428,15 @@ console.log('\u2500'.repeat(66));
     /canvasTypeScale = rp \/ 16/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
   ok('probe readouts reserve two lines so the canvas cannot resize mid-gesture',
     /\.stat-value\.hold2 \{ min-height: 3\.5em; \}/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
-    (readFileSync(join(ROOT, 'topics/field.html'), 'utf8').match(/stat-value [^"]*hold2|stat-value hold2/g) || []).length >= 1);
+    (readFileSync(join(ROOT, 'topics/fields.html'), 'utf8').match(/stat-value [^"]*hold2|stat-value hold2/g) || []).length >= 1);
 
   ok('the Details swap animates revealed blocks unless reduced motion',
     /const level = root\.dataset\.detail === 'off' \? 'plain' : 'tech';/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')) &&
     /if \(EMC\.reducedMotion\) \{ flip\(\); return; \}/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
-  ok('the mascot is capped so it can never dominate the hero',
-    /width: min\(108px, 26vw\); max-height: 40vh/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
-    /width: min\(84px, 22vw\); max-height: 30vh/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')));
+  ok('graded-feedback badges ship as flat word chips in both states',
+    /\.fbadge-ok/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
+    /\.fbadge-no/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
+    !/\.mascot|\.mreact/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')));
 
   // ---- #14 no phantom important-variants of component classes -----------
   const builtAll = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
@@ -1401,9 +1474,9 @@ console.log('\u2500'.repeat(66));
   // ---- #3 one printed speed of sound site-wide -----------------------------
   const printed = pages.map(f => readFileSync(join(ROOT, f), 'utf8')).join('\n') +
                   readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8');
-  ok('every printed Coulomb constant is 8.99\u00D710\u2079 (the lecture value; code keeps full precision)',
+  ok('every printed Coulomb constant is 8.99\u00D710\u2079 (the lecture value \u2014 and the engine computes with it too)',
     /8\.99\u00D710/.test(printed) && !/8\.988\u00D710/.test(printed) &&
-    /K: 8\.987551787e9/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+    /K: 8\.99e9/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
 
   // ---- #9 water density is the round 1000 everywhere it is printed ---------
   ok('printed vacuum permeability is the CODATA 4pi×10⁻⁷ form',
@@ -1414,7 +1487,7 @@ console.log('\u2500'.repeat(66));
   ok('the score card announces the 70% auto-tick when it happens',
     /const passNote = pct >= 70/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
     /Scoring 70% or more/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
-    /Scoring 70% or more in the quiz also ticks all three lessons/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
+    /Scoring 70% or more in the quiz also ticks all three chapters/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
 
   // ---- #6 vendored libraries ship with their licences ---------------------
   ok('Chart.js and KaTeX are vendored with their licence files',
@@ -1522,51 +1595,69 @@ console.log('\u2500'.repeat(66));
       .test(builtCss));
 }
 
-/* ---------------- first-visit splash + repeat-visit gate (owner spec) ----- */
+/* ---------------- legacy lesson URLs redirect into ch2 (§3.3) ------------ */
 {
-  console.log('\n[splash: first visit vs repeat visit]');
-  const inline = readFileSync(join(ROOT, 'index.html'), 'utf8');
-  ok('the splash is gated to the first visit per session (sessionStorage)',
-    /sessionStorage\.getItem\('emc\.splash\.v1'\)/.test(inline) &&
-    /classList\.add\('no-splash'\)/.test(inline));
-  ok('a 4 s failsafe guarantees the shell can never trap a user',
-    /setTimeout\(function \(\) \{ var o = document\.getElementById\('bootOverlay'\); if \(o\) o\.remove\(\); \}, 4000\)/.test(inline));
-  ok('noscript hides the shell when JavaScript is off',
-    /<noscript>[\s\S]*?#bootOverlay\{display:none\}/.test(inline));
-  const overlayMin = Number((readFileSync(join(ROOT, 'js/common.js'), 'utf8')
-    .match(/OVERLAY_MIN_MS = (\d+)/) || [0, NaN])[1]);
-  eq('the branded minimum display is 400 ms (first visit only)', overlayMin, 400);
-  const commonSrc = readFileSync(join(ROOT, 'js/common.js'), 'utf8');
-  const tips = commonSrc.match(/const TIPS = \[([\s\S]*?)\];/);
-  ok('rotating tips exist, never exceed eight, and come from the lecture',
-    tips !== null && tips[1].split('\n').filter(l => l.trim().startsWith("'")).length <= 8);
+  console.log('\n[legacy URL stubs]');
+  for (const [stub, key] of [['topics/charge.html', 'charge'], ['topics/coulomb.html', 'coulomb'], ['topics/field.html', 'field']]) {
+    const h = readFileSync(join(ROOT, stub), 'utf8');
+    ok(`${stub}: meta-refreshes into the merged chapter`, /http-equiv="refresh" content="0; url=fields\.html#/.test(h));
+    ok(`${stub}: script redirect preserves anchors and maps the legacy generic ones`,
+      /location\.replace\('fields\.html'/.test(h) && /'#summary': '#/.test(h) && h.includes(`${key}-summary`));
+    ok(`${stub}: is noindex and canonicalises to the chapter`,
+      /name="robots" content="noindex"/.test(h) &&
+      /rel="canonical" href="https:\/\/emc-lab\.vercel\.app\/topics\/fields\.html"/.test(h));
+    ok(`${stub}: no-JS readers get a working manual link`,
+      h.includes(`href="fields.html#${key}"`) && h.includes('href="../index.html"'));
+  }
+  const vj = readFileSync(join(ROOT, 'vercel.json'), 'utf8');
+  ok('vercel.json keeps the historic efield redirect, now aimed at the chapter',
+    /"\/topics\/efield\.html"/.test(vj) && /"\/topics\/fields\.html"/.test(vj));
+}
 
-  const first = await loadPage('topics/coulomb.html');
+/* ---------------- loader lifecycle (one owner, one watchdog) ------------- */
+{
+  console.log('\n[loader: one lifecycle, one watchdog]');
+  const inline = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const commonSrc = readFileSync(join(ROOT, 'js/common.js'), 'utf8');
+  ok('no static overlay and no splash-session gate ship in the markup',
+    !/<div id="bootOverlay"/.test(inline) && !/emc\.splash\.v1/.test(inline));
+  ok('the dead-man switch is gated on window.EMC and offers Retry + Home',
+    /if \(window\.EMC\) return;/.test(inline) && /bootFatalRetry/.test(inline) &&
+    /location\.reload\(\)/.test(inline) && /ha\.href = home/.test(inline));
+  const showAfter = Number((commonSrc.match(/SHOW_AFTER_MS = (\d+)/) || [0, NaN])[1]);
+  const exitMs = Number((commonSrc.match(/EXIT_MS = (\d+)/) || [0, NaN])[1]);
+  const watchdog = Number((commonSrc.match(/WATCHDOG_MS = (\d+)/) || [0, NaN])[1]);
+  ok('the overlay only appears when startup exceeds ~150 ms', showAfter === 150, String(showAfter));
+  ok('the exit transition stays inside the 200-300 ms window', exitMs >= 200 && exitMs <= 300, String(exitMs));
+  ok('the watchdog is capped at 1500 ms', watchdog > 0 && watchdog <= 1500, String(watchdog));
+  ok('no rotating tips, no minimum-display timer, no second watchdog',
+    !/const TIPS/.test(commonSrc) && !/startTips/.test(commonSrc) &&
+    !/OVERLAY_MIN_MS/.test(commonSrc) && !/SPLASH_KEY/.test(commonSrc) &&
+    !/\}, 4200\)/.test(commonSrc));
+  const loaderSrc = commonSrc.slice(commonSrc.indexOf('const LOADER = (function'), commonSrc.indexOf('/* Legacy alias'));
+  ok('the loader owner never touches storage',
+    !/localStorage|sessionStorage/.test(loaderSrc));
+  ok('critical-failure path names Retry, Home and the missing dependency',
+    /failCard/.test(loaderSrc) && /criticalMissing/.test(loaderSrc) &&
+    /EMC_REGISTRY/.test(loaderSrc));
+
+  const first = await loadPage('topics/fields.html');
   await frames(first.win, 2);
-  ok('first visit: the overlay paints with the three real-signal chips',
-    !!first.doc.getElementById('bootOverlay') &&
-    [...first.doc.querySelectorAll('#bootOverlay .bo-chip')].map(c => c.dataset.stage).join(',') === 'fonts,equations,sims');
-  eq('the bar has one deterministic segment per signal',
-    first.doc.querySelectorAll('#bootOverlay .bo-seg').length, 3);
-  ok('the tip slot is decorative for screen readers',
-    first.doc.getElementById('boTip').getAttribute('aria-hidden') === 'true');
-  ok('a screen-reader status line exists', !!first.doc.getElementById('boStatus'));
-  eq('the first visit claims the session flag',
-    first.win.sessionStorage.getItem('emc.splash.v1'), '1');
+  const st = first.win.EMC.loader.state();
+  ok('a fast jsdom boot finishes without ever painting the overlay',
+    first.doc.getElementById('bootOverlay') === null && st.finished === true && st.painted === false,
+    JSON.stringify(st));
+  ok('the loader tracked exactly the applicable real stages',
+    st.stages.join(',') === 'fonts,equations,ui', st.stages.join(','));
+  eq('no loader timers survive dismissal', st.timers, 0);
+  ok('aria-busy is cleared once ready', !first.doc.documentElement.hasAttribute('aria-busy'));
   first.win.close();
 
-  const second = await loadPage('topics/coulomb.html', {}, { session: { 'emc.splash.v1': '1' } });
-  await frames(second.win, 2);
-  ok('a repeat visit within the session never paints the splash',
-    second.doc.documentElement.classList.contains('no-splash') &&
-    second.doc.getElementById('bootOverlay') === null);
-  second.win.close();
-
-  const reduced = await loadPage('topics/charge.html', {}, { reduceMotion: true });
+  const reduced = await loadPage('topics/fields.html', {}, { reduceMotion: true });
   await frames(reduced.win, 3);
-  await new Promise(r => setTimeout(r, 800));
-  ok('under reduced motion the splash still dismisses on the real signals',
-    reduced.doc.getElementById('bootOverlay') === null);
+  await new Promise(r => setTimeout(r, 400));
+  ok('under reduced motion the loader still finishes on the real signals',
+    reduced.doc.getElementById('bootOverlay') === null && reduced.win.EMC.loader.state().finished === true);
   ok('reduced motion keeps the sandbox fully usable',
     drawCalls(reduced.win, '#sim-static-room') > 50);
   reduced.win.close();
@@ -1576,9 +1667,14 @@ console.log('\u2500'.repeat(66));
 {
   console.log('\n[transitions + plates]');
   const css = readFileSync(join(ROOT, 'css/site.css'), 'utf8').replace(/\s+/g, '');
-  ok('cross-document View Transitions are enabled', /@view-transition\{navigation:auto\}/.test(css));
-  ok('header and mascot are named so they stand still between pages',
-    /view-transition-name:site-header/.test(css) && /view-transition-name:denki/.test(css));
+  /* The @view-transition opt-in was removed on purpose: Chromium logged
+     uncatchable InvalidStateError noise when rapid traversal aborted an
+     in-flight cross-document transition (gate X). One implementation now:
+     the .vt-leaving fade, identical on every engine. */
+  ok('exactly one page-transition implementation ships (no cross-document VT opt-in)',
+    !/@view-transition\{navigation:auto\}/.test(css) && /html\.vt-leaving\.emc-main\{opacity:0/.test(css));
+  ok('the fade respects reduced motion',
+    /html\.vt-leaving\.emc-main\{transition:none\}/.test(css));
   const commonSrc = readFileSync(join(ROOT, 'js/common.js'), 'utf8');
   ok('the fallback fade never hijacks modified clicks, anchors or new tabs',
     /e\.metaKey \|\| e\.ctrlKey \|\| e\.shiftKey \|\| e\.altKey/.test(commonSrc) &&
@@ -1595,7 +1691,7 @@ console.log('\u2500'.repeat(66));
   ok('a canvas-less browser gets a friendly flat message, never a blank hole',
     /This browser can/.test(commonSrc) && /plate\.classList\.add\('keep'\)/.test(commonSrc));
 
-  const { win, doc } = await loadPage('topics/charge.html');
+  const { win, doc } = await loadPage('topics/fields.html');
   await frames(win, 8);
   await new Promise(r => setTimeout(r, 700));
   ok('every plate has retired once its Stage really painted',
@@ -1606,24 +1702,23 @@ console.log('\u2500'.repeat(66));
 /* ---------------- startup system + detail mode ---------------- */
 {
   console.log('\n[startup + detail mode]');
-  const { win, doc } = await loadPage('topics/coulomb.html');
+  const { win, doc } = await loadPage('topics/fields.html');
   await frames(win, 4);
   eq('detail mode defaults to technical', win.document.documentElement.dataset.detail, 'on');
-  ok('a first visit paints the branded boot overlay until the real signals finish',
-    !!doc.getElementById('bootOverlay') &&
-    [...doc.querySelectorAll('#bootOverlay .bo-chip')].map(c => c.dataset.stage).join(',') === 'fonts,equations,sims');
-  await new Promise(r => setTimeout(r, 1100));
-  ok('overlay unmounts once every real stage completes', doc.getElementById('bootOverlay') === null);
-  ok('the shell stays until fonts, above-fold maths and the first sim are really ready',
-    doc.querySelectorAll('#bootOverlay .bo-chip.done').length === 3 || doc.getElementById('bootOverlay') === null);
-  eq('boot strip ships the two post-boot stage chips', doc.querySelectorAll('#bootStrip .boot-chip').length, 2);
+  ok('no overlay exists after a completed fast boot', doc.getElementById('bootOverlay') === null);
+  ok('no boot strip exists in the DOM', doc.getElementById('bootStrip') === null);
+  ok('the loader finished with zero pending timers', win.EMC.loader.state().timers === 0,
+    JSON.stringify(win.EMC.loader.state()));
   const btn = doc.getElementById('detailToggle');
-  ok('toggle is an accessible switch', btn.getAttribute('role') === 'switch' && btn.getAttribute('aria-checked') === 'true');
+  ok('toggle is an accessible pressed-state button (§3.2 aria-pressed)',
+    btn.getAttribute('aria-pressed') === 'true' && !btn.hasAttribute('aria-checked') && !btn.hasAttribute('role'));
   win.__marker = 'alive';
   click(win, btn);
   await new Promise(r => setTimeout(r, 260));      // 80 ms fade-out, then the flip
   eq('toggle flips the html level attribute', win.document.documentElement.dataset.detail, 'off');
-  eq('switch state exposed to assistive tech', btn.getAttribute('aria-checked'), 'false');
+  eq('pressed state exposed to assistive tech', btn.getAttribute('aria-pressed'), 'false');
+  ok('the state change is announced (aria-live toast)',
+    !!doc.getElementById('toastHost') && /Details OFF/.test(doc.getElementById('toastHost').textContent));
   ok('preference persisted', /"detail":"off"/.test(win.localStorage.getItem('emc.prefs.v1') || ''), win.localStorage.getItem('emc.prefs.v1'));
   eq('no reload: page state survived the toggle', win.__marker, 'alive');
   click(win, btn);
@@ -1631,11 +1726,11 @@ console.log('\u2500'.repeat(66));
   eq('toggle back to technical', win.document.documentElement.dataset.detail, 'on');
   ok('fade class is cleaned up after the swap', !win.document.documentElement.classList.contains('detail-fade'));
   await new Promise(r => setTimeout(r, 900));
-  ok('idle prefetch offers the next lesson page',
-    !!doc.querySelector('link[rel="prefetch"][href$="field.html"]'));
+  ok('idle prefetch offers the next chapter page',
+    !!doc.querySelector('link[rel="prefetch"][href$="magind.html"]'));
   await new Promise(r => setTimeout(r, 800));
-  eq('boot strip completes both stages', doc.querySelectorAll('#bootStrip .boot-chip.done').length, 2);
-  ok('boot strip unmounts once complete', doc.getElementById('bootStrip').hidden === true);
+  ok('internal state flips stay inside one owner (loader untouched by the toggle)',
+    win.EMC.loader.state().finished === true && doc.getElementById('bootOverlay') === null);
   await new Promise(r => setTimeout(r, 900));
   ok('chunked idle typesetting finishes every equation',
     [...doc.querySelectorAll('[data-tex]')].every(e => e.dataset.texDone === '1'),
@@ -1656,8 +1751,8 @@ console.log('\u2500'.repeat(66));
   ok('scroll position survives the toggle', Math.abs(w2.win.scrollY - syBefore) < 400, `${syBefore} -> ${w2.win.scrollY}`);
   w2.win.close();
 
-  for (const f of ['index.html', 'quiz.html', 'topics/charge.html', 'topics/coulomb.html',
-                  'topics/field.html', 'topics/current.html', 'topics/magind.html']) {
+  for (const f of ['index.html', 'quiz.html', 'topics/fields.html',
+                  'topics/current.html', 'topics/magind.html']) {
     const h = readFileSync(join(ROOT, f), 'utf8');
     ok(`${f} ships both explanation levels`, h.includes('data-detail="plain"') && h.includes('data-detail="tech"'));
   }
@@ -1668,29 +1763,54 @@ console.log('\u2500'.repeat(66));
   console.log('\n[progress export / import]');
   const { win, doc } = await loadPage('index.html');
   const P = win.EMC.Progress;
-  P.markTopic('charge', true);
-  P.recordQuiz(50);                       // below the pass mark: only charge ticks
+  P.markTopic('ch2', true);
+  P.recordQuiz(50);                       // below the pass mark: only ch2 ticks
   const snapshot = P.exportJSON();
   P.reset();
   eq('the export is a self-describing JSON document', JSON.parse(snapshot).app, 'emc-lab');
   const res = P.importJSON(snapshot);
-  ok('import restores topics and scores', res.ok && P.isTopicDone('charge') &&
-     !P.isTopicDone('coulomb') && P.read().quizBest === 50, res.message);
+  ok('import restores topics and scores', res.ok && P.isTopicDone('ch2') &&
+     !P.isTopicDone('ch1') && P.read().quizBest === 50, res.message);
   ok('import refuses junk and foreign files',
     !P.importJSON('not json at all').ok &&
     !P.importJSON(JSON.stringify({ app: 'something-else', progress: {} })).ok);
   ok('the dashboard offers export, import and reset controls',
     !!doc.getElementById('exportProgress') && !!doc.getElementById('importProgress') &&
     !!doc.getElementById('importProgressFile') && !!doc.getElementById('resetProgress'));
-  ok('legacy progress migrates: charges/efield credit all three lessons; Extra is not tracked',
+  ok('v1 progress migrates onto the chapters: current→ch1, charges→ch2, half-pair never fakes ch3',
     (() => {
       const P2 = win.EMC.Progress;
       P2.reset();
       win.localStorage.setItem('emc.progress.v1', JSON.stringify({ topics: { current: true, charges: true, magnetism: true, induction: false, vectors: true }, quizBest: 60, quizAttempts: 2 }));
       const r = P2.read();
-      return r.topics.charge === true && r.topics.coulomb === true && r.topics.field === true &&
-             r.quizBest === 60 && win.localStorage.getItem('emc.progress.v3.legacy') !== null;
+      return r.topics.ch1 === true && r.topics.ch2 === true && r.topics.ch3 === false &&
+             r.quizBest === 60 && r.quizAttempts === 2 &&
+             win.localStorage.getItem('emc.progress.v4.legacy') !== null;
     })(), 'migration contract broken');
+  ok('v3 lesson records migrate into the chapter schema with nothing lost (§3.6 fixture)',
+    (() => {
+      const P2 = win.EMC.Progress;
+      P2.reset();
+      win.localStorage.setItem('emc.progress.v3', JSON.stringify({
+        topics: { charge: true, coulomb: false, field: true },
+        quizBest: 88, quizAttempts: 3, quizLast: 88,
+        quizHistory: [{ pct: 70, at: '2026-01-01T00:00:00Z' }, { pct: 88, at: '2026-02-01T00:00:00Z' }],
+        updatedAt: '2026-02-01T00:00:00Z'
+      }));
+      const r = P2.read();
+      return r.topics.ch2 === true && r.topics.ch1 === false && r.topics.ch3 === false &&
+             r.quizBest === 88 && r.quizAttempts === 3 && r.quizHistory.length === 2 &&
+             win.localStorage.getItem('emc.progress.v4.legacy') !== null &&
+             win.localStorage.getItem('emc.progress.v3') !== null;   // original untouched
+    })(), 'v3 migration contract broken');
+  ok('v2 records migrate too (efield→ch2, magind→ch3)',
+    (() => {
+      const P2 = win.EMC.Progress;
+      P2.reset();
+      win.localStorage.setItem('emc.progress.v2', JSON.stringify({ topics: { current: false, efield: true, magind: true }, quizBest: 55 }));
+      const r = P2.read();
+      return r.topics.ch1 === false && r.topics.ch2 === true && r.topics.ch3 === true && r.quizBest === 55;
+    })(), 'v2 migration contract broken');
   ok('migration is idempotent', (() => { const P2 = win.EMC.Progress; const a = JSON.stringify(P2.read()); P2.read(); return JSON.stringify(P2.read()) === a; })());
   ok('the dashboard says progress is device-local',
     /this device only/.test(doc.body.textContent));

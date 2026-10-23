@@ -70,7 +70,7 @@
       ],
       discovery: {
         text: 'charge only ever moves — the room\u2019s total can never change, and neutral things are pulled by shifted charge.',
-        href: '#summary'
+        href: '#charge-summary'
       }
     });
     if (box) window.__SR = box;   // debug handle (?debug), never used by the page

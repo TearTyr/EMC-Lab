@@ -1,0 +1,21 @@
+ok   ch2 Coulomb line: net force on q1 = 5.69 N (engine softened ≤1%) — got 5.66, want 5.69 (tol 1%)
+ok   ch2 Coulomb 2-D: net force on +4 uC = 22.7 N — got 22.5, want 22.7 (tol 1.2%)
+ok   ch2 Coulomb 2-D: net points up-right (~24 deg above +x, lecture orientation) — F on selected = Σ k·|q·qᵢ|/rᵢ² over 2 charges = 22.5 N ↗ up-right
+ok   ch2 field: |E| at P = 75,595 N/C — got 75600, want 75595 (tol 1%)
+ok   ch2 field: E points along +y (Ex = 0) — 90° from +x (↑ up)
+ok   ch2 Bohr: v = 2.188e6 m/s at the lecture radius — got 2190000, want 2188000 (tol 1%)
+ok   ch2 quantisation: balloon+hair total reads exactly 0 C — 0 C
+ok   ch1 Ohm: I = V/R = 24/2 = 12 A — got 12, want 12 (tol 1%)
+ok   ch1 Ohm: P = VI = 288 W — got 288, want 288 (tol 1%)
+ok   ch1 Ohm: R=0 refused, readouts stay finite — 12.0 A|288 W|2.00 Ω
+ok   ch1 Ohm: junk input refused, previous value restored — 12.0 A|288 W|2.00 Ω|2
+ok   ch1 circuit: series bank R = 79.00 ohm — 79.00 Ω
+ok   ch1 circuit: total R = 94.00 ohm — 94.00 Ω
+ok   ch1 circuit: I = 12/94 A — got 0.128, want 0.1276595744680851 (tol 1%)
+ok   ch1 circuit: Kirchhoff V(bank)+V(bulb) = 12 V — got 12.01, want 12 (tol 0.5%)
+ok   ch3 Lorentz: RK4 orbit matches r = mv/|q|B within 1% — r=0.00418 m, |RK4-theory|=8.7e-22 m
+ok   ch3 Lorentz: force readout is live and finite 
+ok   ch3 Faraday: emf opposes dPhi/dt on every moving sample (Lenz minus sign) — 12/12 opposed
+ok   ch3 Lenz: direction readout explains the opposition while moving — Flux is increasing. Lenz’s law: the induced current flows so as to oppose the in
+page/console errors: none
+LECTURE VALUES + SIM PHYSICS PASS

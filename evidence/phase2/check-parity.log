@@ -1,0 +1,66 @@
+
+> check
+> node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs
+
+────────────────────────────────────────────────────────────────
+EMC Lab — static project validation
+────────────────────────────────────────────────────────────────
+HTML pages ......... 17
+JS files ........... 45
+Tailwind utilities . 20 used, 20 present in css/site.css
+
+✅ No errors: all links, scripts, ids and data hooks resolve.
+✅ No warnings.
+
+ℹ  40 advisory note(s) on [data-*] hooks:
+   - index.html: no [data-toggle] element (fine if the script guards for it)
+   - index.html: no [data-complete-topic] element (fine if the script guards for it)
+   - index.html: no [data-tex-done] element (fine if the script guards for it)
+   - index.html: no [data-shell-retry] element (fine if the script guards for it)
+   - public/index.html: no [data-toggle] element (fine if the script guards for it)
+   - public/index.html: no [data-complete-topic] element (fine if the script guards for it)
+   - public/index.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/index.html: no [data-shell-retry] element (fine if the script guards for it)
+   - public/quiz.html: no [data-tex] element (fine if the script guards for it)
+   - public/quiz.html: no [data-toggle] element (fine if the script guards for it)
+   - public/quiz.html: no [data-complete-topic] element (fine if the script guards for it)
+   - public/quiz.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/quiz.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/quiz.html: no [data-goto] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-toggle] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-row] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-del] element (fine if the script guards for it)
+   - public/topics/fields.html: no [data-toggle] element (fine if the script guards for it)
+   - public/topics/fields.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/fields.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/topics/magind.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/magind.html: no [data-tex-done] element (fine if the script guards for it)
+   - quiz.html: no [data-tex] element (fine if the script guards for it)
+   - quiz.html: no [data-toggle] element (fine if the script guards for it)
+   - quiz.html: no [data-complete-topic] element (fine if the script guards for it)
+   - quiz.html: no [data-topic-link] element (fine if the script guards for it)
+   - quiz.html: no [data-tex-done] element (fine if the script guards for it)
+   - quiz.html: no [data-goto] element (fine if the script guards for it)
+   - topics/current.html: no [data-toggle] element (fine if the script guards for it)
+   - topics/current.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/current.html: no [data-tex-done] element (fine if the script guards for it)
+   - topics/current.html: no [data-row] element (fine if the script guards for it)
+   - topics/current.html: no [data-del] element (fine if the script guards for it)
+   - topics/fields.html: no [data-toggle] element (fine if the script guards for it)
+   - topics/fields.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/fields.html: no [data-tex-done] element (fine if the script guards for it)
+   - topics/magind.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/magind.html: no [data-tex-done] element (fine if the script guards for it)
+────────────────────────────────────────────────────────────────
+ok   index.html: 1 detail pairs balanced
+ok   quiz.html: 1 detail pairs balanced
+ok   topics/fields.html: 7 detail pairs balanced
+ok   topics/current.html: 11 detail pairs balanced
+ok   topics/magind.html: 4 detail pairs balanced
+ok   topics/charge.html: 0 detail pairs balanced
+ok   topics/coulomb.html: 0 detail pairs balanced
+ok   topics/field.html: 0 detail pairs balanced
+DETAIL PARITY PASS
+SCOPE + NETWORK PURITY PASS

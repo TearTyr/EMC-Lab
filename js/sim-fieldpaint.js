@@ -42,12 +42,16 @@
           { type: 'pos', q: 8e-6, x: 1.1, y: 0.7 },
           { type: 'neg', q: -2e-6, x: 1.9, y: 0.7 }
         ] },
-        { id: 'lecture-y', label: 'Lecture replica: ±4 µC on the y-axis', objects: w => {
-          const cy = w.h / 2;                          // keeps the 0.60 × 0.50 m geometry at any canvas size
+        { id: 'lecture-y', label: 'Lecture replica: ±4 µC, r = 0.700 m, 31.0° at P', objects: w => {
+          const cy = w.h / 2;                          // keeps the lecture geometry at any canvas size
+          /* The lecture's own numbers: each charge sits 0.700 m from P, the
+             line to it making 31.0° with the x-axis → charges at
+             y = ±0.700·sin31° = ±0.3605 m, P at x = 0.700·cos31° = 0.600 m.
+             E₁ = E₂ = 73,388 N/C, net = 75,595 N/C along +y, Eₓ = 0. */
           return [
-            { type: 'neg', q: -4e-6, x: 1.2, y: cy - 0.50 },   // −4 µC “at y = +0.50 m” (screen-up)
-            { type: 'pos', q: 4e-6, x: 1.2, y: cy + 0.50 },    // +4 µC “at y = −0.50 m”
-            { type: 'probe', q: 0, x: 1.80, y: cy },           // P: 0.60 m off the axis
+            { type: 'neg', q: -4e-6, x: 1.2, y: cy - 0.3605 }, // −4 µC “at y = +0.3605 m” (screen-up)
+            { type: 'pos', q: 4e-6, x: 1.2, y: cy + 0.3605 },  // +4 µC “at y = −0.3605 m”
+            { type: 'probe', q: 0, x: 1.80, y: cy },           // P: 0.600 m off the axis
             { type: 'test', q: 1e-9, x: 2.2, y: cy }
           ];
         } }
@@ -89,7 +93,7 @@
       ],
       discovery: {
         text: 'the field is real at every point \u2014 the ghost only reads the push that was already waiting there.',
-        href: '#summary'
+        href: '#field-summary'
       },
       readouts: api => {
         /* the probe's live E — the number the lecture example is about */

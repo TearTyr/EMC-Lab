@@ -1,0 +1,22 @@
+
+> test:shell
+> node tools/shell-stress.mjs
+
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+ok   [motion] 50 switches: stages back to baseline
+ok   [motion] 50 switches: listeners back to baseline
+ok   [motion] 50 switches: chains capped at 2
+ok   [motion] 50 switches: no page errors
+ok   [motion] topic section coherent
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+ok   [reduce] 50 switches: stages back to baseline
+ok   [reduce] 50 switches: listeners back to baseline
+ok   [reduce] 50 switches: chains capped at 2
+ok   [reduce] 50 switches: no page errors
+ok   [reduce] topic section coherent
+ok   [reduce] no stage animates
+SHELL STRESS PASS

@@ -1,0 +1,160 @@
+#!/usr/bin/env node
+/* ==========================================================================
+   EMC Lab — cross-browser core-flow matrix (gate B, brief R9).
+   Run: node tools/browser-matrix.mjs
+   Runs the SAME core flows on every available engine:
+     chromium (Chrome), firefox, and chromium with channel 'msedge' (Edge).
+   Flows: home boots with derived counts -> all three chapters mount ->
+   circuit builder controls move real readouts -> quiz answers + submits +
+   scores 100% -> Detail toggle agrees across attr/aria/label/content.
+   A browser that cannot launch is reported UNTESTED, never assumed (R9).
+   Exits 1 if any launched browser fails a flow or logs a page error.
+   ========================================================================== */
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { resolve, dirname } from 'node:path';
+import { chromium, firefox } from 'playwright';
+
+const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const FILES = new Map();
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir)) {
+    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch'].includes(e)) continue;
+    const f = path.join(dir, e); const st = fs.statSync(f);
+    if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+  }
+})(ROOT);
+const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.json': 'application/json' };
+const server = http.createServer((req, res) => {
+  let u = decodeURIComponent((req.url || '/').split('?')[0]);
+  if (u === '/') u = '/index.html';
+  const b = FILES.get(u);
+  if (!b) { res.writeHead(404); return res.end('not found'); }
+  res.writeHead(200, { 'content-type': MIME[path.extname(u)] || 'application/octet-stream' }); res.end(b);
+});
+await new Promise(r => server.listen(8259, '127.0.0.1', r));
+const B = 'http://127.0.0.1:8259';
+
+const ENGINES = [
+  { name: 'Chrome (chromium 156)', launch: () => chromium.launch({ args: ['--disable-dev-shm-usage'] }) },
+  { name: 'Firefox (playwright)', launch: () => firefox.launch({ args: [] }) },
+  { name: 'Edge (msedge channel)', launch: () => chromium.launch({ channel: 'msedge', args: ['--disable-dev-shm-usage'] }) }
+];
+
+let anyRun = false, allPass = true;
+const summary = [];
+
+for (const eng of ENGINES) {
+  let browser;
+  try { browser = await eng.launch(); }
+  catch (e) {
+    console.log(`UNTESTED  ${eng.name}: could not launch (${String(e).split('\n')[0].slice(0, 90)})`);
+    summary.push([eng.name, 'UNTESTED', '']);
+    continue;
+  }
+  anyRun = true;
+  let fails = 0;
+  const errors = [];
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => errors.push(String(e).slice(0, 120)));
+  pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 120)); });
+  const ok = (name, cond, extra = '') => {
+    if (!cond) { fails++; console.log(`FAIL [${eng.name}] ${name}`, extra); }
+    else console.log(`ok   [${eng.name}] ${name}`, extra ? '— ' + extra : '');
+  };
+
+  /* --- home --- */
+  await pg.goto(B + '/index.html', { waitUntil: 'load' });
+  await pg.waitForTimeout(900);
+  const home = await pg.evaluate(() => ({
+    emc: typeof window.EMC !== 'undefined',
+    stats: [document.getElementById('statChapters').textContent,
+            document.getElementById('statSims').textContent,
+            document.getElementById('statQuestions').textContent].join('|'),
+    overlay: !!document.getElementById('bootOverlay')
+  }));
+  ok('home boots with derived counts 3|13|24', home.emc && home.stats === '3|13|24', home.stats);
+  ok('no boot overlay lingering', home.overlay === false);
+
+  /* --- the three chapters mount via the shell --- */
+  for (const [route, want] of [['#/ch1', 'Circuits'], ['#/ch2', 'Electric Fields'], ['#/ch3', 'Magnetism']]) {
+    await pg.evaluate(r => { location.hash = r; }, route);
+    await pg.waitForTimeout(1300);
+    const st = await pg.evaluate(() => ({
+      mounted: !document.getElementById('shell-topic').hidden,
+      h1: (document.querySelector('#shell-topic h1') || {}).textContent || ''
+    }));
+    ok(`chapter ${route} mounts`, st.mounted && st.h1.includes(want), st.h1.slice(0, 40));
+  }
+
+  /* --- circuit builder: controls move real readouts --- */
+  await pg.goto(B + '/topics/current.html', { waitUntil: 'load' });
+  await pg.evaluate(() => document.getElementById('sim-circuit').scrollIntoView());
+  await pg.waitForTimeout(1200);
+  const c0 = await pg.evaluate(() => document.getElementById('circ-req').textContent);
+  await pg.evaluate(() => document.querySelector('[data-lane="1"]').click());
+  await pg.waitForTimeout(300);
+  await pg.evaluate(() => document.querySelector('[data-lane="2"]').click());
+  await pg.waitForTimeout(400);
+  const c1 = await pg.evaluate(() => ({
+    req: document.getElementById('circ-req').textContent,
+    lanes: window.__CIRC.state.lanes.join(',')
+  }));
+  ok('circuit builder rewire changes the computed R(eq)',
+    c0.includes('79.00') && /24\.99/.test(c1.req) && c1.lanes === 'series,parallel,parallel', `${c0} -> ${c1.req}`);
+  await pg.evaluate(() => document.querySelector('[data-circ-chip="battery"]').click());
+  await pg.waitForTimeout(300);
+  const bat = await pg.evaluate(() => document.getElementById('circ-itotal').textContent);
+  ok('battery toggle reports honest zero current', /no battery/.test(bat), bat);
+
+  /* --- quiz: answer all, submit twice, 100% --- */
+  await pg.goto(B + '/quiz.html', { waitUntil: 'load' });
+  await pg.waitForTimeout(900);
+  const n = await pg.evaluate(() => {
+    let k = 0;
+    document.querySelectorAll('.q-card').forEach(card => {
+      const q = window.EMC_QUIZ.find(x => x.id === Number(card.dataset.qid));
+      const opt = card.querySelector(`.opt[data-opt="${q.answer}"]`);
+      if (opt) { opt.click(); k++; }
+    });
+    return k;
+  });
+  ok('quiz: all 24 answered by real clicks', n === 24, String(n));
+  await pg.evaluate(() => document.getElementById('quiz-submit').scrollIntoView());
+  await pg.evaluate(() => document.getElementById('quiz-submit').click());
+  await pg.waitForTimeout(300);
+  await pg.evaluate(() => document.getElementById('quiz-submit').click());
+  await pg.waitForTimeout(1500);
+  const score = await pg.evaluate(() => document.getElementById('quiz-score').textContent.slice(0, 40));
+  ok('quiz submits and scores 100%', /100%/.test(score), score.replace(/\s+/g, ' '));
+
+  /* --- Detail toggle --- */
+  const dt = await pg.evaluate(() => {
+    const b = document.getElementById('detailToggle');
+    b.click();
+    return new Promise(res => setTimeout(() => res({
+      attr: document.documentElement.dataset.detail,
+      pressed: b.getAttribute('aria-pressed'),
+      label: b.querySelector('.dt-state').textContent,
+      techHidden: [...document.querySelectorAll('[data-detail="tech"]')].every(e => getComputedStyle(e).display === 'none')
+    }), 350));
+  });
+  ok('Detail toggle: attr + aria-pressed + label + content agree',
+    dt.attr === 'off' && dt.pressed === 'false' && dt.label === 'OFF' && dt.techHidden, JSON.stringify(dt));
+
+  ok('no page/console errors in the whole run', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await ctx.close();
+  const version = browser.version();
+  await browser.close();
+  summary.push([`${eng.name} ${version}`, fails === 0 ? 'PASS' : `${fails} FAIL`, '']);
+  if (fails !== 0) allPass = false;
+}
+
+console.log('\n--- gate B matrix ---');
+for (const [name, result] of summary) console.log(`  ${result.padEnd(8)} ${name}`);
+if (!anyRun) { console.log('NO BROWSER COULD RUN — gate B is UNTESTED, not passed'); process.exit(1); }
+console.log(allPass ? 'BROWSER MATRIX PASS' : 'BROWSER MATRIX FAILURES');
+await server.close();
+process.exit(allPass ? 0 : 1);

@@ -32,8 +32,8 @@ const LABEL = process.env.PERF_LABEL || (MODE === 'shots' ? (process.argv[3] || 
 const PORT = 8420;
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.json': 'application/json', '.ico': 'image/x-icon' };
 
-const PAGES = ['index.html', 'quiz.html', 'topics/charge.html', 'topics/coulomb.html',
-               'topics/field.html', 'topics/current.html', 'topics/magind.html'];
+const PAGES = ['index.html', 'quiz.html', 'topics/fields.html',
+               'topics/current.html', 'topics/magind.html'];
 const PROFILES = {
   desktop: { width: 1280, height: 900, dpr: 1, throttle: 1, touch: false },
   mobile: { width: 390, height: 844, dpr: 3, throttle: 4, touch: true },
@@ -363,7 +363,12 @@ async function guard(browser) {
   console.log('\n[animation-loop guard]');
   {
     const page = await openPage('index.html');
-    check('home boot-visible chains = 1', await sampleRaf(page, 1500), 1);
+    /* Home ships NO animated canvas (the redesign replaced the hero dipole
+       with a static equation strip) and the design rules forbid permanent
+       background loops, so the honest budget is zero visible chains —
+       tightened from the stale pre-redesign expectation of 1. Essential
+       motion stays policed by the magind lorentz check below. */
+    check('home boot-visible chains = 0 (no permanent loops)', await sampleRaf(page, 1500), 0);
     check('home hidden chains = 0', await hiddenProbe(page), 0);
     const heap = await page.evaluate(() => performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(2) : null);
     console.log(`  \u2139 home heap (informational): ${heap} MB`);

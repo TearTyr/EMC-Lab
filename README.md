@@ -1,34 +1,42 @@
 # EMC Lab — Interactive Electromagnetics Tutorial
 
-A responsive, interactive educational website for **Calculus-based Physics 2**, built for the
-**EMC group** around the lecture *Electric Forces and Electric Field*. The graded course is
-three short lessons — **Electric Charge**, **Coulomb's Law**, **Electric Field** — each taught
-in four layers (30-second summary → easy version → full version → try it) through **nine
-open sandboxes and toys**, plus a **35-question auto-graded quiz** (19 lesson questions, 16
-optional *Extra*) with Chart.js score analytics. **Circuits & Ohm's Law** and **Magnetism &
-Induction** remain on the site as clearly-labelled *Extra* chapters beyond this lecture.
-Fully static: no backend, no build step, no required dependencies.
+A responsive, interactive educational website for **Calculus-based Physics 2** (Electricity
+group). The course brief's three chapters are the site's three chapters — all principal,
+nothing optional:
 
-The earlier general-physics material (vectors, fluids, heat, waves) is not deleted: it lives
-under `archive/` and remains recoverable; retired general-physics quiz questions are kept in
-`archive/js/quiz-data-general-physics.js`. The pre-redesign Coulomb bench and the
-field-explorer's potential integral (−∫E·dr, beyond this lecture) are archived the same way
-(`archive/js/sim-coulomb.js`, `archive/js/sim-efield-potential.js`).
+| # | Chapter | Page | What's inside |
+|---|---------|------|---------------|
+| 1 | **Circuits & Ohm's Law** | `topics/current.html` | V, I, R, power, series/parallel reduction, an Ohm's-law bench (R2) and a drag-and-drop circuit builder with resistors, a battery and a bulb whose brightness follows P = VI (R1) |
+| 2 | **Electric Fields & Coulomb's Law** | `topics/fields.html` | the graded lecture in three sections — 2.1 Electric Charge, 2.2 Coulomb's Law (1-D/2-D superposition, Bohr atom), 2.3 Electric Field (E = F/\|q₀\|, field lines, the two-charge y-axis example) — with nine open sandboxes and toys |
+| 3 | **Magnetism & Induction** | `topics/magind.html` | Lorentz force F = qv × B, magnetic motion, flux, Faraday's law, Lenz's law on a live coil |
 
-**Single source of truth:** `js/registry.js` defines the subject, its chapters, their paths,
-tags and simulations. Navigation, chapter counts, progress topics, quiz categories, the
-production page list and `sitemap.xml` are all derived from it — adding a future subject
-means adding an entry there plus its content files, never editing counters by hand.
+Plus a **24-question auto-graded quiz** (exactly 8 per chapter) with Chart.js score
+analytics, and device-local **progress tracking** for the three chapters.
 
-> Every number on every screen is computed from the real equations (the component rule,
-> Archimedes' principle, Bernoulli's equation, Q = mcΔT, v = fλ, Ohm's law). Nothing is
-> animated by hand.
->
-> **Stack:** HTML + CSS + vanilla JavaScript, Tailwind CSS compiled locally
-> (`css/input.css` → `css/site.css` via the Tailwind CLI), native Canvas 2D for every
-> simulation, WebAudio for the playable tone bench, and **Chart.js** for quiz analytics —
-> **vendored under `vendor/`**, so the site makes zero third-party requests.
-> The website itself still opens straight from the file system.
+> Every number on every screen is computed from the real equations — Ohm's law,
+> Coulomb's law with vector superposition, E = Σ kq r̂/r², F = qv × B, ε = −N dΦ/dt.
+> Nothing is animated by hand. The Coulomb constant is **k = 8.99×10⁹ N·m²/C²**
+> (the lecture's value) everywhere — computed *and* printed — so every readout
+> reproduces the lecture's worked answers (±1 C at 1 km → 8990 N; net 5.69 N on the
+> +3 µC line example; 22.7 N at ≈24° in 2-D; v = 2.188×10⁶ m/s for Bohr; 75,595 N/C
+> along +y for the two-charge field).
+
+**Stack:** HTML + vanilla JavaScript + Canvas 2D, Tailwind CSS compiled locally
+(`css/input.css` → `css/site.css` via the Tailwind CLI), vendored **KaTeX** and
+**Chart.js** under `vendor/` — the site makes **zero third-party requests** and opens
+straight from the file system.
+
+**Single source of truth:** `js/registry.js` defines the three chapters, their paths,
+quiz tags and simulations. Navigation, chapter counts, progress topics, quiz
+categories, the production page list and `sitemap.xml` are all derived from it —
+never hand-typed. Legacy ids from earlier site generations (`charge`, `coulomb`,
+`field`, `current`, `magind`, …) resolve through its alias map, so old links, old
+hash routes, old quiz deep links and old progress records all keep working.
+
+**Scope map:** `SCOPE_TRACE.md` maps every brief requirement (R1–R11) and every
+lecture item to the page/sim/test that satisfies it. Audit history lives in
+`BUG_AUDIT.md`; the requirement digest (the spec PDFs were not available in the
+working environment) is in `docs/spec/`.
 
 ---
 
@@ -37,421 +45,169 @@ means adding an entry there plus its content files, never editing counters by ha
 The site is static. Any of these works:
 
 ### Option A — open directly
-Double-click `index.html`. Everything works from the file system, including progress tracking
-in browsers that allow `localStorage` for `file://` (Chrome, Edge, Firefox all do by default).
+Double-click `index.html`. Everything works from the file system (the same-page
+chapter reader needs `http://`, so on `file://` chapter links simply open the
+standalone pages — which is the intended fallback).
 
 ### Option B — local web server (recommended)
 ```bash
-cd emc-physics-tutorial
 python3 -m http.server 8000        # or: npx serve .
 # then open  http://localhost:8000
 ```
 
 ### Option C — any static host
-Upload the folder to GitHub Pages, Netlify, Vercel or a university web space as-is.
-
-**Requirements:** a modern browser. Chrome 100+ is the only browser this project
-actually tests; Edge 100+, Firefox 100+ and Safari 15.4+ are *targets* — the code
-avoids exotic APIs and is expected to work there, but is untested (see §10).
-No internet connection is required at run time: Tailwind is compiled ahead of time into
-`css/site.css`, and every font (including your licensed faces) is served from `vendor/` (see §7).
+Upload the repo root, or run the production build (§5) and upload `public/`.
 
 ---
 
 ## 2. File structure
 
 ```
-emc-physics-tutorial/
-├── index.html                     Landing page: navigation, topic cards, formula sheet,
-│                                  progress dashboard, hero KaTeX equation strip
-├── quiz.html                      Quiz page: toolbar, question list, score card
-├── topics/
-│   ├── charge.html                Lesson 1 — charge, q = n·e, conservation, conductors
-│   ├── coulomb.html               Lesson 2 — inverse-square force, superposition, Bohr atom
-│   ├── field.html                 Lesson 3 — E = F/|q0|, field lines, zero points
-│   ├── current.html               Extra — Ohm's law, power, series/parallel, builder
-│   └── magind.html                Extra — magnetism, Lorentz force, flux, Faraday, Lenz
-├── archive/                       Retired general-physics pages, sims and quiz bank
-├── css/
-│   ├── input.css                  THE styling source: @layer base/components + @tailwind directives
-│   ├── site.css                   Committed build of input.css (bun run build:css)
-│   └── fonts.css                  @font-face for the vendored open-font fallbacks
-├── js/
-│   ├── common.js                  Shared engine: constants, HiDPI canvas Stage, pointer input,
-│   │                              SI formatter, localStorage progress, nav/reveal/toasts
-│   ├── registry.js                THE topic registry: subject, chapters, paths, tags, sims
-│   ├── home.js                    Derived hero counters + progress dashboard
-│   ├── sandbox-core.js            Shared free-play engine: drag/zoom/undo/random/share codes,
-│   │                              softened Coulomb + field kernels, release mode with caps,
-│   │                              star challenges, predict-then-run, Easy/Full readouts
-│   ├── sim-static-room.js         Lesson 1 sandbox — attract/repel room + conservation tally
-│   ├── toy-balloon.js             Lesson 1 toy — rub-the-balloon electron transfer (q = n·e)
-│   ├── toy-ledger.js              Lesson 1 toy — charge ledger: conductors share, total fixed
-│   ├── sim-arena.js               Lesson 2 sandbox — tug-of-war arena, lecture presets
-│   ├── toy-pinforce.js            Lesson 2 toy — live 1/r² curve tracer with 2r/3r ghosts
-│   ├── toy-bohr.js                Lesson 2 toy — tune r, read v = √(ke²/mₑr) → 2.19×10⁶ m/s
-│   ├── sim-fieldpaint.js          Lesson 3 sandbox — paint charges, lines, ghost, E probe
-│   ├── toy-dipole.js              Lesson 3 toy — stretch/spin a dipole, lines re-trace live
-│   ├── toy-zerohunt.js            Lesson 3 toy — hot/cold hunt for the zero-field point
-│   ├── sim-ohm.js                 Extra — Ohm's law bench (auto-range meter + I–V chart)
-│   ├── sim-circuit.js             Extra — circuit builder (series/parallel/combination)
-│   ├── sim-lorentz.js             Extra — Lorentz force, RK4 orbits vs analytic r and T
-│   ├── sim-induction.js           Extra — magnet through coil: dipole flux, EMF, galvanometer
-│   ├── quiz-data.js               35 questions with worked explanations + hints (6/6/7 lessons, 8+8 Extra)
-│   └── quiz.js                    Quiz engine: marking modes, optional timer, navigator + flags, autosave/resume, scoring, Chart.js analytics
-├── tools/
-│   ├── check-links.mjs            Static validator (links, ids, data-hooks, CSS coverage)
-│   ├── smoke-test.mjs             Runtime test harness (jsdom, optional dev dependency)
-│   ├── build-public.mjs           Assembles + verifies public/ (the Vercel output directory)
-│   ├── perf-audit.mjs             Transfer-size / blocking-script / font-payload budgets
-│   ├── add-font.mjs               Registers OPTIONAL licensed faces in vendor/fonts/manifest.json
-│   ├── switch-css.mjs             Swaps Tailwind delivery mode (cdn <-> built)
-│   ├── og-card.html               Source artwork for the 1200x630 social preview image
-│   ├── make-og-card.mjs           Renders that artwork to img/og-card.png (puppeteer, dev only)
-│   └── cleanup-repo.ps1           Windows repo-hygiene script: plan -> confirm -> clean (see §9)
-├── img/
-│   ├── og-card.png                Committed Open Graph / Twitter card image (1200x630)
-│   ├── favicon.svg                Favicon artwork — same mascot as the header brand mark
-│   └── apple-touch-icon.png       180x180 iOS home-screen icon (rasterised from favicon.svg)
-├── favicon.ico                    Multi-size ICO (16/32/48) fallback for Safari and any
-│                                  tool that probes /favicon.ico at the origin root
-├── robots.txt                     Allow-all policy + Sitemap pointer (shipped by the build)
-├── vercel.json                    Vercel config: install/build commands, outputDirectory + cache headers
-├── tailwind.config.js             Tailwind pipeline config (bun run build:css)
-├── vendor/
-│   ├── katex/                     Locally vendored KaTeX (js + css + woff2 + LICENSE, MIT)
-│   ├── chart/                     Locally vendored Chart.js 4.4.3 (UMD + LICENSE, MIT)
-│   └── fonts/                     Committed OFL woff2 faces: G8321 Thin / Regular / Bold
-│                                  (+ optional licensed slot: vendor/fonts/README.md)
-├── package.json                   Dev scripts: check / test / build:css / perf / font:scan
-├── README.md                      This file
-├── TESTING.md                     Manual + automated testing checklist   [local-only, gitignored]
-└── PRESENTATION-NOTES.md          Physics + implementation notes for presenting the module  [local-only]
+index.html            home: hero, chapter cards, sim index, formula sheet, progress dashboard
+quiz.html             the 24-question quiz (filters, timers, navigator, charts, resume)
+topics/
+  current.html        Chapter 1 — Circuits & Ohm's Law   (sim-ohm, sim-circuit)
+  fields.html         Chapter 2 — Electric Fields & Coulomb's Law (§§2.1–2.3, nine sims/toys)
+  magind.html         Chapter 3 — Magnetism & Induction  (sim-lorentz, sim-induction)
+  charge.html         redirect stub → fields.html#charge   (old URL, anchors preserved)
+  coulomb.html        redirect stub → fields.html#coulomb
+  field.html          redirect stub → fields.html#field
+js/
+  registry.js         the three chapters + legacy alias map (pure-JSON core)
+  common.js           engine: constants, Stage (HiDPI canvas + rAF), loader, Detail Mode,
+                      Progress (v4 + migrations), KaTeX pipeline, UI primitives
+  shell.js            same-page chapter reader for index.html (hash routes #/ch1…#/ch3,
+                      legacy aliases, one cleanup path for mounted sims)
+  home.js             dashboard + derived hero counters
+  quiz.js             quiz engine (exam/instant, timers, autosave + bank fingerprint,
+                      Chart.js with CSS-bar fallback)
+  quiz-data.js        the 24-question bank (8/8/8)
+  sandbox-core.js     shared free-play engine for the ch2 sandboxes
+  sim-*.js, toy-*.js  the 13 simulations/toys (one file each, registry-listed)
+css/                  input.css (source) → site.css (built), fonts.css
+vendor/               KaTeX + Chart.js + OFL fonts (same-origin, licensed)
+tools/                dev tooling (see §7); archive/ retired material (not shipped)
+docs/spec/            requirement digest + independent recompute of every lecture value
+evidence/             browser-verified audit evidence (screenshots, logs, sweeps)
 ```
-
-Total: ~9,500 lines across 7 pages, the styling pipeline (source + build + font faces)
-and 13 scripts. No framework, no bundler, no backend.
 
 ---
 
 ## 3. Features
 
-| Requirement | Where it lives |
-|---|---|
-| Clean landing page with navigation to each topic | `index.html` — centred hero with mascot, a KaTeX equation strip (the four governing laws) and stat counters derived from the registry/quiz bank, 3 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
-| Responsive UI, desktop + mobile | Fluid `clamp()` type, `md:`/`lg:` grids, hamburger nav < 900 px, canvases resize via `ResizeObserver` |
-| Extra sim — Ohm’s law bench | `js/sim-ohm.js`: V and R sliders (plus an editable R box), auto-ranging ammeter, a bulb whose brightness follows P = VI, and an I–V characteristic chart; presets for ohmic and non-ohmic behaviour |
-| Extra sim — circuit builder | `js/sim-circuit.js`: battery + up to four resistors in series or parallel (three in combination mode); every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
-| Lesson sandboxes (Static Room · Tug-of-War Arena · Field Painter) | `js/sandbox-core.js` + three thin scene files: unlimited draggable charges/objects, per-pair component ghosts, field arrows + integrated field lines, a persistent ghost test charge, draggable ruler and E probe, release mode (F = ma with force cap, close-range softening, edge bounce and a stability warning), trails, slow motion, undo/random, optional ★ challenges detected from the physics state, predict-then-run prompts computed live, and share-codes in the URL hash |
-| Tiny toys (6) | balloon rubbing with electron-parcel counters, an unbreakable charge ledger, a live 1/r² force tracer, a Bohr-atom speed tuner, a dipole builder and a zero-field treasure hunt — each ends with a one-line “what you just discovered” link back to its lesson summary |
-| Extra sim — Lorentz force & circular motion | `js/sim-lorentz.js`: proton/electron/alpha orbits integrated with RK4 at slowed visual time, printed slow-down factor, r = mv/(|q|B) and T = 2πm/(|q|B) theory readouts plus a live RK4-vs-theory radius error, and a right-hand-rule challenge |
-| Extra sim — magnet through a coil | `js/sim-induction.js`: exact dipole flux Φ(z), Faraday EMF = −N dΦ/dt, a centre-zero galvanometer, Lenz current-direction indicator, N/R sliders, a scrolling Φ/EMF chart and a right-hand-rule quiz |
-| Lessons in four layers | Every lesson page: **A** 30-second summary (≤4 bullets + the key formula) → **B** easy version (plain words, one analogy, one flat figure, ≤150 words) → **C** full version (definitions, the lecture's worked examples, common mistakes) → **D** try it (sandbox + two toys + quiz). One symbol table, defined once in Lesson 1. The site-wide Details switch shows A+B (off) or A+C (on); sandbox readouts ride the same switch as Easy/Full |
-| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 35 questions (charge 6 · coulomb 6 · field 7 for the lecture; circuits 8 · magnetism 8 as Extra; every lesson set is 2 concept + 2 calculation with the lecture's own numbers + 1 spot-the-mistake, each with a hint and an Easy/Full tag), exam *or* instant marking, per-question explanations, per-topic breakdown with a **weak-areas summary**, grade bands, review-incorrect + flagged filters, shuffle, retake, **optional timer (Off by default · Practice count-up · Challenge 10/15/20-min countdown with a soft amber last minute and a gentle auto-submit), question navigator strip with prev/next, flag-for-review, autosave & resume after a refresh, two-step submit confirmation, per-question splits when a timer is on, correct-streak counter with a pastel burst, tiny confetti + a cheering mascot on a pass, keyboard flow (1–4/A–D, Enter, N, F)**, `?topic=` deep links from each topic page, and a reacting mascot in every graded feedback |
-| Predict-then-run prompts | Every sandbox can ask you to predict an outcome after idle play — the **simulator computes the answer from its live state** (ghost direction from E, force ratios from 1/r²), grades instantly and is always skippable; the Extra circuit builder keeps its own variant |
-| Chart.js score visualisation | Doughnut (correct/incorrect), horizontal bars (score per topic), line (attempt history) on the score card, drawn by the **vendored** `vendor/chart/chart.umd.min.js`; CSS-bar fallback if that file ever fails to load |
-| Progress tracking with localStorage | `EMC.Progress` in `js/common.js` (key `emc.progress.v3`, with automatic one-time migration from `emc.progress.v1/v2` that keeps a recoverable legacy copy — the old `efield` chapter credits all three lessons; Extra is not tracked): lessons read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all three lessons studied, exactly as the dashboard promises **and as the score card announces at the moment it happens**; **Export / Import** buttons move the snapshot between devices as JSON; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
-| Social preview + SEO | Every page carries `<link rel=canonical>`, `og:type/title/description/url/image(+w/h/alt)`, `twitter:card/title/description/image`, all pointing at one production origin and at `img/og-card.png` (committed, 1200×630, regenerated by `bun run og:card`) |
-| No-JavaScript notice | Each page ships a `<noscript>` banner (`.noscript-note`) that says the sims, dashboard and quiz need JavaScript while the tutorial text still reads |
-| theme-color honesty | `<meta name="theme-color">` is `#17181c`, the exact `--bg` the pages paint, so mobile browser chrome matches the site instead of an older navy |
-| Cross-browser design (Chrome tested; Edge / Firefox / Safari targeted, untested) | No exotic APIs; feature-guarded `ResizeObserver`, `IntersectionObserver`, Web Animations; vendor-prefixed range-input styling for both engines |
+- **Three chapters, one quiz, one progress ring.** Counts on every screen are derived
+  from the registry and the bank (3 chapters · 13 sims · 24 questions).
+- **Detail Mode.** One header switch flips every explanation between a simplified and a
+  full-technical variant — applied before first paint (no flash of the wrong level),
+  persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
+  pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
+  survive the flip untouched.
+- **Loader contract.** Page content renders immediately; a segmented accent bar appears
+  only if startup exceeds ~150 ms, tracks real stages (fonts, above-fold equations,
+  critical UI), exits in ~240 ms, and is capped by a 1500 ms watchdog. A failed critical
+  dependency shows Retry + Home — never a permanent spinner. `tools/loader-verify.mjs`
+  proves the whole contract in a real browser.
+- **Quiz.** Exam or instant marking, optional timers (practice count-up / challenge
+  count-down with auto-submit), question navigator, flags, shuffle, autosave & resume
+  (with explicit stale-bank detection), dual submit buttons, per-chapter breakdown,
+  Chart.js analytics with a CSS-bar fallback if the library fails.
+- **Progress.** localStorage only — no accounts, no backend, no network. v1/v2/v3
+  records migrate losslessly into the v4 chapter schema; Export/Import moves progress
+  between devices as JSON.
+- **Accessibility.** Semantic landmarks, skip link, visible focus, ≥4.5:1 body contrast,
+  state never carried by colour alone, full keyboard flows, `prefers-reduced-motion`
+  honoured everywhere (decorative motion off, state feedback intact).
 
 ---
 
 ## 4. The physics inside each simulation
 
-| Sim | Governing equations implemented |
-|---|---|
-| Extra — Ohm bench (`sim-ohm.js`) | I = V/R; P = VI = I²R = V²/R; I–V characteristic line of gradient 1/R with R/2 and 2R references; auto-ranging meter; over-power warning against the resistor rating |
-| Extra — circuit builder (`sim-circuit.js`) | R<sub>eq</sub> = ΣRᵢ (series), 1/R<sub>eq</sub> = Σ1/Rᵢ (parallel), R₁+(R₂R₃)/(R₂+R₃) (combo); Kirchhoff's laws for every branch V/I/P; carrier-dot density proportional to branch current |
-| Lesson sandboxes (`sandbox-core.js`) | F = k\|q₁q₂\|/r² per pair (close-range softened, r_eff² = r² + ε², ε ≤ 1 cm, hard cap 10⁴ N with a stability chip); E(P) = Σ kq(P−r)/\|P−r\|³; field lines integrated along Ê; F = q₀E on the ghost; release mode integrates F = ma (printed play mass, dt and speed caps, 0.6-restitution walls); conductor touch sharing q′ = (q₁+q₂)/₂; neutral-ball polarisation via the image-charge model — all per frame, nothing scripted |
-| Tiny toys | q = n·e electron counting (balloon); (q₁+q₂)/₂ sharing with an invariant total (ledger); F(r) = k\|q₁q₂\|/r² traced live with exact 2r/3r ratios (pin-force); k e²/r² = mₑv²/r → v = √(ke²/mₑr) (Bohr); dipole field = superposition of two point-charge fields (dipole); ΣE = 0 null-point detection from the same kernel (zero hunt) |
-| Extra — Lorentz force (`sim-lorentz.js`) | F = qv × B; RK4-integrated orbits against the analytic circle r = mv/(\|q\|B), T = 2πm/(\|q\|B); live radius-error readout; physical rotation direction at a printed slow-down factor |
-| Extra — magnet through a coil (`sim-induction.js`) | exact dipole flux Φ(z) = μ₀ma²/(2(a²+z²)^{3/2}); EMF = −N dΦ/dt (analytic derivative, 2 ms sub-stepping); I = EMF/R; P = I²R; pole-aware Lenz direction text |
+| Sim | Chapter | Governing equations (computed live) |
+|-----|---------|-------------------------------------|
+| Ohm bench (`sim-ohm`) | 1 | I = V/R, P = VI, P = I²R; carrier rate I/e; auto-ranging meters; rated-power warning |
+| Circuit builder (`sim-circuit`) | 1 | Series/parallel/combo reduction, Kirchhoff-exact branch solve; bulb brightness ∝ P |
+| Static Room (`sim-static-room`) | 2 §2.1 | softened Coulomb pair sum; contact sharing (q₁+q₂)/2; unbreakable conservation tally |
+| Rub the Balloon (`toy-balloon`) | 2 §2.1 | q = n·e in whole electrons; equal-and-opposite readouts |
+| Charge Ledger (`toy-ledger`) | 2 §2.1 | identical conductors split any total equally; total invariant |
+| Tug-of-War Arena (`sim-arena`) | 2 §2.2 | F = k\|q₁q₂\|/r² + vector superposition; lecture line & 2-D presets reproduce 5.69 N and 22.7 N ∠24°; release mode integrates F = ma |
+| Pin the Force (`toy-pinforce`) | 2 §2.2 | the 1/r² hyperbola, live ratio readout F(2r)/F(r) = 0.250 |
+| Bohr Tuner (`toy-bohr`) | 2 §2.2 | v = √(ke²/(mₑr)) → 2.188×10⁶ m/s at r = 5.29×10⁻¹¹ m (Coulomb pull as the **centripetal** force) |
+| Field Painter (`sim-fieldpaint`) | 2 §2.3 | E(P) = Σ kq (P−r)/\|P−r\|³; lecture replica preset: E₁ = 73,388 N/C, net 75,595 N/C +y, Eₓ = 0 |
+| Dipole Builder (`toy-dipole`) | 2 §2.3 | bisector field of a live dipole |
+| Zero-Field Hunt (`toy-zerohunt`) | 2 §2.3 | sweep for E = 0 with a words-not-colour meter |
+| Lorentz Lab (`sim-lorentz`) | 3 | F = qv × B, r = mv/(\|q\|B), RK4-checked orbits |
+| Coil Lab (`sim-induction`) | 3 | Φ = BA cosθ, ε = −N dΦ/dt, Lenz-direction current |
 
-The retired general-physics simulations (vector bench, buoyancy, Bernoulli, thermometer,
-heat transfer, waves, tone bench) live under `archive/` with their original documentation
-and are not part of the deployed site.
+Softening (≤1 cm) keeps close-range forces finite; the stability warning says so
+outright. The lecture's check values are independently recomputed by
+`node docs/spec/verify-checks.mjs` (all twelve, ≤1 %).
 
 ---
 
-## 5. Bun is the package manager
+## 5. Build & deploy
+
+The committed site runs with **no build step**. The build exists for production:
 
 ```bash
-bun install          # installs the single dev dependency (tailwindcss) -> bun.lock
-bun run build:css    # css/input.css -> css/site.css (minified, ~36 kB)
-bun run check        # static validator (links, ids, utility coverage)
-bun run test         # full jsdom harness (exact assertion count printed at the end)
-bun run perf         # gzip transfer / font payload / blocking-script budgets
-bun run font:scan    # re-scan vendor/fonts/ for OPTIONAL licensed cuts -> manifest.json
-bun run og:card      # regenerate img/og-card.png from tools/og-card.html (puppeteer)
+npm install                # devDependencies: jsdom, tailwindcss, playwright, puppeteer
+npm run build:css          # Tailwind CLI: css/input.css -> css/site.css (minified)
+npm run build:public       # assemble public/: hashed+minified assets, link verification,
+                           # sitemap.xml + generated pages; fails on any broken reference
 ```
 
-Everything else is plain static files; Bun and Node produce identical output, but the
-project standardises on Bun (`bun.lock` is committed and Vercel detects it).
+`package.json` scripts historically call `bun`; **npm works identically** for every
+script (the two `build:*` steps are the same binaries). On Vercel the project builds
+with bun as configured in `vercel.json` (`buildCommand: bun run build`,
+`outputDirectory: public`). Production assets ship under content-hash names with
+1-year immutable headers — that is by design, so source paths like `/js/common.js`
+404 in production while `/js/common.<hash>.js` serves.
 
-> **Lockfile compatibility:** the committed `bun.lock` is `lockfileVersion: 1`, the
-> format Bun 1.3.x reads and writes. Vercel's install step runs a bundled Bun 1.3.x,
-> which cannot parse the `lockfileVersion: 2` files written by Bun ≥ 1.4 — it logs
-> `Unknown lockfile version`, ignores the lockfile and re-resolves from scratch
-> (vercel/vercel#17577). Keep Bun 1.3.x locally (or re-run `bun install` with 1.3.x
-> before committing) so builds stay reproducible.
+---
 
 ## 6. Hosting on Vercel
 
-`vercel.json` pins the whole pipeline so a deploy is reproducible from a bare clone:
-
-* `installCommand: bun install` — Vercel detects `bun.lock` and uses Bun.
-* `buildCommand: bun run build` — recompiles `css/site.css` from `css/input.css` on every
-  deploy (committed CSS can never drift from the markup), then `tools/build-public.mjs`
-  assembles the complete site into a fresh `public/` and verifies every local link resolves.
-* `outputDirectory: public` — pinned in `vercel.json`, which **overrides** the dashboard's
-  Output Directory setting, so a stale dashboard value can never fail the build again.
-  `public/` itself is gitignored: it is a build artifact, regenerated on every deploy.
-* Headers: `/css/` and `/js/` are `immutable, max-age=31536000` — safe because every
-  deploy ships content-hashed filenames (`common.9f3c12ab.js`), and `build:public` now
-  FAILS on Vercel rather than ever falling back to unhashed files under those headers;
-  `/vendor/` (KaTeX, fonts) caches for a day.
-* Each page carries one line of inline critical CSS — scoped to `@media (min-width: 901px)` —
-  that keeps the Topics dropdown collapsed even if a stale stylesheet were ever served.
-
-Progress is localStorage-only by design: no backend, no database, nothing that can incur cost.
-
-### Dashboard settings (project → Settings → General / Build & Development Settings)
-
-| Setting | Value | Why |
-| --- | --- | --- |
-| Framework Preset | `Other` | static site; no framework detection needed |
-| Root Directory | *(empty)* | the site lives at the repository root |
-| Build Command | *(empty — `vercel.json` sets it)* | `bun run build` |
-| Output Directory | *(anything — `vercel.json` overrides it)* | `vercel.json` pins `public`; the build generates it |
-| Install Command | *(empty — `vercel.json` sets it)* | `bun install` |
-
-> **Troubleshooting.**
-> `No Output Directory named "public" found after the Build completed` → historically a
-> dashboard-set Output Directory with nothing generating that folder. Fixed at the source:
-> `vercel.json` pins `outputDirectory: public` **and** `bun run build` generates the folder
-> (the vercel.json value overrides the dashboard per Vercel's docs). If you still see it,
-> the deployment predates commit *"generate public/ output dir"* — push and redeploy with
-> "Use existing Build Cache" unticked.
-> `Unknown lockfile version` while parsing `bun.lock` → a Bun ≥ 1.4 machine rewrote the
-> lockfile to version 2 and it was committed; Vercel's bundled Bun 1.3.x cannot read it.
-> Regenerate with Bun 1.3.x (see §5) and commit the `lockfileVersion: 1` file.
-
-## 7. Styling architecture — one source, three cascade layers
-
-All styling lives in **`css/input.css`**, compiled by the Tailwind CLI into `css/site.css`.
-There is no second stylesheet to fight with: the file is organised as
-
-| Layer | Contents | Loses to |
-|---|---|---|
-| `@layer base` | colour/shape tokens, the three font stacks, element resets (`h1…h4 {margin:0}`, list padding, `sup/sub` positioning) | components **and** utilities |
-| `@layer components` | the sticker design system: `.card`, `.panel`, `.ctl`, `.q-card`, `.opt`, nav, mascot, the `.hr` divider hairline (must keep its own dark rule — an unstyled `<hr>` inherits preflight's light border and reads as a white line), the 640/900/1200 media queries | utilities |
-| `@layer utilities` | Tailwind's own output — every utility used in markup (`mt-2`, `gap-4`, `md:grid-cols-2`, …) | nothing |
-
-Because CSS cascade layers order **base < components < utilities**, a utility class in the
-markup always wins over an element reset or a component rule of equal specificity — that is
-the whole specificity-conflict story, solved by architecture instead of `!important`.
-`bun run check` proves coverage: it lists every utility class used in the site pages and
-verifies each one exists in the compiled `css/site.css`.
-
-### Type system (one committed OFL family, three weights)
-
-| Role | Face | Source |
-|---|---|---|
-| Titles / headings / buttons / labels | `fot-yuruka-std` → **G8321 Bold 700** | licensed face locally (`vendor/fonts/manifest.json` slot); committed fallback `vendor/fonts/g8321-700.woff2` |
-| Body copy / prose | **G8321 Regular 400** | committed `vendor/fonts/g8321-400.woff2` |
-| Display numerals (grade, watermark, ring %) | **G8321 Thin 100** | committed `vendor/fonts/g8321-100.woff2` |
-| Home stat-strip numbers (small, 1.45rem) | **G8321 Regular 400** | committed `vendor/fonts/g8321-400.woff2` |
-
-All three weights are G8321 by Coji Morishita (SIL OFL 1.1) — the whole site is one
-family, so local dev and the deployed site are guaranteed consistent. The stacks live once
-in `tailwind.config.js` (`fontFamily.title / sans / ui`) and are pulled into CSS with
-`theme('fontFamily.…')`, so config and output can never disagree. Titles lead with
-`fot-yuruka-std`, a *paid* face that is never committed: on machines that hold it locally
-it renders headings; everywhere else titles fall back to G8321 Bold — still the site's
-family, no licence risk. ~45 KB of fonts total.
-
-## 8. Engineering notes
-
-* **Visual design policy — "chiikawa official, but dark and minimal".** The layout language is
-  borrowed from chiikawaofficial.com and translated, not copied: one calm centred column,
-  sections separated by space instead of rules, sticker-like cards with thick soft outlines and
-  large radii, pill buttons, and a small bobbing mascot ("Denki-chan") that appears in the hero,
-  above each topic title, and as the brand mark. The palette is a warm charcoal base with the
-  reference site's own candy pastels (pink `#f8aebe`, lilac `#d5b8d8`, green `#b5d777`,
-  blue `#a8d3e0`, yellow `#f6d36b`) used sparingly as the only accents. Typography is a
-  single-family system — G8321 (SIL OFL 1.1) in three committed weights (~45 KB total,
-  zero licence risk): **Thin 100** for oversized display numerals, **Regular 400** for
-  body copy, **Bold 700** for headings, buttons and labels — and the canvas annotations
-  use the same family, with their pixel sizes scaled by the live root font-size so they
-  shrink and grow together with the DOM at every breakpoint. Titles additionally try the
-  privately licensed *FOT-Yuruka Std* first, which only machines holding that paid font
-  can render; everywhere else they fall back to G8321 Bold, keeping every host consistent.
-  `js/common.js` activates such local-only faces through the optional
-  `vendor/fonts/manifest.json` slot (FontFace API, one info log line per face, zero
-  console noise when absent). `sup`/`sub` are positioned by CSS
-  rather than font metrics, so no activated face can ever scatter exponents. Motion is limited to the mascot's bob
-  and soft hover lifts; there is no blur, glass, gradient, glow or scroll animation anywhere.
-  Simulations and SVG figures sit on flat near-black plates, like lab instruments.
-  Readability rules: prose runs at line-height 1.85 in an article rhythm copied from a clean
-  long-form blog layout — ~4.2 rem of air above every numbered heading, ~2.2 rem around
-  equations, callouts, figures, definition lists and disclosures — so only one idea sits on
-  screen at a time and no page ever reads as a wall of text. Every page shares ONE content
-  column (`--column: 1060 px`, i.e. 1020 px of content between the 20 px gutters): topic
-  prose, callouts, sim panels, the quiz head and the home equation strip + stat strip all end
-  at the same left/right edges, so no page ever looks thinner than another. Every
-  supplementary block (real-world connections, common traps) is collapsed behind a "+"
-  disclosure so the main flow stays short; worked examples and rules stay open.
-* **The site talks about physics only.** No page mentions the course, the module or how the
-  site was built, tested or deployed — no "Works everywhere" blurb, no dependency/build-step
-  stats, no dev-doc links in footers. That material lives in this README and in the
-  local-only docs (TESTING.md, PRESENTATION-NOTES.md, SYNC.md — gitignored, kept on
-  disk, never committed), which the deployed site no longer links to or ships.
-* **Everything is same-origin, on purpose.** KaTeX and Chart.js 4.4.3 are
-  committed under `vendor/` with their MIT licence files, exactly like the fonts.
-  That removes the CDN outage risk, the privacy leak and the SRI-hash maintenance in one
-  move; `tools/smoke-test.mjs` asserts per page that no `http(s)://` asset reference exists,
-  and `tools/cleanup-repo.ps1` reports any that reappear.
-* **Equations are real LaTeX, with zero network risk.** **KaTeX is vendored locally**
-  (`vendor/katex/`: js, css and woff2 fonts, ~600 kB), so typesetting works offline, on
-  `file://`, and on any host including Vercel. Every displayed equation carries its source in a
-  `data-tex` attribute (`F = k\,\frac{|q_1q_2|}{r^2}`, `\mathcal{E} = -N\,\frac{d\Phi}{dt}`, …)
-  and is typeset by `EMC.katexify()` at boot and again on `window.load`; the home-page formula
-  table uses inline mode. Each element also keeps hand-readable plain text, so even a totally
-  broken script degrades to legible equations, never raw TeX.
-* **Flat-art policy.** No gradient or glow exists anywhere in the codebase — not in the CSS and
-  not in the canvas code (blocks, wings, bulbs and particles are flat pastel stickers).
-  `tools/smoke-test.mjs` enforces this: it fails if `createLinearGradient`,
-  `createRadialGradient`, `shadowBlur`, `backdrop-filter` or a CSS gradient ever reappear.
-* **Styling.** A single source file, `css/input.css`, holds `@layer base` (tokens, font stacks,
-  element resets), `@layer components` (the whole sticker design system) and the three
-  `@tailwind` directives; `bun run build:css` compiles it to the committed `css/site.css`
-  (also re-run by Vercel on every deploy). Cascade layers guarantee utilities > components >
-  base, which is what makes `mt-2`-style markup utilities win without `!important`.
-  `tailwind.config.js` scans the markup plus `js/quiz.js` (the one script that injects utility
-  classes) and keeps a **top-level** `blocklist` of prose words that collide with utility names
-  (`table`, `filter`, `ring`, …). Careful: nesting `blocklist` inside `content` invalidates the
-  whole config — Tailwind then logs the `purge`/`content` warning and silently drops the
-  blocklist, so scanner accidents leak into the build. One breakpoint system everywhere: **640 / 900 / 1200 px**, shared by the config
-  and the component media queries. Accent colours derive from one variable per hue
-  (`--c/--ct/--ce`), so tags, callouts, accents and readout highlights never hard-code a tint.
-  `node tools/switch-css.mjs cdn` can still add the Play CDN tag if a rubric literally demands
-  "Tailwind via CDN"; `… built` (the shipped default) removes it again.
-* **Canvas engine.** `EMC.Stage` (`js/common.js`) wraps each `<canvas>`: device-pixel-ratio
-  scaling, resize observation, an auto-pausing `requestAnimationFrame` loop, and unified
-  pointer events (mouse + touch + pen) with pointer capture for drags. Render functions draw in
-  CSS pixels only.
-* **Number formatting.** `EMC.eng()` formats to 3 significant figures with a single SI prefix
-  (femto…tera, exponential outside that range); `EMC.unit()` joins the unit without a break so
-  "399 mN" can never wrap. Prefixes are never stacked (no "µmWb").
-* **Robustness.** `localStorage` access is wrapped and falls back to memory; every optional DOM
-  lookup is guarded so a page without a given simulation still boots; `scrollIntoView`,
-  `Element.animate`, `ResizeObserver` and `IntersectionObserver` are feature-detected.
-* **Accessibility.** Skip link, landmark regions, one `<h1>` per page, labelled canvases
-  (`role="img"` + `aria-label`), `radiogroup`/`radio` semantics with arrow-key support in the
-  quiz, `aria-pressed` toggles, visible focus rings, `prefers-reduced-motion` support, and
-  print styles that hide the interactive chrome.
-* **No tracking, no backend.** The only persistent state is one `localStorage` key
-  (`emc.progress.v1`) in the user's own browser.
+- Framework preset: **Other**; Build command `bun run build`; Output directory `public`
+  (also pinned in `vercel.json`, which overrides the dashboard).
+- `vercel.json` carries the cache headers and the legacy `/topics/efield.html` redirect.
+- No analytics or speed-insights integrations: the site must stay zero-third-party
+  (`tools/check-scope.mjs` fails the build locally on any external fetch).
 
 ---
 
-## 9. Developer commands
+## 7. Developer commands
 
 ```bash
-bun install          # dev deps only: jsdom (tests) + tailwindcss (CSS build)
-bun run check        # static validation: links, ids, data-hooks, CSS coverage
-bun run test         # runtime assertions across all five live pages (exact count
-                     # printed at the end; skips politely if jsdom is absent)
-bun run build:css    # recompile css/input.css -> css/site.css after markup changes
-bun run perf         # gzip transfer / font payload / blocking-script budgets
-bun run font:scan    # re-scan vendor/fonts/ for optional licensed cuts -> manifest.json
-bun run switch:cdn   # optional: add the Play CDN tag (rubric demands "Tailwind via CDN")
-bun run switch:built # optional: back to the shipped default (compiled site.css)
+npm run check          # links + ids + data hooks, Detail-Mode parity, scope & network purity
+npm run test           # jsdom smoke test (526 assertions: physics, quiz, loader, a11y, migration)
+npm run test:interact  # real Chromium drives every sim (mouse/touch/keyboard, rude cases)
+npm run test:shell     # shell stress: rapid route switching, teardown, reduced motion
+npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 15 checks
+npm run perf           # transfer/DOM/font budgets per page
+npm run perf:guard     # animation-chain budgets, CLS, anchor clearance
+npm run shots          # screenshots of every page + sim panel
+npm run build          # build:css + build:public
 ```
 
-The website itself still has **zero required dependencies**: Chart.js and KaTeX are
-vendored under `vendor/` (with their licence files), every fallback path is tested, and the
-compiled Tailwind CSS is committed. Nothing on any page is fetched from a third-party host —
-`tools/cleanup-repo.ps1` health-check 8h fails the repo if a `<script>`/`<link>` ever points
-at `http(s)://` again.
-
-### Repo hygiene (Windows)
-
-`tools/cleanup-repo.ps1` automates the tidy-up that a hand-written checklist keeps
-forgetting. It runs **PLAN → CONFIRM → EXECUTE**, so nothing is touched until you
-answer the prompt (`-DryRun` never writes, `-Force` skips the prompt).
-
-```powershell
-# PowerShell / Windows Terminal, from the repo root
-.\tools\cleanup-repo.ps1 -DryRun                     # show me everything first
-.\tools\cleanup-repo.ps1                             # plan, ask, then clean
-.\tools\cleanup-repo.ps1 -Verify -Commit -Push       # clean + bun checks + ship it
-.\tools\cleanup-repo.ps1 -RepoPath D:\VS\EMC-Physics -CheckLive -PurgeNodeModules
-```
-
-```bash
-# Git Bash / MSYS, from the repo root -- forward slashes, or the backslashes are
-# eaten as escapes and PowerShell gets the single word "toolscleanup-repo.ps1"
-# ("The argument ... to the -File parameter does not exist").
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tools/cleanup-repo.ps1 -DryRun
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tools/cleanup-repo.ps1 -Verify -Commit -Push
-```
-
-* **deletes** the dead `server/` + `api/` backends, `tools/subset_font.py`,
-  `bun.lockb`, `package-lock.json`, unused woff2 faces, and OS/editor junk
-  (`Thumbs.db`, `desktop.ini`, `.DS_Store`, `*.bak`, `*.orig`, …) — into the
-  **Recycle Bin** unless you pass `-Permanent`;
-* **untracks but never deletes** your licensed `.ttf`/`.otf` backups, and repairs
-  `.gitignore` if the `vendor/fonts/*.ttf|*.otf` rules went missing;
-* **refuses** to delete anything `css/fonts.css` references or anything in its
-  hard-protected list (`css/site.css`, `bun.lock`, the committed OFL woff2 files,
-  the HTML pages, the configs);
-* **reports** (never silently "fixes") a `lockfileVersion: 2` `bun.lock`, a missing
-  `css/site.css`, `public/` files **tracked in git** (it is the generated deploy
-  artifact and must stay gitignored), `vercel.json` **not** pinning
-  `"outputDirectory": "public"` (the pin that overrides the dashboard and prevents
-  Vercel's *"No Output Directory named public"* error), tracked
-  `node_modules`, tracked files over 1 MB, and private font binaries still
-  reachable in **git history** — `.gitignore` does not rewrite history;
-* `-CheckLive` then probes the deployment: `/api/health` must **not** be 200 while
-  the fonts, `css/site.css` and `/` must be.
-
-Exit codes: `0` clean · `1` you aborted · `2` not the EMC Lab repo · `3` a step failed.
-
-### Performance tooling
-* every `<script>` tag is `defer` and same-origin — there are **no third-party requests at
-  all**, hence no `preconnect` hints and no Subresource Integrity hashes to maintain;
-* the vendored Chart.js (~68 KB gzip) loads only on the quiz page, so no other page pays
-  for it; the tone bench needs no library at all (WebAudio is a browser API);
-* KaTeX and all fonts are self-hosted (no third-party round trips);
-* `npm run perf` (`tools/perf-audit.mjs`) serves the site with gzip like a real host and
-  enforces budgets: **0 render-blocking scripts**, **< 500 KB compressed transfer per page**
-  excluding the font payload, and **fails if raw-TTF fonts ever exceed 500 KB** (the repo
-  ships woff2 only, ~71 KB) — current numbers are ~250-280 KB per page including fonts;
-* if you ever add a big TTF, convert it once with `pip install fonttools brotli` and
-  `TTFont(...).flavor = 'woff2'` — only woff2 belongs in the repo.
+All test tooling is dev-only; the shipped site has zero runtime dependencies.
+Playwright browsers: `npx playwright install chromium firefox` (+ `msedge` channel for
+the Edge run). Puppeteer powers the perf tools.
 
 ---
 
-## 10. Browser support
+## 8. Browser support
 
-Chrome is the only browser this project tests (headless Chrome 148; see
-the local `TESTING.md`). Everything below is a *target*: the code avoids exotic APIs and is
-expected to work on these versions, but nothing has been verified there — do not
-read this table as a claim of tested support.
-
-| Browser | Minimum version (target) | Notes |
-|---|---|---|
-| Chrome | 100 | the only tested browser |
-| Edge | 100 | same engine as Chrome; untested here |
-| Firefox | 100 | `::-moz-range-*` slider styling provided; untested here |
-| Safari | 15.4 | `color-mix()` has a `@supports` fallback; untested here |
+Tested with Playwright in this repo's audit harnesses: **Chromium 156**, **Firefox 157**
+and **Edge 156** (msedge channel) for the core flows; puppeteer's Chrome 148 for the
+performance budgets. The site degrades without JavaScript (all prose readable, noscript
+notices) and without localStorage (progress disabled, everything else intact).
 
 ---
 
-## 11. Licence and credits
+## 9. Licence and credits
 
-Educational use. Physics content follows the standard calculus-based texts
-(Halliday/Resnick/Walker; Serway; Young & Freedman). Constants are CODATA 2018 values.
+- Code & content: educational use, EMC Lab project.
+- KaTeX (MIT) and Chart.js (MIT) are vendored with their licences under `vendor/`.
+- Fonts: G8321 (SIL OFL 1.1) committed as woff2; KaTeX fonts (SIL OFL) vendored.
+- Physics content follows standard calculus-based texts (Halliday/Resnick/Walker,
+  Serway, Young & Freedman) and the course lecture; constants: k = 8.99×10⁹ N·m²/C²
+  (lecture value, used everywhere), e = 1.602×10⁻¹⁹ C, μ₀ = 4π×10⁻⁷ T·m/A.

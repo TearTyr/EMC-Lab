@@ -52,7 +52,7 @@ const outDir = join(repoRoot, 'public');
   globalThis.__REG = JSON.parse(raw.slice(start, end + 1));
 }
 const REGISTRY = globalThis.__REG;
-const CHAPTER_PAGES = REGISTRY.subjects.flatMap(s => s.chapters).map(c => c.path);
+const CHAPTER_PAGES = REGISTRY.chapters.map(c => c.path);
 const ORIGIN = REGISTRY.origin;
 
 // Single files copied from the repo root (the pages themselves, plus the

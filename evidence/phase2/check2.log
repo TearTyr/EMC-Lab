@@ -1,0 +1,85 @@
+
+> check
+> node tools/check-links.mjs
+
+────────────────────────────────────────────────────────────────
+EMC Lab — static project validation
+────────────────────────────────────────────────────────────────
+HTML pages ......... 15
+JS files ........... 45
+Tailwind utilities . 20 used, 20 present in css/site.css
+
+❌ 14 ERROR(S):
+   - index.html: broken reference -> ' + home + '
+   - quiz.html: broken reference -> ' + home + '
+   - topics/charge.html: broken reference -> ' + home + '
+   - topics/coulomb.html: broken reference -> ' + home + '
+   - topics/current.html: broken reference -> ' + home + '
+   - topics/field.html: broken reference -> ' + home + '
+   - topics/magind.html: broken reference -> ' + home + '
+   - index.html: script references missing id "#bootFatal"
+   - quiz.html: script references missing id "#bootFatal"
+   - topics/charge.html: script references missing id "#bootFatal"
+   - topics/coulomb.html: script references missing id "#bootFatal"
+   - topics/current.html: script references missing id "#bootFatal"
+   - topics/field.html: script references missing id "#bootFatal"
+   - topics/magind.html: script references missing id "#bootFatal"
+✅ No warnings.
+
+ℹ  55 advisory note(s) on [data-*] hooks:
+   - index.html: no [data-toggle] element (fine if the script guards for it)
+   - index.html: no [data-complete-topic] element (fine if the script guards for it)
+   - index.html: no [data-tex-done] element (fine if the script guards for it)
+   - index.html: no [data-shell-retry] element (fine if the script guards for it)
+   - public/index.html: no [data-toggle] element (fine if the script guards for it)
+   - public/index.html: no [data-complete-topic] element (fine if the script guards for it)
+   - public/index.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/quiz.html: no [data-toggle] element (fine if the script guards for it)
+   - public/quiz.html: no [data-complete-topic] element (fine if the script guards for it)
+   - public/quiz.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/quiz.html: no [data-tex] element (fine if the script guards for it)
+   - public/quiz.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/quiz.html: no [data-goto] element (fine if the script guards for it)
+   - public/topics/charge.html: no [data-toggle] element (fine if the script guards for it)
+   - public/topics/charge.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/charge.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/topics/coulomb.html: no [data-toggle] element (fine if the script guards for it)
+   - public/topics/coulomb.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/coulomb.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-toggle] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-complete-topic] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-row] element (fine if the script guards for it)
+   - public/topics/current.html: no [data-del] element (fine if the script guards for it)
+   - public/topics/field.html: no [data-toggle] element (fine if the script guards for it)
+   - public/topics/field.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/field.html: no [data-tex-done] element (fine if the script guards for it)
+   - public/topics/magind.html: no [data-complete-topic] element (fine if the script guards for it)
+   - public/topics/magind.html: no [data-topic-link] element (fine if the script guards for it)
+   - public/topics/magind.html: no [data-tex-done] element (fine if the script guards for it)
+   - quiz.html: no [data-tex] element (fine if the script guards for it)
+   - quiz.html: no [data-toggle] element (fine if the script guards for it)
+   - quiz.html: no [data-complete-topic] element (fine if the script guards for it)
+   - quiz.html: no [data-topic-link] element (fine if the script guards for it)
+   - quiz.html: no [data-tex-done] element (fine if the script guards for it)
+   - quiz.html: no [data-goto] element (fine if the script guards for it)
+   - topics/charge.html: no [data-toggle] element (fine if the script guards for it)
+   - topics/charge.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/charge.html: no [data-tex-done] element (fine if the script guards for it)
+   - topics/coulomb.html: no [data-toggle] element (fine if the script guards for it)
+   - topics/coulomb.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/coulomb.html: no [data-tex-done] element (fine if the script guards for it)
+   - topics/current.html: no [data-toggle] element (fine if the script guards for it)
+   - topics/current.html: no [data-complete-topic] element (fine if the script guards for it)
+   - topics/current.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/current.html: no [data-tex-done] element (fine if the script guards for it)
+   - topics/current.html: no [data-row] element (fine if the script guards for it)
+   - topics/current.html: no [data-del] element (fine if the script guards for it)
+   - topics/field.html: no [data-toggle] element (fine if the script guards for it)
+   - topics/field.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/field.html: no [data-tex-done] element (fine if the script guards for it)
+   - topics/magind.html: no [data-complete-topic] element (fine if the script guards for it)
+   - topics/magind.html: no [data-topic-link] element (fine if the script guards for it)
+   - topics/magind.html: no [data-tex-done] element (fine if the script guards for it)
+────────────────────────────────────────────────────────────────

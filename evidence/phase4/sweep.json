@@ -1,0 +1,145 @@
+[
+ {
+  "page": "/",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 576,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0.0029940199110243056,
+  "overflow": {
+   "360": [
+    "data L21 R499",
+    "THEAD L21 R499",
+    "TR L21 R499",
+    "TH L337 R499",
+    "TBODY L21 R499"
+   ],
+   "390": [
+    "data L21 R499",
+    "THEAD L21 R499",
+    "TR L21 R499",
+    "TH L337 R499",
+    "TBODY L21 R499"
+   ],
+   "640": [
+    "[object SVGAnimatedString] L182 R6567"
+   ],
+   "900": [
+    "[object SVGAnimatedString] L236 R6824"
+   ],
+   "1200": [
+    "math L1114 R1207",
+    "semantics L1114 R1207",
+    "mrow L1114 R1207",
+    "mi L1200 R1207",
+    "[object SVGAnimatedString] L269 R7272"
+   ],
+   "1440": [
+    "[object SVGAnimatedString] L355 R7358"
+   ]
+  }
+ },
+ {
+  "page": "/quiz.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 479,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0.046319661458333335,
+  "overflow": {
+   "360": [
+    "SUMMARY L36 R374",
+    "qnav-chip L356 R396",
+    "qnav-chip L401 R441",
+    "qnav-chip L446 R486",
+    "qnav-chip L491 R531"
+   ],
+   "390": [
+    "qnav-chip L356 R396",
+    "qnav-chip L401 R441",
+    "qnav-chip L446 R486",
+    "qnav-chip L491 R531",
+    "qnav-chip L537 R577"
+   ],
+   "640": [
+    "qnav-chip L627 R667",
+    "qnav-chip L672 R712",
+    "qnav-chip L718 R758",
+    "qnav-chip L763 R803",
+    "qnav-chip L808 R848"
+   ],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ },
+ {
+  "page": "/topics/fields.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 537,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [
+    "DIV L20 R377",
+    "canvas-wrap L20 R377",
+    "toy-balloon L20 R377",
+    "sim-plate L20 R377",
+    "panel-body L20 R377"
+   ],
+   "390": [],
+   "640": [],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ },
+ {
+  "page": "/topics/current.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 473,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [],
+   "390": [],
+   "640": [],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ },
+ {
+  "page": "/topics/magind.html",
+  "errors": [],
+  "failed": [],
+  "thirdParty": [],
+  "dupScripts": {},
+  "overlayGoneMs": 512,
+  "hasEMC": true,
+  "detailToggle": "DEAD (no state change)",
+  "cls": 0,
+  "overflow": {
+   "360": [],
+   "390": [],
+   "640": [],
+   "900": [],
+   "1200": [],
+   "1440": []
+  }
+ }
+]

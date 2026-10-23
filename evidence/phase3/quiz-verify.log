@@ -1,0 +1,20 @@
+ok   keyboard: "2" answers the active card — 0/24 -> 1/24
+ok   keyboard: "f" flags the active card for review — 1
+ok   keyboard: "n" + number answers the next blank — 2/24
+ok   keyboard: shortcuts are ignored while focus is in nav/inputs — 2/24
+ok   all 24 answered through real clicks — 24
+ok   submit exists near top and bottom (dual submit) — quiz-submit | Submit quiz (24)
+ok   first submit asks for confirmation, second grades 
+ok   perfect score shows 100% —  100% 24 / 24 cor
+ok   Chart.js (R8) really paints pixels into the score canvas 
+ok   charts replace the CSS-bar fallback once the lib is live 
+ok   retake clears every mark and the pill — {"marks":0,"pill":"0/24"}
+ok   timer stays visible while scrolled and docks on phone widths — {"docked":true,"reserved":true,"visible":true,"inViewport":true,"overlaps":0,"navOverlap":false}
+ok   timer never overlaps answer options or the header at 360 px (settled) — {"docked":true,"reserved":true,"visible":true,"inViewport":true,"overlaps":0,"navOverlap":false}
+ok   timer still visible mid-scroll 
+ok   reload after answering offers an explicit resume 
+ok   resume restores both answers — 2/24
+ok   ?topic=ch1 deep link filters to the 8 circuits questions — 8
+ok   changing the filter keeps ?topic= truthful — ch3
+page/console errors: none
+QUIZ VERIFICATION PASS

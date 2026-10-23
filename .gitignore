@@ -15,6 +15,8 @@ public/
 
 # --- editors / logs ---
 *.log
+# audit evidence must persist with its logs (BUG_AUDIT.md cites these paths)
+!evidence/**/*.log
 .idea/
 .vscode/
 .history/
@@ -43,6 +45,7 @@ TESTING.md
 core.*
 
 # --- local-only scratch probes (kept on disk, never committed) ---
+.scratch/
 lh.tmp.mjs
 tools/perf-probe*.mjs
 
