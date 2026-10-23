@@ -32,7 +32,8 @@ const LABEL = process.env.PERF_LABEL || (MODE === 'shots' ? (process.argv[3] || 
 const PORT = 8420;
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.json': 'application/json', '.ico': 'image/x-icon' };
 
-const PAGES = ['index.html', 'quiz.html', 'topics/current.html', 'topics/efield.html', 'topics/magind.html'];
+const PAGES = ['index.html', 'quiz.html', 'topics/charge.html', 'topics/coulomb.html',
+               'topics/field.html', 'topics/current.html', 'topics/magind.html'];
 const PROFILES = {
   desktop: { width: 1280, height: 900, dpr: 1, throttle: 1, touch: false },
   mobile: { width: 390, height: 844, dpr: 3, throttle: 4, touch: true },
@@ -170,7 +171,7 @@ async function measurePage(browser, url, profile, name) {
       interactions.push('slider-drag');
     }
   }
-  const dragCanvas = await page.$('#sim-ohm, #sim-efield, #sim-lorentz');
+  const dragCanvas = await page.$('#sim-ohm, #sim-fieldpaint, #sim-lorentz');
   if (dragCanvas) {
     const bb = await dragCanvas.boundingBox();
     if (bb) {

@@ -9,7 +9,9 @@
      The HTML ships the current values as no-JS fallbacks; these overwrite
      them at boot. The old animated dipole canvas was removed in favour of
      the static KaTeX equation strip in index.html (no driver needed). */
-  const chapters = (window.EMC_REGISTRY && Array.isArray(EMC_REGISTRY.chapters)) ? EMC_REGISTRY.chapters : [];
+  const REG = window.EMC_REGISTRY || {};
+  const lessons = Array.isArray(REG.lessons) ? REG.lessons : [];
+  const chapters = Array.isArray(REG.chapters) ? REG.chapters : [];
   const simCount = chapters.reduce((n, c) => n + (Array.isArray(c.sims) ? c.sims.length : 0), 0);
   const quizCount = (window.EMC_QUIZ && Array.isArray(EMC_QUIZ)) ? EMC_QUIZ.length : 0;
 
@@ -32,9 +34,9 @@
     const n = document.getElementById(id);
     if (n !== null) n.textContent = String(v);
   };
-  if (chapters.length) {
-    fill('statChapters', chapters.length);
-    fill('ledeChapters', numberToWords(chapters.length));
+  if (lessons.length) {
+    fill('statChapters', lessons.length);
+    fill('ledeChapters', numberToWords(lessons.length));
   }
   if (simCount) {
     fill('statSims', simCount);
@@ -65,7 +67,7 @@
     setTxt('dashPct', `${pct}% complete`);
 
     const doneCount = EMC.TOPICS.filter(t => p.topics[t]).length;
-    const topicsLine = `${doneCount} of ${EMC.TOPICS.length} chapters studied`;
+    const topicsLine = `${doneCount} of ${EMC.TOPICS.length} lessons studied`;
     setTxt('dashTopicsDone', topicsLine);      // dashboard definition list
     setTxt('dashTopicsChip', topicsLine);      // chip above the topic grid
     setTxt('dashQuizBest', p.quizAttempts ? `${p.quizBest}%` : 'not attempted');

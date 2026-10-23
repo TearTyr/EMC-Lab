@@ -9,7 +9,8 @@
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
-    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
+    try { if (sessionStorage.getItem('emc.splash.v1')) document.documentElement.classList.add('no-splash'); } catch (e) { /* storage blocked: show the splash */ }
+    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 4000); /* failsafe: never trap a user on the shell */
   </script>
   <title>Quiz · EMC Lab</title>
   <link rel="canonical" href="https://emc-lab.vercel.app/quiz.html">
@@ -65,12 +66,16 @@
     #bootOverlay .bo-chip.done { color: #b5d777; border-color: rgba(181,215,119,.45); }
     #bootOverlay .bo-chip::after { content: " \2713"; visibility: hidden; }
     #bootOverlay .bo-chip.done::after { visibility: visible; }
-    #bootOverlay .bo-bar { width: 180px; height: 4px; border-radius: 999px; background: #26282f; overflow: hidden; }
-    #bootOverlay .bo-bar i { display: block; width: 40%; height: 100%; background: #a8d3e0; border-radius: 999px; transform: translateX(-100%); animation: boSlide 1.15s ease-in-out infinite; }
-    @keyframes boSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(450%); } }
+    html.no-splash #bootOverlay { display: none; }
+    #bootOverlay .bo-bar { display: flex; gap: 4px; width: 180px; height: 4px; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #26282f; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg::after { content: ""; position: absolute; inset: 0; background: #a8d3e0; border-radius: 999px; transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+    #bootOverlay .bo-seg.done::after { transform: scaleX(1); }
+    #bootOverlay .bo-tip { font-size: .74rem; font-weight: 700; color: #7b8db0; max-width: 30ch; text-align: center; min-height: 2.2em; }
+    #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     @keyframes boBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     @media (prefers-reduced-motion: reduce) {
-      #bootOverlay .bo-bar i { animation: none; width: 100%; background: #2e3138; }
+      #bootOverlay .bo-seg::after { transition: none; }
       #bootOverlay .mascot-bo { animation: none; }
       #bootOverlay { transition: none; }
     }
@@ -90,11 +95,13 @@
     <span class="bo-brand">EMC<em>Lab</em></span>
     <span class="bo-sub">interactive physics</span>
     <span class="bo-chips" aria-hidden="true">
-      <span class="bo-chip" data-stage="shell">layout</span>
-      <span class="bo-chip" data-stage="scripts">scripts</span>
+      <span class="bo-chip" data-stage="fonts">fonts</span>
       <span class="bo-chip" data-stage="equations">equations</span>
+      <span class="bo-chip" data-stage="sims">first sim</span>
     </span>
-    <span class="bo-bar" aria-hidden="true"><i></i></span>
+    <span class="bo-bar" aria-hidden="true"><i class="bo-seg"></i><i class="bo-seg"></i><i class="bo-seg"></i></span>
+    <span class="bo-tip" id="boTip" aria-hidden="true">Like repels, unlike attracts.</span>
+    <span class="sr-only" id="boStatus">Loading…</span>
   </div>
   <noscript><!-- JavaScript is turned off: hide the boot shell (the tutorial text below still reads fine). --><style>#bootOverlay{display:none}</style></noscript>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -127,13 +134,17 @@
         <a class="nav-link" href="index.html">Home</a>
         <div class="nav-drop">
           <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
-                  aria-expanded="false" aria-controls="topicsMenu">Topics
+                  aria-expanded="false" aria-controls="topicsMenu">Lessons
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <a class="dd-link" href="topics/current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
-            <a class="dd-link" href="topics/efield.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charges · fields · superposition · potential</small></a>
-            <a class="dd-link" href="topics/magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
+            <span class="dd-head">The lecture</span>
+            <a class="dd-link" href="topics/charge.html"><b>1 · Electric Charge</b><small>q = n·e · conservation · conductors</small></a>
+            <a class="dd-link" href="topics/coulomb.html"><b>2 · Coulomb’s Law</b><small>F = k|q₁q₂|/r² · superposition · Bohr</small></a>
+            <a class="dd-link" href="topics/field.html"><b>3 · Electric Field</b><small>E = F/|q₀| · field lines · zero points</small></a>
+            <span class="dd-head">Extra — beyond this lecture</span>
+            <a class="dd-link" href="topics/current.html"><b>Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
+            <a class="dd-link" href="topics/magind.html"><b>Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="quiz.html">Take the quiz</a>
@@ -141,8 +152,8 @@
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
     <div class="boot-strip" id="bootStrip" aria-hidden="true">
-      <span class="boot-chip" data-stage="equations">equations</span>
-      <span class="boot-chip" data-stage="sims">simulations</span>
+      <span class="boot-chip" data-stage="equations-rest">equations</span>
+      <span class="boot-chip" data-stage="sims-rest">simulations</span>
     </div>
   </header>
 
@@ -168,14 +179,14 @@
         </div>
       </div>
       <p class="lede">
-        <span id="quiz-total">24</span> multiple-choice questions covering all three chapters, each
-        with a worked explanation. Scoring is automatic; your best result is saved in this browser.
+        <span id="quiz-total">35</span> multiple-choice questions covering the three lessons — plus two
+        optional Extra topics — each with a worked explanation and a hint. Scoring is automatic; your best result is saved in this browser.
       </p>
 
       <!-- Stat tiles: hidden by js/quiz.js while an attempt is in progress,
            so the first question card lands inside the first viewport. -->
       <div class="stat-strip stat-strip-4" id="quiz-stats" style="max-width:640px">
-        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">24</span></div>
+        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">35</span></div>
         <div class="stat"><span class="stat-label">Best score</span><span class="stat-value hl-emerald" id="quiz-best">—</span></div>
         <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="quiz-attempts">0</span></div>
         <div class="stat"><span class="stat-label">Pass mark</span><span class="stat-value hl-amber">70%</span></div>
@@ -215,8 +226,8 @@
             </button>
             <div class="quiz-pill" id="quizPill" hidden role="status" aria-label="Quiz progress">
               <span class="pill-track"><span class="pill-fill" id="quiz-progress-fill"></span></span>
-              <span class="pill-text" id="pillText">0/24</span>
-              <span class="pill-sr" id="quiz-progress-text">0 of 24 answered</span>
+              <span class="pill-text" id="pillText">0/35</span>
+              <span class="pill-sr" id="quiz-progress-text">0 of 35 answered</span>
               <span id="quiz-live" hidden></span>
               <span class="pill-flags" id="pillFlags" hidden>
                 <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -230,9 +241,12 @@
               <span class="ctl-label">Topic</span>
               <div class="btn-group" role="group" aria-label="Filter questions by topic">
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Circuits</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="efield" aria-pressed="false">Fields</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Magnetism</button></div>
+                <button class="btn btn-sm" type="button" data-quiz-filter="lessons" aria-pressed="false">Lessons 1–3</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="charge" aria-pressed="false">Charge</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="coulomb" aria-pressed="false">Coulomb</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="field" aria-pressed="false">Field</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="current" aria-pressed="false">Extra: Circuits</button>
+                <button class="btn btn-sm" type="button" data-quiz-filter="magind" aria-pressed="false">Extra: Magnetism</button></div>
             </div>
             <div class="qopts-cell">
               <span class="ctl-label">Status</span>
@@ -269,7 +283,7 @@
             <button class="btn btn-primary" type="button" id="quiz-submit" data-quiz-submit>Submit quiz</button>
             <button class="btn" type="button" id="quiz-shuffle">Shuffle order</button>
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
-            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">24</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
+            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">35</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
             <p class="tiny faint qopts-submit-hint" id="quiz-submit-hint" data-submit-hint role="status" hidden></p>
           </div>
 
@@ -354,12 +368,12 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="font-bold">Want to revise before scoring?</h2>
-            <p class="small muted" style="margin:.25rem 0 0">Each topic page ends with self-check questions and a live simulation.</p>
+            <p class="small muted" style="margin:.25rem 0 0">Each lesson ends with a sandbox to play in and self-check questions.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <a class="btn btn-sm" href="topics/current.html">Chapter 1</a>
-            <a class="btn btn-sm" href="topics/efield.html">Chapter 2</a>
-            <a class="btn btn-sm" href="topics/magind.html">Chapter 3</a>
+            <a class="btn btn-sm" href="topics/charge.html">Lesson 1</a>
+            <a class="btn btn-sm" href="topics/coulomb.html">Lesson 2</a>
+            <a class="btn btn-sm" href="topics/field.html">Lesson 3</a>
             <a class="btn btn-sm btn-primary" href="index.html">Home</a>
           </div>
         </div>
@@ -407,14 +421,16 @@
         </svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
-        <p class="small muted" style="margin-top:.6rem">Twenty-four questions across the three chapters.</p>
+        <p class="small muted" style="margin-top:.6rem">Thirty-five questions across the three lessons — plus two Extra topics.</p>
       </div>
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
         <ul class="footer-links">
-          <li><a href="topics/current.html">1 · Circuits &amp; Ohm’s law</a></li>
-          <li><a href="topics/efield.html">2 · Electric fields &amp; Coulomb’s law</a></li>
-          <li><a href="topics/magind.html">3 · Magnetism &amp; induction</a></li>
+          <li><a href="topics/charge.html">1 · Electric charge</a></li>
+          <li><a href="topics/coulomb.html">2 · Coulomb’s law</a></li>
+          <li><a href="topics/field.html">3 · Electric field</a></li>
+          <li><a href="topics/current.html">Extra · Circuits &amp; Ohm’s law</a></li>
+          <li><a href="topics/magind.html">Extra · Magnetism &amp; induction</a></li>
         </ul>
       </div>
     </div>

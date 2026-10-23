@@ -178,6 +178,26 @@ window.EMC = (function () {
     constructor(canvas, render, opts = {}) {
       this.canvas = canvas;
       this.ctx = canvas.getContext('2d');
+      if (!this.ctx) {
+        /* Canvas 2D unsupported: leave the friendly flat message standing in
+           the skeleton plate and stay inert — never a blank screen, never a
+           throw. The splash's "first sim" signal still fires, so the loading
+           contract holds even on this path. */
+        this._dead = true;
+        this._timers = new Set(); this._observers = new Set(); this._n = 0;
+        this._raf = 0; this._drawRaf = 0; this._pmRaf = 0; this._running = false;
+        this.w = 0; this.h = 0; this.dpr = 1; this.t = 0;
+        this.pointer = { x: 0, y: 0, down: false, inside: false };
+        const wrap = canvas.closest ? canvas.closest('.canvas-wrap') : null;
+        const plate = wrap ? wrap.querySelector('.sim-plate') : null;
+        if (plate) {
+          plate.classList.add('keep');
+          const msg = plate.querySelector('.sim-plate-msg');
+          if (msg) msg.textContent = 'This browser can\u2019t draw the lab bench \u2014 the written lesson is unaffected';
+        }
+        bootStage('sims');
+        return;
+      }
       this.render = render;
       this.animate = !!opts.animate;
       this._optsAnimate = this.animate;
@@ -263,6 +283,7 @@ window.EMC = (function () {
 
     /* Re-read the CSS size and scale the backing store for crisp rendering. */
     resize() {
+      if (this._dead) return false;
       const rect = this.canvas.getBoundingClientRect();
       const w = Math.max(1, Math.round(rect.width));
       const h = Math.max(1, Math.round(rect.height));
@@ -352,6 +373,7 @@ window.EMC = (function () {
     }
 
     draw() {
+      if (this._dead) return;
       if (!this.w || !this.h) return;
       const ip = this.intro();
       if (ip < 1) {
@@ -363,6 +385,11 @@ window.EMC = (function () {
         c.restore();
       } else {
         this.render(this.ctx, this.w, this.h, this);
+      }
+      /* First real paint: announce the Stage (splash signal + plate handover). */
+      if (!this._readySent) {
+        this._readySent = true;
+        try { this.canvas.dispatchEvent(new CustomEvent('emc:stage-ready', { bubbles: true })); } catch (e) { /* older envs */ }
       }
     }
 
@@ -399,7 +426,7 @@ window.EMC = (function () {
     }
 
     start() {
-      if (this._running) return;
+      if (this._dead || this._running) return;
       this._running = true; this._last = 0;
       this._tick();
       refreshBudget();
@@ -431,6 +458,10 @@ window.EMC = (function () {
         this._last = now;
         this.t += dt;
         this.render(this.ctx, this.w, this.h, this, dt);
+        if (!this._readySent) {
+          this._readySent = true;
+          try { this.canvas.dispatchEvent(new CustomEvent('emc:stage-ready', { bubbles: true })); } catch (e) { /* older envs */ }
+        }
         if (this._idle) { this._raf = 0; return; }        // settled: stop the chain until invalidated
         if (this._visible && !this._hidden) this._tick(); else this._raf = 0;
       });
@@ -621,16 +652,39 @@ window.EMC = (function () {
 
   /* ------------------------------------------------------------------------ 6c. Boot stages (honest, event-driven loading indicator) ------------------------------------------------------------------------ */
   /* Stages flip only when the REAL work completes - never a fake percentage.
-     The overlay's exit contract is exactly what the owner asked for: every
-     <script> on the page loaded AND executed (true by the time boot() runs,
-     since all scripts are defer) plus the above-fold equations typeset.
-     The in-page strip keeps tracking the lazy sims afterwards. */
-  const BOOT_STAGES = ['shell', 'scripts', 'equations', 'sims'];
-  const OVERLAY_STAGES = ['shell', 'scripts', 'equations'];
-  const OVERLAY_MIN_MS = 200;          // long enough to read as a screen, not a flicker; kept low because it delays LCP on every view
+     The first-visit splash tracks three real signals: webfonts ready, the
+     above-fold equations typeset (KaTeX), and the first simulation Stage
+     constructed (or window load on pages without one). sessionStorage gates
+     it to once per session; the inline head script hides it pre-paint on
+     every later navigation, and its own failsafe deletes it even if no
+     script here ever runs. The in-page strip keeps tracking the lazy work
+     afterwards under its own stage names. */
+  const BOOT_STAGES = ['equations-rest', 'sims-rest'];
+  const OVERLAY_STAGES = ['fonts', 'equations', 'sims'];
+  const OVERLAY_MIN_MS = 400;          // long enough to read as a screen; the splash shows once per session only, so it never taxes repeat views
+  const SPLASH_KEY = 'emc.splash.v1';
+  const TIPS = [
+    'Like repels, unlike attracts.',
+    'e = 1.602\u00D710\u207B\u00B9\u2079 C \u2014 charge comes in parcels.',
+    '1 C = 6.24\u00D710\u00B9\u2078 electrons.',
+    'Charge only moves; the total never changes.',
+    'Double the distance \u2192 a quarter of the force.',
+    'k = 8.99\u00D710\u2079 N\u00B7m\u00B2/C\u00B2.',
+    'E = F/|q\u2080| \u2014 the push a positive test charge would feel.',
+    'Field lines start on + and end on \u2212.'
+  ];
   const bootDone = {};
-  let bootMark = 0, overlayClosing = false;
+  let bootMark = 0, overlayClosing = false, tipTimer = 0, tipIdx = 0;
+  function splashSuppressed() {
+    return document.documentElement.classList.contains('no-splash');
+  }
   function closeOverlay() {
+    /* cleanup runs even when the inline 4 s failsafe already removed the DOM:
+       the busy flag and the tip rotator must never outlive the splash */
+    if (tipTimer) { clearInterval(tipTimer); tipTimer = 0; }
+    document.documentElement.removeAttribute('aria-busy');
+    const st = document.getElementById('boStatus');
+    if (st) st.textContent = 'Ready';
     const ov = document.getElementById('bootOverlay');
     if (!ov || overlayClosing) return;
     overlayClosing = true;
@@ -641,11 +695,25 @@ window.EMC = (function () {
       setTimeout(() => ov.remove(), 320);
     }, wait);
   }
+  function startTips() {
+    const el = document.getElementById('boTip');
+    if (!el || splashSuppressed() || EMC.reducedMotion) return;   // reduced motion: the static first tip stays
+    el.textContent = TIPS[0];
+    tipTimer = setInterval(() => {
+      if (!el.isConnected) { clearInterval(tipTimer); tipTimer = 0; return; }
+      tipIdx = (tipIdx + 1) % TIPS.length;
+      el.textContent = TIPS[tipIdx];
+    }, 1200);
+  }
   function bootStage(name) {
     if (bootDone[name]) return;
     bootDone[name] = true;
     if (!bootMark) bootMark = performance.now();
     document.querySelectorAll(`[data-stage="${name}"]`).forEach(c => c.classList.add('done'));
+    /* deterministic bar: one segment per real overlay signal */
+    const doneN = OVERLAY_STAGES.filter(s => bootDone[s]).length;
+    document.querySelectorAll('#bootOverlay .bo-seg').forEach((seg, i) =>
+      seg.classList.toggle('done', i < doneN));
     if (OVERLAY_STAGES.every(s => bootDone[s])) {
       document.dispatchEvent(new CustomEvent('emc:booted'));
       closeOverlay();
@@ -658,25 +726,26 @@ window.EMC = (function () {
   }
 
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
-  /* Active chapter ids come from the registry - one source of truth. */
-  const TOPICS = (window.EMC_REGISTRY ? window.EMC_REGISTRY.chapters.map(c => c.id) : ['current', 'efield', 'magind']);
-  const PROGRESS_KEY = 'emc.progress.v2';
-  const LEGACY_KEY = 'emc.progress.v1';
+  /* The graded lecture: the three lesson ids from the registry (chapters
+     flagged extra are deliberately NOT part of required progress). */
+  const TOPICS = (window.EMC_REGISTRY && window.EMC_REGISTRY.lessons && window.EMC_REGISTRY.lessons.length
+    ? window.EMC_REGISTRY.lessons.map(c => c.id)
+    : (window.EMC_REGISTRY ? window.EMC_REGISTRY.chapters.map(c => c.id) : ['charge', 'coulomb', 'field']));
+  const PROGRESS_KEY = 'emc.progress.v3';
+  const LEGACY_KEYS = ['emc.progress.v2', 'emc.progress.v1'];
 
-  /* Map a legacy v1 record onto the v2 shape. Only chapters with a genuine
-     content correspondence migrate: current->current, charges->efield, and
-     magind only when BOTH magnetism and induction were complete (a half-done
-     old pair must not fake a finished chapter). Unmappable old topics
-     (vectors/fluids/heat/waves) are dropped, never reinterpreted. Idempotent:
-     migrating an already-migrated record changes nothing. */
+  /* Map an older record onto the v3 shape. The old "efield" chapter covered
+     charge + Coulomb + field, so finishing it credits all three lessons;
+     circuits and magnetism moved to Extra and are no longer tracked (Extra
+     pages stay freely readable). Old v1 pairs (charges, magnetism+induction)
+     follow the same rule. Unmappable topics are dropped, never reinterpreted.
+     Idempotent: migrating an already-migrated record changes nothing. */
   function migrateLegacy(p) {
     const t = (p && p.topics) || {};
+    const lectured = !!(t.efield || t.charges);
+    const topics = TOPICS.reduce((o, id) => (o[id] = lectured, o), {});
     return {
-      topics: {
-        current: !!t.current,
-        efield: !!t.charges,
-        magind: !!(t.magnetism && t.induction)
-      },
+      topics,
       quizBest: Number(p.quizBest) || 0,
       quizAttempts: Number(p.quizAttempts) || 0,
       quizLast: Number(p.quizLast) || 0,
@@ -708,9 +777,10 @@ window.EMC = (function () {
           };
         } catch (e) { return blank; }
       }
-      // No v2 yet: migrate a legacy v1 record if present, keeping a
+      // No v3 yet: migrate an older record (v2, then v1) if present, keeping a
       // recoverable copy and leaving the original untouched.
-      const legacy = store.get(LEGACY_KEY);
+      let legacy = null;
+      for (const k of LEGACY_KEYS) { legacy = store.get(k); if (legacy) break; }
       if (!legacy) return blank;
       let parsed;
       try { parsed = JSON.parse(legacy); } catch (e) { return blank; }
@@ -773,8 +843,9 @@ window.EMC = (function () {
       }
 
       const num = (v, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0; };
-      if (src.topics && ('charges' in src.topics || 'vectors' in src.topics || 'magnetism' in src.topics)) {
-        src = migrateLegacy(src);          // importing an old export file
+      if (src.topics && ('charges' in src.topics || 'vectors' in src.topics || 'magnetism' in src.topics ||
+                         'efield' in src.topics || 'current' in src.topics || 'magind' in src.topics)) {
+        src = migrateLegacy(src);          // importing an older (v1/v2) export file
       }
       // An object with NO recognised field is not a progress file - importing
       // it used to silently wipe the stored scores ("Imported: 0 of 3").
@@ -806,10 +877,10 @@ window.EMC = (function () {
     },
     reset() {
       store.remove(PROGRESS_KEY);
-      // also drop the legacy v1 record, or the next read() would migrate it
+      // also drop the legacy records, or the next read() would migrate one
       // straight back and resurrect the old progress (the recoverable copy in
       // PROGRESS_KEY.legacy survives)
-      store.remove(LEGACY_KEY);
+      LEGACY_KEYS.forEach(k => store.remove(k));
       return this.read();
     }
   };
@@ -1139,6 +1210,63 @@ window.EMC = (function () {
         const a = e.target.closest && e.target.closest('a[data-topic-link], .pager a, .dd-link, a[href^="topics/"]');
         if (a) add(a.getAttribute('href'));
       }, { passive: true });
+    },
+
+    /* Page transitions: browsers with the View Transition API get the CSS
+       cross-document handoff (@view-transition in input.css — the header and
+       Denki-chan keep their names and stand still while the content fades).
+       Everywhere else ONE small class swap gives the same 200 ms fade. The
+       fallback never intercepts modified clicks, new tabs, downloads, bare
+       in-page anchors or foreign origins, and a bfcache restore clears the
+       fade immediately, so back/forward keeps working untouched. */
+    initPageTransitions() {
+      const clear = () => document.documentElement.classList.remove('vt-leaving');
+      window.addEventListener('pageshow', e => { if (e.persisted) clear(); });
+      const nativeVT = typeof CSS !== 'undefined' && CSS.supports &&
+        CSS.supports('view-transition-name', 'none');
+      if (nativeVT) return;   // the CSS pipeline owns the handoff there
+      document.addEventListener('click', e => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = e.target.closest && e.target.closest('a[href]');
+        if (!a || a.target || a.hasAttribute('download')) return;
+        const raw = a.getAttribute('href') || '';
+        if (!raw || raw.charAt(0) === '#') return;                    // anchors stay native
+        let url;
+        try { url = new URL(a.href, location.href); } catch (err) { return; }
+        if (url.origin !== location.origin) return;
+        if (url.pathname === location.pathname) return;               // same page: let the browser handle it
+        if (EMC.reducedMotion) return;                                // instant navigation
+        e.preventDefault();
+        document.documentElement.classList.add('vt-leaving');
+        setTimeout(() => { location.assign(url.href); }, 200);
+      });
+    },
+
+    /* Skeleton plates: every canvas wrapper ships a flat placeholder sized by
+       the same height class as its canvas (zero layout shift). The plate fades
+       out on the canvas's real Stage-ready event; a load-time failsafe means a
+       plate can never outlive a slow or blocked script. */
+    initPlates() {
+      const retire = plate => {
+        if (!plate || plate.classList.contains('gone')) return;
+        plate.classList.add('gone');
+        setTimeout(() => { plate.hidden = true; }, 400);
+      };
+      document.addEventListener('emc:stage-ready', e => {
+        const wrap = e.target.closest && e.target.closest('.canvas-wrap');
+        if (wrap) retire(wrap.querySelector('.sim-plate'));
+      });
+      /* Defer scripts execute before DOMContentLoaded, so above-the-fold
+         Stages may already have painted before the listener above exists —
+         sweep once for canvases whose Stage is registered. */
+      const built = new Set((EMC.debugStages ? EMC.debugStages() : []).map(s => s.id));
+      document.querySelectorAll('.canvas-wrap').forEach(wrap => {
+        const c = wrap.querySelector('canvas');
+        if (c && built.has(c.id)) retire(wrap.querySelector('.sim-plate'));
+      });
+      window.addEventListener('load', () => setTimeout(() => {
+        document.querySelectorAll('.sim-plate:not(.keep)').forEach(retire);
+      }, 1200));
     }
   };
 
@@ -1291,23 +1419,47 @@ window.EMC = (function () {
     UI.initDetailToggle();
     UI.initBootStrip();
     UI.initPrefetch();
-    bootStage('shell');
-    // boot() only runs after EVERY defer script has been fetched and executed,
-    // so this chip is the honest "all JS loaded" signal.
-    bootStage('scripts');
+    UI.initPageTransitions();
+    UI.initPlates();
+    /* The splash shows once per session: on every later navigation the inline
+       head script hides it pre-paint (html.no-splash). Claim the session flag
+       here; storage failures fall back to "always show", which is safe. */
+    if (splashSuppressed()) {
+      const ov0 = document.getElementById('bootOverlay');
+      if (ov0) ov0.remove();
+    } else {
+      try { sessionStorage.setItem(SPLASH_KEY, '1'); } catch (e) { /* blocked: show every time */ }
+      document.documentElement.setAttribute('aria-busy', 'true');
+      const st = document.getElementById('boStatus');
+      if (st) st.textContent = 'Loading EMC Lab';
+      startTips();
+    }
+    /* Real signal 1: the webfonts. */
+    if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+      document.fonts.ready.then(() => bootStage('fonts'), () => bootStage('fonts'));
+    } else bootStage('fonts');
     loadLicensedFont();
-    // Typeset what the reader can see right now; the rest waits for idle time
-    // so boot never pays for equations below the fold.
+    /* Real signal 3: the first simulation Stage. Stages announce themselves
+       through emc:stage-ready (and whenNear); pages without a sim canvas are
+       complete right away. The load fallback below still guarantees the exit. */
+    document.addEventListener('emc:stage-ready', () => bootStage('sims'), { once: true });
+    if (!document.querySelector('canvas.sim-canvas')) bootStage('sims');
+    /* Real signal 2: KaTeX. Typeset what the reader can see right now; the
+       rest waits for idle time so boot never pays for equations below it. */
     katexify(document, true);
     bootStage('equations');
     const idle = cb => (typeof window.requestIdleCallback === 'function'
       ? window.requestIdleCallback(cb, { timeout: 1500 })
       : setTimeout(cb, 400));
-    // KaTeX loads with `defer`, i.e. after this boot runs: typeset the
-    // remainder once the whole page (including deferred scripts) has loaded.
-    // Pages whose sims all live below the fold still complete the boot strip;
-    // the remaining equations typeset in idle slices (never one big task).
-    window.addEventListener('load', () => idle(() => { katexifyRest(); bootStage('sims'); }));
+    window.addEventListener('load', () => idle(() => {
+      katexifyRest(); bootStage('equations-rest');
+      bootStage('sims-rest');          // every defer script has now executed
+      bootStage('sims');               // failsafe: the splash must always close
+    }));
+    /* Hard timeout (spec): even if a signal never lands and `load` stalls, the
+       splash is history by ~4.2 s on the JS side — the inline 4 s DOM failsafe
+       covers the case where this script never runs at all. */
+    setTimeout(() => { OVERLAY_STAGES.forEach(name => bootStage(name)); }, 4200);
     // Let individual pages react to progress changes (home dashboard).
     document.dispatchEvent(new CustomEvent('emc:ready', { detail: Progress.read() }));
   }

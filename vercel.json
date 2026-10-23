@@ -31,5 +31,12 @@
   ],
   "buildCommand": "bun run build",
   "outputDirectory": "public",
-  "installCommand": "bun install"
+  "installCommand": "bun install",
+  "redirects": [
+    {
+      "source": "/topics/efield.html",
+      "destination": "/topics/field.html",
+      "permanent": true
+    }
+  ]
 }

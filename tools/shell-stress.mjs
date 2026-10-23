@@ -13,17 +13,20 @@ import { dirname, join } from 'path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => readFileSync(join(ROOT, p), 'utf8');
-const names = ['current', 'efield', 'magind'];
-const sims = ['ohm', 'circuit', 'coulomb', 'efield', 'lorentz', 'induction'];
+const names = ['charge', 'coulomb', 'field', 'current', 'magind'];
 const files = {};
-/* Prod-shaped: the public build ships HASHED sim filenames and the raw names
-   404, so the shell must read script URLs from the topic's own script tags. */
+/* Prod-shaped: the public build ships HASHED script filenames and the raw
+   names 404, so the shell must read script URLs from the topic's own script
+   tags. Every js/ file a topic loads (except the two the index already runs)
+   is hashed here, exactly like build-public does. */
 for (const n of names) {
   let html = read('topics/' + n + '.html');
-  for (const s of sims) html = html.split('js/sim-' + s + '.js').join('js/sim-' + s + '.h1ash2.js');
+  const srcs = [...html.matchAll(/<script defer src="\.\.\/(js\/[^"]+)"><\/script>/g)]
+    .map(m => m[1]).filter(x => !/registry\.js|common\.js/.test(x));
+  for (const src of srcs) html = html.split(src).join(src.replace('.js', '.h1ash2.js'));
   files['topics/' + n + '.html'] = html;
+  for (const src of srcs) files[src.replace('.js', '.h1ash2.js')] = read(src);
 }
-for (const s of sims) files['js/sim-' + s + '.h1ash2.js'] = read('js/sim-' + s + '.js');
 const tick = ms => new Promise(r => setTimeout(r, ms));
 const chains = w => w.EMC.debugStages().filter(s => s.raf && s.running && s.animate).length;
 
@@ -58,7 +61,7 @@ for (const reduce of [false, true]) {
   w.location.hash = '#/current'; await tick(400);          // calm baseline
   const base = w.EMC.stats();
   const baseChains = chains(w);
-  const seq = ['efield', 'magind', 'current', 'home'];
+  const seq = ['field', 'magind', 'charge', 'home'];
   for (let i = 0; i < 50; i++) w.location.hash = seq[i % 4] === 'home' ? '#/' : '#/' + seq[i % 4];
   await tick(1200);
   w.location.hash = '#/current'; await tick(600);

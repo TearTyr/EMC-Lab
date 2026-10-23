@@ -30,21 +30,15 @@ npm run og:card      # regenerate img/og-card.png (1200x630) from tools/og-card.
       build `css/site.css` (prose words that collide with utility names are blocklisted)
 
 ### 1.2 `tools/smoke-test.mjs` (jsdom)
-Boots each of the seven pages, stubs a 2D context, runs the real scripts and asserts physics and
+Boots each of the seven live pages (index, quiz, three lessons, two Extra), stubs a 2D context, runs the real scripts and asserts physics and
 UI behaviour, including:
 
 | Area | Sample assertions |
 |---|---|
 | Home | progress ring at 0 % with empty storage; hero canvas draws; progress percent = 0.8·topics + 0.2·quiz |
-| Vector bench | 3-4-5 preset: |A| = 3, |B| = 4, |R| = 5 with R = (3,4); the (3,4)+(4,−2) preset gives R = (7,2), |R| = √53; the cancellation preset gives |R| = 0; dragging A's tip from (3,4) to (4,4) updates |A| and R; tip-to-tail segment engages |
-| Buoyancy tank | ρ = 600 in water: floats at 60 % submerged with F_B = W = 11.8 N; ρ = 2000: sinks, fully submerged, F_B = ρ_f V g = 19.6 N and the floor holds the rest; seawater (1025) shifts a 500 kg/m³ block to 48.8 % |
-| Bernoulli | venturi at v₁ = 1 m/s, ratio 0.5: v₂ = 4 m/s and ΔP = 7.5 kPa from ½ρ(v₂²−v₁²); wing at 6° AoA reports attached flow, lift grows to 12°, stall flagged at 18° |
-| Thermometer | 37 °C reads 98.6 °F and 310.15 K exactly; −40 °C reads −40.0 °F; the boiling preset reads 212.0 °F / 373.15 K |
-| Heat lab | copper prints q = kAΔT/L = 28.1 W and glass 1/401 of it; radiation at 1 m gives I = 63.7 W/m², at 2 m exactly a quarter; convection switches scenes without errors |
-| Wave bench | f = 2 Hz, λ = 1.5 m → v = 3.00 m/s and T = 0.50 s; longitudinal mode and Pause engage; tone player names 440 Hz "A4 (exact)", λ = 0.78 m, period 2.27 ms; Play is guarded where AudioContext is missing |
 | Ohm | I(12 V, 4 Ω) = 3.00 A, P = 36.0 W; meter auto-ranges to 5 A; 0 V → 0 A; rating warning shows and clears |
 | Circuit | series R = 79 Ω, total 94 Ω, I = 128 mA; V(bank)+V(bulb) = 12 V; parallel R = 6.00 Ω; combo R = R1+(R2‖R3); series branch currents identical; editing R1 updates the analysis; bulb bypass works |
- 30 questions (6 per topic) × exactly 4 options and A–D key chips (no dead E); blank-submit guard; all-correct = 100 %; all-wrong = 0 %; 10/30 = 33 %; explanations shown; options locked after grading; best score + attempts + history persisted; filters, shuffle, retake, instant mode; `?topic=fluids` deep link narrows to 6 cards and stays in the URL |
+ 35 questions (charge 6 · coulomb 6 · field 7 · current 8 · magind 8) × exactly 4 options and A–D key chips; every question has a hint + Easy/Full tag; blank-submit guard; all-correct = 100 %; all-wrong = 0 %; 10/35 = 29 %; explanations shown; options locked after grading; best score + attempts + history persisted; filters (incl. the Lessons 1–3 group = 19), shuffle, retake, instant mode; `?topic=field` deep link narrows to 7 cards and stays in the URL |
 | Chart.js | the **vendored** lib loads from `vendor/chart/` and takes over the score card; with an instrumented `Chart`: exactly three instances (doughnut, bar, line) on the right canvases; with the file skipped: charts hidden and the CSS-bar fallback lists every topic |
  viewport meta, `lang`, skip link, labelled canvases, exactly one `<h1>`, all scripts `defer`; **theme-color `#17181c` equals the painted `--bg`**; `<noscript>` banner present; canonical + `og:*` + `twitter:*` share one origin; favicon geometry equals the header mascot; **no `http(s)://` asset on any page**; compiled CSS has no phantom `\!btn`/`\!card` important variants; print rules contain `.formula`/`.table-scroll` inside the page width; `Progress.exportJSON/importJSON` round-trip and reject junk |
 
@@ -89,7 +83,7 @@ Open `index.html` (or `http://localhost:8000`) and work top to bottom.
 - [ ] `bun run build:css` regenerates `css/site.css` with no diff when nothing changed.
 - [ ] Cascade: add `mt-2` to any `.card h3` in DevTools — computed margin-top becomes `0.5rem`
       (utilities layer beats the `@layer base` reset). No `!important` needed anywhere.
-- [ ] Mobile (<=900px): open the burger, then open **Topics** — the five topic links expand
+- [ ] Mobile (<=900px): open the burger, then open **Lessons** — the three lesson links plus the two Extra links expand
       *in flow* between the Topics button and the pink CTA; nothing overlaps.
 - [ ] Vector bench at 390px: the arrowheads stay inside the canvas at every preset and the
       readout stack wraps into separated rows — no label sits on top of an arrow.
@@ -276,8 +270,8 @@ Open `index.html` (or `http://localhost:8000`) and work top to bottom.
       with a warning toast and nothing is overwritten
 - [ ] JavaScript disabled: the amber `.noscript-note` banner appears and the prose still reads
 - [ ] Print (Ctrl-P) on a topic page: formulas and the formula table fit the page width
-- [ ] A scoring run of ≥ 70 % shows the "marks all five topics" note on the score card and
-      ticks the five topics on the home dashboard
+- [ ] A scoring run of ≥ 70 % shows the "marks all three lessons" note on the score card and
+      ticks the three lessons on the home dashboard
 - [ ] The circuit builder shows a "Predict, then run" strip: answering highlights
       the simulator-computed correct choice, and "Try it" performs the change on the live sim
 - [ ] Submitting with blanks warns once and highlights the first blank; submitting again grades
@@ -310,7 +304,10 @@ been verified and no doc should claim otherwise:
 
 | Quantity | Inputs | Expected |
 |---|---|---|
-| Coulomb force | +2 µC, −2 µC, r = 0.30 m | 0.399 N attractive |
+| Coulomb force (arena preset) | +3 µC, −2 µC, r = 0.30 m | 0.599 N attractive |
+| Lecture line example (arena preset) | −4/+3/−7 µC at 0.20/0.40 m | net 1.12 N on q₁ |
+| Lecture y-axis example (painter preset) | ±4 µC at ±0.50 m, P at x = 0.60 m | 7.55×10⁴ N/C (+y) |
+| Bohr speed (toy) | r = 5.29×10⁻¹¹ m | 2.19×10⁶ m/s |
 | Midpoint field | same configuration | 1.60 × 10⁶ N/C |
 | Ohm's law | 12 V, 4 Ω | I = 3 A, P = 36 W |
 | Series R | 10, 22, 47 Ω | 79 Ω |
@@ -396,7 +393,8 @@ and walk this list:
 - [ ] Only on-screen sims run: scroll a topic, watch `EMC.debugStages()` — at most
       two `raf:true` chains; a third visible sim waits, and never the one you watch.
 - [ ] Rapid-switch torture: paste
-      `for (let i=0;i<50;i++) location.hash = ['#/current','#/efield','#/magind','#/'][i%4]`
+      `for (let i=0;i<50;i++) location.hash = ['#/field','#/magind','#/charge','#/'][i%4]`
+      (tools/shell-stress.mjs automates exactly this — it must print SHELL STRESS PASS)
       in the console, settle on `#/current`, compare `EMC.stats()` with a calm load;
       console stays clean. Repeat with OS reduced-motion on: sims paint static frames,
       controls and dragging still work.

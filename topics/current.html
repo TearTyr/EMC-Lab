@@ -9,9 +9,10 @@
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
-    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
+    try { if (sessionStorage.getItem('emc.splash.v1')) document.documentElement.classList.add('no-splash'); } catch (e) { /* storage blocked: show the splash */ }
+    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 4000); /* failsafe: never trap a user on the shell */
   </script>
-  <title>Topic 1 · Circuits &amp; Ohm’s Law — EMC Lab</title>
+  <title>Extra · Circuits &amp; Ohm’s Law — EMC Lab</title>
   <link rel="canonical" href="https://emc-lab.vercel.app/topics/current.html">
   <!-- Open Graph / Twitter: absolute URLs are required by scrapers. https://emc-lab.vercel.app is the
        production origin; if the deploy URL ever changes, update it in all pages
@@ -19,7 +20,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="EMC Lab">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="Topic 1 · Circuits &amp; Ohm’s Law">
+  <meta property="og:title" content="Extra · Circuits &amp; Ohm’s Law">
   <meta property="og:description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
   <meta property="og:url" content="https://emc-lab.vercel.app/topics/current.html">
   <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
@@ -27,7 +28,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Topic 1 · Circuits &amp; Ohm’s Law">
+  <meta name="twitter:title" content="Extra · Circuits &amp; Ohm’s Law">
   <meta name="twitter:description" content="Ohm's law, series and parallel circuits and equivalent resistance — with an interactive Ohm's law simulator and a circuit builder.">
   <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
@@ -65,12 +66,16 @@
     #bootOverlay .bo-chip.done { color: #b5d777; border-color: rgba(181,215,119,.45); }
     #bootOverlay .bo-chip::after { content: " \2713"; visibility: hidden; }
     #bootOverlay .bo-chip.done::after { visibility: visible; }
-    #bootOverlay .bo-bar { width: 180px; height: 4px; border-radius: 999px; background: #26282f; overflow: hidden; }
-    #bootOverlay .bo-bar i { display: block; width: 40%; height: 100%; background: #a8d3e0; border-radius: 999px; transform: translateX(-100%); animation: boSlide 1.15s ease-in-out infinite; }
-    @keyframes boSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(450%); } }
+    html.no-splash #bootOverlay { display: none; }
+    #bootOverlay .bo-bar { display: flex; gap: 4px; width: 180px; height: 4px; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #26282f; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg::after { content: ""; position: absolute; inset: 0; background: #a8d3e0; border-radius: 999px; transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+    #bootOverlay .bo-seg.done::after { transform: scaleX(1); }
+    #bootOverlay .bo-tip { font-size: .74rem; font-weight: 700; color: #7b8db0; max-width: 30ch; text-align: center; min-height: 2.2em; }
+    #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     @keyframes boBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     @media (prefers-reduced-motion: reduce) {
-      #bootOverlay .bo-bar i { animation: none; width: 100%; background: #2e3138; }
+      #bootOverlay .bo-seg::after { transition: none; }
       #bootOverlay .mascot-bo { animation: none; }
       #bootOverlay { transition: none; }
     }
@@ -90,11 +95,13 @@
     <span class="bo-brand">EMC<em>Lab</em></span>
     <span class="bo-sub">interactive physics</span>
     <span class="bo-chips" aria-hidden="true">
-      <span class="bo-chip" data-stage="shell">layout</span>
-      <span class="bo-chip" data-stage="scripts">scripts</span>
+      <span class="bo-chip" data-stage="fonts">fonts</span>
       <span class="bo-chip" data-stage="equations">equations</span>
+      <span class="bo-chip" data-stage="sims">first sim</span>
     </span>
-    <span class="bo-bar" aria-hidden="true"><i></i></span>
+    <span class="bo-bar" aria-hidden="true"><i class="bo-seg"></i><i class="bo-seg"></i><i class="bo-seg"></i></span>
+    <span class="bo-tip" id="boTip" aria-hidden="true">Like repels, unlike attracts.</span>
+    <span class="sr-only" id="boStatus">Loading…</span>
   </div>
   <noscript><!-- JavaScript is turned off: hide the boot shell (the tutorial text below still reads fine). --><style>#bootOverlay{display:none}</style></noscript>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -127,13 +134,17 @@
         <a class="nav-link" href="../index.html">Home</a>
         <div class="nav-drop">
           <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
-                  aria-expanded="false" aria-controls="topicsMenu">Topics
+                  aria-expanded="false" aria-controls="topicsMenu">Lessons
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <a class="dd-link" href="current.html" aria-current="page"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
-            <a class="dd-link" href="efield.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charges · fields · superposition · potential</small></a>
-            <a class="dd-link" href="magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
+            <span class="dd-head">The lecture</span>
+            <a class="dd-link" href="charge.html"><b>1 · Electric Charge</b><small>q = n·e · conservation · conductors</small></a>
+            <a class="dd-link" href="coulomb.html"><b>2 · Coulomb’s Law</b><small>F = k|q₁q₂|/r² · superposition · Bohr</small></a>
+            <a class="dd-link" href="field.html"><b>3 · Electric Field</b><small>E = F/|q₀| · field lines · zero points</small></a>
+            <span class="dd-head">Extra — beyond this lecture</span>
+            <a class="dd-link" href="current.html" aria-current="page"><b>Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
+            <a class="dd-link" href="magind.html"><b>Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
@@ -141,8 +152,8 @@
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
     <div class="boot-strip" id="bootStrip" aria-hidden="true">
-      <span class="boot-chip" data-stage="equations">equations</span>
-      <span class="boot-chip" data-stage="sims">simulations</span>
+      <span class="boot-chip" data-stage="equations-rest">equations</span>
+      <span class="boot-chip" data-stage="sims-rest">simulations</span>
     </div>
   </header>
 
@@ -150,7 +161,7 @@
     <div class="wrap wrap-narrow section-tight topic-head">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span>Topic 1</span>
+        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span>Extra</span>
       </nav>
       <svg class="mascot mascot-sm" aria-hidden="true" viewBox="0 0 120 112">
   <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
@@ -161,7 +172,7 @@
   <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
-      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Topic 1 of 3</span>
+      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Extra · beyond this lecture</span>
       <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Circuits &amp; Ohm’s Law</h1>
       <p class="lede" data-detail="plain">Circuits come down to three quantities — voltage is energy per unit charge, current is the rate of charge flow, and resistance measures opposition to that flow — linked by one equation, V = IR. This topic builds from that to real networks.</p>
       <p class="lede" data-detail="tech">
@@ -559,11 +570,11 @@
       <div class="card mt-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 class="font-bold">Finished with Chapter 1?</h3>
-            <p class="small muted" style="margin:.25rem 0 0">Next: charges, fields and potential.</p>
+            <h3 class="font-bold">Finished with this Extra chapter?</h3>
+            <p class="small muted" style="margin:.25rem 0 0">Back to the three lessons — or test this topic alone.</p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-primary" type="button" data-complete-topic="current" aria-pressed="false">Mark topic as complete</button>
+            <a class="btn btn-primary" href="../index.html">Back to the lessons</a>
             <a class="btn" href="../quiz.html?topic=current">Quiz this topic</a>
           </div>
         </div>
@@ -571,7 +582,7 @@
 
       <nav class="pager" aria-label="Topic navigation">
         <a href="../index.html"><span class="dir">← Home</span><span class="ttl">Dashboard &amp; formula sheet</span></a>
-        <a class="next" href="efield.html"><span class="dir">Next chapter →</span><span class="ttl">2 · Electric fields &amp; Coulomb’s law</span></a>
+        <a class="next" href="magind.html"><span class="dir">Next (Extra) →</span><span class="ttl">Magnetism &amp; induction</span></a>
       </nav>
     </section>
   </main>
@@ -590,14 +601,16 @@
         </svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
-        <p class="small muted" style="margin-top:.6rem">Topic 1 of 3.</p>
+        <p class="small muted" style="margin-top:.6rem">Extra — beyond this lecture.</p>
       </div>
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
         <ul class="footer-links">
-          <li><a href="current.html">1 · Circuits &amp; Ohm’s law</a></li>
-          <li><a href="efield.html">2 · Electric fields &amp; Coulomb’s law</a></li>
-          <li><a href="magind.html">3 · Magnetism &amp; induction</a></li>
+          <li><a href="charge.html">1 · Electric charge</a></li>
+          <li><a href="coulomb.html">2 · Coulomb’s law</a></li>
+          <li><a href="field.html">3 · Electric field</a></li>
+          <li><a href="current.html">Extra · Circuits &amp; Ohm’s law</a></li>
+          <li><a href="magind.html">Extra · Magnetism &amp; induction</a></li>
           <li><a href="../quiz.html">Quiz</a></li>
         </ul>
       </div>

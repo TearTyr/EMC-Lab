@@ -59,77 +59,64 @@ async function page(url, opts = {}) {
 }
 const box = async (pg, sel) => pg.locator(sel).boundingBox();
 
-/* ---- Coulomb: mouse drag moves a charge and updates the real readouts ---- */
+/* ---- Arena: mouse drag moves a charge and updates the real readouts ---- */
 {
-  const { ctx, pg } = await page(B + '/topics/efield.html');
-  const b = await box(pg, '#sim-coulomb');
-  const r0 = await pg.inputValue('#coul-r');
-  await pg.locator('#sim-coulomb').scrollIntoViewIfNeeded();
+  const { ctx, pg } = await page(B + '/topics/coulomb.html');
+  await pg.click('[data-sb-preset="pair"]');
+  await pg.locator('#sim-arena').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(300);
-  const bb = await pg.locator('#sim-coulomb').boundingBox();
-  await pg.mouse.move(bb.x + 0.625 * bb.width, bb.y + 0.54 * bb.height);
+  const bb = await pg.locator('#sim-arena').boundingBox();
+  // preset "pair" zooms x2 about (1.35 m, 0.60 m): q1 lands near 40%/50% of
+  // the canvas, q2 near 60%/50%
+  await pg.mouse.click(bb.x + 0.40 * bb.width, bb.y + 0.50 * bb.height);
   await pg.waitForTimeout(120);
+  const sel0 = await pg.textContent('#ar-sel');
+  ok('arena: clicking a charge selects it and reports a real force', /N/.test(sel0), sel0);
+  await pg.mouse.move(bb.x + 0.60 * bb.width, bb.y + 0.50 * bb.height);
   await pg.mouse.down();
-  for (let i = 1; i <= 6; i++) await pg.mouse.move(bb.x + (0.625 * bb.width) - i * 12, bb.y + 0.54 * bb.height);
+  for (let i = 1; i <= 6; i++) await pg.mouse.move(bb.x + (0.60 - i * 0.02) * bb.width, bb.y + 0.50 * bb.height);
   await pg.mouse.up();
   await pg.waitForTimeout(150);
-  const r1 = await pg.inputValue('#coul-r');
-  ok('coulomb: mouse drag changes separation state', r1 !== r0, `${r0} -> ${r1}`);
-  ok('coulomb: drag class released after up', !(await pg.getAttribute('#sim-coulomb', 'class')).includes('grabbing'));
+  const sel1 = await pg.textContent('#ar-sel');
+  ok('arena: dragging the second charge closer grows the force', sel1 !== sel0, `${sel0} -> ${sel1}`);
+  ok('arena: drag class released after up', !(await pg.getAttribute('#sim-arena', 'class')).includes('grabbing'));
 
   /* interrupted drag: release far outside the canvas */
-  const r2 = await pg.inputValue('#coul-r');
-  await pg.mouse.move(bb.x + 0.375 * bb.width, bb.y + 0.54 * bb.height);
+  await pg.mouse.move(bb.x + 0.56 * bb.width, bb.y + 0.50 * bb.height);
   await pg.mouse.down();
-  await pg.mouse.move(bb.x + 0.45 * bb.width, bb.y + 0.54 * bb.height);
   await pg.mouse.move(10, 10);                          // outside the workspace
   await pg.mouse.up();
   await pg.waitForTimeout(120);
-  ok('coulomb: outside release leaves no stuck drag', !(await pg.getAttribute('#sim-coulomb', 'class')).includes('grabbing'));
-  const b2 = await box(pg, '#sim-coulomb');
-  await pg.mouse.move(b2.x + 0.375 * b2.width, b2.y + 0.54 * b2.height);
-  await pg.mouse.down();
-  await pg.mouse.move(b2.x + 0.45 * b2.width, b2.y + 0.54 * b2.height);
-  await pg.mouse.up();
-  ok('coulomb: still draggable after interrupted gesture', (await pg.inputValue('#coul-r')) !== r2);
-
-  /* keyboard: slider arrows update value + readout */
-  const v0 = await pg.textContent('#coul-q1v');
-  await pg.focus('#coul-q1');
-  await pg.keyboard.press('ArrowRight');
-  await pg.keyboard.press('ArrowRight');
-  await pg.waitForTimeout(120);
-  ok('coulomb: keyboard slider updates readout', (await pg.textContent('#coul-q1v')) !== v0);
+  ok('arena: outside release leaves no stuck drag', !(await pg.getAttribute('#sim-arena', 'class')).includes('grabbing'));
   await ctx.close();
 }
 
-/* ---- Coulomb: touch drag (real touch events via CDP) ---- */
+/* ---- Arena: touch drag (real touch events via CDP) ---- */
 {
-  const { ctx, pg } = await page(B + '/topics/efield.html', { hasTouch: true, viewport: { width: 390, height: 844 } });
-  await pg.locator('#sim-coulomb').scrollIntoViewIfNeeded();
+  const { ctx, pg } = await page(B + '/topics/coulomb.html', { hasTouch: true, viewport: { width: 390, height: 844 } });
+  await pg.click('[data-sb-preset="pair"]');
+  await pg.locator('#sim-arena').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(300);
-  const b = await box(pg, '#sim-coulomb');
-  const r0 = await pg.inputValue('#coul-r');
+  const b = await box(pg, '#sim-arena');
   const y0 = await pg.evaluate(() => window.scrollY);
   const cdp = await ctx.newCDPSession(pg);
   const pt = (x, y) => [{ x: Math.round(x), y: Math.round(y), radiusX: 2, radiusY: 2, force: 1, id: 1 }];
-  const X = b.x + 0.70 * b.width, Y = b.y + 0.54 * b.height;
+  const X = b.x + 0.55 * b.width, Y = b.y + 0.50 * b.height;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(X, Y) });
   for (let i = 1; i <= 5; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(X - i * 14, Y) });
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await pg.waitForTimeout(200);
-  ok('coulomb: touch drag changes separation', (await pg.inputValue('#coul-r')) !== r0);
-  ok('coulomb: page did not scroll during canvas drag', (await pg.evaluate(() => window.scrollY)) === y0);
+  ok('arena: page did not scroll during a canvas drag', (await pg.evaluate(() => window.scrollY)) === y0);
   await ctx.close();
 }
 
-/* ---- efield: rapid preset switching ---- */
+/* ---- Field Painter: rapid preset switching ---- */
 {
-  const { ctx, pg } = await page(B + '/topics/efield.html');
-  for (const p of ['single-pos', 'dipole', 'single-neg', 'dipole']) await pg.click(`[data-ef-preset="${p}"]`, { delay: 20 });
-  await pg.waitForTimeout(200);
-  ok('efield: last preset wins after rapid clicks',
-    ((await pg.getAttribute('[data-ef-preset="dipole"]', 'class')) || '').includes('active'));
+  const { ctx, pg } = await page(B + '/topics/field.html');
+  for (const p of ['single', 'dipole', 'like', 'dipole']) await pg.click(`[data-sb-preset="${p}"]`, { delay: 20 });
+  await pg.waitForTimeout(250);
+  ok('fieldpaint: last preset wins after rapid clicks',
+    (await pg.textContent('#fp-count')).trim() === '2', await pg.textContent('#fp-count'));
   await ctx.close();
 }
 

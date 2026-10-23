@@ -986,3 +986,139 @@
     pre, code, .mono { white-space: pre-wrap; overflow-wrap: anywhere; }
   }
 }
+
+/* ==========================================================================
+   Sandbox, splash & transition additions (lesson-redesign pass).
+   Second components block: same cascade rank as the one above. Flat tokens
+   only; motion is opacity/transform only, one duration + easing everywhere.
+   ========================================================================== */
+@layer base {
+  :root { --vt-ms: 200ms; --vt-ease: ease; }
+}
+
+@layer components {
+
+  /* -- skeleton plates: exactly the canvas box they cover, so the handover
+        to the live Stage cannot shift layout. Fade = opacity only. --------- */
+  .canvas-wrap { position: relative; }
+  .sim-plate {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: var(--bg-soft); border-bottom: 1.5px solid var(--line);
+    transition: opacity var(--vt-ms) var(--vt-ease);
+  }
+  .sim-plate.gone { opacity: 0; pointer-events: none; }
+  .sim-plate-msg {
+    font-family: theme('fontFamily.ui'); font-size: .78rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint);
+    padding: 0 1rem; text-align: center;
+  }
+  html:not(.js) .sim-plate-msg::after {
+    content: " — JavaScript is off, so the bench stays dark; the lesson text reads fine.";
+    text-transform: none; letter-spacing: 0;
+  }
+  @media (prefers-reduced-motion: reduce) { .sim-plate { transition: none; } }
+  @media print { .sim-plate { display: none !important; } }
+
+  /* -- page-transition fallback: ONE class, main only --------------------- */
+  html.vt-leaving .emc-main { opacity: 0; transition: opacity var(--vt-ms) var(--vt-ease); }
+  @media (prefers-reduced-motion: reduce) { html.vt-leaving .emc-main { transition: none; } }
+
+  /* -- nav dropdown group heads ------------------------------------------- */
+  .dd-head {
+    display: block; font-family: theme('fontFamily.ui'); font-size: .64rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint);
+    padding: .45rem .8rem .1rem;
+  }
+
+  /* -- sandbox toolbars, toggles, tally ------------------------------------ */
+  .sb-toolbar { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; padding: .55rem .8rem 0; }
+  .sb-toolbar .btn[aria-pressed="true"] { border-color: var(--sk); color: var(--sk); }
+  .sb-tog {
+    display: inline-flex; align-items: center; gap: .35rem; font-family: theme('fontFamily.ui');
+    font-size: .78rem; font-weight: 700; color: var(--text-dim); cursor: pointer;
+    background: var(--panel-2); border: 1.5px solid var(--line-soft); border-radius: 999px;
+    padding: .28rem .7rem; min-height: 32px;
+  }
+  .sb-tally {
+    font-family: theme('fontFamily.ui'); font-weight: 700; color: var(--mi);
+    background: var(--mi-t); border: 1.5px solid var(--mi-e); border-radius: var(--r-ctl);
+    padding: .45rem .7rem; margin-top: .7rem;
+  }
+
+  /* -- Easy/Full inside sandboxes rides the site-wide Details toggle ------- */
+  html[data-detail="off"] .sb-full { display: none; }
+  html[data-detail="on"] .sb-easy { display: none; }
+
+  /* -- challenges, stars, predict-then-run, discovery, long-press sheet ---- */
+  .sb-chalhost { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .8rem; align-items: center; }
+  .sb-chal { display: inline-flex; align-items: center; gap: .3rem; }
+  .sb-star { color: var(--line); font-size: 1rem; line-height: 1; transition: color .2s ease, transform .2s ease; }
+  .sb-star.got { color: var(--ye); transform: scale(1.15); }
+  .sb-predict { margin-top: .8rem; padding: .7rem .85rem; }
+  .sb-predict-q { display: block; font-weight: 700; margin-bottom: .5rem; }
+  .sb-predict-fb.good { color: var(--mi); }
+  .sb-predict-fb.bad { color: var(--pk); }
+  .sb-discover { margin-top: .8rem; }
+  .sb-sheet {
+    position: absolute; z-index: 40; right: .8rem; bottom: .8rem; display: flex; flex-wrap: wrap;
+    gap: .35rem; align-items: center; max-width: min(340px, 90%);
+    background: var(--panel); border: 2px solid var(--edge); border-radius: var(--r-mid);
+    padding: .6rem .7rem; box-shadow: 0 16px 34px -18px #000;
+  }
+  .sb-sheet b { flex: 1 0 100%; font-size: .84rem; }
+  @media (prefers-reduced-motion: reduce) { .sb-star { transition: none; } .sb-star.got { transform: none; } }
+
+  /* -- Charge Ledger -------------------------------------------------------- */
+  .lg-totalwrap { display: grid; justify-items: center; gap: .1rem; margin-bottom: .8rem; }
+  .lg-total { font-family: theme('fontFamily.ui'); font-weight: 100; font-size: 2.6rem; color: var(--mi); line-height: 1.1; }
+  .lg-tray { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+  .lg-ball {
+    display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%;
+    border: 2.5px solid var(--edge); color: #17181c; cursor: pointer;
+    font-family: theme('fontFamily.ui'); transition: transform .15s ease;
+  }
+  .lg-ball b { font-size: 1.05rem; }
+  .lg-ball span { font-size: .68rem; font-weight: 700; }
+  .lg-ball.picked { transform: scale(1.12); border-color: var(--sk); }
+  @media (prefers-reduced-motion: reduce) {
+    .lg-ball { transition: none; }
+    .lg-ball.picked { transform: none; }
+  }
+
+  /* -- Zero-Field Hunt chip: flat colour steps + words, never hue alone ----- */
+  .zh-chip {
+    display: inline-block; margin-top: .6rem; font-family: theme('fontFamily.ui'); font-weight: 700;
+    font-size: .82rem; border-radius: 999px; padding: .35rem .85rem;
+    border: 1.5px solid var(--line); color: var(--text-dim); background: var(--panel-2);
+  }
+  .zh-cold { color: var(--sk); border-color: var(--sk-e); background: var(--sk-t); }
+  .zh-cool { color: var(--li); border-color: var(--li-e); background: var(--li-t); }
+  .zh-warm { color: var(--ye); border-color: var(--ye-e); background: var(--ye-t); }
+  .zh-zero { color: var(--mi); border-color: var(--mi-e); background: var(--mi-t); }
+
+  /* -- Bohr Tuner lecture-radius highlight ---------------------------------- */
+  .val-hit { color: var(--mi); }
+
+  /* -- quiz: Easy/Full level tags + optional hints ---------------------------- */
+  .q-level { opacity: .85; }
+  .q-level-full { background: var(--li-t); color: var(--li); border: 1.5px solid var(--li-e); }
+  .q-hint-btn {
+    font-family: theme('fontFamily.ui'); font-size: .72rem; font-weight: 700; color: var(--sk);
+    background: none; border: 1.5px solid var(--sk-e); border-radius: 999px;
+    padding: .12rem .6rem; cursor: pointer; margin-left: .35rem; vertical-align: middle;
+  }
+  .q-hint-text { display: block; margin-top: .35rem; }
+}
+
+/* Cross-document View Transitions: the header and the mascot keep their names,
+   so they stand still while page content cross-fades. Browsers without the
+   at-rule ignore it and get the .vt-leaving fallback instead. */
+@view-transition { navigation: auto; }
+.site-header { view-transition-name: site-header; }
+.site-header .brand-mark { view-transition-name: denki; }
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: var(--vt-ms); animation-timing-function: var(--vt-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 1ms; }
+}

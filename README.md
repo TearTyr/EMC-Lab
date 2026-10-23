@@ -1,15 +1,19 @@
 # EMC Lab — Interactive Electromagnetics Tutorial
 
-A responsive, interactive educational website for **Calculus-based Electromagnetics**, built
-for the **EMC group**. The course is a single subject in three chapters — **Circuits &
-Ohm's Law**, **Electric Fields & Coulomb's Law**, and **Magnetism & Induction** — taught
-through written tutorials, **six live simulations**, and a **24-question auto-graded quiz**
-with Chart.js score analytics. Fully static: no backend, no build step, no required
-dependencies.
+A responsive, interactive educational website for **Calculus-based Physics 2**, built for the
+**EMC group** around the lecture *Electric Forces and Electric Field*. The graded course is
+three short lessons — **Electric Charge**, **Coulomb's Law**, **Electric Field** — each taught
+in four layers (30-second summary → easy version → full version → try it) through **nine
+open sandboxes and toys**, plus a **35-question auto-graded quiz** (19 lesson questions, 16
+optional *Extra*) with Chart.js score analytics. **Circuits & Ohm's Law** and **Magnetism &
+Induction** remain on the site as clearly-labelled *Extra* chapters beyond this lecture.
+Fully static: no backend, no build step, no required dependencies.
 
 The earlier general-physics material (vectors, fluids, heat, waves) is not deleted: it lives
 under `archive/` and remains recoverable; retired general-physics quiz questions are kept in
-`archive/js/quiz-data-general-physics.js`.
+`archive/js/quiz-data-general-physics.js`. The pre-redesign Coulomb bench and the
+field-explorer's potential integral (−∫E·dr, beyond this lecture) are archived the same way
+(`archive/js/sim-coulomb.js`, `archive/js/sim-efield-potential.js`).
 
 **Single source of truth:** `js/registry.js` defines the subject, its chapters, their paths,
 tags and simulations. Navigation, chapter counts, progress topics, quiz categories, the
@@ -62,9 +66,11 @@ emc-physics-tutorial/
 │                                  progress dashboard, hero KaTeX equation strip
 ├── quiz.html                      Quiz page: toolbar, question list, score card
 ├── topics/
-│   ├── current.html               Chapter 1 — Ohm's law, power, series/parallel, builder
-│   ├── efield.html                Chapter 2 — charge, Coulomb's law, fields, potential
-│   └── magind.html                Chapter 3 — magnetism, Lorentz force, flux, Faraday, Lenz
+│   ├── charge.html                Lesson 1 — charge, q = n·e, conservation, conductors
+│   ├── coulomb.html               Lesson 2 — inverse-square force, superposition, Bohr atom
+│   ├── field.html                 Lesson 3 — E = F/|q0|, field lines, zero points
+│   ├── current.html               Extra — Ohm's law, power, series/parallel, builder
+│   └── magind.html                Extra — magnetism, Lorentz force, flux, Faraday, Lenz
 ├── archive/                       Retired general-physics pages, sims and quiz bank
 ├── css/
 │   ├── input.css                  THE styling source: @layer base/components + @tailwind directives
@@ -75,13 +81,23 @@ emc-physics-tutorial/
 │   │                              SI formatter, localStorage progress, nav/reveal/toasts
 │   ├── registry.js                THE topic registry: subject, chapters, paths, tags, sims
 │   ├── home.js                    Derived hero counters + progress dashboard
-│   ├── sim-ohm.js                 Sim 1 — Ohm's law bench (auto-range meter + I–V chart)
-│   ├── sim-circuit.js             Sim 2 — circuit builder (series/parallel/combination)
-│   ├── sim-coulomb.js             Sim 3 — Coulomb force bench (inverse-square, drag charges)
-│   ├── sim-efield.js              Sim 4 — field explorer: field lines, probe, −∫E·dr integral
-│   ├── sim-lorentz.js             Sim 5 — Lorentz force, RK4 orbits vs analytic r and T
-│   ├── sim-induction.js           Sim 6 — magnet through coil: dipole flux, EMF, galvanometer
-│   ├── quiz-data.js               24 questions with worked explanations (8 per chapter)
+│   ├── sandbox-core.js            Shared free-play engine: drag/zoom/undo/random/share codes,
+│   │                              softened Coulomb + field kernels, release mode with caps,
+│   │                              star challenges, predict-then-run, Easy/Full readouts
+│   ├── sim-static-room.js         Lesson 1 sandbox — attract/repel room + conservation tally
+│   ├── toy-balloon.js             Lesson 1 toy — rub-the-balloon electron transfer (q = n·e)
+│   ├── toy-ledger.js              Lesson 1 toy — charge ledger: conductors share, total fixed
+│   ├── sim-arena.js               Lesson 2 sandbox — tug-of-war arena, lecture presets
+│   ├── toy-pinforce.js            Lesson 2 toy — live 1/r² curve tracer with 2r/3r ghosts
+│   ├── toy-bohr.js                Lesson 2 toy — tune r, read v = √(ke²/mₑr) → 2.19×10⁶ m/s
+│   ├── sim-fieldpaint.js          Lesson 3 sandbox — paint charges, lines, ghost, E probe
+│   ├── toy-dipole.js              Lesson 3 toy — stretch/spin a dipole, lines re-trace live
+│   ├── toy-zerohunt.js            Lesson 3 toy — hot/cold hunt for the zero-field point
+│   ├── sim-ohm.js                 Extra — Ohm's law bench (auto-range meter + I–V chart)
+│   ├── sim-circuit.js             Extra — circuit builder (series/parallel/combination)
+│   ├── sim-lorentz.js             Extra — Lorentz force, RK4 orbits vs analytic r and T
+│   ├── sim-induction.js           Extra — magnet through coil: dipole flux, EMF, galvanometer
+│   ├── quiz-data.js               35 questions with worked explanations + hints (6/6/7 lessons, 8+8 Extra)
 │   └── quiz.js                    Quiz engine: marking modes, optional timer, navigator + flags, autosave/resume, scoring, Chart.js analytics
 ├── tools/
 │   ├── check-links.mjs            Static validator (links, ids, data-hooks, CSS coverage)
@@ -124,17 +140,17 @@ and 13 scripts. No framework, no bundler, no backend.
 |---|---|
 | Clean landing page with navigation to each topic | `index.html` — centred hero with mascot, a KaTeX equation strip (the four governing laws) and stat counters derived from the registry/quiz bank, 3 topic cards, simulation index, formula reference; the header carries a **Topics dropdown** (with one-line descriptions) so the nav stays three items wide |
 | Responsive UI, desktop + mobile | Fluid `clamp()` type, `md:`/`lg:` grids, hamburger nav < 900 px, canvases resize via `ResizeObserver` |
-| Sim 1 — Ohm’s law bench | `js/sim-ohm.js`: V and R sliders (plus an editable R box), auto-ranging ammeter, a bulb whose brightness follows P = VI, and an I–V characteristic chart; presets for ohmic and non-ohmic behaviour |
-| Sim 2 — circuit builder | `js/sim-circuit.js`: battery + up to four resistors in series or parallel (three in combination mode); every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
-| Sim 3 — Coulomb force bench | `js/sim-coulomb.js`: two draggable point charges; F = k q₁ q₂ / r² recomputed per frame with to-scale arrows, full substitution line and inverse-square demonstration (doubling r quarters F) |
-| Sim 4 — electric field explorer | `js/sim-efield.js`: place any number of charges; field lines integrated along E, a vector grid coloured by |E|, a +1 nC test-charge probe, and draggable A/B markers with a live −∫E·dr Simpson integral checked against the analytic Σkq/r potential difference |
-| Sim 5 — Lorentz force & circular motion | `js/sim-lorentz.js`: proton/electron/alpha orbits integrated with RK4 at slowed visual time, printed slow-down factor, r = mv/(|q|B) and T = 2πm/(|q|B) theory readouts plus a live RK4-vs-theory radius error, and a right-hand-rule challenge |
-| Sim 6 — magnet through a coil | `js/sim-induction.js`: exact dipole flux Φ(z), Faraday EMF = −N dΦ/dt, a centre-zero galvanometer, Lenz current-direction indicator, N/R sliders, a scrolling Φ/EMF chart and a right-hand-rule quiz |
-| Tutorials with explanations, diagrams, formulas, real-world examples | Each topic page: objectives → theory → SVG figures → worked examples → applications → misconceptions → self-check reveals |
-| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 24 questions (8 per chapter across circuits · fields · magnetism), exam *or* instant marking, per-question explanations, per-topic breakdown with a **weak-areas summary**, grade bands, review-incorrect + flagged filters, shuffle, retake, **optional timer (Off by default · Practice count-up · Challenge 10/15/20-min countdown with a soft amber last minute and a gentle auto-submit), question navigator strip with prev/next, flag-for-review, autosave & resume after a refresh, two-step submit confirmation, per-question splits when a timer is on, correct-streak counter with a pastel burst, tiny confetti + a cheering mascot on a pass, keyboard flow (1–4/A–D, Enter, N, F)**, `?topic=` deep links from each topic page, and a reacting mascot in every graded feedback |
-| Predict-then-run challenges | The circuit builder asks you to predict an outcome; the **simulator itself computes the answer** from its live analysis, then a "Try it" button performs the change so the readouts confirm it |
+| Extra sim — Ohm’s law bench | `js/sim-ohm.js`: V and R sliders (plus an editable R box), auto-ranging ammeter, a bulb whose brightness follows P = VI, and an I–V characteristic chart; presets for ohmic and non-ohmic behaviour |
+| Extra sim — circuit builder | `js/sim-circuit.js`: battery + up to four resistors in series or parallel (three in combination mode); every branch current is solved from Kirchhoff’s laws, animated carriers split proportionally, and V/I/R/P/R_eq readouts update live |
+| Lesson sandboxes (Static Room · Tug-of-War Arena · Field Painter) | `js/sandbox-core.js` + three thin scene files: unlimited draggable charges/objects, per-pair component ghosts, field arrows + integrated field lines, a persistent ghost test charge, draggable ruler and E probe, release mode (F = ma with force cap, close-range softening, edge bounce and a stability warning), trails, slow motion, undo/random, optional ★ challenges detected from the physics state, predict-then-run prompts computed live, and share-codes in the URL hash |
+| Tiny toys (6) | balloon rubbing with electron-parcel counters, an unbreakable charge ledger, a live 1/r² force tracer, a Bohr-atom speed tuner, a dipole builder and a zero-field treasure hunt — each ends with a one-line “what you just discovered” link back to its lesson summary |
+| Extra sim — Lorentz force & circular motion | `js/sim-lorentz.js`: proton/electron/alpha orbits integrated with RK4 at slowed visual time, printed slow-down factor, r = mv/(|q|B) and T = 2πm/(|q|B) theory readouts plus a live RK4-vs-theory radius error, and a right-hand-rule challenge |
+| Extra sim — magnet through a coil | `js/sim-induction.js`: exact dipole flux Φ(z), Faraday EMF = −N dΦ/dt, a centre-zero galvanometer, Lenz current-direction indicator, N/R sliders, a scrolling Φ/EMF chart and a right-hand-rule quiz |
+| Lessons in four layers | Every lesson page: **A** 30-second summary (≤4 bullets + the key formula) → **B** easy version (plain words, one analogy, one flat figure, ≤150 words) → **C** full version (definitions, the lecture's worked examples, common mistakes) → **D** try it (sandbox + two toys + quiz). One symbol table, defined once in Lesson 1. The site-wide Details switch shows A+B (off) or A+C (on); sandbox readouts ride the same switch as Easy/Full |
+| Quiz with ≥ 10 MCQs, automatic scoring + feedback | 35 questions (charge 6 · coulomb 6 · field 7 for the lecture; circuits 8 · magnetism 8 as Extra; every lesson set is 2 concept + 2 calculation with the lecture's own numbers + 1 spot-the-mistake, each with a hint and an Easy/Full tag), exam *or* instant marking, per-question explanations, per-topic breakdown with a **weak-areas summary**, grade bands, review-incorrect + flagged filters, shuffle, retake, **optional timer (Off by default · Practice count-up · Challenge 10/15/20-min countdown with a soft amber last minute and a gentle auto-submit), question navigator strip with prev/next, flag-for-review, autosave & resume after a refresh, two-step submit confirmation, per-question splits when a timer is on, correct-streak counter with a pastel burst, tiny confetti + a cheering mascot on a pass, keyboard flow (1–4/A–D, Enter, N, F)**, `?topic=` deep links from each topic page, and a reacting mascot in every graded feedback |
+| Predict-then-run prompts | Every sandbox can ask you to predict an outcome after idle play — the **simulator computes the answer from its live state** (ghost direction from E, force ratios from 1/r²), grades instantly and is always skippable; the Extra circuit builder keeps its own variant |
 | Chart.js score visualisation | Doughnut (correct/incorrect), horizontal bars (score per topic), line (attempt history) on the score card, drawn by the **vendored** `vendor/chart/chart.umd.min.js`; CSS-bar fallback if that file ever fails to load |
-| Progress tracking with localStorage | `EMC.Progress` in `js/common.js` (key `emc.progress.v2`, with an automatic one-time migration from `emc.progress.v1` that keeps a recoverable legacy copy): chapters read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all three chapters studied, exactly as the dashboard promises **and as the score card announces at the moment it happens**; **Export / Import** buttons move the snapshot between devices as JSON; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
+| Progress tracking with localStorage | `EMC.Progress` in `js/common.js` (key `emc.progress.v3`, with automatic one-time migration from `emc.progress.v1/v2` that keeps a recoverable legacy copy — the old `efield` chapter credits all three lessons; Extra is not tracked): lessons read + best score + attempt history → ring on the home page; a quiz score of 70%+ also counts as all three lessons studied, exactly as the dashboard promises **and as the score card announces at the moment it happens**; **Export / Import** buttons move the snapshot between devices as JSON; degrades gracefully to memory when storage is blocked. Deliberately backend-free |
 | Social preview + SEO | Every page carries `<link rel=canonical>`, `og:type/title/description/url/image(+w/h/alt)`, `twitter:card/title/description/image`, all pointing at one production origin and at `img/og-card.png` (committed, 1200×630, regenerated by `bun run og:card`) |
 | No-JavaScript notice | Each page ships a `<noscript>` banner (`.noscript-note`) that says the sims, dashboard and quiz need JavaScript while the tutorial text still reads |
 | theme-color honesty | `<meta name="theme-color">` is `#17181c`, the exact `--bg` the pages paint, so mobile browser chrome matches the site instead of an older navy |
@@ -146,12 +162,12 @@ and 13 scripts. No framework, no bundler, no backend.
 
 | Sim | Governing equations implemented |
 |---|---|
-| Sim 1 — Ohm bench (`sim-ohm.js`) | I = V/R; P = VI = I²R = V²/R; I–V characteristic line of gradient 1/R with R/2 and 2R references; auto-ranging meter; over-power warning against the resistor rating |
-| Sim 2 — circuit builder (`sim-circuit.js`) | R<sub>eq</sub> = ΣRᵢ (series), 1/R<sub>eq</sub> = Σ1/Rᵢ (parallel), R₁+(R₂R₃)/(R₂+R₃) (combo); Kirchhoff's laws for every branch V/I/P; carrier-dot density proportional to branch current |
-| Sim 3 — Coulomb bench (`sim-coulomb.js`) | F = k\|q₁q₂\|/r² with to-scale log-mapped arrows; Newton's-third-law pair; midpoint field by superposition; directions follow which side each charge is on |
-| Sim 4 — field explorer (`sim-efield.js`) | E(P) = Σ kq (P−r)/\|P−r\|³; field lines integrated along E; vector grid coloured by \|E\|; Simpson −∫E·dr between draggable A/B markers checked against the analytic Σkq/r potential difference; one fixed world scale (3 m across) so readouts never depend on canvas size |
-| Sim 5 — Lorentz force (`sim-lorentz.js`) | F = qv × B; RK4-integrated orbits against the analytic circle r = mv/(\|q\|B), T = 2πm/(\|q\|B); live radius-error readout; physical rotation direction at a printed slow-down factor |
-| Sim 6 — magnet through a coil (`sim-induction.js`) | exact dipole flux Φ(z) = μ₀ma²/(2(a²+z²)^{3/2}); EMF = −N dΦ/dt (analytic derivative, 2 ms sub-stepping); I = EMF/R; P = I²R; pole-aware Lenz direction text |
+| Extra — Ohm bench (`sim-ohm.js`) | I = V/R; P = VI = I²R = V²/R; I–V characteristic line of gradient 1/R with R/2 and 2R references; auto-ranging meter; over-power warning against the resistor rating |
+| Extra — circuit builder (`sim-circuit.js`) | R<sub>eq</sub> = ΣRᵢ (series), 1/R<sub>eq</sub> = Σ1/Rᵢ (parallel), R₁+(R₂R₃)/(R₂+R₃) (combo); Kirchhoff's laws for every branch V/I/P; carrier-dot density proportional to branch current |
+| Lesson sandboxes (`sandbox-core.js`) | F = k\|q₁q₂\|/r² per pair (close-range softened, r_eff² = r² + ε², ε ≤ 1 cm, hard cap 10⁴ N with a stability chip); E(P) = Σ kq(P−r)/\|P−r\|³; field lines integrated along Ê; F = q₀E on the ghost; release mode integrates F = ma (printed play mass, dt and speed caps, 0.6-restitution walls); conductor touch sharing q′ = (q₁+q₂)/₂; neutral-ball polarisation via the image-charge model — all per frame, nothing scripted |
+| Tiny toys | q = n·e electron counting (balloon); (q₁+q₂)/₂ sharing with an invariant total (ledger); F(r) = k\|q₁q₂\|/r² traced live with exact 2r/3r ratios (pin-force); k e²/r² = mₑv²/r → v = √(ke²/mₑr) (Bohr); dipole field = superposition of two point-charge fields (dipole); ΣE = 0 null-point detection from the same kernel (zero hunt) |
+| Extra — Lorentz force (`sim-lorentz.js`) | F = qv × B; RK4-integrated orbits against the analytic circle r = mv/(\|q\|B), T = 2πm/(\|q\|B); live radius-error readout; physical rotation direction at a printed slow-down factor |
+| Extra — magnet through a coil (`sim-induction.js`) | exact dipole flux Φ(z) = μ₀ma²/(2(a²+z²)^{3/2}); EMF = −N dΦ/dt (analytic derivative, 2 ms sub-stepping); I = EMF/R; P = I²R; pole-aware Lenz direction text |
 
 The retired general-physics simulations (vector bench, buoyancy, Bernoulli, thermometer,
 heat transfer, waves, tone bench) live under `archive/` with their original documentation

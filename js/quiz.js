@@ -43,7 +43,7 @@
 
   const S = {
     order: BANK.slice(),          // current question order (shuffle changes this)
-    filter: 'all',                // 'all' | topic id | 'wrong' | 'unanswered' | 'flagged'
+    filter: 'all',                // 'all' | 'lessons' | topic id | 'wrong' | 'unanswered' | 'flagged'
     answers: new Map(),           // question id -> chosen option index
     marked: new Map(),            // question id -> true/false (only once graded)
     flagged: new Set(),           // question ids flagged for review before submit
@@ -67,8 +67,13 @@
   };
 
   const el = id => document.getElementById(id);
+  /* The three graded-lecture lessons (registry chapters without extra:true),
+     so lecture students can filter the Extra material away in one click. */
+  const LESSON_IDS = (window.EMC_REGISTRY && window.EMC_REGISTRY.lessons)
+    ? EMC_REGISTRY.lessons.map(c => c.id) : [];
   const visible = () => S.order.filter(q => {
     if (S.filter === 'all') return true;
+    if (S.filter === 'lessons') return LESSON_IDS.includes(q.topic);
     if (S.filter === 'wrong') return S.marked.get(q.id) === false;
     if (S.filter === 'unanswered') return !S.answers.has(q.id);
     if (S.filter === 'flagged') return S.flagged.has(q.id);
@@ -148,6 +153,9 @@
         <div style="min-width:0">
           <p class="q-text">${q.q}</p>
           <span class="tag ${topicClass} q-topic">${q.label}</span>
+          <span class="tag q-level${q.level === 'full' ? ' q-level-full' : ''}">${q.level === 'full' ? 'Full' : 'Easy'}</span>${q.hint ? `
+          <button type="button" class="q-hint-btn" data-hint="${q.id}" aria-expanded="false" aria-controls="hint-${q.id}">hint</button>
+          <span class="tiny faint q-hint-text" id="hint-${q.id}" hidden>${q.hint}</span>` : ''}
         </div>
         <button type="button" class="q-flag${isFlagged ? ' on' : ''}" data-flag="${q.id}" aria-pressed="${isFlagged}"
                 title="Flag for review" aria-label="${isFlagged ? 'Remove the review flag from' : 'Flag'} question ${index + 1}">
@@ -264,6 +272,7 @@
       const timer = S.timerMode === 'up' ? 'Practice timer'
         : S.timerMode === 'down' ? `Challenge ${S.timerMins} min` : 'Timer off';
       const filter = S.filter === 'all' ? 'All topics'
+        : S.filter === 'lessons' ? 'Lessons 1\u20133'
         : S.filter === 'unanswered' ? 'Unanswered only'
         : S.filter === 'flagged' ? 'Flagged only'
         : S.filter === 'wrong' ? 'Incorrect only'
@@ -741,6 +750,18 @@
 
   /* ---- answering ------------------------------------------------------- */
   host.addEventListener('click', e => {
+    const hintBtn = e.target.closest('.q-hint-btn');
+    if (hintBtn !== null) {
+      // hints are optional scaffolding: reveal in place, never block answering
+      const panel = document.getElementById('hint-' + hintBtn.dataset.hint);
+      if (panel !== null) {
+        // explicit branches: a negated identifier in this file would be
+        // scanned by Tailwind into a phantom important-variant utility
+        if (panel.hidden) { panel.hidden = false; hintBtn.setAttribute('aria-expanded', 'true'); }
+        else { panel.hidden = true; hintBtn.setAttribute('aria-expanded', 'false'); }
+      }
+      return;
+    }
     const flagBtn = e.target.closest('.q-flag');
     if (flagBtn !== null) { toggleFlag(Number(flagBtn.dataset.flag)); return; }
     const btn = e.target.closest('.opt');
@@ -938,10 +959,10 @@
     box.classList.remove('score-enter');
     void box.offsetWidth;               // restart the entrance on every retake
     box.classList.add('score-enter');
-    // The home dashboard promises that a pass (>= 70%) ticks all five topics.
+    // The home dashboard promises that a pass (>= 70%) ticks all three lessons.
     // Say so out loud at the moment it happens instead of letting it be silent.
     const passNote = pct >= 70
-      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all three chapters
+      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all three lessons
            as studied on your dashboard \u2014 a pass means the whole course has been covered.
            Un-tick any topic with the button at the end of its page if you would rather keep
            working on it.</p>`

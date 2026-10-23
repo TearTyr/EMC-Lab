@@ -18,7 +18,7 @@ export default {
               // (`if (!card) return`) and compiled to phantom important-variants
               // of two hand-written component classes. The null checks are now
               // explicit, and blocking the names keeps them out for good.
-              '!btn', '!card'],
+              '!btn', '!card', '!panel'],
   theme: {
     screens: { sm: '640px', md: '900px', lg: '1200px' },
     extend: {

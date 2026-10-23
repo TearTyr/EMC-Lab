@@ -3,8 +3,8 @@
    pages keep working unchanged). The shell fetches a topic's <main>, mounts it
    into the #shell-topic section and loads that chapter's sim scripts ONCE over
    the network (re-executed per mount, so each sim IIFE re-binds through
-   EMC.whenNear to the freshly mounted canvases). Routes: #/current, #/efield,
-   #/magind; unknown #/… falls back to home; every other hash stays a normal
+   EMC.whenNear to the freshly mounted canvases). Routes: #/charge, #/coulomb, #/field,
+   #/current, #/magind; unknown #/… falls back to home; every other hash stays a normal
    in-page anchor. Inactive sections are hidden AND inert; stages of a leaving
    topic are destroyed through the Stage's single cleanup path. */
 (function () {
@@ -75,16 +75,18 @@
     if (!main) throw new Error('no <main> in ' + ch.path);
     mainCache.set(ch.id, main.innerHTML);
     /* The production build ships hashed asset names (js/sim-ohm.<hash>.js), so
-       never guess a sim script URL: read it from the topic's own script tags,
-       exactly like the standalone page does. */
-    const srcs = {};
-    (ch.sims || []).forEach(id => {
-      const tag = doc.querySelector('script[src*="' + id + '"]');
-      if (tag) {
-        let src = tag.getAttribute('src') || '';
-        src = src.replace(/^\.\.\//, '').replace(/^\.\//, '');
-        if (src) srcs[id] = src;
-      }
+       never guess a script URL: read ALL of the topic's own <script> tags in
+       document order — that keeps shared engines (js/sandbox-core.js) ahead of
+       the sims that need them. Scripts index.html already runs, and vendored
+       libraries, are skipped. */
+    const HAVE = ['registry.js', 'common.js'];
+    const srcs = [];
+    doc.querySelectorAll('script[src]').forEach(tag => {
+      let src = tag.getAttribute('src') || '';
+      if (src.indexOf('/js/') === -1) return;            // vendor/katex etc.
+      if (HAVE.some(h => src.indexOf(h) >= 0)) return;   // already on index
+      src = src.replace(/^\.\.\//, '').replace(/^\.\//, '');
+      if (src) srcs.push(src);
     });
     srcCache.set(ch.id, srcs);
     return main.innerHTML;
@@ -94,10 +96,9 @@
      looks its canvas up at run time and defers init through EMC.whenNear, so
      a fresh execution binds exactly the currently mounted canvases. */
   async function runSimScripts(ch, token) {
-    const srcs = srcCache.get(ch.id) || {};
-    for (const id of (ch.sims || [])) {
+    const srcs = srcCache.get(ch.id) || [];
+    for (const url of srcs) {
       if (token !== loadToken) return false;    // a newer switch owns the body
-      const url = srcs[id] || ('js/' + id + '.js');
       let txt = scriptCache.get(url);
       if (txt === undefined) {
         try {
@@ -144,7 +145,7 @@
       if (token !== loadToken) return;          // a newer switch won the race
       body.innerHTML = html;
       // mounted content keeps working like the standalone page: reveal-gated
-      // blocks get observed now, and bare relative chapter links (efield.html)
+      // blocks get observed now, and bare relative chapter links (field.html)
       // are re-based into topics/ so they resolve (and same-page switch) here
       if (EMC.UI && EMC.UI.initReveal) EMC.UI.initReveal();
       body.querySelectorAll('a[href]').forEach(a => {

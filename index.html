@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
+  <meta name="description" content="EMC Lab — an interactive physics tutorial for Electric Forces &amp; Electric Field: three short lessons (charge, Coulomb’s law, electric field), nine open sandboxes and a scored quiz, with circuits and magnetism kept as Extra.">
   <meta name="theme-color" content="#17181c">
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
-    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 6000); /* failsafe: never trap a user on the shell */
+    try { if (sessionStorage.getItem('emc.splash.v1')) document.documentElement.classList.add('no-splash'); } catch (e) { /* storage blocked: show the splash */ }
+    setTimeout(function () { var o = document.getElementById('bootOverlay'); if (o) o.remove(); }, 4000); /* failsafe: never trap a user on the shell */
   </script>
   <title>EMC Lab · Interactive Electromagnetics Tutorial</title>
   <link rel="canonical" href="https://emc-lab.vercel.app/">
@@ -20,7 +21,7 @@
   <meta property="og:site_name" content="EMC Lab">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Interactive Electromagnetics Tutorial">
-  <meta property="og:description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
+  <meta property="og:description" content="EMC Lab — an interactive physics tutorial for Electric Forces &amp; Electric Field: three short lessons (charge, Coulomb’s law, electric field), nine open sandboxes and a scored quiz, with circuits and magnetism kept as Extra.">
   <meta property="og:url" content="https://emc-lab.vercel.app/">
   <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
   <meta property="og:image:width" content="1200">
@@ -28,7 +29,7 @@
   <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Interactive Electromagnetics Tutorial">
-  <meta name="twitter:description" content="EMC Lab — an interactive, browser-based electromagnetics tutorial: circuits &amp; Ohm’s law, electric fields &amp; Coulomb’s law, and magnetism &amp; induction, with six live simulations and a scored quiz.">
+  <meta name="twitter:description" content="EMC Lab — an interactive physics tutorial for Electric Forces &amp; Electric Field: three short lessons (charge, Coulomb’s law, electric field), nine open sandboxes and a scored quiz, with circuits and magnetism kept as Extra.">
   <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=2">
 
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
@@ -66,12 +67,16 @@
     #bootOverlay .bo-chip.done { color: #b5d777; border-color: rgba(181,215,119,.45); }
     #bootOverlay .bo-chip::after { content: " \2713"; visibility: hidden; }
     #bootOverlay .bo-chip.done::after { visibility: visible; }
-    #bootOverlay .bo-bar { width: 180px; height: 4px; border-radius: 999px; background: #26282f; overflow: hidden; }
-    #bootOverlay .bo-bar i { display: block; width: 40%; height: 100%; background: #a8d3e0; border-radius: 999px; transform: translateX(-100%); animation: boSlide 1.15s ease-in-out infinite; }
-    @keyframes boSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(450%); } }
+    html.no-splash #bootOverlay { display: none; }
+    #bootOverlay .bo-bar { display: flex; gap: 4px; width: 180px; height: 4px; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #26282f; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg::after { content: ""; position: absolute; inset: 0; background: #a8d3e0; border-radius: 999px; transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+    #bootOverlay .bo-seg.done::after { transform: scaleX(1); }
+    #bootOverlay .bo-tip { font-size: .74rem; font-weight: 700; color: #7b8db0; max-width: 30ch; text-align: center; min-height: 2.2em; }
+    #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     @keyframes boBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     @media (prefers-reduced-motion: reduce) {
-      #bootOverlay .bo-bar i { animation: none; width: 100%; background: #2e3138; }
+      #bootOverlay .bo-seg::after { transition: none; }
       #bootOverlay .mascot-bo { animation: none; }
       #bootOverlay { transition: none; }
     }
@@ -91,11 +96,13 @@
     <span class="bo-brand">EMC<em>Lab</em></span>
     <span class="bo-sub">interactive physics</span>
     <span class="bo-chips" aria-hidden="true">
-      <span class="bo-chip" data-stage="shell">layout</span>
-      <span class="bo-chip" data-stage="scripts">scripts</span>
+      <span class="bo-chip" data-stage="fonts">fonts</span>
       <span class="bo-chip" data-stage="equations">equations</span>
+      <span class="bo-chip" data-stage="sims">first sim</span>
     </span>
-    <span class="bo-bar" aria-hidden="true"><i></i></span>
+    <span class="bo-bar" aria-hidden="true"><i class="bo-seg"></i><i class="bo-seg"></i><i class="bo-seg"></i></span>
+    <span class="bo-tip" id="boTip" aria-hidden="true">Like repels, unlike attracts.</span>
+    <span class="sr-only" id="boStatus">Loading…</span>
   </div>
   <noscript><!-- JavaScript is turned off: hide the boot shell (the tutorial text below still reads fine). --><style>#bootOverlay{display:none}</style></noscript>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -131,13 +138,17 @@
         <a class="nav-link" href="index.html" aria-current="page">Home</a>
         <div class="nav-drop">
           <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
-                  aria-expanded="false" aria-controls="topicsMenu">Topics
+                  aria-expanded="false" aria-controls="topicsMenu">Lessons
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <a class="dd-link" href="topics/current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
-            <a class="dd-link" href="topics/efield.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charges · fields · superposition · potential</small></a>
-            <a class="dd-link" href="topics/magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
+            <span class="dd-head">The lecture</span>
+            <a class="dd-link" href="topics/charge.html"><b>1 · Electric Charge</b><small>q = n·e · conservation · conductors</small></a>
+            <a class="dd-link" href="topics/coulomb.html"><b>2 · Coulomb’s Law</b><small>F = k|q₁q₂|/r² · superposition · Bohr</small></a>
+            <a class="dd-link" href="topics/field.html"><b>3 · Electric Field</b><small>E = F/|q₀| · field lines · zero points</small></a>
+            <span class="dd-head">Extra — beyond this lecture</span>
+            <a class="dd-link" href="topics/current.html"><b>Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
+            <a class="dd-link" href="topics/magind.html"><b>Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="quiz.html">Take the quiz</a>
@@ -145,8 +156,8 @@
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
     <div class="boot-strip" id="bootStrip" aria-hidden="true">
-      <span class="boot-chip" data-stage="equations">equations</span>
-      <span class="boot-chip" data-stage="sims">simulations</span>
+      <span class="boot-chip" data-stage="equations-rest">equations</span>
+      <span class="boot-chip" data-stage="sims-rest">simulations</span>
     </div>
   </header>
 
@@ -171,37 +182,37 @@
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
         </div>
-        <span class="eyebrow reveal rv-d1">Interactive electromagnetics</span>
-        <h1 class="h-hero reveal rv-d2">See electromagnetics move.</h1>
+        <span class="eyebrow reveal rv-d1">Electric forces &amp; electric field</span>
+        <h1 class="h-hero reveal rv-d2">Learn the lecture by playing with it.</h1>
         <p class="lede reveal rv-d3">
-          One subject, <span id="ledeChapters">three</span> chapters, <span id="ledeSims">six</span> live
-          simulations and a <span id="ledeQuizN">24</span>-question scored quiz.
-          Build a circuit, drag charges and watch the field lines bend, push a magnet through
-          a coil and see the EMF flip sign — every number on screen is computed from the real
-          equations, not faked.
+          One lecture, <span id="ledeChapters">three</span> lessons, <span id="ledeSims">thirteen</span> live
+          sandboxes and simulations and a <span id="ledeQuizN">35</span>-question scored quiz.
+          Rub a balloon, tug charges around a free-play arena, paint an electric field and hunt
+          its zero point — every number on screen is computed from the real equations, not faked.
+          Circuits and magnetism live on under <em>Extra</em>.
         </p>
         <div class="btn-row reveal rv-d3">
-          <a class="btn btn-primary" href="topics/current.html">Start with Chapter 1</a>
-          <a class="btn" href="topics/magind.html#sim-induction-panel">Jump to the induction lab</a>
+          <a class="btn btn-primary" href="topics/charge.html">Start with Lesson 1</a>
+          <a class="btn" href="topics/field.html#sim-fieldpaint-panel">Jump to the field painter</a>
           <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
         </div>
         <!-- Hero equation strip (replaces the old animated dipole canvas): the four
-             governing laws of the three chapters, typeset by KaTeX through the same
+             governing laws of the lecture, typeset by KaTeX through the same
              [data-tex] pipeline as every other equation on the site. The spans carry
              hand-readable fallbacks, so the strip still reads if KaTeX never loads. -->
-        <div class="eq-strip" aria-label="The four governing equations of the course">
-          <span class="eq-item"><span data-tex="V = IR">V = I·R</span><small>Ohm’s law</small></span>
-          <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·q<sub>1</sub>q<sub>2</sub>/r<sup>2</sup></span><small>Coulomb’s law</small></span>
-          <span class="eq-item"><span data-tex="\vec{F} = q\,\vec{v} \times \vec{B}">F = qv × B</span><small>Lorentz force</small></span>
-          <span class="eq-item"><span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span><small>Faraday’s law</small></span>
+        <div class="eq-strip" aria-label="The four governing equations of the lecture">
+          <span class="eq-item"><span data-tex="q = n e">q = n·e</span><small>charge is quantised</small></span>
+          <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup></span><small>Coulomb’s law</small></span>
+          <span class="eq-item"><span data-tex="E = \dfrac{F}{|q_0|}">E = F/|q<sub>0</sub>|</span><small>electric field</small></span>
+          <span class="eq-item"><span data-tex="E = \dfrac{kq}{r^2}">E = k·q/r<sup>2</sup></span><small>point charge</small></span>
         </div>
         <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
              EMC_QUIZ (single sources of truth); the numbers below are the no-JS
              fallbacks and must match the current content. -->
         <div class="stat-strip reveal">
-          <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan" id="statChapters">3</span></div>
-          <div class="stat"><span class="stat-label">Simulations</span><span class="stat-value hl-amber" id="statSims">6</span></div>
-          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">24</span></div>
+          <div class="stat"><span class="stat-label">Lessons</span><span class="stat-value hl-cyan" id="statChapters">3</span></div>
+          <div class="stat"><span class="stat-label">Sandboxes &amp; sims</span><span class="stat-value hl-amber" id="statSims">13</span></div>
+          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">35</span></div>
         </div>
       </div>
     </section>
@@ -209,26 +220,28 @@
 
     <section class="section wrap">
       <h2 class="h-sec reveal">How to use this site</h2>
-      <p class="lede" style="margin:.35rem 0 0">Read a topic, play with its simulation, then prove it in the quiz. Your progress is saved on this device only.</p>
+      <p class="lede" style="margin:.35rem 0 0">Read a lesson — 30-second summary first — play with its sandbox, then prove it in the quiz. Your progress is saved on this device only.</p>
       <div class="steps mt-4">
         <div class="card step reveal">
-          <h3 class="font-bold">Read the tutorial</h3>
+          <h3 class="font-bold">Read the lesson</h3>
           <p class="small muted" style="margin:.35rem 0 0">
-            Each topic opens with learning objectives, then explains the idea with a diagram,
-            the governing equation, a worked example and a real-world application.
+            Each lesson opens with a 30-second summary and one key formula, then tells the
+            same idea in plain words, then in full technical detail with the lecture’s own
+            worked examples. The Details switch in the header picks your depth.
           </p>
         </div>
         <div class="card step reveal">
-          <h3 class="font-bold">Play with the simulation</h3>
+          <h3 class="font-bold">Play with the sandbox</h3>
           <p class="small muted" style="margin:.35rem 0 0">
-            Move the sliders and drag the objects on the canvas. Predict what will happen
-            first, then check — the readouts update live and show the working.
+            Every lesson is one open sandbox plus two tiny toys: drop as many charges as you
+            like, drag anything, flip the switches. Optional challenges give stars; nothing
+            ever blocks your play, and every setup copies to a shareable link.
           </p>
         </div>
         <div class="card step reveal">
           <h3 class="font-bold">Prove it in the quiz</h3>
           <p class="small muted" style="margin:.35rem 0 0">
-            <span id="quizCountWord">Twenty-four</span> multiple-choice questions with worked explanations. Your best score is
+            <span id="quizCountWord">Thirty-five</span> multiple-choice questions with hints and worked explanations. Your best score is
             saved in this browser so you can track improvement.
           </p>
         </div>
@@ -239,123 +252,167 @@
 
     <section class="section wrap">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4 reveal">
-        <h2 class="h-sec" style="margin:0">Electromagnetics — three chapters</h2>
-        <span class="tag tag-cyan" id="dashTopicsChip">0 of 3 chapters studied</span>
+        <h2 class="h-sec" style="margin:0">The lecture — three lessons</h2>
+        <span class="tag tag-cyan" id="dashTopicsChip">0 of 3 lessons studied</span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-        <!-- Chapter 1 -->
-        <article class="card card-hover topic-card reveal" data-motif="circuit" style="--topic-accent:#f6d36b">
+        <!-- Lesson 1 -->
+        <article class="card card-hover topic-card reveal" data-motif="field" style="--topic-accent:#f6d36b">
           <span class="topic-num" aria-hidden="true">01</span>
           <span class="topic-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12h3l2-5 3 10 2-5h6"/><circle cx="4" cy="12" r="1.4"/>
+              <circle cx="9" cy="12" r="4"/><path d="M9 10v4M7 12h4"/><circle cx="18" cy="7" r="2.4"/><path d="M18 5.8v2.4"/>
             </svg>
           </span>
-          <h3 class="text-xl font-bold">Circuits &amp; Ohm’s Law</h3>
-          <p class="small muted">Voltage, current and resistance — and how to reduce any resistor network to one value.</p>
+          <h3 class="text-xl font-bold">Electric Charge</h3>
+          <p class="small muted">Two kinds of charge, and the two rules they never break: like repels, and charge only moves.</p>
           <ul class="topic-list">
-            <li>Ohm’s law: V = IR and P = IV</li>
-            <li>Series and parallel circuits</li>
-            <li>Build and solve live networks</li>
+            <li>q = n·e — charge comes in parcels</li>
+            <li>Conservation, proved by an unbreakable tally</li>
+            <li>Conductors vs insulators, live</li>
           </ul>
           <div class="flex items-center gap-2 mt-3">
-            <a class="btn btn-sm btn-primary" href="topics/current.html" data-topic-link="current">Open chapter</a>
-            <span class="check-pill" data-topic-check="current">not started</span>
+            <a class="btn btn-sm btn-primary" href="topics/charge.html" data-topic-link="charge">Open lesson</a>
+            <span class="check-pill" data-topic-check="charge">not started</span>
           </div>
         </article>
 
-        <!-- Chapter 2 -->
-        <article class="card card-hover topic-card reveal" data-motif="field" style="--topic-accent:#f8aebe">
+        <!-- Lesson 2 -->
+        <article class="card card-hover topic-card reveal" data-motif="circuit" style="--topic-accent:#f8aebe">
           <span class="topic-num" aria-hidden="true">02</span>
+          <span class="topic-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="5" cy="12" r="2.6"/><circle cx="19" cy="12" r="2.6"/><path d="M8 12h8M10 9.5l4 5M10 14.5l4-5"/>
+            </svg>
+          </span>
+          <h3 class="text-xl font-bold">Coulomb’s Law</h3>
+          <p class="small muted">The inverse-square tug between charges — and how many tugs add as arrows, not numbers.</p>
+          <ul class="topic-list">
+            <li>F = k|q₁q₂|/r²: 2× distance → ¼ force</li>
+            <li>Superposition in 1-D and 2-D</li>
+            <li>The Bohr atom’s 2.19×10⁶ m/s, derived</li>
+          </ul>
+          <div class="flex items-center gap-2 mt-3">
+            <a class="btn btn-sm btn-primary" href="topics/coulomb.html" data-topic-link="coulomb">Open lesson</a>
+            <span class="check-pill" data-topic-check="coulomb">not started</span>
+          </div>
+        </article>
+
+        <!-- Lesson 3 -->
+        <article class="card card-hover topic-card reveal" data-motif="coil" style="--topic-accent:#a8d3e0">
+          <span class="topic-num" aria-hidden="true">03</span>
           <span class="topic-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>
             </svg>
           </span>
-          <h3 class="text-xl font-bold">Electric Fields &amp; Coulomb’s Law</h3>
-          <p class="small muted">What charge is, how it creates a field, and how potential comes from −∫E·dr.</p>
+          <h3 class="text-xl font-bold">Electric Field</h3>
+          <p class="small muted">A push waiting at every point in space — measured by the force on a positive test charge.</p>
           <ul class="topic-list">
-            <li>Coulomb’s law: F = k·q<sub>1</sub>q<sub>2</sub>/r<sup>2</sup></li>
-            <li>Field direction, lines, superposition</li>
-            <li>Potential difference, measured live</li>
+            <li>E = F/|q₀| and the direction rule</li>
+            <li>Paint field lines for any configuration</li>
+            <li>Hunt the point where E = 0</li>
           </ul>
           <div class="flex items-center gap-2 mt-3">
-            <a class="btn btn-sm btn-primary" href="topics/efield.html" data-topic-link="efield">Open chapter</a>
-            <span class="check-pill" data-topic-check="efield">not started</span>
-          </div>
-        </article>
-
-        <!-- Chapter 3 -->
-        <article class="card card-hover topic-card reveal" data-motif="coil" style="--topic-accent:#d5b8d8">
-          <span class="topic-num" aria-hidden="true">03</span>
-          <span class="topic-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <ellipse cx="9" cy="12" rx="3" ry="7"/><ellipse cx="14" cy="12" rx="3" ry="7"/><path d="M19 8h3M19 12h3M19 16h3"/>
-            </svg>
-          </span>
-          <h3 class="text-xl font-bold">Magnetism &amp; Induction</h3>
-          <p class="small muted">A changing magnetic flux creates a voltage — and a moving charge feels qv × B.</p>
-          <ul class="topic-list">
-            <li>F = qv × B, r = mv/(|q|B), RK4 orbits</li>
-            <li>Faraday’s law: EMF = −N·dΦ/dt</li>
-            <li>Lenz’s law on the live coil</li>
-          </ul>
-          <div class="flex items-center gap-2 mt-3">
-            <a class="btn btn-sm btn-primary" href="topics/magind.html" data-topic-link="magind">Open chapter</a>
-            <span class="check-pill" data-topic-check="magind">not started</span>
+            <a class="btn btn-sm btn-primary" href="topics/field.html" data-topic-link="field">Open lesson</a>
+            <span class="check-pill" data-topic-check="field">not started</span>
           </div>
         </article>
       </div>
     </section>
 
     <section class="section wrap">
-      <h2 class="h-sec reveal">Six simulations, all driven by real equations</h2>
-      <p class="lede" data-detail="plain" style="margin:0 0 1.2rem">Every simulation works out its numbers from the real physics equations while you play with it — nothing is faked or pre-recorded.</p>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4 reveal">
+        <h2 class="h-sec" style="margin:0">Extra — beyond this lecture</h2>
+        <span class="tag tag-violet">optional</span>
+      </div>
+      <p class="lede reveal" style="margin:.35rem 0 1rem">Not part of <em>Electric Forces and Electric Field</em>, kept for the curious. Nothing here is required for the quiz’s lesson filters.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <article class="card card-hover topic-card reveal" style="--topic-accent:#d5b8d8">
+          <span class="topic-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12h3l2-5 3 10 2-5h6"/><circle cx="4" cy="12" r="1.4"/>
+            </svg>
+          </span>
+          <h3 class="text-xl font-bold">Circuits &amp; Ohm’s Law</h3>
+          <p class="small muted">Voltage, current, resistance, power and live resistor networks.</p>
+          <div class="flex items-center gap-2 mt-3">
+            <a class="btn btn-sm" href="topics/current.html">Open Extra chapter</a>
+          </div>
+        </article>
+        <article class="card card-hover topic-card reveal" style="--topic-accent:#b5d777">
+          <span class="topic-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="9" cy="12" rx="3" ry="7"/><ellipse cx="14" cy="12" rx="3" ry="7"/><path d="M19 8h3M19 12h3M19 16h3"/>
+            </svg>
+          </span>
+          <h3 class="text-xl font-bold">Magnetism &amp; Induction</h3>
+          <p class="small muted">F = qv × B, magnetic flux, Faraday’s law and Lenz’s law on a live coil.</p>
+          <div class="flex items-center gap-2 mt-3">
+            <a class="btn btn-sm" href="topics/magind.html">Open Extra chapter</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap">
+      <h2 class="h-sec reveal">Every simulation is a sandbox, driven by real equations</h2>
+      <p class="lede" data-detail="plain" style="margin:0 0 1.2rem">Every sandbox works out its numbers from the real physics equations while you play — nothing is faked or pre-recorded.</p>
       <p class="lede" style="margin-bottom:1.2rem" data-detail="tech">
-        Nothing is animated by hand: every frame is computed from Ohm’s law, Kirchhoff’s laws,
-        Coulomb’s law, the Lorentz force or Faraday’s law. Change an input and the physics
-        re-solves.
+        Nothing is animated by hand: every frame is computed from q = n·e, Coulomb’s law with
+        vector superposition, or E = Σ kq r̂/r². Change anything and the physics re-solves —
+        including the lecture’s own worked answers, which fall out of the live readouts.
       </p>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a class="card card-hover reveal" href="topics/charge.html#sim-static-room-panel">
+          <span class="tag tag-amber">Lesson 1</span>
+          <h3 class="font-bold mt-2">Static Room</h3>
+          <p class="small muted mt-2">A free-play room of charges, balloons, socks and metal balls — with a conservation tally that cannot be broken.</p>
+        </a>
+        <a class="card card-hover reveal" href="topics/charge.html#toy-balloon-panel">
+          <span class="tag tag-amber">Lesson 1</span>
+          <h3 class="font-bold mt-2">Rub the Balloon + Charge Ledger</h3>
+          <p class="small muted mt-2">Swipe to transfer whole electrons (q = n·e), then watch identical conductors split any total equally.</p>
+        </a>
+        <a class="card card-hover reveal" href="topics/coulomb.html#sim-arena-panel">
+          <span class="tag tag-rose">Lesson 2</span>
+          <h3 class="font-bold mt-2">Tug-of-War Arena</h3>
+          <p class="small muted mt-2">Any number of charges, net-force arrows with per-pair ghosts, release mode — and the lecture’s own examples as optional presets.</p>
+        </a>
+        <a class="card card-hover reveal" href="topics/coulomb.html#toy-pinforce-panel">
+          <span class="tag tag-rose">Lesson 2</span>
+          <h3 class="font-bold mt-2">Pin the Force + Bohr Tuner</h3>
+          <p class="small muted mt-2">Trace the 1/r² hyperbola live, then tune the Bohr radius until the electron hits 2.19×10⁶ m/s.</p>
+        </a>
+        <a class="card card-hover reveal" href="topics/field.html#sim-fieldpaint-panel">
+          <span class="tag tag-cyan">Lesson 3</span>
+          <h3 class="font-bold mt-2">Field Painter</h3>
+          <p class="small muted mt-2">Paint charges, watch arrows and lines form, drag the ghost test charge — the lecture’s y-axis example reads 7.55×10⁴ N/C at P.</p>
+        </a>
+        <a class="card card-hover reveal" href="topics/field.html#toy-dipole-panel">
+          <span class="tag tag-cyan">Lesson 3</span>
+          <h3 class="font-bold mt-2">Dipole Builder + Zero-Field Hunt</h3>
+          <p class="small muted mt-2">Stretch and spin a live dipole, then sweep a hot-and-cold E-meter to find where the field cancels to zero.</p>
+        </a>
         <a class="card card-hover reveal" href="topics/current.html#sim-ohm-panel">
-          <span class="tag tag-amber">Chapter 1</span>
-          <h3 class="font-bold mt-2">Ohm’s law simulator</h3>
-          <p class="small muted mt-2">Auto-ranging ammeter, a bulb that brightens with power, and an I–V characteristic plot.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/current.html#sim-circuit-panel">
-          <span class="tag tag-amber">Chapter 1</span>
-          <h3 class="font-bold mt-2">Circuit builder</h3>
-          <p class="small muted mt-2">Add resistors in series, parallel or a combination; animated current splits correctly between branches.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/efield.html#sim-coulomb-panel">
-          <span class="tag tag-rose">Chapter 2</span>
-          <h3 class="font-bold mt-2">Coulomb force bench</h3>
-          <p class="small muted mt-2">Drag two charges apart and watch the inverse-square force arrows grow and shrink.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/efield.html#sim-efield-panel">
-          <span class="tag tag-rose">Chapter 2</span>
-          <h3 class="font-bold mt-2">Electric field explorer</h3>
-          <p class="small muted mt-2">Place any number of charges; field lines, vector grids, a probe — and a live −∫E·dr potential integral.</p>
+          <span class="tag tag-violet">Extra</span>
+          <h3 class="font-bold mt-2">Ohm bench + circuit builder</h3>
+          <p class="small muted mt-2">Auto-ranging meters, a bulb that brightens with P = VI, and Kirchhoff-exact networks.</p>
         </a>
         <a class="card card-hover reveal" href="topics/magind.html#sim-lorentz-panel">
-          <span class="tag tag-violet">Chapter 3</span>
-          <h3 class="font-bold mt-2">Lorentz force &amp; circular motion</h3>
-          <p class="small muted mt-2">RK4-integrated orbits for protons, electrons and alpha particles, checked against r = mv/(|q|B).</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/magind.html#sim-induction-panel">
-          <span class="tag tag-violet">Chapter 3</span>
-          <h3 class="font-bold mt-2">Magnet through a coil</h3>
-          <p class="small muted mt-2">Exact dipole flux, Faraday’s law, a centre-zero galvanometer and a scrolling Φ/EMF chart.</p>
+          <span class="tag tag-violet">Extra</span>
+          <h3 class="font-bold mt-2">Lorentz orbits + coil lab</h3>
+          <p class="small muted mt-2">RK4-checked circular motion and a magnet-through-coil with live Faraday/Lenz readouts.</p>
         </a>
         <div class="card card-flat reveal">
           <span class="tag">Governing equations</span>
           <ul class="topic-list mt-2">
-            <li><span data-tex="V = IR">V = IR</span>, <span data-tex="P = VI">P = VI</span>, Kirchhoff’s laws</li>
-            <li><span data-tex="E = kq/r^2">E = kq/r<sup>2</sup></span>, superposition by vector sum</li>
-            <li><span data-tex="\vec{F} = q\vec{v} \times \vec{B}">F = qv × B</span>, <span data-tex="r = mv/(|q|B)">r = mv/(|q|B)</span></li>
-            <li><span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span> (Lenz’s minus sign)</li>
+            <li><span data-tex="q = n e">q = n·e</span>, e = 1.602×10<sup>−19</sup> C — charge is quantised and conserved</li>
+            <li><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q₁q₂|/r²</span>, added as vectors</li>
+            <li><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = kq/r²</span> — the direction rule: push on a + test charge</li>
+            <li>Extra: <span data-tex="V = IR">V = IR</span>, <span data-tex="\vec{F} = q\vec{v} \times \vec{B}">F = qv × B</span>, <span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span></li>
           </ul>
         </div>
       </div>
@@ -365,7 +422,7 @@
 
     <section class="section wrap">
       <h2 class="h-sec reveal">Quick formula reference</h2>
-      <p class="lede" style="margin:.35rem 0 0">One cheat-sheet table with every formula the topics use, plus its units and what it tells you.</p>
+      <p class="lede" style="margin:.35rem 0 0">One cheat-sheet table: the lecture’s formulas first, then the Extra ones, with units and what each tells you.</p>
       <div class="panel reveal">
         <div class="table-scroll">
           <table class="data">
@@ -373,23 +430,23 @@
               <tr><th>Concept</th><th>Equation</th><th>Units</th><th>What it tells you</th></tr>
             </thead>
             <tbody>
-              <tr><td class="txt">Coulomb force</td><td><span data-tex="F = k q_1 q_2 / r^2">F = k·q<sub>1</sub>q<sub>2</sub> / r<sup>2</sup></span></td><td>N</td><td class="txt">Inverse square: 2× the distance → ¼ the force</td></tr>
-              <tr><td class="txt">Electric field</td><td><span data-tex="E = F/q = kq/r^2">E = F/q = k·q / r<sup>2</sup></span></td><td>N/C = V/m</td><td class="txt">Force per unit positive test charge</td></tr>
-              <tr><td class="txt">Ohm’s law</td><td><span data-tex="V = IR">V = I·R</span></td><td>V, A, Ω</td><td class="txt">Voltage drives current against resistance</td></tr>
-              <tr><td class="txt">Electrical power</td><td><span data-tex="P = VI = I^2R = V^2/R">P = VI = I<sup>2</sup>R = V<sup>2</sup>/R</span></td><td>W</td><td class="txt">Rate of energy conversion to heat/light</td></tr>
-              <tr><td class="txt">Series resistance</td><td><span data-tex="R_{\mathrm{eq}} = \textstyle\sum_i R_i">R<sub>eq</sub> = ΣR<sub>i</sub></span></td><td>Ω</td><td class="txt">Always bigger than the largest resistor</td></tr>
-              <tr><td class="txt">Parallel resistance</td><td><span data-tex="1/R_{\mathrm{eq}} = \textstyle\sum_i 1/R_i">1/R<sub>eq</sub> = Σ1/R<sub>i</sub></span></td><td>Ω</td><td class="txt">Always smaller than the smallest branch</td></tr>
-              <tr><td class="txt">Magnetic force</td><td><span data-tex="\vec{F} = q\,\vec{v} \times \vec{B}">F = q·v × B</span></td><td>N</td><td class="txt">Perpendicular to both v and B → does no work</td></tr>
-              <tr><td class="txt">Radius of orbit</td><td><span data-tex="r = mv/(|q|B)">r = mv / (|q|B)</span></td><td>m</td><td class="txt">Faster or heavier → wider circle</td></tr>
-              <tr><td class="txt">Magnetic flux</td><td><span data-tex="\Phi = BA\cos\theta">Φ = B·A·cosθ</span></td><td>Wb = T·m<sup>2</sup></td><td class="txt">How much field threads the loop</td></tr>
-              <tr><td class="txt">Faraday’s law</td><td><span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span></td><td>V</td><td class="txt">Only a <em>changing</em> flux induces a voltage</td></tr>
+              <tr><td class="txt">Quantised charge</td><td><span data-tex="q = n e">q = n·e</span></td><td>C</td><td class="txt">Charge comes in whole electron parcels; 1 C = 6.24×10<sup>18</sup> of them</td></tr>
+              <tr><td class="txt">Coulomb force</td><td><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q<sub>1</sub>q<sub>2</sub>| / r<sup>2</sup></span></td><td>N</td><td class="txt">Inverse square: 2× the distance → ¼ the force; signs pick direction only</td></tr>
+              <tr><td class="txt">Superposition</td><td><span data-tex="\vec{F}_{net} = \vec{F}_1 + \vec{F}_2 + \dots">F⃗<sub>net</sub> = F⃗₁ + F⃗₂ + …</span></td><td>N</td><td class="txt">Forces and fields add as vectors (components), never as plain numbers</td></tr>
+              <tr><td class="txt">Electric field</td><td><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = k·q/r<sup>2</sup></span></td><td>N/C</td><td class="txt">Force per unit positive test charge; E points the way a + charge is pushed</td></tr>
+              <tr><td class="txt">Force in a field</td><td><span data-tex="F = |q_0| E">F = |q₀|·E</span></td><td>N</td><td class="txt">A negative charge feels it opposite E</td></tr>
+              <tr><td class="txt">Bohr speed</td><td><span data-tex="v = \sqrt{ke^2/(m_e r)}">v = √(ke²/(mₑr))</span></td><td>m/s</td><td class="txt">Coulomb pull as centripetal force: 2.19×10⁶ m/s at r = 5.29×10⁻¹¹ m</td></tr>
+              <tr><td class="txt">Extra · Ohm’s law</td><td><span data-tex="V = IR">V = I·R</span>, <span data-tex="P = VI">P = VI</span></td><td>V, A, Ω, W</td><td class="txt">Voltage drives current against resistance; power is the rate of heating</td></tr>
+              <tr><td class="txt">Extra · networks</td><td><span data-tex="R_{eq} = \sum R_i">R<sub>eq</sub> = ΣRᵢ</span> / <span data-tex="1/R_{eq} = \sum 1/R_i">1/R<sub>eq</sub> = Σ1/Rᵢ</span></td><td>Ω</td><td class="txt">Series adds; parallel adds conductances (always smaller than the smallest)</td></tr>
+              <tr><td class="txt">Extra · magnetic force</td><td><span data-tex="\vec{F} = q\,\vec{v} \times \vec{B}">F = q·v × B</span>, <span data-tex="r = mv/(|q|B)">r = mv/(|q|B)</span></td><td>N, m</td><td class="txt">Perpendicular to v and B → bends paths, never does work</td></tr>
+              <tr><td class="txt">Extra · Faraday</td><td><span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span>, <span data-tex="\Phi = BA\cos\theta">Φ = B·A·cosθ</span></td><td>V, Wb</td><td class="txt">Only a <em>changing</em> flux induces; the minus is Lenz’s law</td></tr>
             </tbody>
           </table>
         </div>
       </div>
       <p class="tiny faint mt-3">
-        Constants used throughout: k = 8.988×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup>, μ<sub>0</sub> = 4π×10<sup>−7</sup> T·m/A,
-        e = 1.602×10<sup>−19</sup> C (CODATA 2018).
+        Constants used throughout: k = 8.99×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup> (the lecture’s value; the code
+        keeps full CODATA precision), e = 1.602×10<sup>−19</sup> C, μ<sub>0</sub> = 4π×10<sup>−7</sup> T·m/A (Extra).
       </p>
     </section>
 
@@ -425,7 +482,7 @@
               </dl>
               <p class="tiny faint" style="margin-top:.8rem">
                 Tick a topic with the <em>Mark topic as complete</em> button at the end of each page.
-                Scoring 70% or more in the quiz also ticks all three chapters for you, since a pass
+                Scoring 70% or more in the quiz also ticks all three lessons for you, since a pass
                 means the whole course has been covered — say the word and un-tick any of them.
               </p>
               <p class="tiny faint" style="margin-top:.4rem">
@@ -446,8 +503,8 @@
           <div style="flex:1 1 320px">
             <h2 class="h-sec" style="margin:0">Ready to test yourself?</h2>
             <p class="muted small" style="margin:.3rem 0 0">
-              <span id="quizCountCta">24</span> questions, instant or exam marking, worked explanations for every answer,
-              and a per-chapter breakdown so you know exactly what to revise.
+              <span id="quizCountCta">35</span> questions — 19 across the three lessons, 16 Extra — with hints, instant or
+              exam marking, worked explanations, and a per-topic breakdown so you know exactly what to revise.
             </p>
           </div>
           <a class="btn btn-primary" href="quiz.html">Open the quiz →</a>
@@ -483,10 +540,12 @@
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Topics</h3>
         <ul class="footer-links">
-          <li><a href="topics/current.html">1 · Circuits &amp; Ohm’s law</a></li>
-          <li><a href="topics/efield.html">2 · Electric fields &amp; Coulomb’s law</a></li>
-          <li><a href="topics/magind.html">3 · Magnetism &amp; induction</a></li>
-          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">24</span> questions)</a></li>
+          <li><a href="topics/charge.html">1 · Electric charge</a></li>
+          <li><a href="topics/coulomb.html">2 · Coulomb’s law</a></li>
+          <li><a href="topics/field.html">3 · Electric field</a></li>
+          <li><a href="topics/current.html">Extra · Circuits &amp; Ohm’s law</a></li>
+          <li><a href="topics/magind.html">Extra · Magnetism &amp; induction</a></li>
+          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">35</span> questions)</a></li>
         </ul>
       </div>
     </div>
