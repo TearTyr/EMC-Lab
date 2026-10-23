@@ -202,6 +202,12 @@ window.EMC = (function () {
       this._drawRaf = 0; this._pmRaf = 0; this._pm = null;
       this._lastRender = 0;
       this._fpsCap = LOW_TIER_DEVICE ? 30 : 0;      // 0 = uncapped
+      /* Entrance: objects assemble into place on first paint. draw() applies
+         a generic decelerating fade+rise; sims that choreograph their own
+         objects (charges converging, a magnet sliding in) read intro().
+         Reduced motion skips straight to the settled state. */
+      this._introMs = opts.intro || 0;
+      this._introStart = 0;
       this._hidden = typeof document !== 'undefined' && document.hidden === true;
       this._idle = false;           // set by sims whose scene has visually settled
 
@@ -345,7 +351,31 @@ window.EMC = (function () {
       refreshBudget();
     }
 
-    draw() { if (this.w && this.h) this.render(this.ctx, this.w, this.h, this); }
+    draw() {
+      if (!this.w || !this.h) return;
+      const ip = this.intro();
+      if (ip < 1) {
+        const c = this.ctx;
+        c.save();
+        c.globalAlpha *= ip;
+        c.translate(0, (1 - ip) * 8);
+        this.render(c, this.w, this.h, this);
+        c.restore();
+      } else {
+        this.render(this.ctx, this.w, this.h, this);
+      }
+    }
+
+    /* 0..1 decelerated entrance progress; keeps a non-animating stage
+       repainting until settled, and answers 1 under reduced motion. */
+    intro() {
+      if (!this._introMs || this._prm) return 1;
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      if (!this._introStart) this._introStart = now;
+      const p = clamp((now - this._introStart) / this._introMs, 0, 1);
+      if (p < 1 && !this._running) this.invalidate();
+      return 1 - Math.pow(1 - p, 3);
+    }
 
     /* Sims whose scene has visually settled (spring at rest, diffusion at
        steady state, tone stopped) call setIdle(true) to stop the chain; any
@@ -796,7 +826,15 @@ window.EMC = (function () {
       if (target) target.textContent = fmt(v);
       if (onChange) onChange(v);
     };
-    addL(input, 'input', apply, signal ? { signal } : undefined);
+    addL(input, 'input', () => {
+      apply();
+      // brief accent pulse on the readout: feedback that the value moved
+      if (target && target.classList) {
+        target.classList.remove('val-tick');
+        void target.offsetWidth;
+        target.classList.add('val-tick');
+      }
+    }, signal ? { signal } : undefined);
     apply();
     return { input, set(v) { input.value = String(v); apply(); }, get: () => parseFloat(input.value) };
   }
@@ -880,7 +918,9 @@ window.EMC = (function () {
     },
 
     initReveal() {
-      const items = document.querySelectorAll('.reveal');
+      // :not(.in) so the shell can re-run this after mounting a topic whose
+      // reveal-gated blocks were never observed by the boot pass
+      const items = document.querySelectorAll('.reveal:not(.in)');
       if (!items.length) return;
       if (typeof IntersectionObserver !== 'function' ||
           window.matchMedia('(prefers-reduced-motion: reduce)').matches) {

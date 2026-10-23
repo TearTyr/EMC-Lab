@@ -77,7 +77,9 @@
       if (!pill) return;
       const done = !!p.topics[t];
       pill.classList.toggle('done', done);
+      const was = pill.textContent;
       pill.textContent = done ? 'completed' : 'not started';
+      if (was !== pill.textContent) { pill.classList.remove('pop'); void pill.offsetWidth; pill.classList.add('pop'); }
       const link = document.querySelector(`[data-topic-link="${t}"]`);
       if (link) link.setAttribute('aria-label', `${TOPIC_META[t].title} — ${done ? 'completed' : 'not started'}`);
     });
@@ -169,4 +171,37 @@
       importFile.value = '';   // let the same file be imported again
     });
   }
+
+  /* ---- hero parallax drift (ZZZ-style layered depth) ----------------------
+     The pointer nudges a wrapper around the mascot by a few pixels; the bob
+     animation stays on the svg itself so the two transforms compose instead
+     of fighting. rAF-throttled, eased toward the target, and only armed on
+     hover-capable devices with reduced motion off - re-checked live through
+     matchMedia so flipping the OS preference calms it immediately. */
+  function initHeroDrift() {
+    const layer = document.querySelector('.hero-drift');
+    if (!layer) return;
+    const mqHover = window.matchMedia ? window.matchMedia('(hover: hover)') : null;
+    const mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    const armed = () => (!mqHover || mqHover.matches) && (!mqReduce || !mqReduce.matches);
+    let raf = 0, tx = 0, ty = 0, cx = 0, cy = 0;
+    const step = () => {
+      cx += (tx - cx) * 0.12; cy += (ty - cy) * 0.12;
+      layer.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`;
+      raf = (Math.abs(tx - cx) > 0.2 || Math.abs(ty - cy) > 0.2) ? requestAnimationFrame(step) : 0;
+    };
+    const wake = () => { if (!raf) raf = requestAnimationFrame(step); };
+    window.addEventListener('pointermove', e => {
+      if (!armed()) return;
+      tx = ((e.clientX / window.innerWidth) - 0.5) * 12;
+      ty = ((e.clientY / window.innerHeight) - 0.5) * 8;
+      wake();
+    }, { passive: true });
+    const rest = () => { tx = 0; ty = 0; wake(); };
+    window.addEventListener('blur', rest);
+    document.addEventListener('mouseleave', rest);
+    if (mqReduce && typeof mqReduce.addEventListener === 'function') mqReduce.addEventListener('change', rest);
+    if (mqHover && typeof mqHover.addEventListener === 'function') mqHover.addEventListener('change', rest);
+  }
+  initHeroDrift();
 })();

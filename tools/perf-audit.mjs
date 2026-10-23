@@ -27,19 +27,36 @@ const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript
 
 /* gzip like a real host (Vercel serves brotli), so transfer numbers are honest */
 function serve(port) {
-  return http.createServer((req, res) => {
-    const u = decodeURIComponent((req.url || '/').split('?')[0]);
-    let f = path.join(ROOT, u === '/' ? 'index.html' : u);
-    if (!f.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
-    if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) f += '.html';
-    if (!fs.existsSync(f)) { res.writeHead(404); return res.end('not found'); }
-    const raw = fs.readFileSync(f);
-    const type = MIME[path.extname(f).toLowerCase()] || 'application/octet-stream';
-    if (/gzip/.test(req.headers['accept-encoding'] || '') && /text|javascript|json|svg/.test(type)) {
-      res.writeHead(200, { 'Content-Type': type, 'Content-Encoding': 'gzip' });
-      return res.end(zlib.gzipSync(raw, { level: 6 }));
+  /* Preload + pre-gzip at startup: keeps request handling allocation-free and
+     works in sandboxes where fs access inside request callbacks is restricted. */
+  const FILES = new Map();
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir)) {
+      if (e === 'node_modules' || e === '.git' || e === 'public') continue;
+      const f = path.join(dir, e);
+      const st = fs.statSync(f);
+      if (st.isDirectory()) walk(f);
+      else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
     }
-    res.writeHead(200, { 'Content-Type': type });
+  })(ROOT);
+  const GZ = new Map();
+  for (const [k, buf] of FILES) {
+    const type = MIME[path.extname(k).toLowerCase()] || '';
+    if (/text|javascript|json|svg/.test(type)) GZ.set(k, zlib.gzipSync(buf, { level: 6 }));
+  }
+  return http.createServer((req, res) => {
+    let u = decodeURIComponent((req.url || '/').split('?')[0]);
+    if (u === '/') u = '/index.html';
+    let raw = FILES.get(u);
+    if (!raw && !path.extname(u)) raw = FILES.get(u + '.html');
+    if (!raw) { res.writeHead(404); return res.end('not found'); }
+    const type = MIME[path.extname(u).toLowerCase()] || 'application/octet-stream';
+    const gz = GZ.get(u) || GZ.get(u + '.html');
+    if (gz && /gzip/.test(req.headers['accept-encoding'] || '')) {
+      res.writeHead(200, { 'Content-Type': type, 'Content-Encoding': 'gzip', 'Content-Length': gz.length });
+      return res.end(gz);
+    }
+    res.writeHead(200, { 'Content-Type': type, 'Content-Length': raw.length });
     res.end(raw);
   }).listen(port);
 }

@@ -246,7 +246,7 @@
   const el = id => document.getElementById(id);
   const readoutTick = EMC.throttle(updateReadouts, 6);
 
-  const stage = new EMC.Stage(canvas, render, { animate: true });
+  const stage = new EMC.Stage(canvas, render, { animate: true, intro: 480 });
 
   /* ---- readouts -------------------------------------------------------- */
   function updateReadouts() {

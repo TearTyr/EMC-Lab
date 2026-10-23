@@ -128,7 +128,7 @@
               aria-label="Open navigation menu"><span></span><span></span><span></span></button>
 
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
-        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="index.html" aria-current="page">Home</a>
         <div class="nav-drop">
           <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
                   aria-expanded="false" aria-controls="topicsMenu">Topics
@@ -160,6 +160,7 @@
 
     <section class="hero">
       <div class="wrap hero-stack">
+        <div class="hero-drift">
         <svg class="mascot" viewBox="0 0 120 112" role="img" aria-label="Denki-chan, the EMC Lab mascot">
   <path d="M38 26 C34 8 46 5 49 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
   <path d="M82 26 C86 8 74 5 71 16" fill="#f6f1e5" stroke="#3a3d45" stroke-width="3" stroke-linecap="round"/>
@@ -169,16 +170,17 @@
   <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
-        <span class="eyebrow">Interactive electromagnetics</span>
-        <h1 class="h-hero">See electromagnetics move.</h1>
-        <p class="lede">
+        </div>
+        <span class="eyebrow reveal rv-d1">Interactive electromagnetics</span>
+        <h1 class="h-hero reveal rv-d2">See electromagnetics move.</h1>
+        <p class="lede reveal rv-d3">
           One subject, <span id="ledeChapters">three</span> chapters, <span id="ledeSims">six</span> live
           simulations and a <span id="ledeQuizN">24</span>-question scored quiz.
           Build a circuit, drag charges and watch the field lines bend, push a magnet through
           a coil and see the EMF flip sign — every number on screen is computed from the real
           equations, not faked.
         </p>
-        <div class="btn-row">
+        <div class="btn-row reveal rv-d3">
           <a class="btn btn-primary" href="topics/current.html">Start with Chapter 1</a>
           <a class="btn" href="topics/magind.html#sim-induction-panel">Jump to the induction lab</a>
           <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
@@ -196,13 +198,14 @@
         <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
              EMC_QUIZ (single sources of truth); the numbers below are the no-JS
              fallbacks and must match the current content. -->
-        <div class="stat-strip">
+        <div class="stat-strip reveal">
           <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan" id="statChapters">3</span></div>
           <div class="stat"><span class="stat-label">Simulations</span><span class="stat-value hl-amber" id="statSims">6</span></div>
           <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">24</span></div>
         </div>
       </div>
     </section>
+
 
     <section class="section wrap">
       <h2 class="h-sec reveal">How to use this site</h2>
@@ -243,7 +246,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         <!-- Chapter 1 -->
-        <article class="card card-hover topic-card reveal" style="--topic-accent:#f6d36b">
+        <article class="card card-hover topic-card reveal" data-motif="circuit" style="--topic-accent:#f6d36b">
           <span class="topic-num" aria-hidden="true">01</span>
           <span class="topic-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -264,7 +267,7 @@
         </article>
 
         <!-- Chapter 2 -->
-        <article class="card card-hover topic-card reveal" style="--topic-accent:#f8aebe">
+        <article class="card card-hover topic-card reveal" data-motif="field" style="--topic-accent:#f8aebe">
           <span class="topic-num" aria-hidden="true">02</span>
           <span class="topic-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -285,7 +288,7 @@
         </article>
 
         <!-- Chapter 3 -->
-        <article class="card card-hover topic-card reveal" style="--topic-accent:#d5b8d8">
+        <article class="card card-hover topic-card reveal" data-motif="coil" style="--topic-accent:#d5b8d8">
           <span class="topic-num" aria-hidden="true">03</span>
           <span class="topic-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -310,7 +313,7 @@
     <section class="section wrap">
       <h2 class="h-sec reveal">Six simulations, all driven by real equations</h2>
       <p class="lede" data-detail="plain" style="margin:0 0 1.2rem">Every simulation works out its numbers from the real physics equations while you play with it — nothing is faked or pre-recorded.</p>
-      <p class="lede reveal" style="margin-bottom:1.2rem" data-detail="tech">
+      <p class="lede" style="margin-bottom:1.2rem" data-detail="tech">
         Nothing is animated by hand: every frame is computed from Ohm’s law, Kirchhoff’s laws,
         Coulomb’s law, the Lorentz force or Faraday’s law. Change an input and the physics
         re-solves.

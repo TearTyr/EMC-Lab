@@ -1160,6 +1160,25 @@ console.log('\u2500'.repeat(66));
       ![...html.matchAll(/<(?:script|link)[^>]+(?:src|href)="(https?:\/\/[^"]+)"/g)]
         .some(m => !/emc-lab\.vercel\.app/.test(m[1])));
 
+    // ---- catch-up guards: the premium/motion pass stays honest -------------
+    if (p === 'index.html') {
+      ok('index: the marquee stays removed (no ticker markup)', !/class="ticker"/.test(html));
+      ok('index: three chapter cards carry physics motifs', (html.match(/data-motif="/g) || []).length === 3);
+      ok('index: shell script is wired for same-page reading', /src="js\/shell\.js"/.test(html));
+      ok('index: home nav marks the current page', /nav-link" href="index\.html" aria-current="page"/.test(html));
+    }
+    if (p.startsWith('topics/')) {
+      ok(`${p}: every sim panel ships a first-use hint`, (html.match(/class="sim-hint/g) || []).length === 2);
+      ok(`${p}: chapter nav marks the current chapter`, /dd-link" href="[a-z]+\.html" aria-current="page"/.test(html));
+      ok(`${p}: scroll-reveal coverage on lesson blocks`, (html.match(/class="[^"]*reveal/g) || []).length >= 20);
+      ok(`${p}: header entrance stagger present`, /eyebrow-amber reveal rv-d1/.test(html) && /h-topic reveal rv-d2/.test(html));
+    }
+    if (p === 'index.html' || p.startsWith('topics/')) {
+      ok(`${p}: reveal gate never sits on a Details-swapped block`,
+        !/<[^>]*data-detail="(plain|tech)"[^>]*class="[^"]*reveal/.test(html) &&
+        !/<[^>]*class="[^"]*reveal[^>]*data-detail="(plain|tech)"/.test(html));
+    }
+
     // ---- #15 favicon artwork must equal the header brand mark -------------
     const brandMark = (html.match(/<svg class="brand-mark"[\s\S]*?<\/svg>/) || ['', ''])[0];
     ok(`${p}: favicon artwork matches the header mascot`,
@@ -1181,7 +1200,7 @@ console.log('\u2500'.repeat(66));
   const robotsTxt = readFileSync(join(ROOT, 'robots.txt'), 'utf8');
   ok('robots.txt allows everything and points at the production sitemap',
     /User-agent: \*/.test(robotsTxt) && /Allow: \//.test(robotsTxt) &&
-    /Sitemap: https:\/\/emc-physics\.vercel\.app\/sitemap\.xml/.test(robotsTxt));
+    /Sitemap: https:\/\/emc-lab\.vercel\.app\/sitemap\.xml/.test(robotsTxt));
   const buildSrc = readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8');
   ok('the deploy allow-list ships robots.txt + favicon.ico and fails the build without them',
     /'robots\.txt',\n  'favicon\.ico'/.test(buildSrc) &&
@@ -1213,6 +1232,17 @@ console.log('\u2500'.repeat(66));
     (builtAll.match(/\\![a-z][a-z0-9-]*/g) || []).join(','));
   ok('quiz.js uses explicit null checks (no negated identifiers to scan)',
     !/!btn|!card/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+  ok('mobile Details toggle keeps its visible label (no hidden dt-label)',
+    !/\.dt-label\s*\{[^}]*display:\s*none/.test(builtAll));
+  ok('readout value tick + flag pop ship in the compiled css',
+    /val-tick/.test(builtAll) && /flagPop/.test(builtAll));
+  ok('shell keeps file:// navigation native',
+    /protocol === 'file:'/.test(readFileSync(join(ROOT, 'js/shell.js'), 'utf8')));
+  ok('button groups show a visible selected state (not aria-pressed alone)',
+    /\.btn-group \.btn\[aria-pressed=true\]/.test(builtAll));
+  ok('sims ship entrance choreography tied to real objects',
+    /intro: 480/.test(readFileSync(join(ROOT, 'js/sim-coulomb.js'), 'utf8')) &&
+    /intro\(\)/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
   ok('the phantom class names stay blocklisted in the Tailwind config',
     /'!btn', '!card'/.test(readFileSync(join(ROOT, 'tailwind.config.js'), 'utf8')));
 

@@ -16,7 +16,8 @@
     x1n: 0.30,      // normalised position of q1 (0 = left edge)
     x2n: 0.70,      // normalised position of q2
     showE: true,
-    dragging: null  // 'q1' | 'q2' | null
+    dragging: null,  // 'q1' | 'q2' | null
+    hover: null     // which charge is under the pointer (readiness ring)
   };
 
   /* ---- derived quantities --------------------------------------------- */
@@ -50,10 +51,16 @@
   }
 
   /* ---- rendering ------------------------------------------------------- */
+  let stageReady = false;
   function render(ctx, w, h) {
     ctx.clearRect(0, 0, w, h);
     const midY = h * 0.54;
-    const x1 = w * state.x1n, x2 = w * state.x2n;
+    /* entrance: the pair converges from centre as the bench assembles.
+       stageReady: the Stage constructor draws once before `stage` binds. */
+    const ip = stageReady ? stage.intro() : 1;
+    const cx0 = w / 2;
+    const x1 = cx0 + (w * state.x1n - cx0) * ip;
+    const x2 = cx0 + (w * state.x2n - cx0) * ip;
     const r1 = chargeRadius(state.q1), r2 = chargeRadius(state.q2);
     const r = separation();
 
@@ -95,6 +102,14 @@
     /* --- charges --- */
     chargeGlyph(ctx, x1, midY, r1, state.q1);
     chargeGlyph(ctx, x2, midY, r2, state.q2);
+    if (state.hover && state.hover !== state.dragging) {
+      const hx = state.hover === 'q1' ? x1 : x2;
+      const hr = (state.hover === 'q1' ? r1 : r2) + 6;
+      ctx.save();
+      ctx.strokeStyle = '#a8d3e0'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(hx, midY, hr, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
     label(ctx, `q1 = ${state.q1 > 0 ? '+' : ''}${state.q1.toFixed(1)} \u00B5C`,
       x1, midY + 66, { color: '#f8aebe', size: 12 });
     label(ctx, `q2 = ${state.q2 > 0 ? '+' : ''}${state.q2.toFixed(1)} \u00B5C`,
@@ -115,7 +130,8 @@
       { color: 'rgba(148,163,184,.7)', size: 11.5, weight: '500' });
   }
 
-  const stage = new EMC.Stage(canvas, render);
+  const stage = new EMC.Stage(canvas, render, { intro: 480 });
+  stageReady = true;
 
   /* ---- readouts -------------------------------------------------------- */
   const out = {
@@ -199,7 +215,9 @@
     if (p.type === 'down') {
       const hit1 = Math.hypot(p.x - x1, p.y - midY) < chargeRadius(state.q1) + 14;
       const hit2 = Math.hypot(p.x - x2, p.y - midY) < chargeRadius(state.q2) + 14;
-      state.dragging = hit1 ? 'q1' : hit2 ? 'q2' : null;
+      // the hover ring promises grabbability: honour it if the down-hit and
+      // the last move-hit ever disagree (sub-pixel pointer rounding)
+      state.dragging = hit1 ? 'q1' : hit2 ? 'q2' : state.hover;
       canvas.classList.toggle('grabbing', !!state.dragging);
     } else if (p.type === 'move' && state.dragging) {
       const xn = clamp(p.x / stage.w, 0.035, 0.965);
@@ -215,9 +233,20 @@
       }
       syncSlider();
       refresh();
+    } else if (p.type === 'move') {
+      // readiness feedback: ring + grab cursor on whatever sits under the pointer
+      const h1 = Math.hypot(p.x - x1, p.y - midY) < chargeRadius(state.q1) + 14;
+      const h2 = Math.hypot(p.x - x2, p.y - midY) < chargeRadius(state.q2) + 14;
+      const hov = h1 ? 'q1' : h2 ? 'q2' : null;
+      if (hov !== state.hover) {
+        state.hover = hov;
+        canvas.classList.toggle('grab', !!hov);
+        refresh();
+      }
     } else if (p.type === 'up' || p.type === 'leave') {
       state.dragging = null;
       canvas.classList.remove('grabbing');
+      if (p.type === 'leave') { state.hover = null; canvas.classList.remove('grab'); refresh(); }
     }
   });
 

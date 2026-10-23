@@ -1,5 +1,5 @@
 # EMC Lab — interactive electromagnetics tutorial
-# https://emc-physics.vercel.app
+# https://emc-lab.vercel.app
 #
 # The whole site is public educational content: nothing to hide from
 # crawlers. The sitemap is generated from js/registry.js at build time
@@ -8,4 +8,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://emc-physics.vercel.app/sitemap.xml
+Sitemap: https://emc-lab.vercel.app/sitemap.xml

@@ -402,6 +402,9 @@ and walk this list:
       controls and dragging still work.
 - [ ] Offline/throttled fetch failure: DevTools → Network → block `topics/*.html`,
       switch topic — the reader offers a link to the standalone page.
+- [ ] Shell sim loading works with BOTH dev raw names (`js/sim-ohm.js`) and the
+      production build's hashed names (`js/sim-ohm.<hash>.js`): the shell reads the
+      URL from the topic's own script tags, never guesses it (regression 2026-10-22).
 - [ ] Standalone pages (`topics/current.html` etc.) behave exactly as before:
       eager script tags, lazy paint via `whenNear`, no shell chrome.
 - [ ] Hover lift only on hover-capable devices (touch: press feedback instead);

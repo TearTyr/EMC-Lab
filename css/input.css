@@ -220,6 +220,11 @@
   }
   .seg-btn:hover { color: var(--text); }
   .seg-btn[aria-pressed="true"], .seg-btn.active { background: var(--sk); color: #10222b; font-weight: 700; }
+  /* button groups carry real selected state (filters, durations, presets):
+     aria-pressed alone was invisible to sighted users */
+  .btn-group .btn[aria-pressed="true"], .btn-group .btn.active {
+    background: var(--sk); border-color: var(--sk-e); color: #10222b; font-weight: 700;
+  }
   .tag {
     display: inline-flex; align-items: center; gap: .3rem; padding: .14rem .6rem;
     border-radius: 999px; font-family: theme('fontFamily.ui'); font-size: .7rem;
@@ -287,7 +292,12 @@
   .detail-toggle[aria-checked="true"] .dt-track { background: var(--mi-t); }
   .detail-toggle[aria-checked="true"] .dt-knob { transform: translateX(14px); background: var(--mi); }
   .detail-toggle:focus-visible { outline: 2px solid var(--sk); outline-offset: 2px; }
-  @media (max-width: 640px) { .detail-toggle { margin-left: .4rem; padding: .26rem .55rem; } .detail-toggle .dt-label { display: none; } }
+  @media (max-width: 640px) {
+    /* the switch alone read as a mystery ON/OFF pill on phones: keep the
+       word "Details" visible (compact) so the control explains itself */
+    .detail-toggle { margin-left: .4rem; padding: .3rem .6rem; min-height: 40px; gap: .34rem; }
+    .detail-toggle .dt-label { font-size: .72rem; letter-spacing: .02em; }
+  }
 
   /* ---- staged boot strip: fixed overlay under the header, so it can never
      shift layout (CLS 0); invisible unless a stage is genuinely pending ---- */
@@ -635,6 +645,7 @@
   .qopts-submit-hint { flex: 1 1 100%; margin: .1rem 0 0; }
   .qopts-submit-note { flex: 1 1 100%; margin: .1rem 0 0; }
   .qopts-hint { margin: 0; }
+  .sim-hint { margin: .45rem 0 0; }
   /* long copy lives once, inside a flat sticker details with a "?" badge */
   .quiz-help { margin-top: .95rem; padding-top: .8rem; border-top: 1.5px solid var(--line-soft); }
   .quiz-help summary {
@@ -652,7 +663,8 @@
   .quiz-help-body { display: grid; gap: .35rem; margin-top: .55rem; }
   .quiz-help-body p { margin: 0; }
   @media (min-width: 640px) { .qopts-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (min-width: 900px) { .qopts-grid { grid-template-columns: 1.4fr 1fr 1.1fr 1.1fr; } }
+  @media (min-width: 900px) { .qopts-grid { grid-template-columns: 1.1fr 1fr 1.4fr 1.2fr; } }
+  @media (min-width: 1200px) { .qopts-cell .seg { flex-wrap: nowrap; } }
 
   /* ---- the ONE progress indicator: bar + count + flags (was bar + line + pill) ---- */
   .quiz-pill {
@@ -738,7 +750,7 @@
   .footer-links a:hover { color: var(--sk); text-decoration: underline; }
   .breadcrumb { display: flex; gap: .5rem; align-items: center; font-size: .82rem; color: var(--text-faint); flex-wrap: wrap; }
   .breadcrumb a { color: var(--text-dim); text-decoration: none; }
-  .breadcrumb a:hover { color: var(--sk); text-decoration: underline; }
+  .breadcrumb a:hover { color: var(--sk); }
   .pager { display: grid; gap: .8rem; grid-template-columns: 1fr; margin-top: 1.6rem; }
   .pager a { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-card); padding: 1rem 1.25rem; }
   .pager a:hover { border-color: var(--edge); }
@@ -780,6 +792,86 @@
     .seg-btn:active, .topic-card:active, .card-hover:active { transform: none; }
     .topic-card { transition: none; }
     .shell-enter { animation: none; }
+  }
+
+  /* ---- ZZZ motion pass ----------------------------------------------------
+     Motion language snapshotted from zenless.hoyoverse.com/en-us/main and
+     restated in our flat sticker system: decelerate-settle reveals, cards resting at a slight angle that straighten under the
+     pointer, huge outlined section numerals, springy press. Stability and
+     performance lead: transform/opacity only, a single looping element, IO
+     reveals fire once, no permanent will-change, no new dependencies, and
+     every rule below carries its own reduced-motion override. */
+  :root { --zzz-decel: cubic-bezier(.22, .9, .28, 1); }
+  /* stagger utilities - used only on non-interactive hero copy, where a
+     transition-delay can never slow a hover response */
+  html.js .reveal.rv-d2 { transition-delay: .09s; }
+  html.js .reveal.rv-d3 { transition-delay: .18s; }
+  /* sticker tilt: cards rest askew like pasted stickers, straighten on hover.
+     `rotate` is its own property so it composes with the reveal transform. */
+  .topic-card { rotate: -.6deg; transition: transform .18s ease, rotate .22s var(--zzz-decel), border-color .18s ease; }
+  .topic-card:nth-of-type(2) { rotate: .5deg; }
+  .topic-card:nth-of-type(3) { rotate: -.4deg; }
+  @media (hover: hover) { .topic-card:hover { rotate: 0deg; } }
+  /* huge outlined chapter numerals, flat stroke, zero motion cost */
+  @supports (-webkit-text-stroke: 1px #000) {
+    .topic-num { color: transparent; -webkit-text-stroke: 1.4px var(--edge); }
+  }
+  /* hero parallax layer wrapper (js drifts it, bob stays on the svg) */
+  .hero-drift { display: block; }
+  @media (prefers-reduced-motion: reduce) {
+    .topic-card, .topic-card:nth-of-type(2), .topic-card:nth-of-type(3) { rotate: 0deg; transition: none; }
+    html.js .reveal.rv-d2, html.js .reveal.rv-d3 { transition-delay: 0s; }
+  }
+
+
+  /* sliding underline: transform-only hover cue for text links */
+  .breadcrumb a, .prose a { position: relative; text-decoration: none; }
+  .breadcrumb a::after, .prose a::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px;
+    background: currentColor; transform: scaleX(0); transform-origin: left center;
+    transition: transform .22s var(--zzz-decel);
+  }
+  .breadcrumb a:hover::after, .prose a:hover::after,
+  .breadcrumb a:focus-visible::after, .prose a:focus-visible::after { transform: scaleX(1); }
+  /* details pay-off: content settles in when a dig-deep or help box opens */
+  @keyframes digIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  details[open] > *:not(summary) { animation: digIn .28s ease both; }
+  @media (prefers-reduced-motion: reduce) {
+    .breadcrumb a::after, .prose a::after { transition: none; }
+    details[open] > *:not(summary) { animation: none; }
+  }
+
+
+  /* nav: sliding selection indicator (transform-only) + current-page state */
+  .nav-link { position: relative; }
+  .nav-link:not(.nav-cta):not(.nav-drop-btn)::after {
+    content: ""; position: absolute; left: .6rem; right: .6rem; bottom: .32rem; height: 2px;
+    border-radius: 2px; background: var(--sk);
+    transform: scaleX(0); transform-origin: left center;
+    transition: transform .2s var(--zzz-decel);
+  }
+  .nav-link:hover::after, .nav-link[aria-current="page"]::after { transform: scaleX(1); }
+  .nav-link[aria-current="page"] { color: var(--text); }
+  /* chapter-card scientific motifs: tiny inline SVGs, no new assets */
+  .topic-card::after {
+    content: ""; position: absolute; top: 3.6rem; right: .8rem; width: 88px; height: 44px;
+    opacity: .15; pointer-events: none;
+    background: no-repeat center / contain var(--motif, none);
+  }
+  .topic-card[data-motif="circuit"] { --motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 44'%3E%3Cpath d='M2 22h20l6-12 8 24 8-24 8 24 6-12h28' fill='none' stroke='%23f6d36b' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E"); }
+  .topic-card[data-motif="field"] { --motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 44'%3E%3Ccircle cx='44' cy='22' r='3.4' fill='%23f8aebe'/%3E%3Cg stroke='%23f8aebe' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M52 22h30M36 22H6M50 12l22-9M38 32l-22 9M50 32l22 9M38 12l-22-9'/%3E%3C/g%3E%3C/svg%3E"); }
+  .topic-card[data-motif="coil"] { --motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 44'%3E%3Cpath d='M2 22c8-18 14-18 22 0s14 18 22 0 14-18 22 0 12 14 18 4' fill='none' stroke='%23d5b8d8' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E"); }
+  /* readout value tick: brief accent pulse when a control changes a value */
+  .val-tick { display: inline-block; animation: valPop .3s ease; }
+  @keyframes valPop { 0% { transform: scale(1); } 35% { transform: scale(1.07); color: var(--sk); } 100% { transform: scale(1); } }
+  /* flag-for-review pop */
+  .q-flag.on svg { animation: flagPop .3s cubic-bezier(.34, 1.4, .64, 1); }
+  @keyframes flagPop { from { transform: scale(.5); } to { transform: scale(1); } }
+  /* progress tag pop when a chapter state actually changes */
+  .tag.pop { animation: valPop .35s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-link:not(.nav-cta):not(.nav-drop-btn)::after { transition: none; }
+    .val-tick, .q-flag.on svg, .tag.pop { animation: none; }
   }
 
   @media (min-width: 640px) {

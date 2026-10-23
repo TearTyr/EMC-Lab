@@ -4,7 +4,7 @@
    sitemap are all derived from this object — never hand-copied.
    Adding a future subject = adding an entry here + its content files. */
 window.EMC_REGISTRY = {
-  "origin": "https://emc-physics.vercel.app",
+  "origin": "https://emc-lab.vercel.app",
   "subjects": [
     {
       "id": "electromagnetics",

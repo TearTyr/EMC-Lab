@@ -211,7 +211,7 @@
     }
   }
 
-  const stage = new EMC.Stage(canvas, render, { animate: true });
+  const stage = new EMC.Stage(canvas, render, { animate: true, intro: 480 });
 
   /* ---- I-V characteristic chart --------------------------------------- */
   const chartCanvas = document.getElementById('sim-ohm-chart');

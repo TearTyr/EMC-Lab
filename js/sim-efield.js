@@ -40,6 +40,8 @@
   };
 
   function loadPreset(name) {
+    // presets are configurations, not momentary actions: show which one is loaded
+    document.querySelectorAll('[data-ef-preset]').forEach(b => b.classList.toggle('active', b.dataset.efPreset === name));
     const p = PRESETS[name];
     if (!p) return;
     state.charges = p.map(c => ({ ...c }));
@@ -242,7 +244,7 @@
     }
   }
 
-  const stage = new EMC.Stage(canvas, render);
+  const stage = new EMC.Stage(canvas, render, { intro: 480 });
 
   /* ---- readouts -------------------------------------------------------- */
   const el = id => document.getElementById(id);

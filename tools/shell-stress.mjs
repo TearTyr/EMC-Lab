@@ -16,8 +16,14 @@ const read = p => readFileSync(join(ROOT, p), 'utf8');
 const names = ['current', 'efield', 'magind'];
 const sims = ['ohm', 'circuit', 'coulomb', 'efield', 'lorentz', 'induction'];
 const files = {};
-for (const n of names) files['topics/' + n + '.html'] = read('topics/' + n + '.html');
-for (const s of sims) files['js/sim-' + s + '.js'] = read('js/sim-' + s + '.js');
+/* Prod-shaped: the public build ships HASHED sim filenames and the raw names
+   404, so the shell must read script URLs from the topic's own script tags. */
+for (const n of names) {
+  let html = read('topics/' + n + '.html');
+  for (const s of sims) html = html.split('js/sim-' + s + '.js').join('js/sim-' + s + '.h1ash2.js');
+  files['topics/' + n + '.html'] = html;
+}
+for (const s of sims) files['js/sim-' + s + '.h1ash2.js'] = read('js/sim-' + s + '.js');
 const tick = ms => new Promise(r => setTimeout(r, ms));
 const chains = w => w.EMC.debugStages().filter(s => s.raf && s.running && s.animate).length;
 

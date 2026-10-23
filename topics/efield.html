@@ -129,7 +129,7 @@
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
             <a class="dd-link" href="current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · series &amp; parallel · builder</small></a>
-            <a class="dd-link" href="efield.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charges · fields · superposition · potential</small></a>
+            <a class="dd-link" href="efield.html" aria-current="page"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charges · fields · superposition · potential</small></a>
             <a class="dd-link" href="magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
@@ -158,8 +158,8 @@
   <circle cx="36" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/><circle cx="84" cy="66" r="5.5" fill="#f8aebe" opacity=".85"/>
   <path d="M63 78 l-9 13 h6 l-3 11 11-14 h-6 z" fill="#f6d36b" stroke="#3a3d45" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>
-      <span class="eyebrow eyebrow-amber" style="margin-top:.45rem">Topic 2 of 3</span>
-      <h1 class="h-topic" style="margin:.4rem 0 .35rem">Electric Fields &amp; Coulomb’s Law</h1>
+      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Topic 2 of 3</span>
+      <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Electric Fields &amp; Coulomb’s Law</h1>
       <p class="lede" data-detail="plain">A charge creates an electric field in the space around it. Another charge placed in that field experiences a force — the field is the mediator. The explorer below lets you see it and measure it.</p>
       <p class="lede" data-detail="tech">
         Charge is the source of everything electrical. Around it space acquires a <strong>field</strong> — a vector at every point — and other charges simply respond to the field where they stand. This chapter builds from the inverse-square force to superposition, field lines and the potential difference measured by a live line integral.
@@ -178,7 +178,7 @@
     </div>
 
 <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec" id="charge">2.1 · Positive and negative charge</h2>
+      <h2 class="h-sec reveal" id="charge">2.1 · Positive and negative charge</h2>
       <p>
         Matter contains two kinds of charge, named <strong>positive</strong> and
         <strong>negative</strong> by Benjamin Franklin. The rule that governs everything is
@@ -217,7 +217,7 @@
         </div>
       </details>
 
-      <h2 class="h-sec" id="coulomb">2.2 · Coulomb’s law</h2>
+      <h2 class="h-sec reveal" id="coulomb">2.2 · Coulomb’s law</h2>
       <p>
         In 1785 Charles-Augustin de Coulomb measured the force between small charged spheres
         with a torsion balance and found an inverse-square law that looks exactly like
@@ -275,7 +275,7 @@
       </p>
       <div class="formula"><span class="eq" data-display data-tex="\vec{F}_{\mathrm{net}} = \vec{F}_1 + \vec{F}_2 + \vec{F}_3 + \dots">F<sub>net</sub> = F<sub>1</sub> + F<sub>2</sub> + F<sub>3</sub> + …</span><span class="where">add as vectors (components), not as magnitudes</span></div>
 
-      <h2 class="h-sec" id="field">2.3 · The electric field and its direction</h2>
+      <h2 class="h-sec reveal" id="field">2.3 · The electric field and its direction</h2>
       <p>
         Rather than thinking of charges reaching across empty space, physics says each charge
         modifies the space around it, creating an <strong>electric field E</strong>. A second
@@ -297,7 +297,7 @@
         </p>
       </div>
 
-      <figure class="fig">
+      <figure class="fig reveal">
         <div class="fig-box">
           <svg viewBox="0 0 460 200" width="460" height="200" role="img"
                aria-label="Field arrows radiate outward from a positive charge and inward toward a negative charge">
@@ -384,7 +384,8 @@
         </div>
       </details>
 
-      <h2 class="h-sec" id="sim-coulomb-panel" style="scroll-margin-top:5rem">2.4 · Simulation — Coulomb’s law bench</h2>
+      <h2 class="h-sec reveal" id="sim-coulomb-panel" style="scroll-margin-top:5rem">2.4 · Simulation — Coulomb’s law bench</h2>
+      <p class="sim-hint tiny faint">Drag either charge on the canvas; the force arrows are the computed pair, not a script.</p>
       <p>
         Change either charge or drag them apart. The arrows show the force on each charge:
         notice that they are always equal and opposite, and that doubling the separation makes
@@ -393,11 +394,11 @@
     </section>
 
     <section class="section-tight wrap wrap-sim">
-      <div class="panel reveal">
-        <div class="panel-head">
-          <h3 class="panel-title"><span class="dot"></span> Coulomb’s law bench</h3>
-          <p class="panel-sub">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup> · drag the charges</p>
-          <div class="panel-actions">
+      <div class="panel reveal reveal">
+        <div class="panel reveal-head">
+          <h3 class="panel reveal-title"><span class="dot"></span> Coulomb’s law bench</h3>
+          <p class="panel reveal-sub">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup> · drag the charges</p>
+          <div class="panel reveal-actions">
             <button class="btn btn-sm" type="button" data-coul-preset="1,1,0.30">+1 µC / +1 µC</button>
             <button class="btn btn-sm" type="button" data-coul-preset="3,-2,0.30">Dipole</button>
             <button class="btn btn-sm" type="button" data-coul-preset="5,5,0.10">Strong repulsion</button>
@@ -416,7 +417,7 @@
               <span><i class="swatch" style="background:#f6d36b"></i> net field at the midpoint</span>
             </div>
           </div>
-          <div class="panel-body">
+          <div class="panel reveal-body">
             <div class="ctl-stack">
               <div class="ctl">
                 <span class="ctl-label"><span class="sym">q<sub>1</sub></span> first charge</span>
@@ -452,7 +453,8 @@
     </section>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec" id="sim-efield-panel" style="scroll-margin-top:5rem">2.5 · Simulation — electric field explorer</h2>
+      <h2 class="h-sec reveal" id="sim-efield-panel" style="scroll-margin-top:5rem">2.5 · Simulation — electric field explorer</h2>
+      <p class="sim-hint tiny faint">Drag on the canvas to place and move charges; field lines and potential update live.</p>
       <p>
         Build any charge configuration you like. The canvas traces real field lines by
         integrating <strong>a small step ds along Ê(P)</strong> from each positive charge, and can also show a
@@ -467,11 +469,11 @@
     </section>
 
     <section class="section-tight wrap wrap-sim">
-      <div class="panel reveal">
-        <div class="panel-head">
-          <h3 class="panel-title"><span class="dot" style="background:#f8aebe"></span> Electric field explorer</h3>
-          <p class="panel-sub">superposition of point-charge fields</p>
-          <div class="panel-actions">
+      <div class="panel reveal reveal">
+        <div class="panel reveal-head">
+          <h3 class="panel reveal-title"><span class="dot" style="background:#f8aebe"></span> Electric field explorer</h3>
+          <p class="panel reveal-sub">superposition of point-charge fields</p>
+          <div class="panel reveal-actions">
             <div class="seg" id="ef-brush" role="group" aria-label="Tool">
               <button class="seg-btn" type="button" data-value="move" aria-pressed="true">Move</button>
               <button class="seg-btn" type="button" data-value="add+" aria-pressed="false">+ charge</button>
@@ -492,7 +494,7 @@
               <span><i class="swatch" style="background:#f6d36b"></i> force on the +1 nC probe</span>
             </div>
           </div>
-          <div class="panel-body">
+          <div class="panel reveal-body">
             <div class="ctl-stack">
               <div>
                 <span class="ctl-label" style="margin-bottom:.35rem">Display mode</span>
@@ -540,7 +542,7 @@
     </section>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec" id="check">2.6 · Check your understanding</h2>
+      <h2 class="h-sec reveal" id="check">2.6 · Check your understanding</h2>
       <p>Think first, then click to reveal the answer.</p>
 
       <details class="check">

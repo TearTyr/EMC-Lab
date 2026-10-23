@@ -127,6 +127,12 @@
 
   function drawMagnet(ctx, G) {
     const x = G.magnetX, y = G.cy, L = G.magLen, T = G.magThick;
+    if (hoverMag && !dragging) {
+      ctx.save();
+      ctx.strokeStyle = '#a8d3e0'; ctx.lineWidth = 2;
+      ctx.strokeRect(x - L / 2 - 5, y - T - 5, L + 10, T * 2 + 10);
+      ctx.restore();
+    }
     ctx.save();
     // S half (left, pastel blue)
     roundRect(ctx, x - L / 2, y - T / 2, L / 2, T, 4);
@@ -224,10 +230,17 @@
   }
 
   /* ---- main render ----------------------------------------------------- */
-  let dragging = false, lastZ = 0;
+  let dragging = false, lastZ = 0, hoverMag = false;
   function render(ctx, w, h, stageRef, dt) {
     ctx.clearRect(0, 0, w, h);
     const G = geom(w, h);
+    /* entrance: the magnet slides in from the end of its travel; physics
+       (state.z) is untouched - this only places the drawn body */
+    const ip = stageRef.intro();
+    if (ip < 1) {
+      const from = G.coilX - G.pxPerM * Z_MAX - 60;
+      G.magnetX = from + (G.magnetX - from) * ip;
+    }
 
     /* --- advance the magnet ------------------------------------------------ The EMF peak is narrow (it sits at z = +/- a/2), so a single Euler step per animation frame can jump straight over it on a slow device. The motion is therefore integrated in sub-steps of at most 2 ms, which also keeps the position accurate when the browser clamps dt. */
     const subSteps = dt ? clamp(Math.ceil(dt / 0.002), 1, 40) : 1;
@@ -285,7 +298,7 @@
     if (chart) chart.draw();
   }
 
-  const stage = new EMC.Stage(canvas, render, { animate: true });
+  const stage = new EMC.Stage(canvas, render, { animate: true, intro: 480 });
 
   /* ---- strip chart: flux linkage and EMF vs time ----------------------- */
   const chartCanvas = document.getElementById('sim-induction-chart');
@@ -449,9 +462,13 @@
       }
     } else if (p.type === 'move' && dragging) {
       state.z = clamp((p.x - G.coilX) / G.pxPerM, -Z_MAX, Z_MAX);
+    } else if (p.type === 'move') {
+      const hov = Math.abs(p.x - G.magnetX) < G.magLen / 2 + 14 && Math.abs(p.y - G.cy) < G.magThick + 16;
+      if (hov !== hoverMag) { hoverMag = hov; canvas.classList.toggle('grab', hov); stageRef.invalidate(); }
     } else if (p.type === 'up' || p.type === 'leave' || p.type === 'cancel') {
       dragging = false;
       canvas.classList.remove('grabbing');
+      if (p.type === 'leave') { hoverMag = false; canvas.classList.remove('grab'); stageRef.invalidate(); }
     }
   });
 

@@ -45,3 +45,6 @@ core.*
 # --- local-only scratch probes (kept on disk, never committed) ---
 lh.tmp.mjs
 tools/perf-probe*.mjs
+
+# screenshot harness output (tools/screenshots.mjs)
+shots/

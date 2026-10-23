@@ -263,7 +263,7 @@
       { color: '#a7f3d0', size: 12, weight: '800', align: 'right' });
   }
 
-  const stage = new EMC.Stage(canvas, render, { animate: true });
+  const stage = new EMC.Stage(canvas, render, { animate: true, intro: 480 });
 
   /* prefers-reduced-motion parks the rAF loop, which also parks the drifting
      charge carriers. Any deliberate interaction with the bench - a topology

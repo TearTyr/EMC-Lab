@@ -15,6 +15,7 @@
   const topicSec = document.getElementById('shell-topic');
   const body = document.getElementById('shell-topic-body');
   if (!home || !topicSec || !body) return;      // standalone topic pages: no shell
+  if (location.protocol === 'file:') return;    // file:// cannot fetch: keep real links
 
   const CHAPTERS = REG.chapters.filter(c => c.path && c.path.indexOf('topics/') === 0);
   const byId = id => CHAPTERS.find(c => c.id === id) || null;
@@ -23,6 +24,7 @@
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
   const mainCache = new Map();     // chapter id -> <main> innerHTML
+  const srcCache = new Map();      // chapter id -> sim id -> script src (as shipped)
   const scriptCache = new Map();   // sim url -> source text (network: once)
   let active = 'home';             // 'home' | chapter id
   let pendingAnchor = null;        // e.g. sim-induction-panel from a deep link
@@ -72,6 +74,19 @@
     const main = doc ? doc.querySelector('main') : null;
     if (!main) throw new Error('no <main> in ' + ch.path);
     mainCache.set(ch.id, main.innerHTML);
+    /* The production build ships hashed asset names (js/sim-ohm.<hash>.js), so
+       never guess a sim script URL: read it from the topic's own script tags,
+       exactly like the standalone page does. */
+    const srcs = {};
+    (ch.sims || []).forEach(id => {
+      const tag = doc.querySelector('script[src*="' + id + '"]');
+      if (tag) {
+        let src = tag.getAttribute('src') || '';
+        src = src.replace(/^\.\.\//, '').replace(/^\.\//, '');
+        if (src) srcs[id] = src;
+      }
+    });
+    srcCache.set(ch.id, srcs);
     return main.innerHTML;
   }
 
@@ -79,9 +94,10 @@
      looks its canvas up at run time and defers init through EMC.whenNear, so
      a fresh execution binds exactly the currently mounted canvases. */
   async function runSimScripts(ch, token) {
+    const srcs = srcCache.get(ch.id) || {};
     for (const id of (ch.sims || [])) {
       if (token !== loadToken) return false;    // a newer switch owns the body
-      const url = 'js/' + id + '.js';
+      const url = srcs[id] || ('js/' + id + '.js');
       let txt = scriptCache.get(url);
       if (txt === undefined) {
         try {
@@ -127,6 +143,16 @@
       const html = await fetchMain(ch);
       if (token !== loadToken) return;          // a newer switch won the race
       body.innerHTML = html;
+      // mounted content keeps working like the standalone page: reveal-gated
+      // blocks get observed now, and bare relative chapter links (efield.html)
+      // are re-based into topics/ so they resolve (and same-page switch) here
+      if (EMC.UI && EMC.UI.initReveal) EMC.UI.initReveal();
+      body.querySelectorAll('a[href]').forEach(a => {
+        const h = a.getAttribute('href') || '';
+        if (/^(https?:|#|\/|mailto:)/.test(h)) return;
+        if (h.indexOf('../') === 0 || h.indexOf('topics/') === 0) return;
+        a.setAttribute('href', 'topics/' + h);
+      });
       if (EMC.katexify) { try { EMC.katexify(body); } catch (err) { /* typeset later */ } }
       const mine = await runSimScripts(ch, token);
       if (!mine) return;
