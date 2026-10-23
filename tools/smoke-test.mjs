@@ -1435,8 +1435,15 @@ console.log('\u2500'.repeat(66));
     /if \(EMC\.reducedMotion\) \{ flip\(\); return; \}/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
   ok('graded-feedback badges ship as flat word chips in both states',
     /\.fbadge-ok/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
-    /\.fbadge-no/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
-    !/\.mascot|\.mreact/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')));
+    /\.fbadge-no/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')));
+  /* The mascot is back as the site's personality anchor (client brief PART 7):
+     capped layout area, pointer-events none, idle float off under reduced
+     motion - the earlier no-mascot assertion encoded the previous brief's
+     scope lock and is superseded (justification: client directive change). */
+  ok('the mascot ships with layout caps and a reduced-motion off-switch',
+    /\.hero-mascot \{[^}]*max-height: 40vh/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
+    /@media \(prefers-reduced-motion: reduce\) \{ \.hero-mascot \{ animation: none; \}/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')) &&
+    /\.mascot \{[^}]*pointer-events: none/.test(readFileSync(join(ROOT, 'css/input.css'), 'utf8')));
 
   // ---- #14 no phantom important-variants of component classes -----------
   const builtAll = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
@@ -1595,7 +1602,63 @@ console.log('\u2500'.repeat(66));
       .test(builtCss));
 }
 
-/* ---------------- legacy lesson URLs redirect into ch2 (§3.3) ------------ */
+/* ---------------- the once-per-session intro (brief PART 6) --------------- */
+{
+  console.log('\n[intro]');
+  const src = readFileSync(join(ROOT, 'js/intro.js'), 'utf8');
+  const css = readFileSync(join(ROOT, 'css/input.css'), 'utf8');
+  ok('intro plays once per session under its own key, never the progress keys',
+    /emc\.intro\.v1/.test(src) && !/emc\.progress/.test(src));
+  ok('intro waits for the single loader completion event', /emc:loader-done/.test(src));
+  ok('intro skips chapter routes, replays and a failed boot',
+    /location\.hash/.test(src) && /sessionPlayed\(\)/.test(src) && /bootFatal/.test(src));
+  ok('intro overlay never locks the page (overlay pointer-events none, controls auto)',
+    /#introOverlay \{[^}]*pointer-events: none/.test(css) &&
+    /\.intro-skip \{[^}]*pointer-events: auto/.test(css) &&
+    /\.in-start \{[^}]*pointer-events: auto/.test(css));
+  ok('intro motion is transform/opacity keyframes only (flat-art rules hold)',
+    !/gradient|backdrop-filter|shadowBlur|blur\(/.test(
+      css.slice(css.indexOf('#introOverlay {')).replace(/\/\*[\s\S]*?\*\//g, '')));
+  const idx = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
+    /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
+    /class="btn btn-primary in-start" href="topics\/current\.html"/.test(idx));
+  ok('no other page ships the intro markup',
+    ['quiz.html', 'topics/fields.html', 'topics/current.html', 'topics/magind.html']
+      .every(f => !/id="introOverlay"/.test(readFileSync(join(ROOT, f), 'utf8'))));
+
+  const run1 = await loadPage('index.html');
+  await frames(run1.win, 4);
+  ok('a fresh session plays the intro after boot',
+    run1.doc.getElementById('introOverlay') !== null &&
+    run1.doc.getElementById('introOverlay').classList.contains('play'));
+  await new Promise(r => setTimeout(r, 5600));
+  const st1 = run1.win.EMC_INTRO.state();
+  ok('the intro removes itself and leaves zero timers/listeners',
+    run1.doc.getElementById('introOverlay') === null && st1.timers === 0 && st1.listeners === 0 &&
+    run1.win.sessionStorage.getItem('emc.intro.v1') === '1', JSON.stringify(st1));
+  run1.win.close();
+
+  const run2 = await loadPage('index.html', {}, { session: { 'emc.intro.v1': '1' } });
+  await frames(run2.win, 2);
+  ok('a replayed session never sees the intro', run2.doc.getElementById('introOverlay') === null);
+  run2.win.close();
+
+  const run3 = await loadPage('index.html?#/ch2');   // hash rides the query slot: loadPage builds the jsdom URL from it
+  await frames(run3.win, 2);
+  ok('chapter deep links skip the intro', run3.doc.getElementById('introOverlay') === null);
+  run3.win.close();
+
+  const run4 = await loadPage('index.html', {}, { reduceMotion: true });
+  await frames(run4.win, 2);
+  const rmOn = run4.doc.getElementById('introOverlay');
+  ok('reduced motion gets the static composition', rmOn !== null && rmOn.classList.contains('rm'));
+  await new Promise(r => setTimeout(r, 1900));
+  ok('the reduced-motion intro clears quickly', run4.doc.getElementById('introOverlay') === null);
+  run4.win.close();
+}
+
+/* ---------------- legacy lesson URLs redirect into ch2 (§3.3) ------------ *//* ---------------- legacy lesson URLs redirect into ch2 (§3.3) ------------ */
 {
   console.log('\n[legacy URL stubs]');
   for (const [stub, key] of [['topics/charge.html', 'charge'], ['topics/coulomb.html', 'coulomb'], ['topics/field.html', 'field']]) {

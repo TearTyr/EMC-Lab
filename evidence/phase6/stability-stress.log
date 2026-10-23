@@ -1,0 +1,37 @@
+ok   A nav dropdown -> #/ch1 mounts in sync — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","blocking":null,"overlay":false}
+ok   A nav dropdown -> #/ch2 mounts in sync — {"hash":"#/ch2","h1":"Electric Fields & Coulomb’","blocking":null,"overlay":false}
+ok   A nav dropdown -> #/ch3 mounts in sync — {"hash":"#/ch3","h1":"Magnetism & Induction","blocking":null,"overlay":false}
+ok   A nav dropdown -> #/ch1 mounts in sync — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","blocking":null,"overlay":false}
+ok   A nav card -> #/ch1 mounts in sync — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","blocking":null,"overlay":false}
+ok   A nav card -> #/ch3 mounts in sync — {"hash":"#/ch3","h1":"Magnetism & Induction","blocking":null,"overlay":false}
+ok   A nav card -> #/ch2 mounts in sync — {"hash":"#/ch2","h1":"Electric Fields & Coulomb’","blocking":null,"overlay":false}
+ok   A nav card -> #/ch1 mounts in sync — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","blocking":null,"overlay":false}
+ok   A Details OFF persists while mounted in ch1 — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","homeVisible":false,"stages":0,"listeners":0,"
+ok   A nav hash -> #/ch2 mounts in sync — {"hash":"#/ch2","h1":"Electric Fields & Coulomb’","blocking":null,"overlay":false}
+ok   A chapter mounted while OFF shows plain variants immediately — {"techVisible":0,"plainVisible":7}
+ok   A toggling ON after mount reveals the tech variants — {"techVisible":7}
+ok   A nav hash -> #/ch3 mounts in sync — {"hash":"#/ch3","h1":"Magnetism & Induction","blocking":null,"overlay":false}
+ok   A leaving ch2 after sim use tears its stages down (by identity) — live stages now: sim-lorentz,sim-induction,sim-induction-chart
+ok   A nav hash -> #/ch1 mounts in sync — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","blocking":null,"overlay":false}
+ok   A leaving ch3 after sim use tears its stages down (by identity) — live stages now: sim-ohm,sim-ohm-chart
+ok   A rapid switching settles on the last destination, usable — {"hash":"#/ch1","h1":"Circuits & Ohm’s Law","homeVisible":false,"stages":0,"listeners":0,"blocking":null,"overlayUp":fal
+ok   A Back restores the previous chapter — {"hash":"#/ch2","h1":"Electric Fields & Coulom"}
+ok   A Forward returns — #/ch1
+ok   A direct hash URL mounts ch3 — #/ch3
+ok   A refresh on a chapter route remounts correctly — {"hash":"#/ch3","h1":"Magnetism & Induction","homeVisible":false,"stages":3,"listeners":57,"blocking
+ok   A new-tab link opens the standalone chapter, fully alive — {"h1":"Electric Fields & Coulomb’s Law","emc":true}
+ok   A mobile menu navigates to ch3 — {"hash":"#/ch3","h1":"Magnetism & Induction","homeVisible":false,"stages":3,"listeners":57,"blocking
+ok   A in-page pager link moves to the next chapter — #/ch2
+ok   B ten rapid toggles keep attr/aria/label in lockstep 
+ok   B keyboard Enter toggles and agrees — {"hash":"","h1":"","homeVisible":true,"stages":0,"listeners":0,"blocking":null,"
+ok   B reload keeps OFF (persisted) — off
+ok   B reload keeps ON — on
+ok   B back/forward keep Details state and page usable — on
+ok   B blocked storage: page boots, toggle still flips — {"detail":"off","emc":true}
+ok   C /index.html: every plain/tech pair shares font-size + line-height — 1 pairs
+ok   C /topics/fields.html: every plain/tech pair shares font-size + line-height — 7 pairs
+ok   C /topics/current.html: every plain/tech pair shares font-size + line-height — 5 pairs
+ok   C /topics/magind.html: every plain/tech pair shares font-size + line-height — 3 pairs
+ok   C /quiz.html: every plain/tech pair shares font-size + line-height — 1 pairs
+console/page errors: none
+STABILITY STRESS PASS

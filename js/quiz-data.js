@@ -182,13 +182,13 @@ window.EMC_QUIZ = [
   },
   {
     id: 16, topic: 'ch2', label: "Electric field", level: 'full',
-    q: "A charge q₀ = +18×10<sup>−8</sup> C sits in a uniform field E = 2.0×10<sup>3</sup> N/C (lecture example). The force on it is:",
-    options: ["9.0×10<sup>−11</sup> N",
-              "3.6×10<sup>−4</sup> N, along E",
-              "3.6×10<sup>−4</sup> N, opposite E",
-              "3.6×10<sup>−11</sup> N"],
+    q: "A charge q₀ = +18×10<sup>−8</sup> C sits in the lecture’s uniform spot field E = 2.0 N/C. The force on it is:",
+    options: ["9.0×10<sup>−8</sup> N",
+              "3.6×10<sup>−7</sup> N, along E",
+              "3.6×10<sup>−7</sup> N, opposite E",
+              "3.6×10<sup>−8</sup> N"],
     answer: 1,
-    explain: "F = |q₀|E = (18×10⁻⁸)(2.0×10³) = <b>3.6×10⁻⁴ N</b>, and a POSITIVE charge is pushed <b>along</b> E. (Swap in q₀ = −24×10⁻⁸ C and you get 4.8×10⁻⁴ N opposite E — the lecture’s part b.)",
+    explain: "F = |q₀|E = (18×10⁻⁸)(2.0) = <b>3.6×10⁻⁷ N</b>, and a POSITIVE charge is pushed <b>along</b> E. (Swap in q₀ = −24×10⁻⁸ C and you get 4.8×10⁻⁷ N opposite E — the lecture’s part (b), and the corrected value of the slide’s 4.7×10⁻⁷ N.)",
     hint: "Multiply |q₀| by E; the sign of q₀ only picks the direction. (9.0×10⁻¹¹ is the division slip.)"
   },
 

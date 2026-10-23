@@ -55,6 +55,7 @@ async function page(opts = {}) {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
   return { ctx, pg };
 }
 

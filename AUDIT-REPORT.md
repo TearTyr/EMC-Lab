@@ -31,7 +31,8 @@ Buttons/sliders only; battery/bulb could not be disconnected, resistors not move
 
 - **Loader (BOOT-02/03):** always-on splash, 400ms minimum, rotating tips + mascot, 4.2s/4s failsafes, no error state → replaced by one event-driven lifecycle (§3 below).
 - **Detail Mode (DETAIL-01/02):** toggle dead (BOOT-01 downstream); `role=switch`→`aria-pressed` + announced; parity violations (current 10 tech/6 plain, magind 4/1) → 8 genuine plain variants written + JS readouts paired (`*-plain` siblings) + permanent parity gate (`tools/check-detail-parity.mjs`, 24 pairs balanced).
-- **Data (DATA-01/02/03):** engine computed k=8.987551787e9 while every printed example showed 8.99e9 arithmetic → `CONST.K = 8.99e9` everywhere, stated; arena lecture presets and fieldpaint replica used wrong geometries → rebuilt to the lecture's (0.20+0.15 m line; 0.15 m@73°+0.10 m 2-D; r=0.700 m/31.0° field) with worked examples and 3 quiz questions rewritten.
+- **Data (DATA-01/02/03/04):** engine computed k=8.987551787e9 while every printed example showed 8.99e9 arithmetic → `CONST.K = 8.99e9` everywhere, stated; arena lecture presets and fieldpaint replica used wrong geometries → rebuilt to the lecture's (0.20+0.15 m line; 0.15 m@73°+0.10 m 2-D; r=0.700 m/31.0° field) with worked examples and 3 quiz questions rewritten.
+DATA-04 (post-audit, PDF-verified): slide-21 example rescaled ×10³ → aligned to the lecture's E = 2.0 N/C with the corrected 4.8×10⁻⁷ N and an explicit on-page correction note.
 - **Network (NET-01):** production-only injection of `cdn.vercel-insights.com` + `cdn.jsdelivr.net` → removed from all 3 carriers; static + runtime same-origin gates added (`tools/check-scope.mjs`). Live re-verification requires a deploy → **not verified live**.
 - **Navigation (NAV-01/02):** shell routing dead (BOOT-01) → 31-check matrix green; chapter links full-navigated on engines without native View Transitions (listener-order race) and Chromium logged uncatchable `InvalidStateError` on traversal-aborted view transitions → single `.vt-leaving` transition implementation + shell intercepts in capture phase.
 - **Quiz (QUIZ-01/02):** no stale-bank detection (numeric id collisions would silently mis-resume) → session v3 + fingerprint + explicit clear-and-announce; floating timer covered 3 answer options at 360px → docked opaque bottom bar with reserved padding; `n` shortcut answered the wrong card (IO threshold-only retargeting + mid-scroll overwrite) → explicit retarget with a 900ms jump lock.
@@ -59,6 +60,24 @@ One key (`emc.prefs.v1`) and one attribute (`html[data-detail]`, applied pre-pai
 - **Lecture errors corrected:** (1) site uses 4.8×10⁻⁴ N arithmetic for the slide-21 example (the 4.7 typo appears nowhere); (2) "centripetal" used throughout (no "centrifugal" in active content); (3) k = 8.99×10⁹ computed AND printed everywhere, value stated in index footnote/README/quiz-data header.
 - **Chapter 3 note:** Magnetism & Induction appears in **neither source document**; it ships under the prompt's project-approved scope (Lorentz, magnetic motion, flux, Faraday, Lenz, induction) with nothing added beyond it.
 - **Production-vs-source finding:** production is a faithful minified+hashed build of `main` (bare source paths 404 there by design); the disagreement was semantic (commit `01675dd` rescoped the site around the lecture alone and demoted the brief's own circuits material to "Extra").
+
+### 5.1 Post-audit: the real lecture PDF arrived (2026-10-23) and was verified slide-by-slide
+
+`docs/spec/PHYSICS2 LEC01 Electrostatic.pdf` (24 slides) was supplied after the audit closed and
+committed to `docs/spec/`; figure slides 16–18, 21–23 were rendered to `docs/spec/slides/` and read
+as images. Verification log: end of `docs/spec/brief-digest.md`. Result: **every digest value and
+both "known lecture errors" confirmed on-slide** (k = 8.99×10⁹ verbatim on slide 15; the collinear
+figure on slide 17 matches the rebuilt preset geometry and arrow directions exactly; slide 18 shows
+the 2-D layout with q₂ 73° above +x and the printed F=23, 24°; slides 22–23 show 0.700 m / 31.0°,
+E₁ = 73.388×10³, Eₓ = 0, E = 75.595×10³ along +y; slide 19 carries the "centrifugal force" note;
+slide 21's handwriting shows the 4.7×10⁻⁷ N slip).
+One site deviation found and fixed as **DATA-04**: the slide-21 worked example and its quiz question
+had quoted a ×10³-rescaled field (E = 2.0×10³ N/C → 10⁻⁴ N results); both now use the lecture's own
+E = 2.0 N/C → (a) 3.6×10⁻⁷ N along E, (b) 4.8×10⁻⁷ N opposite E, with an on-page correction note.
+The course-brief PDF is still outstanding; R-rows remain digest-sourced (documented in `docs/spec/README.md`).
+Re-verified after the change: smoke 536/536, check 0, interact PASS, quiz-verify 18/18,
+lecture-values 19/19, a11y 17/17, nav 31/31, loader 16/16 (×3 runs), matrix PASS ×3 engines
+(`evidence/phase6/`).
 
 ## 6. Design & motion changes
 
@@ -109,6 +128,29 @@ Environments that could not run: production deploy (no credentials) — anything
 4. Quiz CLS 0.046 (≤0.1 ✓) comes from the results-area entrance; could be flattened with reserved chart heights if desired.
 5. Brand-mark/favicon artwork is the old character logo (kept deliberately — replacing favicons is an identity task outside the audit's fix scope; the *mascot features* are removed).
 6. Blocked-attempt log: 3 environment workarounds (playwright install-deps hang → manual apt; first apt timeout → warm-cache resume; /tmp clone → moved under /home/user). No fix required >3 attempts; the `lastJump` scope leak was caught and fixed on its second iteration.
+
+## 9A. Second-brief addendum (stabilization, intro, cute polish)
+
+A follow-up brief requested reproduction of reported chapter-navigation / Details /
+link regressions, a YTPMV-inspired opening, and mascot-led cute polish.
+- **Reproduction first:** `tools/stability-stress.mjs` executes the required browser
+  sequences verbatim (35 checks). On this branch they PASS — the reported symptoms
+  trace to BOOT-01/NAV-01/NAV-02/DETAIL-01, fixed and re-verified earlier; recorded as
+  NAV-03/DET-03/LINK-01 *Not reproducible* with the harness kept as a permanent monitor.
+  Typography parity (PART 4.5) measured: every plain/tech pair shares font-size and
+  line-height (`.lede` = 1.04rem/1.8 ≈ 16.6px, with a `.lede.small` guard rail).
+- **Intro:** see BUG_AUDIT INTRO-01 for the full contract and verification
+  (intro-verify 10/10, a11y A0 5/5, smoke +14, frames in `evidence/phase6/intro-frames/`).
+  Reference-video honesty: metadata inspected via YouTube oEmbed and the watch page
+  ("The Larping Tombstone — Larping the Rooms [Green Version]"); the FOOTAGE itself was
+  not inspectable (bot-gate; no frame/audio access), so the composition follows the
+  written design direction using only site-local assets — no copyrighted footage/audio.
+- **Mascot:** restored as the identity anchor (BUG_AUDIT MASCOT-01); no mascot image was
+  attached to the brief (`uploads/` held only the lecture PDF), so the project's own
+  Denki-chan artwork is the source.
+- **Regression after the additions:** every tool green again (`evidence/phase6/`),
+  including perf:guard home chains = 0 (the intro adds no JS animation loop) and the
+  three-engine browser matrix.
 
 ## 10. Deployment status
 

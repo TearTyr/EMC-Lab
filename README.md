@@ -102,6 +102,16 @@ evidence/             browser-verified audit evidence (screenshots, logs, sweeps
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
+- **Once-per-session intro.** The homepage opens with a short (~4.6 s) original
+  YTPMV-flavoured composition — mascot pop, title slams, montage cuts, chapter
+  chips, a cheering mascot and a Start-Learning slam — that wipes into the
+  already-rendered homepage. It is skippable (visible button, any key or click),
+  plays once per session under its own storage key, never appears on chapter
+  routes or replays, uses CSS keyframes only (transform/opacity), and reduces to
+  a static card under `prefers-reduced-motion`. `npm run intro-verify` proves the
+  whole contract. Denki-chan, the site mascot, anchors the hero (capped layout
+  area, `pointer-events: none`, gentle float) and reacts once to meaningful
+  moments (quiz pass, chapter completion) beside word-based state text.
 - **Loader contract.** Page content renders immediately; a segmented accent bar appears
   only if startup exceeds ~150 ms, tracks real stages (fonts, above-fold equations,
   critical UI), exits in ~240 ms, and is capped by a 1500 ms watchdog. A failed critical
@@ -181,7 +191,9 @@ npm run check          # links + ids + data hooks, Detail-Mode parity, scope & n
 npm run test           # jsdom smoke test (526 assertions: physics, quiz, loader, a11y, migration)
 npm run test:interact  # real Chromium drives every sim (mouse/touch/keyboard, rude cases)
 npm run test:shell     # shell stress: rapid route switching, teardown, reduced motion
-npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 15 checks
+npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 16 checks
+npm run intro-verify   # the once-per-session intro contract (PART 6.4), 10 checks
+npm run stability-stress # the reported-bug reproduction matrix (nav/Details/typography), 35 checks
 npm run perf           # transfer/DOM/font budgets per page
 npm run perf:guard     # animation-chain budgets, CLS, anchor clearance
 npm run shots          # screenshots of every page + sim panel

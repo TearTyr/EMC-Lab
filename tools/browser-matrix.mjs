@@ -58,6 +58,7 @@ for (const eng of ENGINES) {
   const errors = [];
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const pg = await ctx.newPage();
+  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
   pg.on('pageerror', e => errors.push(String(e).slice(0, 120)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 120)); });
   const ok = (name, cond, extra = '') => {

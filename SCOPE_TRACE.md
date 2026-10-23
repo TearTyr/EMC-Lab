@@ -26,12 +26,12 @@ Source of truth note: the two spec PDFs were **not provided** in this workspace;
 |---|---|---|---|
 | Charge signs, e = 1.602×10⁻¹⁹ C, quantization, conservation, conductors/insulators, like repel | 1 C = 6.24×10¹⁸ electrons | `topics/fields.html` §2.1 + `toy-balloon`/`toy-ledger` counters; quiz Q9 | OK in jsdom (smoke); browser recheck Phase 5 |
 | Coulomb's law F = k\|q₁\|\|q₂\|/r² | ±1.0 C @ 1.0 km → 8990 N attractive | `sim-arena` + `topics/fields.html` §2.2 worked example 1; quiz Q11 | OK — DATA-01 fixed (k=8.99e9); verify-checks reproduces 8990 N |
-| Superposition collinear (−4/+3/−7 µC; 0.20/0.15 m) | F₁₂≈2.70 N (−x), F₁₃≈8.39 N (+x), net ≈5.69 N +x | `sim-arena` `lecture-line` preset + §2.2 worked example 2; quiz Q12 | OK — DATA-02 fixed; smoke asserts 8.39 − 2.70 N from the live engine |
-| Superposition 2D (+4/−6/−5 µC; 0.15 m @73°, 0.10 m) | ≈22.7 N (23 N) at ≈24° above +x | `sim-arena` `lecture-2d` preset + §2.2 worked example 3; quiz Q13 | OK — DATA-02 fixed; smoke asserts ≈22.7 N |
+| Superposition collinear (−4/+3/−7 µC; 0.20/0.15 m) | F₁₂≈2.70 N (−x), F₁₃≈8.39 N (+x), net ≈5.69 N +x | `sim-arena` `lecture-line` preset + §2.2 worked example 2; quiz Q12 | OK — DATA-02 fixed; smoke asserts 8.39 − 2.70 N from the live engine; **figure verified against PDF slide 17** (identical geometry and arrow directions) |
+| Superposition 2D (+4/−6/−5 µC; 0.15 m @73°, 0.10 m) | ≈22.7 N (23 N) at ≈24° above +x | `sim-arena` `lecture-2d` preset + §2.2 worked example 3; quiz Q13 | OK — DATA-02 fixed; smoke asserts ≈22.7 N; **figure verified against PDF slide 18** (incl. the 73°-above-+x orientation and F=23, 24°) |
 | Bohr hydrogen (r = 5.29×10⁻¹¹ m) | F ≈ 8.245×10⁻⁸ N, v ≈ 2.188×10⁶ m/s | `toy-bohr` + §2.2; quiz Q14 | OK — smoke asserts v = 2.19×10⁶ m/s at r = 5.29×10⁻¹¹ m |
 | E = F/\|q₀\|, direction rule, N/C, field lines | F = \|q₀\|E | `topics/fields.html` §2.3 + `sim-fieldpaint` | OK in jsdom; browser recheck Phase 5 |
-| Two-charge field (±4.00 µC, 0.700 m, 31.0°) | E₁=E₂≈73,388 N/C; net 75,595 N/C +y; E_x=0 | `sim-fieldpaint` `lecture-y` preset + §2.3 worked example 2; quiz Q16 | OK — DATA-03 fixed; smoke asserts 75,595 N/C |
-| Lecture error #1: slide 21(b) 4.8×10⁻⁷ N (not 4.7) | site must use 4.8×10⁻⁷ | `topics/fields.html` §2.3 worked example 1 prints 4.8×10⁻⁴ N for the −24×10⁻⁸ C case (E = 2.0×10³ N/C) | OK — corrected value used; no 4.7 anywhere (out-of-scope scan) |
+| Two-charge field (±4.00 µC, 0.700 m, 31.0°) | E₁=E₂≈73,388 N/C; net 75,595 N/C +y; E_x=0 | `sim-fieldpaint` `lecture-y` preset + §2.3 worked example 2; quiz Q16 | OK — DATA-03 fixed; smoke asserts 75,595 N/C; **verified against PDF slides 22–23** (0.700 m, 31.0°, E₁ = 73.388×10³, Eₓ = 0, E = 75.595×10³ +y) |
+| Lecture error #1: slide 21(b) 4.8×10⁻⁷ N (not 4.7) | site must use 4.8×10⁻⁷ | `topics/fields.html` §2.3 worked example 1 now prints the lecture's own numbers — E = 2.0 N/C, (a) 3.6×10⁻⁷ N along E, (b) **4.8×10⁻⁷ N** opposite E — with an on-page note correcting the slide's 4.7×10⁻⁷ slip (DATA-04); verified against slide-21 figure | OK — PDF-verified |
 | Lecture error #2: "centrifugal" → centripetal | site must say centripetal | grep: no "centrifugal" in active content; `toy-bohr`/§2.2 say centripetal | OK |
 | Lecture error #3: k = 8.99×10⁹ everywhere, stated | k printed & computed as 8.99×10⁹ | `CONST.K = 8.99e9`; value stated in index footnote, README, quiz-data header | OK — DATA-01 fixed |
 
@@ -50,8 +50,9 @@ Source of truth note: the two spec PDFs were **not provided** in this workspace;
 
 | Feature | Location | Verdict |
 |---|---|---|
-| Mascot "Denki-chan" (hero, boot overlay, topic-complete cheer, `initMascotPause`) | — | **REMOVED** (commit 2d53e15): hero/quiz/resume/figure mascots, cheer art, initMascotPause, CSS; graded feedback uses word badges; brand-mark logo stays until any future identity work |
+| Mascot "Denki-chan" | `index.html` hero, intro, quiz score cheer, chapter-complete button, brand mark | **KEPT as identity anchor** per the current client brief (PART 7.4), reversing the earlier scope lock (MASCOT-01): capped predictable layout area, pointer-events none, reduced-motion off-switch, word-based state text retained alongside cheer art |
 | Rotating boot tips (`TIPS`, `startTips`) | — | **REMOVED** (loader rework 29aa96a); asserted absent by smoke |
+| YTPMV-inspired intro (new brief PART 6) | `js/intro.js` + `#introOverlay` (index only) | **OK** — INTRO-01: once-per-session, skippable, reduced-motion static variant, never gates content or navigation; `intro-verify` 10/10 |
 | Hero pointer-parallax drift (`initHeroDrift`) | — | **REMOVED** (commit 2d53e15) |
 | In-header boot chip strip (`#bootStrip`, `initBootStrip`) | — | **REMOVED** (loader rework 29aa96a) |
 | Dead general-physics constants in `CONST` | — | **REMOVED** (hygiene bb9728a); scope scan enforces (`npm run check`) |

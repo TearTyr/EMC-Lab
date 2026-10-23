@@ -45,6 +45,7 @@ async function page(opts = {}) {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
   return { ctx, pg };
 }
 const focusVisible = pg => pg.evaluate(() => {
@@ -57,6 +58,31 @@ const focusVisible = pg => pg.evaluate(() => {
     matchesFV: a.matches(':focus-visible')
   };
 });
+
+/* =============== intro accessibility (PART 6/8.2) ========================= */
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
+  await pg.goto(B + '/index.html', { waitUntil: 'load' });
+  await pg.waitForTimeout(900);
+  const up = await pg.evaluate(() => !!document.getElementById('introOverlay'));
+  ok('A0 intro plays on a fresh session', up === true);
+  if (up) {
+    await pg.keyboard.press('Tab');
+    const first = await pg.evaluate(() => ({ id: document.activeElement.id, outline: getComputedStyle(document.activeElement).outlineStyle !== 'none' }));
+    ok('A0 the skip control is the first tab stop with a visible ring', first.id === 'introSkip' && first.outline, JSON.stringify(first));
+    const pe = await pg.evaluate(() => getComputedStyle(document.getElementById('introOverlay')).pointerEvents);
+    ok('A0 the playing intro never locks page controls (pointer-events none)', pe === 'none', pe);
+    await pg.keyboard.press('Enter');
+    await pg.waitForTimeout(400);
+    ok('A0 Enter on skip dismisses the intro', (await pg.evaluate(() => !!document.getElementById('introOverlay'))) === false);
+    await pg.keyboard.press('Tab');
+    const after = await pg.evaluate(() => document.activeElement.className.toString().slice(0, 20));
+    ok('A0 after the intro the skip-link is the first tab stop again', /skip-link/.test(after), after);
+  }
+  await ctx.close();
+}
 
 /* =============== keyboard-only core flow (gate A) ========================= */
 {

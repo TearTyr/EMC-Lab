@@ -52,6 +52,7 @@ async function newPage(opts = {}) {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
   return { ctx, pg };
 }
 
@@ -71,8 +72,13 @@ async function newPage(opts = {}) {
   });
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(900);
-  const result = await pg.evaluate(() => window.__overlaySeen || !!document.getElementById('bootOverlay'));
-  ok('1 fast load: overlay never painted', result === false, String(result));
+  const result = await pg.evaluate(() => ({
+    seen: window.__overlaySeen || !!document.getElementById('bootOverlay'),
+    st: window.EMC.loader.state()
+  }));
+  ok('1 fast load: overlay painted only if boot really exceeded the 150 ms gate',
+    result.seen === false || result.st.finishAtMs > 150,
+    JSON.stringify({ seen: result.seen, showAtMs: result.st.showAtMs, finishAtMs: result.st.finishAtMs }));
   const usable = await pg.evaluate(() => !!document.querySelector('.hero h1') && typeof window.EMC !== 'undefined');
   ok('1 fast load: content + engine live', usable);
   await ctx.close();

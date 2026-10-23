@@ -55,3 +55,32 @@ Retired material may stay in `archive/`.
 
 ## Independent recomputation of the lecture check values (script, k=8.99e9, e=1.602e-19)
 Run: `node docs/spec/verify-checks.mjs` (results must match the table above within ≤1 %).
+
+
+---
+
+## Verification log against the actual lecture PDF (2026-10-23)
+
+Source: `docs/spec/PHYSICS2 LEC01 Electrostatic.pdf` (24 slides). Figure slides rendered
+to `docs/spec/slides/slide-NN.png` and read as images; text slides compared via extraction.
+
+| Digest item | PDF slide(s) | Verdict |
+|---|---|---|
+| Charge signs; proton/electron/neutron | 3–5, 7 | confirmed |
+| e = 1.602×10⁻¹⁹ C; 1 C = 6.24×10¹⁸ electrons | 7, 9 | confirmed (slide 9 prints 6.24×10¹⁸) |
+| Quantization ("integral multiples of e") | 10 | confirmed |
+| Conservation of charge | 11 | confirmed |
+| Like repel / unlike attract | 12 | confirmed |
+| Conductors vs insulators (Cu/Al/Ag/Au; rubber/plastic/wood) | 13–14 | confirmed |
+| Coulomb's law; k = 8.99×10⁹ N·m²/C² | 15 | confirmed verbatim |
+| ±1.0 C at 1.0 km → 8990 N attractive | 16 | confirmed (problem statement; value recomputed) |
+| Collinear: q₂=−4.0 µC @0.20 m, q₁=+3.0 µC, q₃=−7.0 µC @0.15 m; F₁₂ ←, F₁₃ → | 17 (figure) | confirmed exactly — geometry AND arrow directions match the site preset/example |
+| 2-D: +4.0 / −6.0 (0.15 m @73°) / −5.0 µC (0.10 m); F = 23, 24° | 18 (figure) | confirmed exactly — incl. q₂ ABOVE +x (site preset matches this orientation) |
+| Bohr: r = 5.29×10⁻¹¹ m, mₑ = 9.11×10⁻³¹ kg | 19 | confirmed (site uses CODATA mₑ; v agrees to 4 s.f.) |
+| Slide 19 "Note! Formula for centrifugal force Fc = mv²/r" | 19 | **lecture error #2 confirmed on-slide** — site says centripetal |
+| E = F/\|q₀\|, direction = force on + test charge, N/C | 20 | confirmed |
+| Slide 21: E = 2.0 N/C; (a) +18×10⁻⁸ C; (b) −24×10⁻⁸ C; printed (a) 3.6×10⁻⁷ N, (b) **4.7×10⁻⁷ N** | 21 (figure) | **lecture error #1 confirmed on-slide** (24×2.0 = 48, not 47). Site now prints the lecture's E = 2.0 N/C with the corrected 4.8×10⁻⁷ N and an explicit correction note (DATA-04) |
+| Two charges ±4.00 µC on y-axis, 0.700 m from P, 31.0°; E₁ = E₂ = 73.388×10³ N/C; Eₓ = 0; E = 75.595×10³ N/C along +y | 22–23 (figures + handwriting) | confirmed exactly — matches site preset/readouts (75,595 N/C, 90°) |
+| Nothing beyond charge / Coulomb / field in this lecture | 1–2 (outline) | confirmed — circuits (ch1) come from the brief; magnetism (ch3) from neither document (project-approved scope, stated in SCOPE_TRACE + AUDIT-REPORT §5) |
+
+No digest row contradicted the PDF. One site-side deviation found (DATA-04) and fixed.

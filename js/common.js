@@ -699,7 +699,7 @@ window.EMC = (function () {
       sr.textContent = 'Loading EMC Lab: ' + stages.map(s => STAGE_LABEL[s] || s).join(', ');
       el.appendChild(bar); el.appendChild(sr);
       document.body.appendChild(el);
-      overlay = el; srStatus = sr; painted = true;
+      overlay = el; srStatus = sr; painted = true; showAtMs = now();
       document.documentElement.setAttribute('aria-busy', 'true');
       paint();
     }
@@ -739,10 +739,15 @@ window.EMC = (function () {
       return missing;
     }
 
+    let showAtMs = 0, finishAtMs = 0;
     function finish(reason) {
       if (finished) return;
       finished = true;
+      finishAtMs = now();
       clearTimers();
+      /* single owner, single completion signal: the intro (and anything else
+         that must wait for a usable page) listens for this one event. */
+      try { document.dispatchEvent(new CustomEvent('emc:loader-done', { detail: reason })); } catch (e) {}
       const missing = criticalMissing();
       if (missing.length && document.body) failCard(missing.join(', and ') + '.');
       document.documentElement.removeAttribute('aria-busy');
@@ -780,7 +785,16 @@ window.EMC = (function () {
     return {
       start, signal, finish, expire,
       /* introspection for the gates and tests */
-      state() { return { started, painted, finished, stages: stages.slice(), done: Object.keys(done), timers: [showTimer, watchdogTimer, exitTimer].filter(Boolean).length }; }
+      state() {
+        return {
+          started, painted, finished, stages: stages.slice(), done: Object.keys(done),
+          timers: [showTimer, watchdogTimer, exitTimer].filter(Boolean).length,
+          /* ms since this script evaluated (≈ navigation start for a defer
+             script) — lets the gate harness assert the §3.1 contract exactly:
+             the overlay may paint only if boot had not finished by ~150 ms */
+          showAtMs, finishAtMs
+        };
+      }
     };
   })();
 
@@ -1135,7 +1149,7 @@ window.EMC = (function () {
           const done = Progress.isTopicDone(id);
           btn.classList.toggle('btn-primary', !done);
           btn.innerHTML = done
-            ? 'Chapter completed \u2713'
+            ? '<svg class="mascot-cheer" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg> Chapter completed \u2713'
             : 'Mark chapter as complete';
           btn.setAttribute('aria-pressed', String(done));
         };

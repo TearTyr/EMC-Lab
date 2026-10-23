@@ -21,7 +21,9 @@
     "nav-verify": "node tools/nav-verify.mjs",
     "quiz-verify": "node tools/quiz-verify.mjs",
     "lecture-values": "node tools/lecture-values.mjs",
-    "a11y-verify": "node tools/a11y-verify.mjs"
+    "a11y-verify": "node tools/a11y-verify.mjs",
+    "intro-verify": "node tools/intro-verify.mjs",
+    "stability-stress": "node tools/stability-stress.mjs"
   },
   "devDependencies": {
     "jsdom": "^27.4.0",
