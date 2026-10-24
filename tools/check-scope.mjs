@@ -8,7 +8,7 @@
       Optics) nor the retired site structures ("Extra" chapters, "Lesson N
       of 3", the 35-question bank). Terms are topic phrases, not generic
       physics words — "heat" in P = I²R heating or "temperature" in Ohm's-law
-      caveats are legitimate and never matched. archive/ is exempt by design.
+      caveats are legitimate and never matched.
    2. THIRD-PARTY FETCHES: no active file may load a resource from a
       non-same-origin URL (src=/href=/url()/import()/fetch()). The
       production origin and XML namespaces are allowed; nothing else.
@@ -21,7 +21,7 @@ const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 
 const ACTIVE_DIRS = ['js', 'css', 'topics'];
 const ACTIVE_FILES = ['index.html', 'quiz.html', 'js/registry.js', 'vercel.json'];
-const SKIP = new Set(['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch', 'vendor']);
+const SKIP = new Set(['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'vendor']);
 
 function activeFiles() {
   const out = [];

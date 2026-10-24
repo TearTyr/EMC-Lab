@@ -1670,11 +1670,13 @@ console.log('\u2500'.repeat(66));
      instead of sleeping; the measured removal time is asserted against the
      composition window. CONTRACT CHANGE (2026-10-23, user request "near 1:1
      with the reference video"): the intro is now the uniform 1:6 compression
-     of the full 70.416 s reference = 11.736 s + wipe slack, TOTAL_MS 12250
-     + 180 ms exit + polling slack → [11800, 14200] ms. Logged in BUG_AUDIT. */
+     of the full 70.416 s reference = 11.736 s + wipe slack; CONTRACT CHANGE
+     (2026-10-24, phase 9d: S4 insert plays at footage tempo per the
+     "match 00:20" directive) → 13.814 s + wipe slack, TOTAL_MS 14330
+     + 180 ms exit + polling slack → [13900, 16300] ms. Logged in BUG_AUDIT. */
   const tEnd0 = Date.now();
   let removedAt = -1;
-  while (Date.now() - tEnd0 < 15500) {
+  while (Date.now() - tEnd0 < 17600) {
     if (!run1.doc.getElementById('introOverlay')) { removedAt = Date.now() - tEnd0; break; }
     await new Promise(r => setTimeout(r, 50));
   }
@@ -1683,7 +1685,7 @@ console.log('\u2500'.repeat(66));
     run1.doc.getElementById('introOverlay') === null && st1.timers === 0 && st1.listeners === 0 &&
     run1.win.sessionStorage.getItem('emc.intro.v1') === '1', JSON.stringify(st1));
   ok('auto-end is deterministic inside the composition window (no fixed-sleep padding)',
-    removedAt >= 11800 && removedAt <= 14200, `removed at ~${removedAt} ms`);
+    removedAt >= 13900 && removedAt <= 16300, `removed at ~${removedAt} ms`);
   run1.win.close();
 
   const run2 = await loadPage('index.html', {}, { session: { 'emc.intro.v1': '1' } });

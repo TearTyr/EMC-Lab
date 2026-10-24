@@ -27,7 +27,7 @@ const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
-    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch'].includes(e)) continue;
+    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
     const f = path.join(dir, e); const st = fs.statSync(f);
     if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
   }
@@ -74,10 +74,10 @@ async function ctxPage(opts = {}) {
      full 70.416 s reference (11.736 s + 0.45 s wipe + 0.18 s exit), so the
      auto-end window moved from 3-6 s to 11.5-14.5 s after 'load'. Skip is
      still instant on any key/pointer, still once-per-session. Justification
-     logged in BUG_AUDIT.md (test-change log) and PROGRESS.md phase 9c. */
-  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 18000 });
+     logged in BUG_AUDIT.md (test-change log). */
+  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
   const endedAt = Date.now() - t0;
-  ok('1 intro auto-ends within the 1:6-cut window (11.5-14.5 s incl. boot)', endedAt > 11500 && endedAt < 14500, `${endedAt} ms`);
+  ok('1 intro auto-ends within the 9d window (13.6-16.6 s incl. boot)', endedAt > 13600 && endedAt < 16600, `${endedAt} ms`);
   const st = await pg.evaluate(() => ({
     intro: window.EMC_INTRO.state(),
     flag: sessionStorage.getItem('emc.intro.v1'),
@@ -159,7 +159,7 @@ async function ctxPage(opts = {}) {
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(1000);
   const s1 = await pg.evaluate(() => ({ emc: typeof window.EMC !== 'undefined', intro: !!document.getElementById('introOverlay') }));
-  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 18000 });
+  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
   ok('7 blocked storage: page boots, intro plays once and still clears', s1.emc === true, JSON.stringify(s1));
   await ctx.close();
 }
@@ -168,7 +168,7 @@ async function ctxPage(opts = {}) {
 {
   const { ctx, pg } = await ctxPage();
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
-  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 18000 });
+  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
   await pg.evaluate(() => document.dispatchEvent(new Event('emc:loader-done')));
   await pg.waitForTimeout(600);
   const after = await pg.evaluate(() => ({ st: window.EMC_INTRO.state(), nodes: document.querySelectorAll('#introOverlay').length }));

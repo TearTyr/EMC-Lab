@@ -15,8 +15,6 @@ public/
 
 # --- editors / logs ---
 *.log
-# audit evidence must persist with its logs (BUG_AUDIT.md cites these paths)
-!evidence/**/*.log
 .idea/
 .vscode/
 .history/
@@ -36,12 +34,8 @@ public/
 vendor/fonts/*.ttf
 vendor/fonts/*.otf
 
-# --- local-only dev docs / generator (kept on disk, never committed) ---
-web_report.md
-html.py
+# --- local-only dev docs (kept on disk, never committed) ---
 PRESENTATION-NOTES.md
-SYNC.md
-TESTING.md
 core.*
 
 # --- local-only scratch probes (kept on disk, never committed) ---

@@ -1,7 +1,8 @@
 # Presentation notes — EMC Lab interactive physics module
 
 Companion notes for presenting the project: what the physics is, where each rubric point is
-satisfied, and a scripted 5-minute live demo. Full design record: `REDESIGN.md` (committed).
+satisfied, and a scripted 5-minute live demo. Full project record: `README.md` (features,
+commands, file map) and `BUG_AUDIT.md` (audit history).
 
 ---
 

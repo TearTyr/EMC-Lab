@@ -1,6 +1,6 @@
 /* EMC Lab — site-wide motion system (phase 8).
    One small reusable pattern set transcribed from the reference footage
-   (evidence/phase8/reference-timeline.md), applied consistently across the
+   (docs/reference/animation-reference.md), applied consistently across the
    site by js/motion.js + [data-mx] markup:
      rise   staggered entrance reveal (scroll or route arrival)
      slam   rotated type slam for section titles / hero words

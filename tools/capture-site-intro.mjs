@@ -13,7 +13,7 @@ const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
-    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch', 'Video'].includes(e)) continue;
+    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
     const f = path.join(dir, e); const st = fs.statSync(f);
     if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
   }
@@ -51,7 +51,7 @@ for (;;) {
   stamps.push(t);
   i++;
   if (gone && t > 6400) break;
-  if (t > 12000) break;
+  if (t > 16000) break;
 }
 fs.writeFileSync(`${OUT}/stamps.json`, JSON.stringify(stamps));
 console.log('frames:', i, 'span_ms:', stamps[stamps.length - 1], 'errors:', errs.length ? errs : 'none');

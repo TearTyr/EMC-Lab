@@ -12,7 +12,7 @@
    bottom-line slams), flash #6 + the bookend callback, and the second
    zero-white hard cut into the single-card end state — then the site-only
    letterbox wipe hands over to the homepage. Timing map:
-   evidence/video-analysis/intro-1to6-map.md. CSS keyframes only.
+   docs/reference/animation-reference.md. CSS keyframes only.
    Contract (brief PART 6, duration amended by the 1:6 request):
      - 11.74 s composition + 0.45 s wipe auto-play, once per session
        (sessionStorage `emc.intro.v1`; NEVER touches the progress keys),
@@ -32,7 +32,8 @@
   if (!overlay) return;
 
   const KEY = 'emc.intro.v1';
-  const TOTAL_MS = 12250;         // 11.736 s composition (70.416/6) + wipe + slack
+  const TOTAL_MS = 14330;         // 13.814 s composition (S1–S3 & S5–S9 at 1:6,
+                                  // S4 at footage tempo) + wipe + slack
   const EXIT_MS = 620;            // exit animation + safety margin
   const RM_MS = 1200;             // reduced-motion static hold
   let timers = [];

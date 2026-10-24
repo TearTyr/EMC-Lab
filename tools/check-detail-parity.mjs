@@ -14,8 +14,8 @@
      3. NOT IDENTICAL — a paired plain block must not be a copy of its tech
         block (normalized text equality fails), and must not be empty/thin
         (< 24 chars of text).
-   Exits 1 on any violation. Stubs in topics/{charge,coulomb,field}.html and
-   archive/ carry no detail blocks and are scanned anyway for regressions.
+   Exits 1 on any violation. Stubs in topics/{charge,coulomb,field}.html
+   carry no detail blocks and are scanned anyway for regressions.
    ========================================================================== */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';

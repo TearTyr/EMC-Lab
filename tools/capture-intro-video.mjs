@@ -20,11 +20,11 @@ const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const OUTDIR = resolve(process.argv[2] || '/tmp/introvideo');
 
 /* Serve the repo from memory, excluding heavy / non-shipped dirs so the
-   verifier-style preload can't blow the 1 GB budget (see TESTING.md). */
+   verifier-style preload can't blow the 1 GB budget (see README §7). */
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
-    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch', 'Video'].includes(e)) continue;
+    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
     const f = path.join(dir, e); const st = fs.statSync(f);
     if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
   }
@@ -59,7 +59,7 @@ const introSeen = Date.now() - t0;
 
 /* Wait for the overlay to be removed from the DOM (intro.js cleans up),
    then hold ~3.4 s so the homepage reveal staggers are on tape. */
-await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 22000 });
+await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 25000 });
 const introDone = Date.now() - t0;
 await pg.waitForTimeout(3400);
 

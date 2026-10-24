@@ -33,10 +33,10 @@ never hand-typed. Legacy ids from earlier site generations (`charge`, `coulomb`,
 `field`, `current`, `magind`, …) resolve through its alias map, so old links, old
 hash routes, old quiz deep links and old progress records all keep working.
 
-**Scope map:** `SCOPE_TRACE.md` maps every brief requirement (R1–R11) and every
-lecture item to the page/sim/test that satisfies it. Audit history lives in
-`BUG_AUDIT.md`; the requirement digest (the spec PDFs were not available in the
-working environment) is in `docs/spec/`.
+**Scope map:** audit history and every requirement→fix→verification record lives
+in `BUG_AUDIT.md`; the requirement digest (the spec PDFs were not available in the
+working environment) is in `docs/spec/`. The reference-video analysis behind the
+intro and the site-wide motion system is in `docs/reference/animation-reference.md`.
 
 ---
 
@@ -86,9 +86,10 @@ js/
   sim-*.js, toy-*.js  the 13 simulations/toys (one file each, registry-listed)
 css/                  input.css (source) → site.css (built), fonts.css
 vendor/               KaTeX + Chart.js + OFL fonts (same-origin, licensed)
-tools/                dev tooling (see §7); archive/ retired material (not shipped)
+tools/                dev tooling (see §7)
 docs/spec/            requirement digest + independent recompute of every lecture value
-evidence/             browser-verified audit evidence (screenshots, logs, sweeps)
+docs/reference/       reference-video analysis behind the intro & motion system
+Video/                the original reference MP4 (analysis source; never shipped)
 ```
 
 ---
@@ -102,17 +103,22 @@ evidence/             browser-verified audit evidence (screenshots, logs, sweeps
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro (v3).** The homepage opens with a short (5.8 s)
-  original composition whose editing grammar is transcribed from the inspected
-  reference footage (`Video/シェリーライド.mp4`, dev-only, never shipped): confetti
-  pops, white flash, the drawn mascot with the locked outlined title over a
-  silhouette strip and paper-doll pose swaps, a VS skit with tilted inset
-  stills, a black/red insert cut, a collage chorus with rotated word slams on
-  a 1.16 s phrase grid, white-flash dips and a bookend callback — then a
-  letterbox wipe into the rendered homepage. Skippable, once per session
+- **Once-per-session intro (v4 "reference cut").** The homepage opens with a
+  ~14.3 s original composition whose editing grammar and timing are transcribed
+  from the inspected reference footage (`Video/シェリーライド.mp4`, dev-only,
+  never shipped): every section of the footage plays at 1:6 time-compression —
+  confetti pops, white flash, the drawn mascot with the locked outlined title
+  over a silhouette strip and paper-doll pose swaps, a VS skit with tilted inset
+  stills, a collage chorus with rotated word slams on a 1.16 s phrase grid,
+  white-flash dips and a bookend callback — EXCEPT the black insert passage at
+  footage 00:20, which plays at footage tempo (hard cut → cropped face +
+  caption + flanking chibis, one-beat red band + photo panel + outlined
+  caption, stamp, ramped flash) because 1:6 compressed its beats into a
+  flicker. Skippable, once per session
   (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to
   a static card under `prefers-reduced-motion`. `npm run intro-verify` proves the
-  whole contract. The client's drawn mascot artwork anchors every brand surface
+  whole contract; the timing map lives in `docs/reference/animation-reference.md`.
+  The client's drawn mascot artwork anchors every brand surface
   (hero, header/footer marks, favicon set, social card) — no SVG-generated
   mascot art remains; the hero mascot is capped (capped layout
   area, `pointer-events: none`, gentle float) and reacts once to meaningful
@@ -193,12 +199,12 @@ with bun as configured in `vercel.json` (`buildCommand: bun run build`,
 
 ```bash
 npm run check          # links + ids + data hooks, Detail-Mode parity, scope & network purity
-npm run test           # jsdom smoke test (526 assertions: physics, quiz, loader, a11y, migration)
+npm run test           # jsdom smoke test (556 assertions: physics, quiz, loader, a11y, migration, intro)
 npm run test:interact  # real Chromium drives every sim (mouse/touch/keyboard, rude cases)
 npm run test:shell     # shell stress: rapid route switching, teardown, reduced motion
 npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 16 checks
 npm run intro-verify   # the once-per-session intro contract (PART 6.4), 12 checks
-npm run motion-verify  # site-wide motion system (phase 8): reveals, route flash dip, whip, 10 checks
+npm run motion-verify  # site-wide motion system: reveals, route flash dip, whip, 10 checks
 npm run asset-verify   # image/asset contract: decode, dims, alt, lazy, stretch, art, favicon ICO
 npm run stability-stress # the reported-bug reproduction matrix (nav/Details/typography), 35 checks
 npm run perf           # transfer/DOM/font budgets per page
@@ -210,6 +216,23 @@ npm run build          # build:css + build:public
 All test tooling is dev-only; the shipped site has zero runtime dependencies.
 Playwright browsers: `npx playwright install chromium firefox` (+ `msedge` channel for
 the Edge run). Puppeteer powers the perf tools.
+
+**Harness notes (sandbox/low-RAM environments).**
+- Run the browser gates **one at a time**; `pkill -9 -f "chrome|chromium"` between runs —
+  zombie browsers from a crashed run cause `Target crashed` on the next harness's first page.
+- `perf`/`perf:guard` default to puppeteer/Chrome; without a Chrome binary use
+  `PERF_ENGINE=playwright npm run perf:guard`, or point puppeteer at Playwright's cached
+  headless shell via `PUPPETEER_EXECUTABLE_PATH=~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell npm run perf`.
+- The intro runs 13.82 s + wipe: `intro-verify` waits up to 20 s for overlay removal,
+  `capture-intro-video` up to 25 s.
+- Verifier file-servers preload the repo into RAM and exclude `docs/`, `.scratch/`,
+  `shots/` and `Video/` (never requested by any page; a page that did request them
+  would 404 into the `misses[]` assertion).
+- `check-links.mjs` keeps a `DYNAMIC_IDS` allowlist (includes `introOverlay`: markup only
+  in index.html, every script reference null-guarded, behaviour covered by intro-verify).
+- Intro captures: `node tools/capture-site-intro.mjs` (timestamped frame loop →
+  `/tmp/introcap`), `node tools/capture-intro-video.mjs [outDir]` (webm). Responsive
+  sweep: `node tools/baseline-sweep.mjs [name]` → `shots/sweeps/[name]/`.
 
 ---
 

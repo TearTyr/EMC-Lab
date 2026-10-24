@@ -1,3 +1,0 @@
-mounted, details ON : {"techVisible":7,"plainVisible":0,"attr":"on","pressed":"true"}
-after toggle OFF    : {"techVisible":0,"plainVisible":7,"attr":"off","pressed":"false"}
-after reload        : {"techVisible":0,"plainVisible":7,"attr":"off","pressed":"false"} pref: off

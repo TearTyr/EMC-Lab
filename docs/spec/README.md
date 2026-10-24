@@ -24,9 +24,10 @@ truth was the requirement digest embedded in the task prompt:
   Since the brief/slides themselves are unavailable, the digest stands in for all three
   document tiers; the repo/deployment never overrides it.
 
-Prior practice in this repo agrees: `REDESIGN.md` §Sources records "the PDFs are not in
-the workspace, so the brief's scope list is treated as the lecture's table of contents".
+Prior practice in this repo agrees: the design record consistently noted "the PDFs are
+not in the workspace, so the brief's scope list is treated as the lecture's table of
+contents".
 
 If the brief PDF is supplied later, diff it against `brief-digest.md` before trusting
-any R-row; everything derived (SCOPE_TRACE.md rows, quiz curation, sim targets)
+any requirement row; everything derived (quiz curation, sim targets)
 cites the digest line, so re-verification is mechanical.

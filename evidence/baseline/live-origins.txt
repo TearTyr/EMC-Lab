@@ -1,5 +1,0 @@
-# .scratch/live-check.mjs against https://emc-lab.vercel.app/ (2026-10-23)
-state: {"hasEMC":false,"overlay":true,"statQuestions":"35"}
-origins: [ 'https://emc-lab.vercel.app', 'https://cdn.vercel-insights.com', 'https://cdn.jsdelivr.net' ]
-errors: [ 'PAGEERROR: ReferenceError: EMC is not defined', 'PAGEERROR: ReferenceError: EMC is not defined' ]
-screenshot: evidence/baseline/live-home.png

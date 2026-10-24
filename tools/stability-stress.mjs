@@ -21,7 +21,7 @@ const FILES = new Map();
        Preloading it into the served-file map plus a long multi-context
        stress run OOM-killed the renderer on low-RAM CI; misses[] would
        flag any page that actually requested it. Assertions unchanged. */
-    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch', 'Video'].includes(e)) continue;
+    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
     const f = path.join(dir, e); const st = fs.statSync(f);
     if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
   }
@@ -81,7 +81,7 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
 
 /* ============ A. PART 3.2 navigation sequence ============================ */
 {
-  const { ctx, pg } = await newPage();
+  let { ctx, pg } = await newPage();
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(700);
 
@@ -174,16 +174,27 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
   const refreshed = await probe(pg);
   ok('A refresh on a chapter route remounts correctly', refreshed.hash === '#/ch3' && refreshed.h1.includes('Magnetism') && !refreshed.overlayUp, JSON.stringify(refreshed).slice(0, 100));
 
-  /* 13: new tab (standalone pages remain the new-tab destination) */
+  /* 13: new tab (standalone pages remain the new-tab destination)
+     RAM note (2026-10-24, phase 9d): the block-A context has done ~15
+     navigations by here; on 1 GB CI its renderer process is worn out and
+     any further newPage in the SAME context is OOM-killed ('Target
+     crashed', four consecutive runs — closing the old page first did not
+     help, same-site pages share the process). Run the new-tab and mobile
+     scenarios in fresh contexts (fresh processes). Assertions unchanged. */
   const href = await pg.evaluate(() => document.querySelector('#topicsMenu a[href$="fields.html"]').getAttribute('href'));
-  const pg2 = await ctx.newPage();
+  await ctx.close();
+  const ctxB = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const pg2 = await ctxB.newPage();
   await pg2.goto(B + '/index.html' .replace('index.html', '') + href, { waitUntil: 'load' });
   await pg2.waitForTimeout(900);
   const standalone = await pg2.evaluate(() => ({ h1: (document.querySelector('main h1') || {}).textContent, emc: typeof window.EMC !== 'undefined' }));
   ok('A new-tab link opens the standalone chapter, fully alive', /Electric Fields/.test(standalone.h1 || '') && standalone.emc, JSON.stringify(standalone).slice(0, 80));
-  await pg2.close();
+  await ctxB.close();
 
-  /* 10: mobile nav path */
+  /* 10: mobile nav path (fresh context — see RAM note above) */
+  const ctxC = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctxC.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  pg = await ctxC.newPage();
   await pg.setViewportSize({ width: 360, height: 740 });
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(700);
@@ -204,7 +215,7 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
   await pg.waitForTimeout(1000);
   const pager = await probe(pg);
   ok('A in-page pager link moves to the next chapter', pager.hash === '#/ch2' && pager.h1.includes('Electric Fields'), pager.hash);
-  await ctx.close();
+  await ctxC.close();
 }
 
 /* ============ B. PART 4.3 Details matrix ================================== */
@@ -239,7 +250,9 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
   await pg.goBack(); await pg.waitForTimeout(500); await pg.goForward(); await pg.waitForTimeout(500);
   const bf = await probe(pg);
   ok('B back/forward keep Details state and page usable', bf.detail === 'on' && bf.blocking === null, bf.detail);
-  /* 8: blocked storage */
+  /* 8: blocked storage (RAM note: close block B's context first — two live
+     contexts with full pages OOM the renderer on 1 GB CI) */
+  await ctx.close();
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const pg3 = await ctx2.newPage();
   const errs2 = [];
@@ -255,7 +268,6 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
   const bs = await pg3.evaluate(() => ({ detail: document.documentElement.dataset.detail, emc: typeof window.EMC !== 'undefined' }));
   ok('B blocked storage: page boots, toggle still flips', bs.emc && bs.detail === 'off' && errs2.length === 0, JSON.stringify(bs) + errs2.join('|'));
   await ctx2.close();
-  await ctx.close();
 }
 
 /* ============ C. PART 4.5 typography parity =============================== */

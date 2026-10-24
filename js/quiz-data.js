@@ -9,7 +9,7 @@
    (docs/spec/verify-checks.mjs). Displayed totals are derived from
    BANK.length, never hand-maintained. k = 8.99×10⁹ N·m²/C² everywhere —
    the lecture's value, computed AND printed (BUG_AUDIT DATA-01).
-   Questions beyond the ch2 quota live in archive/js/quiz-data-ch2-extras.js. */
+   The bank is exactly the curated 24 (8 per chapter). */
 window.EMC_QUIZ = [
 
   /* ================= Chapter 1 — Circuits & Ohm's law ================= */

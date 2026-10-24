@@ -1,4 +1,6 @@
 import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
+mkdirSync('shots', { recursive: true }); // shots/ is gitignored harness output
 const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const pg = await ctx.newPage();
@@ -16,5 +18,5 @@ const state = await pg.evaluate(() => ({
 console.log(JSON.stringify(state));
 console.log('origins:', [...new Set(reqs)]);
 console.log('errors:', msgs.slice(0, 6));
-await pg.screenshot({ path: 'evidence/baseline/live-home.png' });
+await pg.screenshot({ path: 'shots/live-home.png' });
 await browser.close(); process.exit(0);

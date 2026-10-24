@@ -1152,43 +1152,49 @@
 
 /* ==========================================================================
    INTRO OVERLAY — the opening composition (index.html only).
-   v4 "1:6 cut": a uniform time-compression of the COMPLETE reference video
-   (Video/シェリーライド.mp4, 70.416 s of picture, evidence/video-analysis/
-   reference-analysis.md + frame-timeline.md). Every event fires at
-   t_ref / 6, so all nine sections keep their exact relative rhythm:
+   v4 "1:6 cut" + phase 9d S4 fix: a time-compression of the COMPLETE reference
+   video (Video/シェリーライド.mp4, 70.416 s of picture,
+   docs/reference/animation-reference.md). Every event fires at
+   t_ref / 6 — EXCEPT the S4 "00:20" insert, which plays at footage tempo
+   (1:1) because 1:6 compressed its deliberate beats into a flicker:
      S1 overture      0.000–0.436   confetti pops every .042 s (discrete)
      S2 title lockup  0.436–2.019   flash #1, lock-up burst-in, paper-doll
                                     micro swaps, whip-squash A→B at 1.225
      S3 skit          2.019–3.153   flash #2, lines + VS pop, spinning
                                     insets (period floor 0.5 s), line swap
-     S4 insert        3.153–3.575   HARD CUT (zero white), staged slams
-                                    .05 s apart, stamp at 3.500
-     S5 chorus A      3.575–6.703   RAMPED flash #3, collage burst, five
+     S4 insert        3.153–5.653   FOOTAGE TEMPO: HARD CUT (zero white) to
+                                    cropped face + caption + flanking chibis,
+                                    1.1 s hold, ONE beat of red band + photo
+                                    panel + outlined caption, 1.0 s hold,
+                                    stamp on the panel, ramped flash #3
+     S5 chorus A      5.653–8.781   RAMPED flash #3, collage burst, five
                                     word slams at the footage onsets, whips,
                                     bubble columns, speech panels, title
                                     callback + arrow, corner cluster, chips
-     S6 chorus B      6.703–8.272   flash #4, LOCKED lyric caption (never
+     S6 chorus B      8.781–10.350  flash #4, LOCKED lyric caption (never
                                     moves), centre pose swaps on the grid,
                                     fairies swapping edges every .333 s
-     S7 chorus C      8.272–9.836   flash #5, correction panels + X draws,
+     S7 chorus C     10.350–11.914  flash #5, correction panels + X draws,
                                     corner words, big slams, starburst
                                     badges, diamonds, bottom-line words
-     S8 bookend       9.836–11.419  flash #6, identical S2 lock-up (pose C)
-     S9 end card     11.419–11.736  HARD CUT (zero white), single bordered
+     S8 bookend      11.914–13.497  flash #6, identical S2 lock-up (pose C)
+     S9 end card     13.497–13.814  HARD CUT (zero white), single bordered
                                     still, static hold — then the site-only
-                                    letterbox wipe hands over to the page.
+                                    letterbox wipe (13.818 s) hands over.
    Flash grammar is frame-quantised, not scaled: 2 white frames (33 ms) +
    the footage decay per flash (90 / 250 / 300-ramped / 200 / 300 / 150 ms;
    flash #3 ramps in over 4 frames). Hard cuts carry zero white, exactly
    like f1134 / f4110.
-   Documented deviations (user decision 2026-10-23 + flat-art rules):
+   Documented deviations (user decisions 2026-10-23/24 + flat-art rules):
      · palette stays the site's pink identity (footage yellow → pink);
-     · full-white flashes (already site policy) — 6 × 33 ms in 11.7 s is
+     · full-white flashes (already site policy) — 6 × 33 ms in 13.8 s is
        well under photosensitivity guidance; reduced motion shows none;
      · motion-blur smears → whip-squash (blur filters banned);
      · arc-swept curved text omitted (legibility);
      · inset spin period floor 0.5 s (footage 2 s / 6 = 0.33 s);
-     · arrow-slash draw floor 0.15 s (footage 0.5 s / 6 = 0.083 s).
+     · arrow-slash draw floor 0.15 s (footage 0.5 s / 6 = 0.083 s);
+     · S4 at footage tempo (rhythm fidelity at the 00:20 passage); all
+       other sections keep exact 1:6, shifted +2.078 s (master 13.814 s).
    CSS keyframes only (transform/opacity/visibility), no rAF, no audio,
    no gradients/blur/backdrop-filter. Reduced motion: static lock-up.
    ========================================================================== */
@@ -1219,24 +1225,34 @@
 
 /* ---- section fields: pink base, black insert, plum chorus (hard cuts) --- */
 #introOverlay .in-field { position: absolute; inset: 0; background: #f6b3ca; }
+/* AI-generated electron backdrop (user directive 2026-10-24): flat art plate,
+   opaque, sits above the pink field and below everything else. Visible only
+   for the opening lockup (S1+S2) and the S8 bookend that reuses it — hidden
+   through the skit/insert/chorus sections. Hard visibility switches only, on
+   the section boundaries (the S2→S3 and S7→S8 flashes cover the seams). */
+#introOverlay .in-aiart { position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; visibility: hidden; }
+#introOverlay.play .in-aiart { animation:
+  in-vis 0s steps(1,end) 0s forwards,      in-hid 0s steps(1,end) 2.019s forwards,
+  in-vis 0s steps(1,end) 11.92s forwards,  in-hid 0s steps(1,end) 13.497s forwards; }
 #introOverlay .in-field-dark { background: #0b0c0e; visibility: hidden; }
 #introOverlay .in-field-plum { background: #33202b; visibility: hidden; }
 #introOverlay.play .in-field-dark { animation:
   in-vis 0s steps(1,end) 3.153s forwards,   /* f1134 hard cut, zero white */
-  in-hid 0s steps(1,end) 3.575s forwards; }
+  in-hid 0s steps(1,end) 5.653s forwards; }
 #introOverlay.play .in-field-plum { animation:
-  in-vis 0s steps(1,end) 3.575s forwards,   /* ramped flash #3 lands here */
-  in-hid 0s steps(1,end) 9.836s forwards; } /* flash #6 → pink bookend */
+  in-vis 0s steps(1,end) 5.653s forwards,   /* ramped flash #3 lands here */
+  in-hid 0s steps(1,end) 11.914s forwards; } /* flash #6 → pink bookend */
 
 /* ---- white-flash dips: frame-quantised footage grammar ------------------
    2 white frames (33 ms) + per-flash decay; #3 ramps in over 4 frames. */
 #introOverlay .in-dip { position: absolute; inset: 0; background: #fff; opacity: 0; }
-#introOverlay.play .in-dip1 { animation: in-flash1 .123s cubic-bezier(.3,.8,.4,1) .436s forwards; }
+#introOverlay.play .in-dip1 { animation: in-flash1 .123s cubic-bezier(.3,.8,.4,1) .438.078s forwards; }
 #introOverlay.play .in-dip2 { animation: in-flash2 .283s cubic-bezier(.3,.8,.4,1) 2.019s forwards; }
-#introOverlay.play .in-dip3 { animation: in-flash3 .366s cubic-bezier(.3,.8,.4,1) 3.575s forwards; }
-#introOverlay.play .in-dip4 { animation: in-flash4 .233s cubic-bezier(.3,.8,.4,1) 6.703s forwards; }
-#introOverlay.play .in-dip5 { animation: in-flash5 .333s cubic-bezier(.3,.8,.4,1) 8.272s forwards; }
-#introOverlay.play .in-dip6 { animation: in-flash6 .183s cubic-bezier(.3,.8,.4,1) 9.836s forwards; }
+#introOverlay.play .in-dip3 { animation: in-flash3 .366s cubic-bezier(.3,.8,.4,1) 5.653s forwards; }
+#introOverlay.play .in-dip4 { animation: in-flash4 .233s cubic-bezier(.3,.8,.4,1) 8.781s forwards; }
+#introOverlay.play .in-dip5 { animation: in-flash5 .333s cubic-bezier(.3,.8,.4,1) 10.35s forwards; }
+#introOverlay.play .in-dip6 { animation: in-flash6 .183s cubic-bezier(.3,.8,.4,1) 11.914s forwards; }
 @keyframes in-flash1 { 0%, 27% { opacity: 1; } 100% { opacity: 0; } }   /* ~90 ms decay */
 @keyframes in-flash2 { 0%, 12% { opacity: 1; } 100% { opacity: 0; } }   /* ~250 ms */
 @keyframes in-flash3 { 0% { opacity: .25; } 4% { opacity: .4; } 8% { opacity: .58; }
@@ -1245,13 +1261,13 @@
 @keyframes in-flash5 { 0%, 10% { opacity: 1; } 100% { opacity: 0; } }   /* ~300 ms */
 @keyframes in-flash6 { 0%, 18% { opacity: 1; } 100% { opacity: 0; } }   /* ~150 ms */
 
-/* ---- letterbox bars + the site-only closing wipe (11.74 s) -------------- */
+/* ---- letterbox bars + the site-only closing wipe (13.818 s) ------------ */
 #introOverlay .in-bars { position: absolute; inset: 0; }
 #introOverlay .in-bar { position: absolute; left: 0; right: 0; height: 7vh; background: #0b0c0e; }
 #introOverlay .in-bar-t { top: 0; transform-origin: top; }
 #introOverlay .in-bar-b { bottom: 0; transform-origin: bottom; }
-#introOverlay.play .in-bar-t { animation: in-wipe-t .45s cubic-bezier(.7,0,.3,1) 11.74s both; }
-#introOverlay.play .in-bar-b { animation: in-wipe-b .45s cubic-bezier(.7,0,.3,1) 11.74s both; }
+#introOverlay.play .in-bar-t { animation: in-wipe-t .45s cubic-bezier(.7,0,.3,1) 13.818s both; }
+#introOverlay.play .in-bar-b { animation: in-wipe-b .45s cubic-bezier(.7,0,.3,1) 13.818s both; }
 @keyframes in-wipe-t { from { transform: scaleY(1); } to { transform: scaleY(7.2); } }
 @keyframes in-wipe-b { from { transform: scaleY(1); } to { transform: scaleY(7.2); } }
 
@@ -1267,14 +1283,14 @@
 #introOverlay .in-cf6 { top: 14%; left: 40%; width: 14px; height: 14px; border-radius: 50%; background: #33202b; }
 #introOverlay .in-cf7 { top: 34%; left: 74%; width: 22px; height: 12px; background: #fdf3f6; clip-path: polygon(0 0, 100% 40%, 20% 100%); }
 #introOverlay .in-cf8 { top: 42%; left: 50%; width: 13px; height: 13px; background: #33202b; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
-#introOverlay.play .in-cf1 { animation: in-op1 0s steps(1,end) .042s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf2 { animation: in-op1 0s steps(1,end) .083s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf3 { animation: in-op1 0s steps(1,end) .167s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf4 { animation: in-op1 0s steps(1,end) .208s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf5 { animation: in-op1 0s steps(1,end) .25s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf6 { animation: in-op1 0s steps(1,end) .292s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf7 { animation: in-op1 0s steps(1,end) .333s forwards, in-op0 0s steps(1,end) .486s forwards; }
-#introOverlay.play .in-cf8 { animation: in-op1 0s steps(1,end) .375s forwards, in-op0 0s steps(1,end) .486s forwards; }
+#introOverlay.play .in-cf1 { animation: in-op1 0s steps(1,end) .44.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf2 { animation: in-op1 0s steps(1,end) .85.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf3 { animation: in-op1 0s steps(1,end) .169.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf4 { animation: in-op1 0s steps(1,end) .210.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf5 { animation: in-op1 0s steps(1,end) .27.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf6 { animation: in-op1 0s steps(1,end) .294.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf7 { animation: in-op1 0s steps(1,end) .335.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
+#introOverlay.play .in-cf8 { animation: in-op1 0s steps(1,end) .377.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
 
 /* ---- S2/S8 title lock-up: strip + EQ glyphs, mascot, locked title -------
    Flash #1 dissolve-out is staggered (footage f158–163): title lands first
@@ -1286,17 +1302,17 @@
 #introOverlay .in-eq { font-family: theme('fontFamily.mono'); font-size: clamp(.6rem, 1.6vw, .85rem);
   font-weight: 700; color: #33202b; opacity: .28; }
 #introOverlay.play .in-strip { animation:
-  in-vis 0s steps(1,end) .56s forwards,  in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 9.875s forwards, in-hid 0s steps(1,end) 11.419s forwards; }
+  in-vis 0s steps(1,end) .58.078s forwards,  in-hid 0s steps(1,end) 2.019s forwards,
+  in-vis 0s steps(1,end) 11.953s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
 
 #introOverlay .in-mascot-wrap { position: relative; grid-row: 1; grid-column: 1;
   width: clamp(150px, 34vh, 260px); visibility: hidden; }
 #introOverlay.play .in-mascot-wrap { animation:
-  in-pop .3s cubic-bezier(.3,1.5,.4,1) .5s both,
+  in-pop .3s cubic-bezier(.3,1.5,.4,1) .7.078s both,
   in-whipx .03s steps(1,end) 1.225s forwards,          /* f440–447 A→B sliver */
-  in-vis 0s steps(1,end) .5s forwards,   in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 6.722s forwards, in-hid 0s steps(1,end) 8.272s forwards,
-  in-vis 0s steps(1,end) 9.842s forwards, in-hid 0s steps(1,end) 11.419s forwards; }
+  in-vis 0s steps(1,end) .7.078s forwards,   in-hid 0s steps(1,end) 2.019s forwards,
+  in-vis 0s steps(1,end) 8.8s forwards, in-hid 0s steps(1,end) 10.35s forwards,
+  in-vis 0s steps(1,end) 11.92s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
 @keyframes in-pop { 0% { transform: scale(.5); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
 @keyframes in-whipx { 0% { transform: scaleX(1); } 40% { transform: scaleX(.1); } 100% { transform: scaleX(1); } }
 #introOverlay .in-mascot { display: block; width: 100%; height: auto; }
@@ -1304,72 +1320,72 @@
 /* paper-doll micro swaps + whip-squash pose families, on the footage grid
    (1.5 s macro + 0.30 s doublet → 0.25 s + 0.05 s here). Generated from the
    f230…f4020 onset list — see .scratch/intro16 + evidence map. */
-#introOverlay.play .in-mascot { animation: in-tilt 11.736s steps(1, end) both; }
-#introOverlay.play .in-mascot-sparkle { animation: in-pose 11.736s steps(1, end) both; }
+#introOverlay.play .in-mascot { animation: in-tilt 13.814s steps(1, end) both; }
+#introOverlay.play .in-mascot-sparkle { animation: in-pose 13.814s steps(1, end) both; }
 @keyframes in-pose {
-  0%, 5.42% { opacity: 0; }
-  5.46%, 5.85% { opacity: 1; }
-  5.89%, 6.2% { opacity: 0; }
-  6.25%, 6.63% { opacity: 1; }
-  6.67%, 7.06% { opacity: 0; }
-  7.1%, 7.48% { opacity: 1; }
-  7.52%, 9.68% { opacity: 0; }
-  9.72%, 10.4% { opacity: 1; }
-  10.44%, 10.58% { opacity: 0; }
-  10.63%, 12.99% { opacity: 1; }
-  13.04%, 15.12% { opacity: 0; }
-  15.17%, 15.62% { opacity: 1; }
-  15.66%, 16.03% { opacity: 0; }
-  16.07%, 17.16% { opacity: 1; }
-  17.2%, 59.18% { opacity: 0; }
-  59.22%, 61.39% { opacity: 1; }
-  61.43%, 63.61% { opacity: 0; }
-  63.65%, 65.82% { opacity: 1; }
-  65.87%, 68.04% { opacity: 0; }
-  68.08%, 70.44% { opacity: 1; }
-  70.48%, 83.82% { opacity: 0; }
-  83.86%, 86.59% { opacity: 1; }
-  86.63%, 88% { opacity: 0; }
-  88.05%, 89.43% { opacity: 1; }
-  89.47%, 92.26% { opacity: 0; }
-  92.31%, 93.69% { opacity: 1; }
-  93.73%, 95.11% { opacity: 0; }
-  95.15%, 97.26% { opacity: 1; }
-  97.3%, 99.96% { opacity: 0; }
+  0%, 4.6% { opacity: 0; }
+  4.64%, 4.97% { opacity: 1; }
+  5%, 5.27% { opacity: 0; }
+  5.31%, 5.63% { opacity: 1; }
+  5.67%, 6% { opacity: 0; }
+  6.03%, 6.35% { opacity: 1; }
+  6.39%, 8.22% { opacity: 0; }
+  8.26%, 8.84% { opacity: 1; }
+  8.87%, 8.99% { opacity: 0; }
+  9.03%, 11.04% { opacity: 1; }
+  11.08%, 12.85% { opacity: 0; }
+  12.89%, 13.27% { opacity: 1; }
+  13.3%, 13.62% { opacity: 0; }
+  13.65%, 14.58% { opacity: 1; }
+  14.61%, 65.32% { opacity: 0; }
+  65.35%, 67.2% { opacity: 1; }
+  67.23%, 69.08% { opacity: 0; }
+  69.12%, 70.96% { opacity: 1; }
+  71%, 72.85% { opacity: 0; }
+  72.88%, 74.89% { opacity: 1; }
+  74.92%, 86.25% { opacity: 0; }
+  86.29%, 88.61% { opacity: 1; }
+  88.64%, 89.81% { opacity: 0; }
+  89.85%, 91.02% { opacity: 1; }
+  91.05%, 93.42% { opacity: 0; }
+  93.47%, 94.64% { opacity: 1; }
+  94.67%, 95.85% { opacity: 0; }
+  95.88%, 97.67% { opacity: 1; }
+  97.71%, 99.97% { opacity: 0; }
 }
 @keyframes in-tilt {
-  0%, 5.42% { transform: rotate(0deg); }
-  5.46%, 6.2% { transform: rotate(-2deg); }
-  6.25%, 6.63% { transform: rotate(2.5deg); }
-  6.67%, 7.06% { transform: rotate(-2deg); }
-  7.1%, 7.48% { transform: rotate(2deg); }
-  7.52%, 9.68% { transform: rotate(-2.5deg); }
-  9.72%, 10.58% { transform: rotate(2deg); }
-  10.63%, 12.99% { transform: rotate(-2deg); }
-  13.04%, 15.12% { transform: rotate(2deg); }
-  15.17%, 15.62% { transform: rotate(-2.5deg); }
-  15.66%, 16.03% { transform: rotate(2deg); }
-  16.07%, 59.18% { transform: rotate(-2deg); }
-  59.22%, 61.39% { transform: rotate(2deg); }
-  61.43%, 63.61% { transform: rotate(-2deg); }
-  63.65%, 65.82% { transform: rotate(2.5deg); }
-  65.87%, 68.04% { transform: rotate(-2deg); }
-  68.08%, 86.59% { transform: rotate(2deg); }
-  86.63%, 88% { transform: rotate(-2deg); }
-  88.05%, 89.43% { transform: rotate(2deg); }
-  89.47%, 92.26% { transform: rotate(-2.5deg); }
-  92.31%, 93.69% { transform: rotate(2deg); }
-  93.73%, 95.11% { transform: rotate(-2deg); }
-  95.15%, 97.26% { transform: rotate(2.5deg); }
-  97.3%, 99.96% { transform: rotate(0deg); }
+  0%, 4.6% { transform: rotate(0deg); }
+  4.64%, 5.27% { transform: rotate(-2deg); }
+  5.31%, 5.63% { transform: rotate(2.5deg); }
+  5.67%, 6% { transform: rotate(-2deg); }
+  6.03%, 6.35% { transform: rotate(2deg); }
+  6.39%, 8.22% { transform: rotate(-2.5deg); }
+  8.26%, 8.99% { transform: rotate(2deg); }
+  9.03%, 11.04% { transform: rotate(-2deg); }
+  11.08%, 12.85% { transform: rotate(2deg); }
+  12.89%, 13.27% { transform: rotate(-2.5deg); }
+  13.3%, 13.62% { transform: rotate(2deg); }
+  13.65%, 65.32% { transform: rotate(-2deg); }
+  65.35%, 67.2% { transform: rotate(2deg); }
+  67.23%, 69.08% { transform: rotate(-2deg); }
+  69.12%, 70.96% { transform: rotate(2.5deg); }
+  71%, 72.85% { transform: rotate(-2deg); }
+  72.88%, 88.61% { transform: rotate(2deg); }
+  88.64%, 89.81% { transform: rotate(-2deg); }
+  89.85%, 91.02% { transform: rotate(2deg); }
+  91.05%, 93.42% { transform: rotate(-2.5deg); }
+  93.47%, 94.64% { transform: rotate(2deg); }
+  94.67%, 95.85% { transform: rotate(-2deg); }
+  95.88%, 97.67% { transform: rotate(2.5deg); }
+  97.71%, 99.97% { transform: rotate(0deg); }
 }
 
 #introOverlay .in-title { grid-row: 2; grid-column: 1; margin-top: .3rem; text-align: center;
   visibility: hidden; font-family: theme('fontFamily.title'); font-weight: 700; line-height: .95; }
 #introOverlay.play .in-title { animation:
-  in-slam .25s cubic-bezier(.2,1.3,.3,1) .47s both,
-  in-vis 0s steps(1,end) .47s forwards,   in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 9.842s forwards, in-hid 0s steps(1,end) 11.419s forwards; }
+  in-slam .25s cubic-bezier(.2,1.3,.3,1) .49.078s both,
+  in-vis 0s steps(1,end) .49.078s forwards,   in-hid 0s steps(1,end) 2.019s forwards,
+  in-vis 0s steps(1,end) 11.92s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
 @keyframes in-slam { 0% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes in-slamb { 0% { transform: scale(1.5) rotate(var(--wr, 0deg)); opacity: 0; }
   100% { transform: scale(1) rotate(var(--wr, 0deg)); opacity: 1; } }
@@ -1384,8 +1400,8 @@
 #introOverlay .in-start { grid-row: 3; grid-column: 1; margin-top: .9rem;
   font-size: 1.02rem; padding: .62em 1.5em; visibility: hidden; }
 #introOverlay.play .in-start { animation:
-  in-slam .26s cubic-bezier(.2,1.4,.3,1) 10s both,
-  in-vis 0s steps(1,end) 9.9s forwards, in-hid 0s steps(1,end) 11.419s forwards; }
+  in-slam .26s cubic-bezier(.2,1.4,.3,1) 12.078s both,
+  in-vis 0s steps(1,end) 11.978s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
 
 /* ---- S3 skit (2.019–3.153 s): handwritten pair + VS + spinning insets -- */
 #introOverlay .in-skit { position: absolute; inset: 0; visibility: hidden; }
@@ -1429,59 +1445,87 @@
   50% { transform: perspective(420px) rotateY(-90deg) rotate(7deg); }
   100% { transform: perspective(420px) rotateY(-16deg) rotate(7deg); } }
 
-/* ---- S4 insert (3.153–3.575 s): HARD CUT to a different world -----------
-   f1134 zero white; chibi swap f1160 → 3.222; staged slams ~0.3 s apart in
-   the footage → 0.05 s here (3.333 / 3.383 / 3.433); stamp f1260 → 3.500. */
-#introOverlay .in-insert { position: absolute; inset: 0; visibility: hidden; }
+/* ---- S4 insert (3.153–5.653 s): HARD CUT at FOOTAGE TEMPO ---------------
+   The 00:20 passage plays 1:1 with the footage (user directive 2026-10-24:
+   the previous 0.42 s 1:6 window compressed the footage's deliberate beats
+   into a flicker). Onsets = footage pts − 18.916 + 3.153:
+     f1134 18.916 → 3.153  hard cut, zero white: cropped giant face + small
+                            caption + flanking chibis (flicker pose swaps)
+     f1202 20.033 → 4.273  ONE beat: red top band + photo panel + outlined
+                            caption slam together; chibis jump to corners
+     f1262 21.050 → 5.287  stamp glyph slams onto the panel (overshoot)
+     f1284 21.416 → 5.653  ramped flash #3 into chorus A
+   S5–S9 keep their exact 1:6 rhythm, shifted +2.078 s (master clock
+   13.814 s). See docs/reference/animation-reference.md §4–§5. */
+#introOverlay .in-insert { position: absolute; inset: 0; overflow: hidden; visibility: hidden; }
 #introOverlay.play .in-insert { animation:
-  in-vis 0s steps(1,end) 3.153s forwards, in-hid 0s steps(1,end) 3.575s forwards; }
-#introOverlay .in-face { position: absolute; left: 50%; top: 46%; width: min(120vh, 110%);
+  in-vis 0s steps(1,end) 3.153s forwards, in-hid 0s steps(1,end) 5.653s forwards; }
+#introOverlay .in-face { position: absolute; left: 50%; top: 36%; width: min(112vh, 86%);
   transform: translate(-50%, -50%); opacity: .96; }
-#introOverlay .in-cap0 { position: absolute; left: 6vw; bottom: 12vh; font-family: theme('fontFamily.ui');
+/* footage: the face is replaced by band+panel+black on the panel beat */
+#introOverlay.play .in-face { animation: in-hid 0s steps(1,end) 4.273s forwards; }
+#introOverlay .in-cap0 { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center;
+  font-family: theme('fontFamily.ui');
   font-weight: 700; font-size: clamp(.7rem, 2vw, .95rem); color: #fdf3f6; }
-#introOverlay .in-insert-bar { position: absolute; top: 7vh; left: 0; right: 0; height: 9vh;
+#introOverlay .in-insert-bar { position: absolute; top: 0; left: 0; right: 0; height: 21vh;
   background: #d92b4b; transform: translateY(-120%); }
-#introOverlay.play .in-insert-bar { animation: in-bar-in .12s cubic-bezier(.6,0,.3,1) 3.333s both; }
+#introOverlay.play .in-insert-bar { animation: in-bar-in .09s cubic-bezier(.6,0,.3,1) 4.273s both; }
 @keyframes in-bar-in { from { transform: translateY(-120%); } to { transform: translateY(0); } }
-#introOverlay .in-chibi-big { position: absolute; right: 16vw; bottom: 14vh; width: clamp(72px, 16vh, 130px);
-  transform: rotate(6deg); --wr: 6deg; opacity: 0; }
-#introOverlay.play .in-chibi-big { animation: in-slamb .12s cubic-bezier(.2,1.5,.3,1) 3.383s both; }
-#introOverlay .in-cap2 { position: absolute; left: 0; right: 0; top: 64%; text-align: center;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1.4rem, 6vw, 3rem);
-  color: #fdf3f6; -webkit-text-stroke: 2px #0b0c0e; opacity: 0; }
-#introOverlay.play .in-cap2 { animation: in-slam .12s cubic-bezier(.2,1.4,.3,1) 3.433s both; }
-#introOverlay .in-stamp { position: absolute; right: 8vw; top: 20vh; background: #0b0c0e; color: #e9ff47;
+#introOverlay .in-photo { position: absolute; left: 12%; right: 12%; top: 24vh; height: 42vh;
+  background: #4a121c; overflow: hidden; opacity: 0; --wr: 0deg; }
+#introOverlay .in-photo img { display: block; width: 100%; height: 100%; object-fit: contain;
+  opacity: .95; }
+#introOverlay.play .in-photo { animation: in-slamb .1s cubic-bezier(.2,1.5,.3,1) 4.273s both; }
+#introOverlay .in-cap2 { position: absolute; left: 0; right: 0; top: 46vh; text-align: center;
+  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1.4rem, 5.4vw, 2.8rem);
+  color: #fdf3f6; -webkit-text-stroke: 2px #0b0c0e; opacity: 0; --wr: -2deg; }
+#introOverlay.play .in-cap2 { animation: in-slam .1s cubic-bezier(.2,1.4,.3,1) 4.273s both; }
+#introOverlay .in-stamp { position: absolute; left: 0; right: 0; top: 29vh; margin-inline: auto;
+  width: max-content; background: #0b0c0e; color: #e9ff47;
   font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1rem, 3.4vw, 1.7rem);
-  border: 3px solid #e9ff47; padding: .15em .5em; transform: rotate(-10deg); --wr: -10deg; opacity: 0; }
-#introOverlay.play .in-stamp { animation: in-slamb .08s cubic-bezier(.2,1.6,.3,1) 3.5s both; }
+  border: 3px solid #e9ff47; padding: .15em .5em; transform: rotate(-10deg); --wr: -10deg;
+  opacity: 0; }
+#introOverlay.play .in-stamp { animation: in-slamb .1s cubic-bezier(.2,1.6,.3,1) 5.287s both; }
 #introOverlay .in-chibi { position: absolute; width: clamp(38px, 8vh, 64px); }
 #introOverlay .in-chibi img { display: block; width: 100%; height: auto; }
 #introOverlay .in-chibi img.sp { position: absolute; inset: 0; opacity: 0; }
 #introOverlay .in-chibi.cb1 { left: 8%; bottom: 14%; transform: rotate(-8deg); }
 #introOverlay .in-chibi.cb2 { right: 8%; bottom: 16%; transform: rotate(7deg); }
-#introOverlay.play .in-chibi img.sp { animation: in-op1 0s steps(1,end) 3.222s forwards; } /* f1140→1160 */
+/* footage: chibis flank the face at mid height from the cut, flicker-swap
+   poses (f1135–1160), then jump to the bottom corners on the panel beat. */
+#introOverlay.play .in-chibi.cb1 { animation:
+  in-cb1-mid 0s steps(1,end) 3.153s forwards, in-cb1-corner 0s steps(1,end) 4.273s forwards; }
+#introOverlay.play .in-chibi.cb2 { animation:
+  in-cb2-mid 0s steps(1,end) 3.153s forwards, in-cb2-corner 0s steps(1,end) 4.273s forwards; }
+@keyframes in-cb1-mid { to { transform: rotate(-8deg) translate(-3vw, -44vh); } }
+@keyframes in-cb1-corner { to { transform: rotate(-8deg); } }
+@keyframes in-cb2-mid { to { transform: rotate(7deg) translate(3vw, -38vh); } }
+@keyframes in-cb2-corner { to { transform: rotate(7deg); } }
+#introOverlay.play .in-chibi img.sp { animation:
+  in-op1 0s steps(1,end) 3.203s forwards, in-op0 0s steps(1,end) 3.253s forwards,
+  in-op1 0s steps(1,end) 3.586s forwards; }   /* flicker f1136 / f1139 / f1160 */
 
-/* ---- S5 chorus A (3.575–6.703 s): the dense collage ---------------------
-   Onsets from frame-timeline.md: words f1320/1420/1470/1530/1540 →
-   3.667/3.944/4.083/4.250/4.278; whips f1410/f1510 → 3.917/4.194; bubble
-   columns f1440/f1500 → 4.000/4.167; speech panel f1560–1740 → 4.333–4.833
-   (chip + lines 0.3 s apart → 0.05 s); panel 2 f2040-slot → 4.667, both out
-   4.917; callback + arrow f1800 → 5.000; corner cluster f1860 → 5.167;
-   chips f2130–2190 → 5.917/6.042/6.083, whip-out f2227 → 6.183. */
-#introOverlay .in-cola { position: absolute; inset: 0; visibility: hidden; }
+/* ---- S5 chorus A (5.653–8.781 s): the dense collage ---------------------
+   Onsets from docs/reference/animation-reference.md §2 (footage onsets at
+   1:6, +2.078 s phase-9d shift): words f1320/1420/1470/1530/1540 →
+   5.745/6.022/6.161/6.328/6.356; whips f1410/f1510 → 5.995/6.272; bubble
+   columns f1440/1500 → 6.078/6.245; speech panel f1560–1740 → 6.411–6.911
+   (chip + lines 0.3 s apart → 0.05 s); panel 2 f2040-slot → 6.745, both out
+   6.995; callback + arrow f1800 → 7.078; corner cluster f1860 → 7.245;
+   chips f2130–2190 → 7.995/8.120/8.161, whip-out f2227 → 8.261. */
 #introOverlay.play .in-cola { animation:
-  in-vis 0s steps(1,end) 3.575s forwards, in-hid 0s steps(1,end) 6.703s forwards,
-  in-whipx .03s steps(1,end) 3.917s forwards, in-whipx .03s steps(1,end) 4.194s forwards; }
+  in-vis 0s steps(1,end) 5.653s forwards, in-hid 0s steps(1,end) 8.781s forwards,
+  in-whipx .03s steps(1,end) 5.995s forwards, in-whipx .03s steps(1,end) 6.272s forwards; }
 #introOverlay .in-panel { position: absolute; border: 3px solid #f06e9a; background: #3d2733; opacity: 0; overflow: hidden; }
 #introOverlay .in-panel img { width: 100%; height: 100%; object-fit: cover; opacity: .5; }
 #introOverlay .in-p1 { left: 6%; top: 16%; width: clamp(90px, 18vw, 190px); height: clamp(56px, 11vw, 116px); transform: rotate(-3deg); }
 #introOverlay .in-p2 { right: 6%; top: 20%; width: clamp(80px, 16vw, 170px); height: clamp(50px, 10vw, 106px); transform: rotate(2deg); }
 #introOverlay .in-p3 { left: 10%; bottom: 18%; width: clamp(70px, 14vw, 150px); height: clamp(44px, 9vw, 94px); transform: rotate(2deg); }
 #introOverlay .in-p4 { right: 9%; bottom: 15%; width: clamp(90px, 17vw, 180px); height: clamp(54px, 10vw, 110px); transform: rotate(-2deg); }
-#introOverlay.play .in-p1 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 3.583s both; }
-#introOverlay.play .in-p2 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 3.6s both; }
-#introOverlay.play .in-p3 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 3.617s both; }
-#introOverlay.play .in-p4 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 3.633s both; }
+#introOverlay.play .in-p1 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.661s both; }
+#introOverlay.play .in-p2 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.678s both; }
+#introOverlay.play .in-p3 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.695s both; }
+#introOverlay.play .in-p4 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.711s both; }
 #introOverlay .in-plate { position: absolute; left: 0; right: 0; margin-inline: auto; width: max-content;
   background: #fdf3f6; color: #33202b; font-family: theme('fontFamily.ui');
   font-weight: 700; letter-spacing: .22em; text-transform: uppercase; font-size: clamp(.55rem, 1.5vw, .72rem);
@@ -1490,15 +1534,15 @@
 #introOverlay .in-plate-b { bottom: calc(7vh + 12px); transform: rotate(1deg); --wr: 1deg; background: #f06e9a; color: #2b1b22; }
 #introOverlay .in-chip-od { top: calc(7vh + 44px); transform: rotate(1.5deg); --wr: 1.5deg;
   background: #e9ff47; color: #33202b; }
-#introOverlay.play .in-plate-t { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 3.65s both; }
-#introOverlay.play .in-plate-b { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 3.667s both; }
-#introOverlay.play .in-chip-od { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 3.683s both; }
+#introOverlay.play .in-plate-t { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 5.728s both; }
+#introOverlay.play .in-plate-b { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 5.745s both; }
+#introOverlay.play .in-chip-od { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 5.761s both; }
 #introOverlay .in-wedge { position: absolute; width: clamp(60px, 12vw, 130px); height: clamp(16px, 3vw, 30px);
   background: #f06e9a; clip-path: polygon(0 100%, 18% 0, 32% 100%, 50% 0, 64% 100%, 82% 0, 100% 100%); opacity: 0; }
 #introOverlay .in-w1 { left: 4%; top: 44%; transform: rotate(-14deg); }
 #introOverlay .in-w2 { right: 4%; top: 52%; transform: rotate(12deg); }
-#introOverlay.play .in-w1 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 3.6s both; }
-#introOverlay.play .in-w2 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 3.65s both; }
+#introOverlay.play .in-w1 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.678s both; }
+#introOverlay.play .in-w2 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.728s both; }
 /* rotated outlined word slams at the five footage onsets */
 #introOverlay .in-slam-w { position: absolute; font-family: theme('fontFamily.title'); font-weight: 700;
   font-size: clamp(1.7rem, 7.5vw, 4rem); color: #fdf3f6; -webkit-text-stroke: 2px #1c1016; opacity: 0; }
@@ -1507,11 +1551,11 @@
 #introOverlay .in-s3 { left: 12%; bottom: 26%; --wr: -5deg; }
 #introOverlay .in-s4 { right: 12%; top: 16%; --wr: 10deg; color: #ffd9e6; }
 #introOverlay .in-s5 { left: 38%; top: 20%; --wr: -3deg; color: #e9ff47; }
-#introOverlay.play .in-s1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 3.667s both; }
-#introOverlay.play .in-s2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 3.944s both; }
-#introOverlay.play .in-s3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 4.083s both; }
-#introOverlay.play .in-s4 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 4.25s both; }
-#introOverlay.play .in-s5 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 4.278s both; }
+#introOverlay.play .in-s1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 5.745s both; }
+#introOverlay.play .in-s2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.022s both; }
+#introOverlay.play .in-s3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.161s both; }
+#introOverlay.play .in-s4 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.328s both; }
+#introOverlay.play .in-s5 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.356s both; }
 @keyframes in-word { 0% { transform: scale(1.7) rotate(0deg); opacity: 0; }
   60% { transform: scale(.94) rotate(var(--wr, -8deg)); opacity: 1; }
   100% { transform: scale(1) rotate(var(--wr, -8deg)); opacity: 1; } }
@@ -1522,12 +1566,12 @@
   text-align: center; opacity: 0; }
 #introOverlay .in-vcol1 { left: 30%; top: 30%; transform: rotate(-4deg); }
 #introOverlay .in-vcol2 { right: 27%; top: 34%; transform: rotate(3deg); }
-#introOverlay.play .in-vcol1 span:nth-child(1) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 4s both; }
-#introOverlay.play .in-vcol1 span:nth-child(2) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 4.05s both; }
-#introOverlay.play .in-vcol1 span:nth-child(3) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 4.1s both; }
-#introOverlay.play .in-vcol2 span:nth-child(1) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 4.167s both; }
-#introOverlay.play .in-vcol2 span:nth-child(2) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 4.217s both; }
-#introOverlay.play .in-vcol2 span:nth-child(3) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 4.267s both; }
+#introOverlay.play .in-vcol1 span:nth-child(1) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.078s both; }
+#introOverlay.play .in-vcol1 span:nth-child(2) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.128s both; }
+#introOverlay.play .in-vcol1 span:nth-child(3) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.178s both; }
+#introOverlay.play .in-vcol2 span:nth-child(1) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.245s both; }
+#introOverlay.play .in-vcol2 span:nth-child(2) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.295s both; }
+#introOverlay.play .in-vcol2 span:nth-child(3) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.345s both; }
 /* diagonal speech-bubble panels: slide+rotate in, chip first then lines
    0.05 s apart (footage 0.3 s), hold, swap out */
 #introOverlay .in-speech { position: absolute; background: #fdf3f6; color: #33202b; border: 3px solid #1c1016;
@@ -1540,29 +1584,29 @@
 #introOverlay .in-speech1 { left: 6%; bottom: 15%; }
 #introOverlay .in-speech2 { right: 6%; bottom: 19%; }
 #introOverlay.play .in-speech1 { animation:
-  in-panelin .12s cubic-bezier(.2,.9,.3,1) 4.333s both,
-  in-vis 0s steps(1,end) 4.333s forwards, in-hid 0s steps(1,end) 4.833s forwards; }
+  in-panelin .12s cubic-bezier(.2,.9,.3,1) 6.411s both,
+  in-vis 0s steps(1,end) 6.411s forwards, in-hid 0s steps(1,end) 6.911s forwards; }
 #introOverlay.play .in-speech2 { animation:
-  in-panelin2 .12s cubic-bezier(.2,.9,.3,1) 4.667s both,
-  in-vis 0s steps(1,end) 4.667s forwards, in-hid 0s steps(1,end) 4.917s forwards; }
+  in-panelin2 .12s cubic-bezier(.2,.9,.3,1) 6.745s both,
+  in-vis 0s steps(1,end) 6.745s forwards, in-hid 0s steps(1,end) 6.995s forwards; }
 @keyframes in-panelin { from { opacity: 0; transform: translate(-24vw, -14vh) rotate(-16deg); }
   to { opacity: 1; transform: translate(0, 0) rotate(-8deg); } }
 @keyframes in-panelin2 { from { opacity: 0; transform: translate(24vw, -14vh) rotate(16deg); }
   to { opacity: 1; transform: translate(0, 0) rotate(6deg); } }
-#introOverlay.play .in-speech1 b { animation: in-op1 0s steps(1,end) 4.383s forwards; }
-#introOverlay.play .in-speech1 i:nth-of-type(1) { animation: in-op1 0s steps(1,end) 4.433s forwards; }
-#introOverlay.play .in-speech1 i:nth-of-type(2) { animation: in-op1 0s steps(1,end) 4.483s forwards; }
-#introOverlay.play .in-speech2 b { animation: in-op1 0s steps(1,end) 4.717s forwards; }
-#introOverlay.play .in-speech2 i:nth-of-type(1) { animation: in-op1 0s steps(1,end) 4.767s forwards; }
-#introOverlay.play .in-speech2 i:nth-of-type(2) { animation: in-op1 0s steps(1,end) 4.817s forwards; }
+#introOverlay.play .in-speech1 b { animation: in-op1 0s steps(1,end) 6.461s forwards; }
+#introOverlay.play .in-speech1 i:nth-of-type(1) { animation: in-op1 0s steps(1,end) 6.511s forwards; }
+#introOverlay.play .in-speech1 i:nth-of-type(2) { animation: in-op1 0s steps(1,end) 6.561s forwards; }
+#introOverlay.play .in-speech2 b { animation: in-op1 0s steps(1,end) 6.795s forwards; }
+#introOverlay.play .in-speech2 i:nth-of-type(1) { animation: in-op1 0s steps(1,end) 6.845s forwards; }
+#introOverlay.play .in-speech2 i:nth-of-type(2) { animation: in-op1 0s steps(1,end) 6.895s forwards; }
 /* title callback bottom-centre + black arrow slash drawn over it (f1800) */
 #introOverlay .in-callback { position: absolute; left: 0; right: 0; bottom: 10vh; text-align: center;
   font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1rem, 3.2vw, 1.6rem);
   color: #fdf3f6; -webkit-text-stroke: 2px #1c1016; opacity: 0; }
-#introOverlay.play .in-callback { animation: in-slam .1s cubic-bezier(.2,1.3,.3,1) 5s both; }
+#introOverlay.play .in-callback { animation: in-slam .1s cubic-bezier(.2,1.3,.3,1) 7.078s both; }
 #introOverlay .in-arrow { position: absolute; left: 38%; bottom: calc(10vh + 1.1rem); width: clamp(140px, 22vw, 240px);
   height: 8px; background: #0b0c0e; transform-origin: left center; transform: rotate(-18deg) scaleX(0); }
-#introOverlay.play .in-arrow { animation: in-arrow .15s cubic-bezier(.3,.7,.4,1) 5.02s both; }
+#introOverlay.play .in-arrow { animation: in-arrow .15s cubic-bezier(.3,.7,.4,1) 7.098s both; }
 @keyframes in-arrow { from { transform: rotate(-18deg) scaleX(0); } to { transform: rotate(-18deg) scaleX(1); } }
 /* corner word-box cluster: four pre-rotated boxes in ONE beat (f1860) */
 #introOverlay .in-cx { position: absolute; background: #e9ff47; color: #33202b; border: 3px solid #1c1016;
@@ -1574,12 +1618,12 @@
 #introOverlay .in-cx4 { right: 6%; left: auto; bottom: calc(7vh + 12px); transform: rotate(-7deg); --wr: -7deg; }
 #introOverlay .in-cx5 { left: 4%; right: auto; top: 56%; transform: rotate(-8deg); --wr: -8deg; background: #ffd9e6; }
 #introOverlay .in-cx6 { right: 4%; left: auto; top: 62%; transform: rotate(7deg); --wr: 7deg; background: #ffd9e6; }
-#introOverlay.play .in-cx1 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 5.167s both; }
-#introOverlay.play .in-cx2 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 5.167s both; }
-#introOverlay.play .in-cx3 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 5.167s both; }
-#introOverlay.play .in-cx4 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 5.167s both; }
-#introOverlay.play .in-cx5 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 5.833s both; }
-#introOverlay.play .in-cx6 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 6.167s both; }
+#introOverlay.play .in-cx1 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
+#introOverlay.play .in-cx2 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
+#introOverlay.play .in-cx3 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
+#introOverlay.play .in-cx4 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
+#introOverlay.play .in-cx5 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.911s both; }
+#introOverlay.play .in-cx6 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 8.245s both; }
 /* dark chips slide in horizontally, 0.05 s stagger, whip-squash out (f2227;
    the footage's blur smear is substituted — blur filters are banned) */
 #introOverlay .in-ncplace { position: absolute; left: 0; right: 0; top: 40vh; display: flex; justify-content: center; }
@@ -1588,26 +1632,26 @@
   font-family: theme('fontFamily.ui'); font-weight: 700; font-size: clamp(.68rem, 1.9vw, .92rem);
   white-space: nowrap; opacity: 0; }
 #introOverlay.play .in-ncrow { animation:
-  in-whipx .03s steps(1,end) 6.183s forwards, in-hid 0s steps(1,end) 6.25s forwards; }
-#introOverlay.play .in-nc1 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 5.917s both; }
-#introOverlay.play .in-nc2 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 6.042s both; }
-#introOverlay.play .in-nc3 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 6.083s both; }
+  in-whipx .03s steps(1,end) 8.261s forwards, in-hid 0s steps(1,end) 8.328s forwards; }
+#introOverlay.play .in-nc1 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 7.995s both; }
+#introOverlay.play .in-nc2 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 8.12s both; }
+#introOverlay.play .in-nc3 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 8.161s both; }
 @keyframes in-chipin { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
 
-/* ---- S6 chorus B (6.703–8.272 s): the LOCKED lyric world ----------------
+/* ---- S6 chorus B (8.781–10.350 s): the LOCKED lyric world ----------------
    Footage f2420–2978: the bottom caption never moves while the centre swaps
    on the grid and fairy cut-outs trade frame edges (~1 s → 0.333 s here). */
 #introOverlay .in-colb { position: absolute; inset: 0; visibility: hidden; }
 #introOverlay.play .in-colb { animation:
-  in-vis 0s steps(1,end) 6.703s forwards, in-hid 0s steps(1,end) 8.272s forwards; }
+  in-vis 0s steps(1,end) 8.781s forwards, in-hid 0s steps(1,end) 10.35s forwards; }
 #introOverlay .in-locklyric { position: absolute; left: 0; right: 0; bottom: 11vh; text-align: center; opacity: 0; }
 #introOverlay .in-locklyric .ll1 { display: block; font-family: theme('fontFamily.title'); font-weight: 700;
   font-size: clamp(1.2rem, 4.4vw, 2.2rem); color: #fdf3f6; -webkit-text-stroke: 2px #1c1016; }
 #introOverlay .in-locklyric .ll2 { display: block; margin-top: .3rem; font-family: theme('fontFamily.mono');
   font-weight: 700; font-size: clamp(.8rem, 2.4vw, 1.1rem); color: #e9ff47; letter-spacing: .12em; }
-#introOverlay.play .in-locklyric { animation: in-op1 0s steps(1,end) 6.722s forwards; }
+#introOverlay.play .in-locklyric { animation: in-op1 0s steps(1,end) 8.8s forwards; }
 #introOverlay .in-plate-t2 { top: calc(7vh + 10px); left: 50%; transform: translateX(-50%) rotate(-1deg); }
-#introOverlay.play .in-plate-t2 { animation: in-slam .12s cubic-bezier(.2,1.4,.3,1) 6.722s both; }
+#introOverlay.play .in-plate-t2 { animation: in-slam .12s cubic-bezier(.2,1.4,.3,1) 8.8s both; }
 #introOverlay .in-fairies { position: absolute; inset: 0; }
 #introOverlay .in-fairy { position: absolute; width: clamp(34px, 7vh, 56px); }
 #introOverlay .in-fairy img { display: block; width: 100%; height: auto; }
@@ -1617,14 +1661,14 @@
 #introOverlay .in-fy4 { left: 7vw; top: 50%; margin-top: calc(clamp(34px, 7vh, 56px) / -2); }
 /* discrete 90° slot swaps every 0.333 s; children counter-step so the
    cut-outs stay upright (footage: fairies trade edges, never tumble) */
-#introOverlay.play .in-fairies { animation: in-fairyspin 1.332s steps(4,end) 6.9s forwards; }
-#introOverlay.play .in-fairy img { animation: in-fairyspin-r 1.332s steps(4,end) 6.9s forwards; }
+#introOverlay.play .in-fairies { animation: in-fairyspin 1.332s steps(4,end) 8.978s forwards; }
+#introOverlay.play .in-fairy img { animation: in-fairyspin-r 1.332s steps(4,end) 8.978s forwards; }
 @keyframes in-fairyspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes in-fairyspin-r { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
 #introOverlay .in-cx7 { right: 5%; top: 30%; transform: rotate(6deg); --wr: 6deg; background: #f06e9a; color: #fdf3f6; }
-#introOverlay.play .in-cx7 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 8.217s both; }
+#introOverlay.play .in-cx7 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 10.295s both; }
 
-/* ---- S7 chorus C (8.272–9.836 s): corrections, badges, diamonds ---------
+/* ---- S7 chorus C (10.350–11.914 s): corrections, badges, diamonds ---------
    Onsets: fix panel 1 → 8.317 (X draws 8.333/8.375), panel 2 → 8.458
    (X 8.475/8.517); corner words f208–213 → 8.667/8.750/8.792/8.833/8.875;
    big slams f213–216 → 8.917/8.958; starbursts f218/f220 → 9.083/9.167;
@@ -1632,24 +1676,24 @@
    9.500/9.583/9.667; whip smear f231' → 9.625. */
 #introOverlay .in-colc { position: absolute; inset: 0; visibility: hidden; }
 #introOverlay.play .in-colc { animation:
-  in-vis 0s steps(1,end) 8.272s forwards, in-hid 0s steps(1,end) 9.836s forwards,
-  in-whipx .03s steps(1,end) 9.625s forwards; }
+  in-vis 0s steps(1,end) 10.35s forwards, in-hid 0s steps(1,end) 11.914s forwards,
+  in-whipx .03s steps(1,end) 11.703s forwards; }
 #introOverlay .in-fix { position: absolute; background: #fdf3f6; color: #33202b; border-radius: 14px;
   border: 3px solid #1c1016; padding: .6em 1em; font-family: theme('fontFamily.title'); font-weight: 700;
   font-size: clamp(.85rem, 2.6vw, 1.25rem); opacity: 0; }
 #introOverlay .in-fix1 { left: 12%; top: 24%; transform: rotate(-4deg); --wr: -4deg; }
 #introOverlay .in-fix2 { right: 10%; top: 30%; transform: rotate(3deg); --wr: 3deg; }
-#introOverlay.play .in-fix1 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 8.317s both; }
-#introOverlay.play .in-fix2 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 8.458s both; }
+#introOverlay.play .in-fix1 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 10.395s both; }
+#introOverlay.play .in-fix2 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 10.536s both; }
 #introOverlay .in-fix u { position: relative; text-decoration: none; }
 #introOverlay .in-fix u::before, #introOverlay .in-fix u::after { content: ""; position: absolute;
   left: -4%; right: -4%; top: 50%; height: 4px; background: #d92b4b; transform-origin: left center; }
 #introOverlay .in-fix u::before { transform: rotate(8deg) scaleX(0); }
 #introOverlay .in-fix u::after { transform: rotate(-8deg) scaleX(0); }
-#introOverlay.play .in-fix1 u::before { animation: in-strikeA .12s cubic-bezier(.3,.7,.4,1) 8.333s both; }
-#introOverlay.play .in-fix1 u::after { animation: in-strikeB .12s cubic-bezier(.3,.7,.4,1) 8.375s both; }
-#introOverlay.play .in-fix2 u::before { animation: in-strikeA .12s cubic-bezier(.3,.7,.4,1) 8.475s both; }
-#introOverlay.play .in-fix2 u::after { animation: in-strikeB .12s cubic-bezier(.3,.7,.4,1) 8.517s both; }
+#introOverlay.play .in-fix1 u::before { animation: in-strikeA .12s cubic-bezier(.3,.7,.4,1) 10.411s both; }
+#introOverlay.play .in-fix1 u::after { animation: in-strikeB .12s cubic-bezier(.3,.7,.4,1) 10.453s both; }
+#introOverlay.play .in-fix2 u::before { animation: in-strikeA .12s cubic-bezier(.3,.7,.4,1) 10.553s both; }
+#introOverlay.play .in-fix2 u::after { animation: in-strikeB .12s cubic-bezier(.3,.7,.4,1) 10.595s both; }
 @keyframes in-strikeA { from { transform: rotate(8deg) scaleX(0); } to { transform: rotate(8deg) scaleX(1); } }
 @keyframes in-strikeB { from { transform: rotate(-8deg) scaleX(0); } to { transform: rotate(-8deg) scaleX(1); } }
 #introOverlay .in-cw { position: absolute; font-family: theme('fontFamily.title'); font-weight: 700;
@@ -1659,18 +1703,18 @@
 #introOverlay .in-cw3 { left: 16%; bottom: 20%; --wr: 5deg; }
 #introOverlay .in-cw4 { right: 16%; bottom: 24%; --wr: -6deg; }
 #introOverlay .in-cw5 { left: 42%; top: 14%; --wr: -3deg; color: #ffd9e6; }
-#introOverlay.play .in-cw1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 8.667s both; }
-#introOverlay.play .in-cw2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 8.75s both; }
-#introOverlay.play .in-cw3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 8.792s both; }
-#introOverlay.play .in-cw4 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 8.833s both; }
-#introOverlay.play .in-cw5 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 8.875s both; }
+#introOverlay.play .in-cw1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.745s both; }
+#introOverlay.play .in-cw2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.828s both; }
+#introOverlay.play .in-cw3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.87s both; }
+#introOverlay.play .in-cw4 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.911s both; }
+#introOverlay.play .in-cw5 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.953s both; }
 #introOverlay .in-big { position: absolute; left: 0; right: 0; display: block; text-align: center;
   font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(2rem, 9vw, 4.6rem);
   color: #fdf3f6; -webkit-text-stroke: 3px #1c1016; opacity: 0; }
 #introOverlay .in-big1 { top: 34%; --wr: -4deg; }
 #introOverlay .in-big2 { top: 52%; --wr: 3deg; color: #e9ff47; }
-#introOverlay.play .in-big1 { animation: in-word .12s cubic-bezier(.2,1.25,.3,1) 8.917s both; }
-#introOverlay.play .in-big2 { animation: in-word .12s cubic-bezier(.2,1.25,.3,1) 8.958s both; }
+#introOverlay.play .in-big1 { animation: in-word .12s cubic-bezier(.2,1.25,.3,1) 10.995s both; }
+#introOverlay.play .in-big2 { animation: in-word .12s cubic-bezier(.2,1.25,.3,1) 11.036s both; }
 /* starburst badges pop with a slight overshoot (f3270 grammar) */
 #introOverlay .in-burst { position: absolute; width: clamp(64px, 12vw, 110px); aspect-ratio: 1;
   display: grid; place-items: center; background: #1c1016; color: #f6b3ca;
@@ -1679,8 +1723,8 @@
   opacity: 0; }
 #introOverlay .in-burst1 { right: 14%; bottom: 30%; transform: rotate(8deg); }
 #introOverlay .in-burst2 { left: 10%; bottom: 32%; transform: rotate(-7deg); }
-#introOverlay.play .in-burst1 { animation: in-badge .16s cubic-bezier(.2,1.4,.3,1) 9.083s both; }
-#introOverlay.play .in-burst2 { animation: in-badge .16s cubic-bezier(.2,1.4,.3,1) 9.167s both; }
+#introOverlay.play .in-burst1 { animation: in-badge .16s cubic-bezier(.2,1.4,.3,1) 11.161s both; }
+#introOverlay.play .in-burst2 { animation: in-badge .16s cubic-bezier(.2,1.4,.3,1) 11.245s both; }
 @keyframes in-badge { 0% { opacity: 0; transform: scale(.5) rotate(-4deg); }
   60% { opacity: 1; transform: scale(1.08) rotate(var(--br, 8deg)); }
   100% { opacity: 1; transform: scale(1) rotate(var(--br, 8deg)); } }
@@ -1692,12 +1736,12 @@
   border: 3px solid #1c1016; display: grid; place-items: center; opacity: 0; }
 #introOverlay .in-dia span { transform: rotate(-45deg); font-family: theme('fontFamily.title');
   font-weight: 700; font-size: clamp(.62rem, 1.8vw, .9rem); color: #33202b; }
-#introOverlay.play .in-dia1 { animation: in-diam .1s cubic-bezier(.2,1.3,.3,1) 9.25s both; }
-#introOverlay.play .in-dia2 { animation: in-diam .1s cubic-bezier(.2,1.3,.3,1) 9.333s both; }
+#introOverlay.play .in-dia1 { animation: in-diam .1s cubic-bezier(.2,1.3,.3,1) 11.328s both; }
+#introOverlay.play .in-dia2 { animation: in-diam .1s cubic-bezier(.2,1.3,.3,1) 11.411s both; }
 @keyframes in-diam { from { opacity: 0; transform: rotate(45deg) scale(.4); }
   to { opacity: 1; transform: rotate(45deg) scale(1); } }
 #introOverlay.play .in-diarow { animation:
-  in-whipx .03s steps(1,end) 9.417s forwards, in-hid 0s steps(1,end) 9.467s forwards; }
+  in-whipx .03s steps(1,end) 11.495s forwards, in-hid 0s steps(1,end) 11.545s forwards; }
 /* bottom-line word slams (f228–233) */
 #introOverlay .in-bl { position: absolute; bottom: 10vh; font-family: theme('fontFamily.title');
   font-weight: 700; font-size: clamp(1.1rem, 4vw, 2rem); color: #fdf3f6;
@@ -1705,14 +1749,14 @@
 #introOverlay .in-bl1 { left: 22%; --wr: -5deg; }
 #introOverlay .in-bl2 { left: 42%; --wr: 3deg; }
 #introOverlay .in-bl3 { left: 64%; --wr: -4deg; }
-#introOverlay.play .in-bl1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 9.5s both; }
-#introOverlay.play .in-bl2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 9.583s both; }
-#introOverlay.play .in-bl3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 9.667s both; }
+#introOverlay.play .in-bl1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 11.578s both; }
+#introOverlay.play .in-bl2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 11.661s both; }
+#introOverlay.play .in-bl3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 11.745s both; }
 
-/* ---- S9 end card (11.419 s → wipe): HARD CUT, zero white, static hold ---
+/* ---- S9 end card (13.497 s → wipe): HARD CUT, zero white, static hold ---
    f4110: pink field + one small (~15 % width) bordered still, centred. */
 #introOverlay .in-endcard { position: absolute; inset: 0; display: grid; place-items: center; visibility: hidden; }
-#introOverlay.play .in-endcard { animation: in-vis 0s steps(1,end) 11.419s forwards; }
+#introOverlay.play .in-endcard { animation: in-vis 0s steps(1,end) 13.497s forwards; }
 #introOverlay .in-endframe { display: block; width: clamp(110px, 15vw, 200px); background: #d92b4b;
   border: 4px solid #33202b; border-radius: 12px; padding: .5rem; transform: rotate(2deg); }
 #introOverlay .in-endframe img { display: block; width: 100%; height: auto; }
@@ -1720,6 +1764,7 @@
 /* ---- reduced motion: one static lock-up, no running animation ---------- */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
 #introOverlay.rm .in-field { background: #f6b3ca; }
+#introOverlay.rm .in-aiart { visibility: visible; }
 #introOverlay.rm .in-field-dark, #introOverlay.rm .in-field-plum,
 #introOverlay.rm .in-skit, #introOverlay.rm .in-insert,
 #introOverlay.rm .in-cola, #introOverlay.rm .in-colb, #introOverlay.rm .in-colc,
@@ -1735,8 +1780,8 @@
 
 /* ==========================================================================
    PHASE 8 — site-wide motion system (js/motion.js + [data-mx] markup).
-   Grammar transcribed from the reference footage (evidence/phase8/
-   reference-timeline.md): discrete pops, rotated slams, staggered reveals,
+   Grammar transcribed from the reference footage
+   (docs/reference/animation-reference.md): discrete pops, rotated slams, staggered reveals,
    squash-whip state swaps, 2-frame white flash dips at section boundaries,
    rotateY inset spin, staggered slide panels. Transform/opacity only (flat
    art rules: no gradients, no blur/shadow filters, no layout animation).
@@ -1787,7 +1832,7 @@
 
 /* ---- phase 9 (full-video addendum): four more reference patterns ---------
    Transcribed from the COMPLETE reference pass, not just the intro — see
-   evidence/video-analysis/transition-inventory.md rows 8, 11, 12, 13, 14.
+   docs/reference/animation-reference.md §3 rows 8, 11, 12, 13, 14.
    11 staged line reveal: speech-bubble panels typed their lines 0.3 s apart
       (footage f1560-1740); site panels stagger children 90 ms.
    8  corner slam cluster: four pre-rotated boxes in one beat (f1860);
