@@ -262,3 +262,6 @@ notices) and without localStorage (progress disabled, everything else intact).
 - Physics content follows standard calculus-based texts (Halliday/Resnick/Walker,
   Serway, Young & Freedman) and the course lecture; constants: k = 8.99×10⁹ N·m²/C²
   (lecture value, used everywhere), e = 1.602×10⁻¹⁹ C, μ₀ = 4π×10⁻⁷ T·m/A.
+- The social card (`img/og-card.png`) is AI-generated artwork matching the
+  lavender kawaii redesign — it is plain committed artwork, not rendered from
+  HTML/CSS: edit it by regenerating an image, never by hand-painting pixels.

@@ -11,7 +11,6 @@
     "font:scan": "node tools/add-font.mjs",
     "perf": "node tools/perf-audit.mjs",
     "perf:guard": "node tools/perf-measure.mjs guard",
-    "og:card": "node tools/make-og-card.mjs",
     "test:shell": "node tools/shell-stress.mjs",
     "shots": "node tools/screenshots.mjs",
     "test:interact": "node tools/interaction-test.mjs",

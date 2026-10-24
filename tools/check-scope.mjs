@@ -98,8 +98,10 @@ for (const f of activeFiles()) {
 }
 /* ---- 3. banned styling (§3.8/scope lock): no gradients, backdrop-filter,
       canvas shadowBlur, blur/drop-shadow filters in any active file ---- */
+/* CONTRACT CHANGE (2026-10-24, cosmic redesign): CSS gradients are the directed
+   design language site-wide and are no longer banned; backdrop-filter, canvas
+   shadowBlur and blur/drop-shadow filters stay banned outside the intro. */
 const BANNED = [
-  [/linear-gradient|radial-gradient|conic-gradient/, 'CSS gradient'],
   [/backdrop-filter\s*:/, 'backdrop-filter declaration'],
   [/shadowBlur\s*[=:(]/, 'canvas shadowBlur'],
   [/filter:\s*[^;"]*\bblur\(/, 'blur filter'],

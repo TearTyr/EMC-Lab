@@ -50,6 +50,24 @@
   }
 
   /* ---------------------------------------------------------- dashboard */
+  /* hero progress card (cosmic redesign): the same real saved progress as the
+     dashboard below — overall percent bar, chapters studied, and the best
+     quiz attempt expressed as questions-right out of the real bank size. */
+  (function heroProgress() {
+    const bar = document.getElementById('heroBar');
+    if (!bar || !window.EMC_QUIZ) return;
+    const p = Progress.read();
+    const quizN = Array.isArray(EMC_QUIZ) ? EMC_QUIZ.length : 24;
+    const pct = Progress.percent();
+    const done = EMC.TOPICS.filter(t => p.topics[t]).length;
+    const correct = Math.round((Number(p.quizBest) || 0) * quizN / 100);
+    const set = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
+    bar.style.width = Math.round(Math.min(100, Math.max(0, pct))) + '%';
+    set('heroCount', Math.round(pct) + ' %');
+    set('heroChap', done + ' / ' + EMC.TOPICS.length);
+    set('heroQuiz', correct + ' / ' + quizN);
+  })();
+
   const ring = document.getElementById('ringFg');
   const RING_R = 58, RING_C = 2 * Math.PI * RING_R;
   if (ring) { ring.style.strokeDasharray = `${RING_C.toFixed(1)}`; ring.style.strokeDashoffset = String(RING_C); }

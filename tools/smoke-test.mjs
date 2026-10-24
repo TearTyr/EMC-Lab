@@ -202,9 +202,14 @@ console.log('\u2500'.repeat(66));
   // the animated dipole canvas was retired in favour of a static KaTeX strip
   ok('the animated hero canvas is gone (replaced by the equation strip)',
     doc.getElementById('heroCanvas') === null && !doc.querySelector('.hero-visual'));
-  eq('hero equation strip ships the four governing laws', doc.querySelectorAll('.eq-strip [data-tex]').length, 4);
-  ok('hero equations are typeset by KaTeX',
-    [...doc.querySelectorAll('.eq-strip [data-tex]')].every(e => e.dataset.texDone === '1'));
+  /* CONTRACT CHANGE (2026-10-24, cosmic-redesign directive): formula GRAPHICS
+     (KaTeX typesetting) no longer appear on the landing/hero — the governing
+     laws are stated in plain written text there. Formulas inside lessons and
+     simulations stay typeset; the intro overlay keeps its locked chips. */
+  eq('hero law strip states the four governing laws in written text',
+    doc.querySelectorAll('.law-strip span').length, 4);
+  ok('landing ships no typeset equation graphics (written text only)',
+    !doc.querySelector('.hero [data-tex]') && !doc.querySelector('main [data-tex]'));
   // hero counters are derived, never hand-copied (audit 1.2 / 1.5 / 3.2)
   eq('chapters stat is derived from the registry', txt(win, 'statChapters'),
     String(win.EMC_REGISTRY.chapters.length));
@@ -1563,8 +1568,11 @@ console.log('\u2500'.repeat(66));
   ok('one site-wide content column (--column: 1060px) ships compiled',
     /--column:1060px/.test(siteCss) && /max-width:var\(--column\)/.test(siteCss) &&
     /\.wrap-narrow\b/.test(siteCss) && /\.wrap-sim\b/.test(siteCss));
-  ok('home equation strip + stat strip align to the same column edges',
-    (siteCss.match(/max-width:calc\(var\(--column\) - 2\.5rem\)/g) || []).length >= 2);
+  /* CONTRACT CHANGE (2026-10-24, cosmic redesign): the KaTeX hero strip is gone
+     (written-law strip + journey strip replaced it); the alignment assertion now
+     checks the shared content column plus the two replacement strips. */
+  ok('home strips share the content column (law strip + journey strip ship)',
+    /--column:1060px/.test(siteCss) && /\.law-strip\b/.test(siteCss) && /\.journey\b/.test(siteCss));
   ok('the old thin 700px measure variable is fully gone',
     !/--measure/.test(siteCss) && !/--measure/.test(cssSrc));
   ok('type system is one family site-wide (G8321 in three weights)',
@@ -1589,8 +1597,12 @@ console.log('\u2500'.repeat(66));
      stripe gradients). Everywhere else the flat-art ban still holds. */
   const cssNoIntro = cssSrc.slice(0, cssSrc.indexOf('#introOverlay {')) +
     cssSrc.slice(cssSrc.indexOf('PHASE 8 — site-wide motion system'));
-  ok('stylesheet contains no gradient/blur/glass effects outside the intro overlay',
-    !/gradient|backdrop-filter|blur\(/.test(cssNoIntro));
+  /* CONTRACT CHANGE (2026-10-24, cosmic redesign): CSS gradients ARE the site's
+     design language now (nebula hero, gradient pills) by user directive; the
+     ban keeps backdrop-filter and blur filters off every non-intro surface
+     (the intro keeps its footage blur whips). */
+  ok('stylesheet keeps blur/glass effects out of every non-intro surface',
+    !/backdrop-filter|blur\(/.test(cssNoIntro));
   // flex or grid on a bullet li fragments <sub>/<sup> into separate items
   ok('bullet lists keep inline maths intact (marker is absolutely positioned)',
     /\.topic-list li \{ position: relative/.test(cssSrc) &&
@@ -1641,7 +1653,7 @@ console.log('\u2500'.repeat(66));
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
     /class="btn btn-primary in-start" href="topics\/current\.html"/.test(idx));
   ok('hero + intro use the supplied mascot art with explicit dimensions (no CLS)',
-    /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
+    /<img class="mascot hero-mascot" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img class="in-mascot" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img class="in-mascot in-mascot-sparkle" src="img\/mascot-sparkle\.png"/.test(idx));
   ok('chorus cut: topic slams + equation chips whip-swap on the beat grid (footage S5 grammar)',
