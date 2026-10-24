@@ -8,8 +8,6 @@
     "build:css": "tailwindcss -c tailwind.config.js -i css/input.css -o css/site.css --minify",
     "build:public": "node tools/build-public.mjs",
     "build": "bun run build:css && bun run build:public",
-    "switch:cdn": "node tools/switch-css.mjs cdn",
-    "switch:built": "node tools/switch-css.mjs built",
     "font:scan": "node tools/add-font.mjs",
     "perf": "node tools/perf-audit.mjs",
     "perf:guard": "node tools/perf-measure.mjs guard",
@@ -30,7 +28,6 @@
   "devDependencies": {
     "jsdom": "^27.4.0",
     "playwright": "^1.64.1",
-    "puppeteer": "^24.43.1",
     "tailwindcss": "^3.4.19"
   },
   "description": "Interactive electromagnetics tutorial for Calculus-based Physics II. Fully static: zero runtime dependencies; jsdom is a dev-only test dependency."

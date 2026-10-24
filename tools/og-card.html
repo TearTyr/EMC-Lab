@@ -6,141 +6,185 @@
   it. It exists so the social preview image can be regenerated instead of
   hand-edited in a paint program:
 
-      node tools/make-og-card.mjs        (needs puppeteer installed anywhere)
+      node tools/make-og-card.mjs        (needs playwright + chromium)
 
   The PNG itself IS committed (img/og-card.png) because the six pages point at
   an absolute URL for it — a scraper fetches that file, it never renders this
   HTML. Re-run the generator whenever the brand colours, the mascot, the counts
-  (topics / simulations / quiz questions) or the fonts change, then commit the
-  new PNG.
+  (chapters / simulations / quiz questions) or the fonts change, then commit the
+  new PNG. The footer counts are derived at generation time from
+  js/registry.js + js/quiz-data.js by make-og-card.mjs.
+
+  Style: kawaii sticker sheet — pastel plates, ink outlines, the client's drawn
+  mascot, sparkles, and the course's real equations typeset by the vendored
+  KaTeX (same pipeline as the site).
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>EMC Lab — social card</title>
   <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <script src="../vendor/katex/katex.min.js"></script>
   <style>
     :root {
-      --bg: #17181c; --panel: #1b1d22; --panel-2: #22242b; --plate: #101114;
-      --line: #2e3138; --text: #edebe3; --text-dim: #b9b7ae; --text-faint: #9a988e;
-      --pk: #f8aebe; --li: #d5b8d8; --mi: #b5d777; --sk: #a8d3e0; --ye: #f6d36b;
+      --cream: #fff7fa; --pink: #ffd9e6; --pink-deep: #f6a8c0; --rose: #e86a92;
+      --mint: #c9f0dd; --mint-deep: #7fd6ae; --lemon: #fff3c2; --lemon-deep: #f4d465;
+      --lav: #e8dcff; --lav-deep: #b79ae8; --sky: #d3ecff; --sky-deep: #8cc6ee;
+      --ink: #33202b; --ink-soft: #5c4351;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 1200px; height: 630px; overflow: hidden; }
     body {
-      background: var(--bg); color: var(--text);
+      background: var(--cream); color: var(--ink);
       font-family: 'G8321', 'Hiragino Maru Gothic ProN', 'Segoe UI', system-ui, sans-serif;
       position: relative;
     }
-    /* faint blueprint grid + two soft glows, like the site hero */
-    .grid {
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(168, 211, 224, .055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(168, 211, 224, .055) 1px, transparent 1px);
-      background-size: 44px 44px;
-      mask-image: radial-gradient(120% 100% at 20% 40%, #000 25%, transparent 78%);
-      -webkit-mask-image: radial-gradient(120% 100% at 20% 40%, #000 25%, transparent 78%);
-    }
-    .glow-a, .glow-b { position: absolute; border-radius: 50%; filter: blur(90px); }
-    .glow-a { width: 520px; height: 520px; left: -140px; top: -180px; background: rgba(248, 174, 190, .16); }
-    .glow-b { width: 460px; height: 460px; right: -120px; bottom: -190px; background: rgba(168, 211, 224, .14); }
 
-    .card {
-      position: absolute; inset: 46px;
-      border: 1.5px solid var(--line); border-radius: 26px;
-      background: linear-gradient(155deg, rgba(34, 36, 43, .92), rgba(16, 17, 20, .92));
-      display: flex; flex-direction: column; padding: 54px 62px 44px;
-    }
-    .row { display: flex; align-items: center; gap: 44px; flex: 1 1 auto; min-height: 0; }
-    .mascot { flex: none; width: 190px; height: 190px; }
-    .mascot img { width: 100%; height: 100%; display: block; object-fit: contain; }
+    /* ---- kawaii backdrop: blush circles + faint floating maths ------------ */
+    .blush { position: absolute; border-radius: 50%; }
+    .blush.b1 { width: 560px; height: 560px; left: -140px; top: -120px; background: var(--pink); opacity: .55; }
+    .blush.b2 { width: 420px; height: 420px; right: -120px; bottom: -160px; background: var(--lav); opacity: .5; }
+    .blush.b3 { width: 240px; height: 240px; right: 190px; top: -90px; background: var(--mint); opacity: .55; }
+    .glyph { position: absolute; color: var(--rose); opacity: .16; font-weight: 700; user-select: none; }
+    .spark { position: absolute; color: var(--rose); opacity: .8; font-weight: 700; }
+    .spark.mint { color: var(--mint-deep); } .spark.lav { color: var(--lav-deep); }
+    .spark.sky { color: var(--sky-deep); } .spark.lemon { color: #d9ae2b; }
 
-    .body { flex: 1 1 auto; min-width: 0; }
-    .eyebrow {
-      font-size: 19px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase;
-      color: var(--pk); margin-bottom: 16px;
-    }
-    h1 {
-      font-size: 76px; font-weight: 700; line-height: 1; letter-spacing: -.01em;
-      color: var(--text);
-    }
-    h1 em { font-style: normal; color: var(--pk); }
-    .sub { font-size: 24px; line-height: 1.45; color: var(--text-dim); margin-top: 14px; max-width: 40ch; }
+    /* scalloped sticker edges top + bottom */
+    .scallop { position: absolute; left: 0; right: 0; height: 24px;
+      background: radial-gradient(circle at 12px 24px, var(--pink) 12px, transparent 13px) repeat-x;
+      background-size: 24px 24px; }
+    .scallop.top { top: 0; transform: scaleY(-1); }
+    .scallop.bottom { bottom: 0; }
 
-    .chips { display: flex; flex-wrap: nowrap; gap: 12px; margin-top: 16px; }
-    .chip {
-      font-size: 18px; font-weight: 700; padding: 7px 16px; border-radius: 999px; white-space: nowrap;
-      border: 1.5px solid var(--line); background: rgba(27, 29, 34, .9); color: var(--text-dim);
-    }
-    .chip.c1 { border-color: rgba(248, 174, 190, .5);  color: var(--pk); }
-    .chip.c2 { border-color: rgba(246, 211, 107, .5);  color: var(--ye); }
-    .chip.c3 { border-color: rgba(213, 184, 216, .5);  color: var(--li); }
-    .chip.c4 { border-color: rgba(168, 211, 224, .5);  color: var(--sk); }
+    /* ---- left: mascot sticker crew ---------------------------------------- */
+    .crew { position: absolute; left: 52px; top: 118px; width: 372px; height: 402px; }
+    .mascot-plate { position: absolute; left: 0; top: 26px; width: 320px; height: 320px;
+      background: #fff; border: 5px solid var(--ink); border-radius: 46px;
+      transform: rotate(-5deg); box-shadow: 10px 12px 0 rgba(232, 106, 146, .35);
+      display: grid; place-items: center; }
+    .mascot-plate img { width: 268px; height: 272px; }
+    .sparkle-buddy { position: absolute; right: -6px; top: -14px; width: 148px; height: 150px;
+      background: #fff; border: 4px solid var(--ink); border-radius: 30px;
+      transform: rotate(9deg); box-shadow: 7px 8px 0 rgba(127, 214, 174, .45);
+      display: grid; place-items: center; }
+    .sparkle-buddy img { width: 118px; height: 120px; }
+    .speech { position: absolute; left: 168px; top: 310px; max-width: 250px;
+      background: #fff; border: 4px solid var(--ink); border-radius: 22px;
+      padding: 12px 18px 13px; transform: rotate(2deg);
+      box-shadow: 6px 7px 0 rgba(183, 154, 232, .4);
+      font-size: 25px; font-weight: 700; color: var(--ink); }
+    .speech::before { content: ""; position: absolute; left: 34px; top: -16px; width: 22px; height: 22px;
+      background: #fff; border-left: 4px solid var(--ink); border-top: 4px solid var(--ink);
+      transform: rotate(35deg) skewX(20deg); border-radius: 6px 0 0 0; }
+    .speech .katex { font-size: 1.02em; }
 
-    /* equation strip: the same four governing laws the hero shows on the site */
-    .eqs { display: flex; gap: 14px; margin-top: 20px; }
-    .eq {
-      flex: 1 1 0; min-width: 0; text-align: center;
-      background: var(--panel-2); border: 1.5px solid var(--line);
-      border-radius: 14px; padding: 13px 10px 11px;
-      display: flex; flex-direction: column; gap: 6px; align-items: center;
-    }
-    .eq .f { font-size: 25px; color: var(--text); letter-spacing: .01em; white-space: nowrap; }
-    .eq .f sub, .eq .f sup { font-size: .62em; }
-    .eq small { font-size: 12.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); }
-    .eq.e1 .f { color: var(--ye); }
-    .eq.e2 .f { color: var(--pk); }
-    .eq.e3 .f { color: var(--li); }
-    .eq.e4 .f { color: var(--mi); }
+    /* ---- right column: title + equation sticker sheet --------------------- */
+    .right { position: absolute; left: 452px; top: 52px; right: 52px; }
+    .kicker { display: inline-block; background: var(--ink); color: #ffe4ee;
+      border-radius: 999px; padding: 7px 20px 8px; font-size: 19px; letter-spacing: .14em;
+      font-weight: 700; transform: rotate(-1.2deg); }
+    h1 { font-size: 76px; line-height: 1.02; margin: 12px 0 4px; font-weight: 700;
+      color: var(--ink); letter-spacing: .01em; }
+    h1 em { font-style: normal; color: var(--rose); }
+    h1 .heart { color: var(--rose); font-size: .58em; vertical-align: .18em; margin-left: 10px; }
+    .tag { font-size: 22px; color: var(--ink-soft); font-weight: 700; margin-bottom: 14px; }
+    .tag b { color: var(--rose); }
 
-    .foot {
-      margin-top: 22px; padding-top: 20px; border-top: 1.5px solid var(--line);
-      display: flex; align-items: center; gap: 16px;
-      font-size: 20px; color: var(--text-faint); letter-spacing: .02em;
-    }
-    .foot span { white-space: nowrap; }
-    .foot b { color: var(--mi); font-weight: 700; }
-    .foot .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--edge, #3a3d45); }
+    .sheet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .eq { border: 4px solid var(--ink); border-radius: 18px; padding: 10px 7px 8px;
+      display: grid; justify-items: center; gap: 5px;
+      box-shadow: 6px 7px 0 rgba(51, 32, 43, .18); }
+    .eq .katex { font-size: 23.5px; color: var(--ink); white-space: nowrap; }
+    .eq:nth-child(7) .katex, .eq:nth-child(8) .katex { font-size: 21px; }
+    .eq small { font-size: 14.5px; letter-spacing: .12em; font-weight: 700; color: var(--ink-soft); }
+    .eq:nth-child(1) { background: var(--pink);  transform: rotate(-1.6deg); }
+    .eq:nth-child(2) { background: var(--mint);  transform: rotate(1.2deg); }
+    .eq:nth-child(3) { background: var(--lemon); transform: rotate(-1deg); }
+    .eq:nth-child(4) { background: var(--sky);   transform: rotate(1.6deg); }
+    .eq:nth-child(5) { background: var(--lav);   transform: rotate(1.3deg); }
+    .eq:nth-child(6) { background: var(--sky);   transform: rotate(-1.4deg); }
+    .eq:nth-child(7) { background: var(--mint);  transform: rotate(1deg); }
+    .eq:nth-child(8) { background: var(--pink);  transform: rotate(-1.2deg); }
+
+    .chips { display: flex; gap: 12px; margin-top: 16px; }
+    .chip { border: 4px solid var(--ink); border-radius: 999px; padding: 6px 14px;
+      font-size: 18px; font-weight: 700; box-shadow: 5px 6px 0 rgba(51, 32, 43, .18); }
+    .chip.c1 { background: var(--lemon); transform: rotate(-1deg); }
+    .chip.c2 { background: var(--pink); transform: rotate(.8deg); }
+    .chip.c3 { background: var(--mint); transform: rotate(-.8deg); }
+
+    /* ---- footer counts (overwritten by the generator) --------------------- */
+    .foot { position: absolute; left: 52px; right: 52px; bottom: 30px;
+      display: flex; align-items: center; gap: 14px; white-space: nowrap;
+      font-size: 21px; font-weight: 700; color: var(--ink-soft); }
+    .foot b { color: var(--rose); font-size: 24px; }
+    .foot .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--pink-deep); }
   </style>
 </head>
 <body>
-  <div class="grid"></div>
-  <div class="glow-a"></div>
-  <div class="glow-b"></div>
+  <i class="blush b1"></i><i class="blush b2"></i><i class="blush b3"></i>
+  <span class="glyph" style="left:404px; top:52px;  font-size:52px; transform:rotate(-14deg)">∑</span>
+  <span class="glyph" style="left:368px; top:470px; font-size:60px; transform:rotate(10deg)">π</span>
+  <span class="glyph" style="left:1108px; top:352px; font-size:56px; transform:rotate(-8deg)">∞</span>
+  <span class="glyph" style="left:60px;  top:40px;  font-size:44px; transform:rotate(12deg)">√</span>
+  <span class="glyph" style="left:760px; top:560px; font-size:48px; transform:rotate(-10deg)">±</span>
+  <span class="spark"        style="left:430px; top:118px; font-size:34px; transform:rotate(8deg)">✦</span>
+  <span class="spark mint"   style="left:1130px; top:86px; font-size:40px; transform:rotate(-12deg)">✦</span>
+  <span class="spark lav"    style="left:392px; top:330px; font-size:28px; transform:rotate(16deg)">★</span>
+  <span class="spark sky"    style="left:1146px; top:470px; font-size:30px; transform:rotate(10deg)">★</span>
+  <span class="spark lemon"  style="left:96px;  top:560px; font-size:30px; transform:rotate(-8deg)">✦</span>
+  <span class="spark"        style="left:652px; top:36px;  font-size:26px;">♡</span>
+  <i class="scallop top"></i><i class="scallop bottom"></i>
 
-  <div class="card">
-    <div class="row">
-    <div class="mascot">
-      <!-- the drawn mascot artwork: same file as the site brand mark / favicon -->
-      <img src="../img/mascot.png" alt="" width="190" height="192">
-    </div>
+  <div class="crew">
+    <span class="mascot-plate"><img src="../img/mascot.png" alt=""></span>
+    <span class="sparkle-buddy"><img src="../img/mascot-sparkle.png" alt=""></span>
+    <span class="speech"><span data-tex="E = F/q">E = F/q</span> ♡</span>
+  </div>
 
-    <div class="body">
-      <div class="eyebrow">Interactive electromagnetics</div>
-      <h1>EMC<em>Lab</em></h1>
-      <p class="sub">Every number on screen is computed from the real equations, not faked.</p>
+  <div class="right">
+    <span class="kicker">INTERACTIVE ELECTROMAGNETICS ♡ PHYSICS II</span>
+    <h1>EMC<em>Lab</em><span class="heart">♡</span></h1>
+    <p class="tag">every number on screen is computed from the <b>real equations</b> — not faked!</p>
+    <div class="sheet">
+      <span class="eq"><span data-tex="q = n e">q = n·e</span><small>CHARGE</small></span>
+      <span class="eq"><span data-tex="F = k\dfrac{|q_1 q_2|}{r^2}">F = k·|q₁q₂|/r²</span><small>COULOMB</small></span>
+      <span class="eq"><span data-tex="E = \dfrac{F}{|q_0|}">E = F/|q₀|</span><small>FIELD</small></span>
+      <span class="eq"><span data-tex="V = I R">V = I·R</span><small>OHM</small></span>
+      <span class="eq"><span data-tex="P = V I">P = V·I</span><small>POWER</small></span>
+      <span class="eq"><span data-tex="\mathbf{F} = q\mathbf{v} \times \mathbf{B}">F = qv × B</span><small>LORENTZ</small></span>
+      <span class="eq"><span data-tex="\Phi = B A \cos\theta">Φ = B·A·cosθ</span><small>FLUX</small></span>
+      <span class="eq"><span data-tex="\varepsilon = -N \dfrac{d\Phi}{dt}">ε = −N·dΦ/dt</span><small>FARADAY</small></span>
     </div>
-    </div>
-
-    <div class="eqs">
-      <span class="eq e1"><span class="f">V = IR</span><small>Ohm’s law</small></span>
-      <span class="eq e2"><span class="f">F = k·q<sub>1</sub>q<sub>2</sub>/r<sup>2</sup></span><small>Coulomb’s law</small></span>
-      <span class="eq e3"><span class="f">F = qv × B</span><small>Lorentz force</small></span>
-      <span class="eq e4"><span class="f">EMF = −N·dΦ/dt</span><small>Faraday’s law</small></span>
-    </div>
-
     <div class="chips">
-      <span class="chip c2">1 · Circuits &amp; Ohm’s Law</span>
-      <span class="chip c1">2 · Electric Fields &amp; Coulomb’s Law</span>
+      <span class="chip c1">1 · Circuits &amp; Ohm's Law</span>
+      <span class="chip c2">2 · Electric Fields &amp; Coulomb's Law</span>
       <span class="chip c3">3 · Magnetism &amp; Induction</span>
     </div>
-
-    <div class="foot">
-      <span><b>3</b> chapters</span><span class="dot"></span>
-      <span><b>6</b> live simulations</span><span class="dot"></span>
-      <span><b>24</b>-question scored quiz</span>
-    </div>
   </div>
+
+  <div class="foot">
+    <span><b>3</b> chapters</span><span class="dot"></span>
+    <span><b>13</b> live simulations</span><span class="dot"></span>
+    <span><b>24</b>-question scored quiz</span><span class="dot"></span>
+    <span>zero runtime deps ♡</span>
+  </div>
+
+  <script>
+    /* typeset the sticker sheet with the vendored KaTeX (same pipeline as the
+       site), then flag readiness for tools/make-og-card.mjs */
+    (function () {
+      function render() {
+        document.querySelectorAll('[data-tex]').forEach(el => {
+          try { window.katex.render(el.dataset.tex, el, { throwOnError: false }); } catch (e) {}
+        });
+        window.__cardReady = true;
+      }
+      if (window.katex) render();
+      else document.addEventListener('DOMContentLoaded', render, { once: true });
+    })();
+  </script>
 </body>
 </html>

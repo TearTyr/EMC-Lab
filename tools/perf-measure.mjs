@@ -16,15 +16,17 @@
    active rAF chains (idle / offscreen / hidden-probe), long tasks, interaction
    frame times + INP proxy, network transfer, AudioContext constructions.
 
-   Methodology notes and limitations are recorded in docs/PERF.md.
-   This file is dev-only: tools/ is not part of the public build allow-list.
+   Methodology notes and limitations live in this header and the inline
+   comments. Single browser stack: Playwright chromium (the same engine every
+   other gate in this repo uses). This file is dev-only: tools/ is not part of
+   the public build allow-list.
    ========================================================================== */
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MODE = process.argv[2] || 'measure';
@@ -82,6 +84,13 @@ function instrument() {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* interactions are frame-sample PROVOCATIONS, not assertions: puppeteer used to
+   click whatever it found (hidden elements threw immediately and were skipped by
+   the `if (handle)` guards); Playwright waits for actionability, so probe
+   visibility first and treat "not clickable" as "not provoked". */
+async function probeClick(h) {
+  try { if (h && await h.isVisible()) await h.click({ timeout: 2000 }); } catch (e) {}
+}
 const MB = b => +(b / 1048576).toFixed(2);
 
 /* ------------------------------------------------------------------ helpers */
@@ -102,12 +111,14 @@ async function sampleRaf(page, ms) {
 function p95(arr) { if (!arr.length) return 0; const s = [...arr].sort((a, b) => a - b); return +s[Math.floor(0.95 * (s.length - 1))].toFixed(1); }
 
 async function measurePage(browser, url, profile, name) {
-  const page = await browser.newPage();
-  const client = await page.createCDPSession();
+  /* one context per page+profile: viewport/DPR/touch are context-level in
+     Playwright, and a fresh context also means a cold cache per measurement */
+  const ctx = await browser.newContext({ viewport: { width: profile.width, height: profile.height }, deviceScaleFactor: profile.dpr, hasTouch: profile.touch });
+  const page = await ctx.newPage();
+  const client = await ctx.newCDPSession(page);
   await client.send('Performance.enable');
   await client.send('Network.enable');
-  await page.evaluateOnNewDocument(instrument);
-  await page.setViewport({ width: profile.width, height: profile.height, deviceScaleFactor: profile.dpr, hasTouch: profile.touch });
+  await page.addInitScript(instrument);
   if (profile.throttle !== 1) await client.send('Emulation.setCPUThrottlingRate', { rate: profile.throttle });
 
   const transfer = { bytes: 0, requests: 0 };
@@ -141,7 +152,7 @@ async function measurePage(browser, url, profile, name) {
   const rafOffscreen = await sampleRaf(page, 2400);
 
   // hidden probe: fake visibilitychange (tests OUR listeners; Chrome's own
-  // rAF throttling for real hidden tabs is browser-level and noted in PERF.md)
+  // rAF throttling for real hidden tabs is browser-level; see the header notes)
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
@@ -175,7 +186,8 @@ async function measurePage(browser, url, profile, name) {
   if (dragCanvas) {
     const bb = await dragCanvas.boundingBox();
     if (bb) {
-      await page.evaluate(sel => document.querySelector(sel).scrollIntoView({ block: 'center' }), await page.evaluateHandle(c => c, dragCanvas).then(h => h.asElement()?.evaluate(e => '#' + e.id).catch(() => null)) || '#sim-ohm');
+      const sel = await dragCanvas.evaluate(el => '#' + el.id).catch(() => null) || '#sim-ohm';
+      await page.evaluate(s => document.querySelector(s).scrollIntoView({ block: 'center' }), sel);
       await sleep(400);
       const bb2 = await dragCanvas.boundingBox();
       await page.mouse.move(bb2.x + bb2.width / 2, bb2.y + bb2.height / 2);
@@ -187,18 +199,18 @@ async function measurePage(browser, url, profile, name) {
   }
   if (url.includes('quiz')) {
     const opt = await page.$('.opt');
-    if (opt) { await opt.click(); interactions.push('quiz-option'); }
+    if (opt && await opt.isVisible().catch(() => false)) { await probeClick(opt); interactions.push('quiz-option'); }
     const filt = await page.$('[data-quiz-filter="efield"]');
-    if (filt) { await filt.click(); interactions.push('quiz-filter'); }
+    if (filt && await filt.isVisible().catch(() => false)) { await probeClick(filt); interactions.push('quiz-filter'); }
   }
   const seg = await page.$('.seg-btn');
-  if (seg) { await seg.click(); interactions.push('segment'); }
+  if (seg && await seg.isVisible().catch(() => false)) { await probeClick(seg); interactions.push('segment'); }
   await sleep(400);
   const frameData = await page.evaluate(() => { window.__perf.sampling = false; const f = window.__perf.frames; const d = []; for (let i = 1; i < f.length; i++) d.push(f[i] - f[i - 1]); return d; });
   const perfState = await page.evaluate(() => ({ longtasks: window.__perf.longtasks, events: window.__perf.events, audioCtx: window.__perf.audioCtx }));
   const inp = perfState.events.length ? Math.max(...perfState.events.map(e => e.dur)) : 0;
 
-  await page.close();
+  await ctx.close();
   return {
     page: url, profile: name,
     loadMs,
@@ -225,10 +237,10 @@ async function shots(browser) {
   for (const [pname, profile] of Object.entries(PROFILES)) {
     for (const url of PAGES) {
       console.log('shot:', pname, url);
-      const page = await browser.newPage();
+      const ctx = await browser.newContext({ viewport: { width: profile.width, height: profile.height }, hasTouch: profile.touch });
+      const page = await ctx.newPage();
       page.setDefaultTimeout(20000);
-      await page.setViewport({ width: profile.width, height: profile.height, deviceScaleFactor: profile.dpr === 3 ? 1 : 1, hasTouch: profile.touch });
-      if (profile.throttle !== 1) await (await page.createCDPSession()).send('Emulation.setCPUThrottlingRate', { rate: profile.throttle });
+      if (profile.throttle !== 1) await (await ctx.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: profile.throttle });
       await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
       await sleep(2500);
       // scroll through so lazy sims initialise before the full-page capture
@@ -240,7 +252,7 @@ async function shots(browser) {
       } catch (e) { console.log('scroll-through skipped:', String(e).slice(0, 80)); }
       const tag = url.replace(/\.html$/, '').replace('topics/', '').replace('index', 'home');
       await page.screenshot({ path: path.join(dir, `${tag}-${profile.width}.jpg`), type: 'jpeg', quality: 72, fullPage: true });
-      await page.close();
+      await ctx.close();
     }
   }
   console.log('shots ->', dir);
@@ -248,11 +260,11 @@ async function shots(browser) {
 
 /* ----------------------------------------------------------------- session */
 async function session(browser) {
-  const page = await browser.newPage();
-  const client = await page.createCDPSession();
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  const client = await ctx.newCDPSession(page);
   await client.send('HeapProfiler.enable');
-  await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
-  await page.evaluateOnNewDocument(instrument);
+  await page.addInitScript(instrument);
   await page.goto(`http://127.0.0.1:${PORT}/topics/current.html`, { waitUntil: 'load' });
   await sleep(3000);
   const sample = async () => {
@@ -274,7 +286,7 @@ async function session(browser) {
       for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight');
     }
     const segs = await page.$$('.seg-btn');
-    if (segs.length) await segs[step % segs.length].click().catch(() => {});
+    if (segs.length) await probeClick(segs[step % segs.length]);
     await sleep(4200);
     step++;
     if (step % 7 === 0) series.push(await sample());
@@ -283,7 +295,7 @@ async function session(browser) {
   fs.mkdirSync(path.join(ROOT, 'docs', 'perf-data'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'docs', 'perf-data', `session-${LABEL}.json`), JSON.stringify(series, null, 2));
   console.log(JSON.stringify(series));
-  await page.close();
+  await ctx.close();
 }
 
 /* ------------------------------------------------------- per-tab RSS delta */
@@ -304,13 +316,13 @@ async function rss(browser) {
   const out = [];
   const blank = chromeRSS();
   for (const url of PAGES) {
-    const page = wrapPage(await browser.newPage());
-    await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
     await sleep(3000);
     const now = chromeRSS();
     out.push({ page: url, deltaMB: MB(now - blank), totalMB: MB(now) });
-    await page.close();
+    await ctx.close();
     await sleep(800);
   }
   console.log(JSON.stringify({ note: 'delta vs idle browser (all chrome processes RSS); includes renderer+GPU+shared services, not isolated per-tab', rows: out }, null, 2));
@@ -331,9 +343,8 @@ async function guard(browser) {
     if (!ok) fails.push(name);
   };
   const openPage = async url => {
-    const page = wrapPage(await browser.newPage());
-    await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
-    await page.evaluateOnNewDocument(() => {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    await page.addInitScript(() => {
       const pend = new Set();
       window.__perf = { rafPending: () => pend.size };
       const o = window.requestAnimationFrame.bind(window);
@@ -390,9 +401,8 @@ async function guard(browser) {
     await page.close();
   }
   for (const url of ['index.html', 'topics/current.html']) {
-    const page = wrapPage(await browser.newPage());
-    await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
-    await page.evaluateOnNewDocument(() => {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    await page.addInitScript(() => {
       window.__cls = 0;
       new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; })
         .observe({ type: 'layout-shift', buffered: true });
@@ -422,26 +432,14 @@ async function guard(browser) {
 
 /* -------------------------------------------------------------------- main */
 const server = await serve();
-/* phase 8: --disable-dev-shm-usage joins the flag set every other launcher in
-   this repo already passes: the session container ships a 40 KB /dev/shm which
-   crashes Chrome 148 at launch. Measurement logic untouched (TOOL-05). */
-/* phase 8 (TOOL-05): PERF_ENGINE=playwright runs the identical measurements on
-   Playwright's chromium headless shell. Needed only in sandboxes where the
-   kernel thread budget (threads-max) is eaten by unreapable zombie tasks and
-   Chrome 148's larger thread pool cannot start (pthread_create EAGAIN).
-   Default stays puppeteer/Chrome; measurements are page-level and unchanged. */
-let browser;
-if (process.env.PERF_ENGINE === 'playwright') {
-  const { chromium } = await import('playwright');
-  browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
-} else {
-  browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage', '--enable-precise-memory-info', '--disable-background-timer-throttling'] });
-}
-const wrapPage = pg => (pg.setViewport ? pg : Object.assign(pg, {
-  setViewport: v => pg.setViewportSize({ width: v.width, height: v.height }),
-  evaluateOnNewDocument: fn => pg.addInitScript(fn)
-}));
-const version = await browser.version();
+/* Single browser stack (2026-10-24 consolidation): Playwright chromium — the
+   same engine every other gate in this repo uses (the puppeteer engine was
+   retired with it). --disable-dev-shm-usage joins the flag set every launcher
+   here passes (the session container ships a 40 KB /dev/shm);
+   --enable-precise-memory-info keeps performance.memory honest. Measurements
+   are page-level and unchanged by the engine swap. */
+const browser = await chromium.launch({ args: ['--disable-dev-shm-usage', '--enable-precise-memory-info', '--disable-background-timer-throttling'] });
+const version = browser.version();
 console.log('browser:', version);
 
 if (MODE === 'guard') await guard(browser);

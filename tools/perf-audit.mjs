@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ==========================================================================
-   EMC Lab - performance audit (dev tool, needs puppeteer installed anywhere)
+   EMC Lab - performance audit (dev tool, needs playwright + chromium)
    File: tools/perf-audit.mjs     run:  node tools/perf-audit.mjs [baseUrl]
 
    Serves the project (python3 http.server) or uses your URL, then asserts the
@@ -69,34 +69,18 @@ if (!base) {
   await new Promise(r => setTimeout(r, 600));
 }
 
-let puppeteer;
-try { puppeteer = (await import('puppeteer')).default; }
-catch { try { puppeteer = (await import('/tmp/node_modules/puppeteer/lib/esm/puppeteer/puppeteer.js')).default; }
-        catch { console.log('puppeteer not found - install it to run the audit'); server?.close(); process.exit(0); } }
-
-const browser = await puppeteer.launch({
-  headless: 'new',
-  protocolTimeout: 120000,
-  timeout: 90000,
-  dumpio: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
-         '--single-process', '--no-zygote', '--disable-background-networking']
+const { chromium } = await import('playwright');
+const browser = await chromium.launch({
+  args: ['--disable-dev-shm-usage', '--disable-gpu', '--disable-background-networking']
 });
-async function newPage() {
-  for (let i = 0; i < 3; i++) {
-    try { return await browser.newPage(); }
-    catch (e) { await new Promise(r => setTimeout(r, 1500)); }
-  }
-  throw new Error('could not open a page');
-}
 const fails = [];
 console.log('\npage                      transfer   fonts    DCL     blocking-scripts');
 console.log('─'.repeat(72));
 for (const path of PAGES) {
-  const page = await newPage();
-  await page.setCacheEnabled(false);   // honest per-page transfer numbers
-  await page.setViewport({ width: 1440, height: 900 });
-  await page.goto(`${base}/${path}`, { waitUntil: 'networkidle2', timeout: 60000 });
+  /* one fresh context per page = cold cache: honest per-page transfer numbers */
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(`${base}/${path}`, { waitUntil: 'networkidle', timeout: 60000 });
   await new Promise(r => setTimeout(r, 1500));
   const m = await page.evaluate(() => {
     const res = performance.getEntriesByType('resource');
@@ -113,7 +97,7 @@ for (const path of PAGES) {
   if (m.blocking > 0) fails.push(`${path}: ${m.blocking} render-blocking script(s)`);
   if (m.total - m.fontBytes > 500 * 1024) fails.push(`${path}: non-font transfer ${((m.total - m.fontBytes) / 1024).toFixed(0)} KB > 500 KB budget`);
   if (m.ttf > 500 * 1024) fails.push(`${path}: raw TTF payload ${(m.ttf / 1024).toFixed(0)} KB - convert to woff2 (pip install fonttools brotli)`);
-  await page.close();
+  await ctx.close();
 }
 await browser.close();
 server?.close();

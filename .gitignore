@@ -34,8 +34,7 @@ public/
 vendor/fonts/*.ttf
 vendor/fonts/*.otf
 
-# --- local-only dev docs (kept on disk, never committed) ---
-PRESENTATION-NOTES.md
+# --- local-only dev artifacts (kept on disk, never committed) ---
 core.*
 
 # --- local-only scratch probes (kept on disk, never committed) ---

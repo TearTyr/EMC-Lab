@@ -33,10 +33,11 @@ never hand-typed. Legacy ids from earlier site generations (`charge`, `coulomb`,
 `field`, `current`, `magind`, …) resolve through its alias map, so old links, old
 hash routes, old quiz deep links and old progress records all keep working.
 
-**Scope map:** audit history and every requirement→fix→verification record lives
-in `BUG_AUDIT.md`; the requirement digest (the spec PDFs were not available in the
-working environment) is in `docs/spec/`. The reference-video analysis behind the
-intro and the site-wide motion system is in `docs/reference/animation-reference.md`.
+**Scope map:** `BUG_AUDIT.md` is the compact register of every audited finding and
+every gate-contract change (all resolved; narrative history lives in git). The
+requirement digest and the lecture PDF are in `docs/spec/`; the reference-video
+analysis behind the intro and the site-wide motion system is in
+`docs/reference/animation-reference.md`.
 
 ---
 
@@ -57,6 +58,10 @@ python3 -m http.server 8000        # or: npx serve .
 
 ### Option C — any static host
 Upload the repo root, or run the production build (§5) and upload `public/`.
+
+The reference footage under `Video/` is a Git LFS object; the site, the tests and
+every gate run without it (all harness file-servers exclude `Video/`). Install
+`git-lfs` and run `git lfs pull` only if you want to re-inspect the footage.
 
 ---
 
@@ -89,7 +94,9 @@ vendor/               KaTeX + Chart.js + OFL fonts (same-origin, licensed)
 tools/                dev tooling (see §7)
 docs/spec/            requirement digest + independent recompute of every lecture value
 docs/reference/       reference-video analysis behind the intro & motion system
-Video/                the original reference MP4 (analysis source; never shipped)
+Video/                the original reference MP4 (analysis source; never shipped;
+                      stored via Git LFS — `git lfs pull` after cloning if you need
+                      to re-derive the footage analysis; no gate reads it)
 ```
 
 ---
@@ -103,17 +110,19 @@ Video/                the original reference MP4 (analysis source; never shipped
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro (v5 “chorus cut”).** The homepage opens with a
-  14-second original composition based on the reference video's main-motion
-  section from about 00:21 onward. It adapts the footage's staggered topic slams,
-  equation chips, speech panels, corner clusters, whip transitions, and closing
-  callback to EMC Lab's physics topics, formulas, mascot, and pink/plum palette.
-  It is an adaptation, not a frame-for-frame copy. The original MP4 is a
-  development reference only and is never shipped. The intro is skippable,
-  plays once per session (`emc.intro.v1`), never plays on chapter routes, and
-  respects reduced-motion settings. `npm run intro-verify` checks its lifecycle;
-  the timing map and deliberate deviations are documented in
-  `docs/reference/animation-reference.md`.
+- **Once-per-session intro (v5 "chorus cut").** The homepage opens with a ~14 s
+  original composition rebuilt off the *main-motion passage* of the inspected
+  reference footage (`Video/シェリーライド.mp4`, dev-only, never shipped): it starts
+  where the footage's main motion starts — the ramped flash at footage 21.4 s into
+  the chorus collage — and runs that section's beat grid with the site's own
+  content in action: outlined topic slams (CHARGE → FIELD → CURRENT → FLUX →
+  INDUCTION) whip-swap with KaTeX equation chips (Coulomb, E = F/q, V = IR, Φ = BA,
+  ε = −dΦ/dt) through ~120 ms motion-blur whips, joined by equation bubble columns,
+  speech panels, a corner cluster, an arc sweep and navy feature chips, then a
+  letterbox wipe hands over to the homepage. Skippable, once per session
+  (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to a
+  static poster under `prefers-reduced-motion`. `npm run intro-verify` proves the
+  whole contract; the timing map lives in `docs/reference/animation-reference.md`.
   The client's drawn mascot artwork anchors every brand surface
   (hero, header/footer marks, favicon set, social card) — no SVG-generated
   mascot art remains; the hero mascot is capped (capped layout
@@ -166,7 +175,7 @@ outright. The lecture's check values are independently recomputed by
 The committed site runs with **no build step**. The build exists for production:
 
 ```bash
-npm install                # devDependencies: jsdom, tailwindcss, playwright, puppeteer
+npm install                # devDependencies: jsdom, tailwindcss, playwright
 npm run build:css          # Tailwind CLI: css/input.css -> css/site.css (minified)
 npm run build:public       # assemble public/: hashed+minified assets, link verification,
                            # sitemap.xml + generated pages; fails on any broken reference
@@ -195,7 +204,7 @@ with bun as configured in `vercel.json` (`buildCommand: bun run build`,
 
 ```bash
 npm run check          # links + ids + data hooks, Detail-Mode parity, scope & network purity
-npm run test           # jsdom smoke test (556 assertions: physics, quiz, loader, a11y, migration, intro)
+npm run test           # jsdom smoke test (557 assertions: physics, quiz, loader, a11y, migration, intro)
 npm run test:interact  # real Chromium drives every sim (mouse/touch/keyboard, rude cases)
 npm run test:shell     # shell stress: rapid route switching, teardown, reduced motion
 npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 16 checks
@@ -209,6 +218,13 @@ npm run shots          # screenshots of every page + sim panel
 npm run build          # build:css + build:public
 ```
 
+Every `*-verify` gate above also has a plain script name (`npm run a11y-verify`,
+`nav-verify`, `quiz-verify`, `lecture-values`, `asset-verify`, …). A few harnesses
+are manual only (`node tools/<name>.mjs`): `browser-matrix` (gate B:
+Chromium+Firefox+Edge core flows), `capture-site-intro` (timestamped intro frame
+loop → `/tmp/introcap`), `capture-intro-video [outDir]` (intro as WebM) and
+`baseline-sweep [name]` (responsive sweep → `shots/sweeps/[name]/`).
+
 All test tooling is dev-only; the shipped site has zero runtime dependencies.
 Playwright browsers: `npx playwright install chromium firefox` (+ `msedge` channel for
 the Edge run). Puppeteer powers the perf tools.
@@ -216,27 +232,24 @@ the Edge run). Puppeteer powers the perf tools.
 **Harness notes (sandbox/low-RAM environments).**
 - Run the browser gates **one at a time**; `pkill -9 -f "chrome|chromium"` between runs —
   zombie browsers from a crashed run cause `Target crashed` on the next harness's first page.
-- `perf`/`perf:guard` default to puppeteer/Chrome; without a Chrome binary use
-  `PERF_ENGINE=playwright npm run perf:guard`, or point puppeteer at Playwright's cached
-  headless shell via `PUPPETEER_EXECUTABLE_PATH=~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell npm run perf`.
-- The intro runs 13.82 s + wipe: `intro-verify` waits up to 20 s for overlay removal,
-  `capture-intro-video` up to 25 s.
+- Every browser harness — gates, screenshots and the perf tools alike — runs on
+  Playwright's chromium (`npx playwright install chromium` once).
+- The intro runs ~13.9 s (13.45 s picture + 0.45 s wipe): `intro-verify` waits up to
+  20 s for overlay removal, `capture-intro-video` up to 25 s.
 - Verifier file-servers preload the repo into RAM and exclude `docs/`, `.scratch/`,
   `shots/` and `Video/` (never requested by any page; a page that did request them
   would 404 into the `misses[]` assertion).
 - `check-links.mjs` keeps a `DYNAMIC_IDS` allowlist (includes `introOverlay`: markup only
   in index.html, every script reference null-guarded, behaviour covered by intro-verify).
-- Intro captures: `node tools/capture-site-intro.mjs` (timestamped frame loop →
-  `/tmp/introcap`), `node tools/capture-intro-video.mjs [outDir]` (webm). Responsive
-  sweep: `node tools/baseline-sweep.mjs [name]` → `shots/sweeps/[name]/`.
 
 ---
 
 ## 8. Browser support
 
 Tested with Playwright in this repo's audit harnesses: **Chromium 156**, **Firefox 157**
-and **Edge 156** (msedge channel) for the core flows; puppeteer's Chrome 148 for the
-performance budgets. The site degrades without JavaScript (all prose readable, noscript
+and **Edge 156** (msedge channel) for the core flows; the same Playwright Chromium for
+the performance budgets. A browser that cannot launch on your machine is reported
+UNTESTED by `browser-matrix`, never assumed. The site degrades without JavaScript (all prose readable, noscript
 notices) and without localStorage (progress disabled, everything else intact).
 
 ---

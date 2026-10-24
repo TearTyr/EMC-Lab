@@ -1620,7 +1620,7 @@ console.log('\u2500'.repeat(66));
     /emc\.intro\.v1/.test(src) && !/emc\.progress/.test(src));
   ok('intro waits for the single loader completion event', /emc:loader-done/.test(src));
   ok('intro skips chapter routes, replays and a failed boot',
-    /location\.hash/.test(src) && /sessionPlayed\(\)/.test(src) && /bootFatal/.test(src));
+    /location\.hash/.test(src) && /hasPlayedThisSession\(\)/.test(src) && /bootFatal/.test(src));
   ok('intro overlay never locks the page (overlay pointer-events none, controls auto)',
     /#introOverlay \{[^}]*pointer-events: none/.test(css) &&
     /\.intro-skip \{[^}]*pointer-events: auto/.test(css) &&

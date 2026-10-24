@@ -78,7 +78,7 @@ const errs = [];
 async function shot(url, file, { w = 1440, h = 900, sel = null, scroll = 0, wait = 2200, rm = false } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: rm ? 'reduce' : 'no-preference' });
   const pg = await ctx.newPage();
-  /* The intro is now the ~11.7 s 1:6 reference cut (longer than any shot
+  /* The intro is the ~14 s v5 chorus cut (longer than any shot
      wait), so shots preset the once-per-session key to document page design,
      exactly like motion/a11y/nav/loader/asset/stability already do. The
      intro has its own gates (intro-verify, capture-intro-video). */

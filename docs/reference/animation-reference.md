@@ -185,10 +185,10 @@ with the S4 insert at footage tempo (user directive 2026-10-24 00:20 fix).
    (always visible; any key/pointer dismisses).
 7. Full-white 255 flashes dimmed to ≤85 % white **site-wide** for photosensitivity comfort
    (the intro keeps the frame grammar but the same cap).
-8. **AI-generated electron backdrop** — retired with the v4 cut (the plate
-   `img/intro-electrons.png` remains in `img/` but no page references it). It was
-   site-only decoration for the v4 opening lockup/bookend; the v5 chorus cut opens
-   on the collage bed instead, matching the footage’s S5.
+8. **AI-generated electron backdrop** — retired with the v4 cut and deleted from
+   `img/` in the 2026-10-24 cleanup. It was site-only decoration for the v4 opening
+   lockup/bookend; the v5 chorus cut opens on the collage bed instead, matching the
+   footage’s S5.
 
 ## 6. Contract/gate surface touched by the intro
 
