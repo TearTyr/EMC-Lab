@@ -749,7 +749,54 @@
   /* Hero equation strip (replaced the animated dipole canvas): the four
      governing laws in one row, each a card with a KaTeX-typeset [data-tex]
      span over a small caption. Same column measure as the stat strip below. */
+  .eq-strip { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; width: 100%; max-width: calc(var(--column) - 2.5rem); margin-top: 1.2rem; }
+  .eq-item { display: flex; flex-direction: column; align-items: center; gap: .35rem; background: var(--panel-2); border: 1.5px solid var(--line-soft); border-radius: var(--r-ctl); padding: .7rem 1.05rem; min-width: 0; }
+  .eq-item .katex { font-size: 1.02rem; }
+  .eq-item small { font-family: theme('fontFamily.ui'); font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+  .stat-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-top: 1.2rem; width: 100%; max-width: calc(var(--column) - 2.5rem); }
+  .stat-strip .stat { text-align: center; }
+  /* three-stat strips only: the odd one out spans the full row on 2-col screens.
+     four-stat strips (.stat-strip-4) sit 2x2 here and 4-across from 640px up. */
+  .stat-strip .stat:nth-child(3):last-child { grid-column: 1 / -1; }
+  .stat-strip-4 { grid-template-columns: repeat(2, 1fr); }
+  /* stat numbers are small (1.45rem): Regular 400, not Thin — thin hairlines lose legibility at this size */
+  .stat-strip .stat-value { font-size: 1.45rem; font-family: theme('fontFamily.ui'); font-weight: 400; }
+  .steps { display: grid; gap: .9rem; grid-template-columns: 1fr; counter-reset: step; }
+  .step { position: relative; padding: 1.15rem; }
+  .step::before { counter-increment: step; content: "0" counter(step); font-family: theme('fontFamily.mono'); font-size: .78rem; font-weight: 700; color: var(--pk); letter-spacing: .12em; display: block; margin-bottom: .35rem; }
+  .site-footer { border-top: 1.5px solid var(--line); background: #141519; padding-block: 2rem; margin-top: 2.5rem; }
+  .footer-grid { display: grid; gap: 2rem; grid-template-columns: 1fr; }
+  .footer-links { list-style: none; display: grid; gap: .35rem; }
+  .footer-links a { color: var(--text-dim); text-decoration: none; font-size: .9rem; }
+  .footer-links a:hover { color: var(--sk); text-decoration: underline; }
+  .breadcrumb { display: flex; gap: .5rem; align-items: center; font-size: .82rem; color: var(--text-faint); flex-wrap: wrap; }
+  .breadcrumb a { color: var(--text-dim); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--sk); }
+  .pager { display: grid; gap: .8rem; grid-template-columns: 1fr; margin-top: 1.6rem; }
+  .pager a { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-card); padding: 1rem 1.25rem; }
+  .pager a:hover { border-color: var(--edge); }
+  .pager .dir { font-family: theme('fontFamily.ui'); font-size: .7rem; text-transform: uppercase; letter-spacing: .16em; color: var(--text-faint); font-weight: 700; }
+  .pager .ttl { color: var(--text); font-weight: 700; }
+  .pager .next { text-align: right; }
+  .challenge { border-top: 1.5px solid var(--line); background: var(--bg-soft); }
+  .challenge .q-prompt { font-family: theme('fontFamily.ui'); font-weight: 700; font-size: .93rem; color: var(--text); }
+  .is-hidden { display: none !important; }
 
+  @keyframes burst { 0% { opacity: .9; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.06); } }
+
+  /* -- responsive: three breakpoints only (640 / 900 / 1200) -------------- */
+  /* ---- motion charm layer: transform + opacity only ---------------------
+     Hover lifts are pointer-device only; touch devices get a soft press
+     instead of a hover that never comes. Every animation below carries its
+     own reduced-motion override next to it (the global block is a backstop). */
+  @media (hover: hover) {
+    .btn:hover { transform: translateY(-1.5px); }
+    .card-hover:hover { transform: translateY(-3px) scale(1.004); }
+    .qnav-chip:hover { transform: translateY(-2px); }
+    .q-flag:hover { transform: translateY(-1px); }
+    .pager a:hover { transform: translateY(-1px); }
+    .topic-card:hover { transform: translateY(-3px); }
+  }
   @media (hover: none) {
     .btn:active:not(:disabled), .opt:active, .qnav-chip:active, .seg-btn:active,
     .topic-card:active, .card-hover:active { transform: scale(.975); }
@@ -1505,270 +1552,3 @@
   font-weight: 700; font-size: 1.05rem; line-height: 1; color: #33202b; pointer-events: none; }
 .ch-sym.on-dark { color: #fdf3f6; }
 .ch-art figcaption { margin-top: .45rem; }
-
-/* ==========================================================================
-   COSMIC SKIN (2026-10-24 full-site redesign, reference: friend's mockup).
-   ONE token set for the whole site — navbar/hero nebula, light lavender
-   content panels, gradient pills, sparkle accents — reused by home, chapters,
-   quiz, settings and footer. Tokens extracted in /tmp/emc-analysis/notes.md.
-   The intro overlay (#introOverlay) is LOCKED: nothing below targets it.
-   ========================================================================== */
-:root {
-  --cs-nav: #1d2350; --cs-deep: #171b3e; --cs-neb: #292f59; --cs-peri: #3f4ba0;
-  --cs-elec: #2149db; --cs-violet: #8b6fe8; --cs-violet-d: #6d4fe0;
-  --cs-pink: #ff8fb8; --cs-blue: #5b8cf0; --cs-teal: #35b5a5;
-  --cs-bg: #f6f8fd; --cs-panel: #ffffff; --cs-panel-2: #f7f9fd;
-  --cs-line: #e3e0f6; --cs-ink: #241a4a; --cs-body: #5f5b7a;
-  --cs-g-violet: linear-gradient(135deg, #8b6fe8, #6d4fe0);
-  --cs-g-blue: linear-gradient(135deg, #5b8cf0, #6d4fe0);
-  --cs-g-teal: linear-gradient(135deg, #4ecbb4, #35b5a5);
-  --cs-g-nebula: linear-gradient(160deg, #171b3e 0%, #292f59 45%, #3f4ba0 100%);
-  --cs-r-s: 12px; --cs-r-m: 18px; --cs-r-l: 26px; --cs-r-pill: 999px;
-  --cs-sh-panel: 0 10px 30px rgba(61, 47, 120, .10);
-  --cs-sh-glow: 0 0 0 3px rgba(139, 111, 232, .22), 0 8px 24px rgba(23, 27, 62, .35);
-  --cs-script: 'Segoe Script', 'Bradley Hand', 'Comic Sans MS', cursive;
-}
-body.emc { background: var(--cs-bg); color: var(--cs-body); }
-.emc h1, .emc h2, .emc h3, .emc h4, .h-hero, .h-topic, .h-sec { color: var(--cs-ink); }
-
-/* ---- dark chrome: navbar ------------------------------------------------- */
-.site-header { background: linear-gradient(180deg, var(--cs-nav), #1a1f47);
-  border-bottom: 1px solid rgba(139, 111, 232, .35); }
-.brand-name { color: #fff; }
-.brand-name em { font-style: normal; background: var(--cs-g-violet);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
-.brand-sub { display: block; font-size: .55rem; letter-spacing: .34em;
-  color: #b9b0ea; text-transform: uppercase; }
-.nav-link { color: #d9d4f5; border-radius: var(--cs-r-pill); padding: .48rem 1.05rem;
-  font-weight: 700; }
-.nav-link:hover { background: rgba(139, 111, 232, .18); color: #fff; }
-.nav-link[aria-current="page"], .nav-drop-btn[aria-expanded="true"] {
-  background: var(--cs-g-violet); color: #fff; box-shadow: var(--cs-sh-glow); }
-.nav-cta, .nav-link.nav-cta { background: var(--cs-g-violet); color: #fff;
-  box-shadow: var(--cs-sh-glow); }
-.nav-drop-menu { background: #221d4e; border: 1px solid rgba(139, 111, 232, .4);
-  border-radius: var(--cs-r-m); }
-.dd-link { color: #e6e2ff; }
-.dd-link small { color: #a99fd6; }
-.dd-head { color: #b9b0ea; }
-.detail-toggle { background: rgba(139, 111, 232, .16); color: #e6e2ff;
-  border: 1.5px solid rgba(139, 111, 232, .5); border-radius: var(--cs-r-pill); }
-.detail-toggle .dt-track { background: #14183a; }
-.scroll-progress i { background: var(--cs-g-violet); }
-
-/* ---- cosmic hero band (home + inner pages) -------------------------------- */
-.hero, .cosmic-band { position: relative; overflow: hidden; color: #fff;
-  background:
-    radial-gradient(38% 55% at 12% 30%, rgba(139, 111, 232, .5), transparent 70%),
-    radial-gradient(30% 45% at 78% 20%, rgba(33, 73, 219, .45), transparent 70%),
-    radial-gradient(22% 34% at 60% 78%, rgba(255, 143, 184, .25), transparent 70%),
-    var(--cs-g-nebula);
-  border-radius: 0; padding: 3.2rem 0 3.6rem; }
-.hero::before, .cosmic-band::before { content: ""; position: absolute; inset: 0;
-  background-image:
-    radial-gradient(2px 2px at 8% 22%, #fff 55%, transparent),
-    radial-gradient(1.6px 1.6px at 22% 64%, #fff 55%, transparent),
-    radial-gradient(2.4px 2.4px at 34% 18%, #fff 55%, transparent),
-    radial-gradient(1.4px 1.4px at 48% 42%, #fff 55%, transparent),
-    radial-gradient(2px 2px at 63% 12%, #fff 55%, transparent),
-    radial-gradient(1.6px 1.6px at 71% 58%, #fff 55%, transparent),
-    radial-gradient(2.2px 2.2px at 86% 30%, #fff 55%, transparent),
-    radial-gradient(1.4px 1.4px at 92% 70%, #fff 55%, transparent);
-  opacity: .8; pointer-events: none; }
-.hero .wrap, .cosmic-band .wrap { position: relative; }
-.hero-stack { display: grid; grid-template-columns: minmax(240px, 340px) 1fr minmax(240px, 300px);
-  gap: 2rem; align-items: center; }
-.hero-eyebrow { letter-spacing: .28em; font-size: .78rem; font-weight: 700; color: #cdc4f4;
-  text-transform: uppercase; }
-.h-hero { color: #fff; font-size: clamp(2.6rem, 6.4vw, 4.6rem); line-height: 1.02; }
-.h-hero em { font-style: normal; background: var(--cs-g-violet);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
-.hero-sub { color: #fff; font-weight: 700; font-size: clamp(1.05rem, 2.4vw, 1.5rem); }
-.hero .lede { color: #d9d4f5; }
-.hero-script, .strip-script { font-family: var(--cs-script); color: #e9e4ff;
-  transform: rotate(-4deg); font-size: 1.05rem; line-height: 1.35; }
-/* mascot on a planet with an orbit ring (mascot art reused, no new art) */
-.planet-wrap { position: relative; display: grid; place-items: center; padding: 2.4rem 0 3.4rem; }
-.planet-wrap .planet { position: absolute; bottom: 0; width: 78%; aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #b9a8f0, #7a63d8 58%, #5847b8 100%);
-  box-shadow: inset -14px -18px 0 rgba(23, 27, 62, .25); }
-.planet-wrap .orbit { position: absolute; bottom: 12%; width: 108%; height: 34%;
-  border: 3px solid rgba(255, 255, 255, .55); border-radius: 50%;
-  transform: rotate(-9deg); }
-.hero-mascot { max-height: 40vh; position: relative; z-index: 2; }
-@media (prefers-reduced-motion: reduce) { .hero-mascot { animation: none; } }
-/* field-line motif between + and − charges (pure SVG in markup) */
-.field-motif { position: absolute; right: 24%; top: 12%; width: min(30vw, 380px);
-  opacity: .95; pointer-events: none; }
-/* frosted progress card (translucency only — no backdrop-filter) */
-.prog-card { background: rgba(255, 255, 255, .12); border: 1.5px solid rgba(233, 228, 255, .4);
-  border-radius: var(--cs-r-l); padding: 1.1rem 1.2rem; color: #fff;
-  box-shadow: 0 12px 32px rgba(23, 27, 62, .35); position: relative; }
-.prog-card h3 { color: #fff; font-size: 1.02rem; }
-.prog-bar { height: 10px; border-radius: var(--cs-r-pill); background: rgba(255, 255, 255, .22);
-  overflow: hidden; margin: .55rem 0 .8rem; }
-.prog-bar i { display: block; height: 100%; width: 0; background: var(--cs-g-violet);
-  border-radius: var(--cs-r-pill); transition: width .4s ease; }
-.prog-row { display: flex; justify-content: space-between; font-size: .92rem; color: #e9e4ff;
-  font-weight: 700; margin-top: .3rem; }
-.prog-card .peek { position: absolute; right: 10px; bottom: 8px; width: 56px; height: 57px;
-  opacity: .95; }
-/* written-law strip replaces the old KaTeX hero strip (formulas as prose) */
-.law-strip { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1.1rem; }
-.law-strip span { background: rgba(255, 255, 255, .14); border: 1.5px solid rgba(233, 228, 255, .45);
-  color: #f0edff; border-radius: var(--cs-r-pill); padding: .32rem .85rem;
-  font-weight: 700; font-size: .86rem; }
-
-/* ---- light content: panels, cards, buttons -------------------------------- */
-.panel, .section > .panel-wrap { background: var(--cs-panel); border: 1.5px solid var(--cs-line);
-  border-radius: var(--cs-r-l); box-shadow: var(--cs-sh-panel); padding: 1.4rem 1.5rem; }
-.card, .card-hover { background: var(--cs-panel); border: 1.5px solid var(--cs-line);
-  border-radius: var(--cs-r-m); box-shadow: var(--cs-sh-panel); }
-.ch-card { position: relative; border-radius: var(--cs-r-m); border: 1.5px solid var(--cs-line);
-  padding: 1.2rem 1.2rem 1.3rem; box-shadow: var(--cs-sh-panel); }
-.ch-card.t1 { background: linear-gradient(160deg, #f5f4fd, #ece7fb); }
-.ch-card.t2 { background: linear-gradient(160deg, #f4f7fe, #e6eefc); }
-.ch-card.t3 { background: linear-gradient(160deg, #e9f6fb, #ddf2ee); }
-.ch-num { position: absolute; top: 1rem; left: 1.1rem; width: 34px; height: 34px;
-  border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; }
-.ch-card.t1 .ch-num { background: var(--cs-g-violet); }
-.ch-card.t2 .ch-num { background: var(--cs-g-blue); }
-.ch-card.t3 .ch-num { background: var(--cs-g-teal); }
-.ch-meta { display: flex; gap: 1rem; font-size: .8rem; font-weight: 700; color: var(--cs-body); }
-.btn { border-radius: var(--cs-r-pill); border: 1.5px solid var(--cs-line);
-  background: #fff; color: var(--cs-ink); font-weight: 700; }
-.btn-primary { background: var(--cs-g-blue); border-color: transparent; color: #fff;
-  box-shadow: 0 8px 20px rgba(91, 140, 240, .35); }
-.btn-primary:hover { filter: brightness(1.06); }
-.btn-enter { display: block; width: 100%; text-align: center; color: #fff; border-color: transparent; }
-.ch-card.t1 .btn-enter { background: var(--cs-g-violet); }
-.ch-card.t2 .btn-enter { background: var(--cs-g-blue); }
-.ch-card.t3 .btn-enter { background: var(--cs-g-teal); }
-/* quick links rows */
-.ql-row { display: flex; align-items: center; gap: .7rem; background: var(--cs-panel-2);
-  border: 1.5px solid var(--cs-line); border-radius: var(--cs-r-pill);
-  padding: .5rem .9rem; font-weight: 700; color: var(--cs-ink); }
-.ql-row:hover { border-color: var(--cs-violet); box-shadow: var(--cs-sh-glow); }
-.ql-ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--cs-g-violet); color: #fff; flex: none; }
-/* stats journey strip */
-.journey { background: #ebecfe; border: 1.5px solid var(--cs-line); border-radius: var(--cs-r-l);
-  padding: 1rem 1.4rem; display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
-.journey .stat b { color: var(--cs-ink); font-size: 1.5rem; }
-/* footer: dark cosmic bookend */
-.site-footer, footer { background: linear-gradient(180deg, #1a1f47, var(--cs-deep));
-  color: #c9c2ea; border-top: 1px solid rgba(139, 111, 232, .35); }
-.site-footer a, footer a { color: #e6e2ff; }
-.site-footer h3, footer h3 { color: #fff; }
-
-/* ---- inner pages: cosmic head band + light lesson panels ------------------ */
-.topic-head, .quiz-head { background:
-    radial-gradient(40% 60% at 15% 25%, rgba(139, 111, 232, .45), transparent 70%),
-    radial-gradient(30% 50% at 85% 30%, rgba(33, 73, 219, .4), transparent 70%),
-    var(--cs-g-nebula);
-  color: #fff; border-radius: 0 0 var(--cs-r-l) var(--cs-r-l);
-  padding: 2rem 1.4rem 2.2rem; border: 0; box-shadow: none; }
-.topic-head .breadcrumb, .topic-head .breadcrumb a { color: #b9b0ea; }
-.topic-head .h-topic, .quiz-head h1 { color: #fff; }
-.topic-head .lede, .quiz-head .lede { color: #d9d4f5; }
-.topic-head .eyebrow { color: #cdc4f4; }
-.callout { border-radius: var(--cs-r-m); }
-
-/* ---- cosmic skin, part 2: hero responsiveness + card/panel details -------- */
-.hero .btn:not(.btn-primary) { background: rgba(255, 255, 255, .14); color: #fff;
-  border-color: rgba(233, 228, 255, .45); }
-.hero .btn:not(.btn-primary):hover { background: rgba(255, 255, 255, .22); }
-.hero-copy { position: relative; z-index: 1; }
-.home-cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1.2rem;
-  align-items: start; }
-.ql-list { display: grid; gap: .55rem; }
-.topic-card[data-motif="circuit"] { background: linear-gradient(160deg, #f5f4fd, #ece7fb); }
-.topic-card[data-motif="field"]   { background: linear-gradient(160deg, #f4f7fe, #e6eefc); }
-.topic-card[data-motif="coil"]    { background: linear-gradient(160deg, #e9f6fb, #ddf2ee); }
-.topic-card { border: 1.5px solid var(--cs-line); border-radius: var(--cs-r-m);
-  box-shadow: var(--cs-sh-panel); }
-.topic-num { position: static; display: inline-grid; place-items: center; width: 34px; height: 34px;
-  border-radius: 50%; color: #fff; font-weight: 700; margin-bottom: .5rem; }
-.topic-card[data-motif="circuit"] .topic-num { background: var(--cs-g-violet); }
-.topic-card[data-motif="field"]   .topic-num { background: var(--cs-g-blue); }
-.topic-card[data-motif="coil"]    .topic-num { background: var(--cs-g-teal); }
-.topic-card .btn-enter { width: 100%; }
-.ch-meta { display: flex; gap: 1.1rem; margin: .55rem 0 .1rem; font-size: .78rem;
-  font-weight: 700; color: var(--cs-body); }
-.ch-meta span::before { content: "▸ "; color: var(--cs-violet); }
-.journey { display: flex; }
-.journey .stat-strip { display: flex; gap: 2.2rem; margin: 0; background: transparent;
-  border: 0; padding: 0; }
-.journey .stat { display: flex; align-items: baseline; gap: .45rem; }
-.journey .stat-value { font-size: 1.5rem; }
-.journey .jl { font-weight: 700; color: var(--cs-ink); }
-.journey .strip-script { margin-left: auto; }
-.strip-script { font-family: var(--cs-script); color: var(--cs-violet-d); font-size: 1rem;
-  transform: rotate(-3deg); line-height: 1.3; }
-.table.data td .katex, .table.data td { color: var(--cs-ink); }
-@media (max-width: 900px) {
-  .hero-stack { grid-template-columns: 1fr; gap: 1.2rem; }
-  .prog-card { max-width: 420px; }
-  .field-motif { display: none; }
-  .home-cols { grid-template-columns: 1fr; }
-  .journey { flex-wrap: wrap; gap: 1rem; }
-  .journey .strip-script { margin-left: 0; }
-}
-
-/* ---- cosmic skin, part 3: central token remap (dark theme -> cosmic light) -
-   Every component already reads these vars; remapping them here flips the
-   whole site onto the light lavender content palette while the dark chrome
-   rules above keep navbar/hero/head-bands/footer cosmic. Single token set. */
-:root {
-  --bg: #f6f8fd; --bg-soft: #eef0fa; --panel: #ffffff; --panel-2: #f4f3fb;
-  --line: #e3e0f6; --line-soft: #eceaf8; --edge: #d6d2ee;
-  --text: #241a4a; --text-dim: #4f4a6e; --text-faint: #6f6a8c;
-  --ye: #6d4fe0; --ye-t: rgba(109, 79, 224, .08); --ye-e: rgba(109, 79, 224, .45);
-}
-.hl-cyan { color: #2b8ab8; } .hl-amber { color: #6d4fe0; } .hl-emerald { color: #2f9e77; }
-
-/* hero fixes: title contrast, copy alignment, motif placement, peek corner */
-.emc .h-hero { color: #fff; }
-.hero-copy { text-align: left; max-width: 640px; }
-.hero-copy .btn-row, .hero-copy .law-strip { justify-content: flex-start; }
-.field-motif { right: 23%; top: 19%; width: min(24vw, 320px); z-index: 0; }
-.prog-card { padding-bottom: 2.7rem; }
-.prog-card .peek { right: -12px; bottom: -18px; width: 64px; height: 65px; }
-/* navbar: Settings pill joins the right-hand group */
-.nav-inner .brand { order: 1; }
-.nav-inner .detail-toggle { order: 3; margin-left: auto; }
-.nav-inner #navMenu { order: 4; margin-left: 0; }
-.nav-inner .nav-toggle { order: 5; }
-.nav-link.nav-cta.active, .nav-link.nav-cta[aria-current="page"] {
-  background: var(--cs-g-violet); color: #fff; }
-/* no light gap between the dark navbar and the cosmic hero */
-.emc-main { padding-top: 0; }
-/* inner-page head bands: full-bleed cosmic with centred narrow content */
-.topic-head, .quiz-head { max-width: 100%; width: 100%; margin: 0 0 1.4rem;
-  border-radius: 0 0 var(--cs-r-l) var(--cs-r-l); padding: 2.2rem 1.4rem 2.4rem; }
-.topic-head > *, .quiz-head > * { max-width: 44rem; margin-left: auto; margin-right: auto; }
-.topic-head .ch-art figcaption, .topic-head .tiny, .topic-head .muted,
-.topic-head .ch-art .tiny { color: #d9d4f5; }
-.quiz-head .eyebrow { color: #cdc4f4; }
-@media (max-width: 1200px) { .field-motif { display: none; } }
-@media (max-width: 900px) {
-  .hero-copy { text-align: center; max-width: 100%; }
-  .hero-copy .btn-row, .hero-copy .law-strip { justify-content: center; }
-}
-
-/* ---- cosmic skin, part 4: polish pass after first screenshots ------------- */
-#shell-home > .wrap { padding-top: 0; }
-.site-header .nav-link.active { background: var(--cs-g-violet); color: #fff;
-  box-shadow: var(--cs-sh-glow); }
-.detail-toggle, .detail-toggle .dt-label, .detail-toggle .dt-state { color: #e6e2ff; }
-.field-motif { right: 26%; top: 9%; width: min(22vw, 300px); }
-@media (max-width: 1280px) { .field-motif { display: none; } }
-
-/* ---- cosmic skin, part 5: second polish pass ------------------------------ */
-#shell-home > .wrap:not(:has(*)) { display: none; }   /* empty spacer wrap */
-.topic-head > * , .quiz-head > * { max-width: none; margin-left: 0; margin-right: 0; }
-.topic-head, .quiz-head { padding-inline: max(1.4rem, calc((100% - 46rem) / 2)); }
-.topic-head .ch-art { max-width: 200px; margin: 1rem 0 0; }
-.topic-head .ch-art img { border-radius: var(--cs-r-m); }
-.field-motif { right: 22%; top: 3%; }

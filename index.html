@@ -185,7 +185,7 @@
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
               title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
-        <span class="dt-label" aria-hidden="true">Settings</span>
+        <span class="dt-label" aria-hidden="true">Details</span>
         <span class="dt-state" aria-hidden="true">ON</span>
         <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
         <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
@@ -195,7 +195,7 @@
               aria-label="Open navigation menu"><span></span><span></span><span></span></button>
 
       <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
-        <a class="nav-link" href="index.html" aria-current="page"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg> Home</a>
+        <a class="nav-link" href="index.html" aria-current="page">Home</a>
         <div class="nav-drop">
           <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
                   aria-expanded="false" aria-controls="topicsMenu">Chapters
@@ -208,7 +208,7 @@
             <a class="dd-link" href="topics/magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
-        <a class="nav-link nav-cta" href="quiz.html">Take the Quiz <span aria-hidden="true">→</span></a>
+        <a class="nav-link nav-cta" href="quiz.html">Take the quiz</a>
       </nav>
     </div>
     <div class="scroll-progress"><i id="readingProgress"></i></div>
@@ -223,54 +223,41 @@
     </div>
 
     <section class="hero">
-      <svg class="field-motif" viewBox="0 0 380 240" aria-hidden="true">
-        <g fill="none" stroke="#7fa8ff" stroke-width="2" opacity=".85">
-          <path d="M70 120 C 130 40, 250 40, 310 120"/><path d="M70 120 C 130 75, 250 75, 310 120"/>
-          <path d="M70 120 C 130 105, 250 105, 310 120"/><path d="M70 120 C 130 135, 250 135, 310 120"/>
-          <path d="M70 120 C 130 165, 250 165, 310 120"/><path d="M70 120 C 130 200, 250 200, 310 120"/>
-        </g>
-        <circle cx="70" cy="120" r="20" fill="#ff8fb8"/><text x="70" y="128" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">+</text>
-        <circle cx="310" cy="120" r="20" fill="#5b8cf0"/><text x="310" y="127" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">−</text>
-      </svg>
       <div class="wrap hero-stack">
-        <span class="planet-wrap reveal">
-          <i class="planet" aria-hidden="true"></i><i class="orbit" aria-hidden="true"></i>
-          <img class="mascot hero-mascot" src="img/mascot.png" width="355" height="360"
-               alt="Denki-chan, the EMC Lab mascot — a round cream creature with a lightning bolt">
-        </span>
-        <div class="hero-copy">
-          <span class="hero-eyebrow reveal rv-d1">✦ Welcome to ✦</span>
-          <h1 class="h-hero reveal rv-d1">EMC<em>Lab</em></h1>
-          <p class="hero-sub reveal rv-d2">Interactive Electromagnetics Tutorial</p>
-          <p class="lede reveal rv-d2">
-            Dive into the world of electromagnetics with interactive lessons, simulations and
-            quizzes — <span id="ledeChapters">three</span> chapters, <span id="ledeSims">thirteen</span> live
-            sandboxes and a <span id="ledeQuizN">24</span>-question scored quiz. Every number on
-            screen is computed from the real equations, not faked.
-          </p>
-          <span class="hero-script" aria-hidden="true">Real Physics.<br>Real Fun. ♡</span>
-          <div class="btn-row reveal rv-d3">
-            <a class="btn btn-primary" href="topics/current.html">▶ Start with Chapter 1 →</a>
-            <a class="btn" href="topics/fields.html#sim-fieldpaint-panel">Jump to the field painter</a>
-            <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
-          </div>
-          <!-- governing laws as PLAIN WRITTEN TEXT (2026-10-24 directive: no formula
-               graphics on landing/hero — the written forms state what was typeset) -->
-          <div class="law-strip reveal rv-d3" aria-label="The governing laws of the course, in words">
-            <span>q = n·e — charge is quantised</span>
-            <span>F = k·|q₁q₂|/r² — Coulomb’s law</span>
-            <span>E = F/|q₀| — electric field</span>
-            <span>E = k·q/r² — point charge</span>
-          </div>
+        <img class="mascot hero-mascot reveal" src="img/mascot.png" width="355" height="360"
+             alt="Denki-chan, the EMC Lab mascot — a round cream creature with a lightning bolt">
+        <span class="eyebrow reveal rv-d1">Circuits · Electric fields · Magnetism</span>
+        <h1 class="h-hero reveal rv-d2">Learn electromagnetics by playing with it.</h1>
+        <p class="lede reveal rv-d3">
+          The whole Electricity brief in <span id="ledeChapters">three</span> chapters, <span id="ledeSims">thirteen</span> live
+          sandboxes and simulations and a <span id="ledeQuizN">24</span>-question scored quiz.
+          Build a circuit and watch the bulb follow P = VI, rub a balloon, tug charges around a
+          free-play arena, paint an electric field, hunt its zero point and bend an electron in a
+          magnetic field — every number on screen is computed from the real equations, not faked.
+        </p>
+        <div class="btn-row reveal rv-d3">
+          <a class="btn btn-primary" href="topics/current.html">Start with Chapter 1</a>
+          <a class="btn" href="topics/fields.html#sim-fieldpaint-panel">Jump to the field painter</a>
+          <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
         </div>
-        <aside class="prog-card reveal rv-d2" aria-label="Your progress on this device">
-          <h3>Your Progress</h3>
-          <div class="prog-bar"><i id="heroBar"></i></div>
-          <div class="prog-row"><span>Quiz progress</span><span id="heroCount">0 / 24</span></div>
-          <div class="prog-row"><span>⭐ Chapters</span><span id="heroChap">0 / 3</span></div>
-          <div class="prog-row"><span>✓ Quizzes</span><span id="heroQuiz">0 / 24</span></div>
-          <img class="peek" src="img/mascot.png" width="56" height="57" alt="">
-        </aside>
+        <!-- Hero equation strip (replaces the old animated dipole canvas): the four
+             governing laws of the lecture, typeset by KaTeX through the same
+             [data-tex] pipeline as every other equation on the site. The spans carry
+             hand-readable fallbacks, so the strip still reads if KaTeX never loads. -->
+        <div class="eq-strip" aria-label="Four governing equations of the course">
+          <span class="eq-item"><span data-tex="q = n e">q = n·e</span><small>charge is quantised</small></span>
+          <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup></span><small>Coulomb’s law</small></span>
+          <span class="eq-item"><span data-tex="E = \dfrac{F}{|q_0|}">E = F/|q<sub>0</sub>|</span><small>electric field</small></span>
+          <span class="eq-item"><span data-tex="E = \dfrac{kq}{r^2}">E = k·q/r<sup>2</sup></span><small>point charge</small></span>
+        </div>
+        <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
+             EMC_QUIZ (single sources of truth); the numbers below are the no-JS
+             fallbacks and must match the current content. -->
+        <div class="stat-strip reveal">
+          <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan" id="statChapters">3</span></div>
+          <div class="stat"><span class="stat-label">Sandboxes &amp; sims</span><span class="stat-value hl-amber" id="statSims">13</span></div>
+          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">24</span></div>
+        </div>
       </div>
     </section>
 
@@ -313,7 +300,7 @@
         <span class="tag tag-cyan" id="dashTopicsChip">0 of 3 chapters studied</span>
       </div>
 
-      <div class="home-cols"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-mx="corner">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-mx="corner">
 
         <!-- Chapter 1 -->
         <article class="card card-hover topic-card reveal" data-motif="circuit" style="--topic-accent:#e9ff47">
@@ -330,9 +317,8 @@
             <li>Series &amp; parallel reduction</li>
             <li>Drag-and-drop circuit builder</li>
           </ul>
-          <span class="ch-meta"><span>Simulations</span><span>Quiz</span></span>
           <div class="flex items-center gap-2 mt-3">
-            <a class="btn btn-sm btn-primary btn-enter" href="topics/current.html" data-topic-link="ch1">Enter →</a>
+            <a class="btn btn-sm btn-primary" href="topics/current.html" data-topic-link="ch1">Open chapter</a>
             <span class="check-pill" data-topic-check="ch1">not started</span>
           </div>
         </article>
@@ -352,9 +338,8 @@
             <li>F = k|q₁q₂|/r², added as arrows</li>
             <li>E = F/|q₀| and the direction rule</li>
           </ul>
-          <span class="ch-meta"><span>Simulations</span><span>Quiz</span></span>
           <div class="flex items-center gap-2 mt-3">
-            <a class="btn btn-sm btn-primary btn-enter" href="topics/fields.html" data-topic-link="ch2">Enter →</a>
+            <a class="btn btn-sm btn-primary" href="topics/fields.html" data-topic-link="ch2">Open chapter</a>
             <span class="check-pill" data-topic-check="ch2">not started</span>
           </div>
         </article>
@@ -374,36 +359,11 @@
             <li>Flux Φ and Faraday’s law</li>
             <li>Lenz’s law, live on the coil</li>
           </ul>
-          <span class="ch-meta"><span>Simulations</span><span>Quiz</span></span>
           <div class="flex items-center gap-2 mt-3">
-            <a class="btn btn-sm btn-primary btn-enter" href="topics/magind.html" data-topic-link="ch3">Enter →</a>
+            <a class="btn btn-sm btn-primary" href="topics/magind.html" data-topic-link="ch3">Open chapter</a>
             <span class="check-pill" data-topic-check="ch3">not started</span>
           </div>
         </article>
-      </div>
-      <aside class="panel ql-panel reveal" aria-label="Quick links">
-        <h2 class="h-sec" style="margin:0 0 .8rem">⚡ Quick Links</h2>
-        <div class="ql-list">
-          <a class="ql-row" href="topics/current.html#sim-circuit-panel"><span class="ql-ico" aria-hidden="true">⌁</span> Circuit Builder</a>
-          <a class="ql-row" href="topics/fields.html#sim-fieldpaint-panel"><span class="ql-ico" aria-hidden="true">✦</span> Field Painter</a>
-          <a class="ql-row" href="topics/fields.html#sim-arena-panel"><span class="ql-ico" aria-hidden="true">✧</span> Tug-of-War Arena</a>
-          <a class="ql-row" href="topics/magind.html#sim-lorentz-panel"><span class="ql-ico" aria-hidden="true">➤</span> Lorentz Lab</a>
-          <a class="ql-row" href="topics/magind.html#sim-induction-panel"><span class="ql-ico" aria-hidden="true">◍</span> Coil Lab</a>
-          <a class="ql-row" href="quiz.html"><span class="ql-ico" aria-hidden="true">✓</span> Scored Quiz</a>
-        </div>
-      </aside>
-      </div>
-      <div class="journey reveal" aria-label="Your physics journey">
-        <span class="jl">Your Physics Journey</span>
-        <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
-             EMC_QUIZ (single sources of truth); the numbers below are the no-JS
-             fallbacks and must match the current content. -->
-        <div class="stat-strip">
-          <div class="stat"><span class="stat-value hl-cyan" id="statChapters">3</span><span class="stat-label">Chapters</span></div>
-          <div class="stat"><span class="stat-value hl-amber" id="statSims">13</span><span class="stat-label">Sandboxes &amp; Sims</span></div>
-          <div class="stat"><span class="stat-value hl-emerald" id="statQuestions">24</span><span class="stat-label">Quiz Questions</span></div>
-        </div>
-        <span class="strip-script">Small steps.<br>Big understanding. ♡</span>
       </div>
     </section>
 
@@ -459,10 +419,10 @@
         <div class="card card-flat reveal">
           <span class="tag">Governing equations</span>
           <ul class="topic-list mt-2">
-            <li><span>q = n·e</span>, e = 1.602×10<sup>−19</sup> C — charge is quantised and conserved</li>
-            <li><span>F = k·|q₁q₂|/r²</span>, added as vectors</li>
-            <li><span>E = F/|q₀| = kq/r²</span> — the direction rule: push on a + test charge</li>
-            <li>Ch1 &amp; Ch3: <span>V = IR</span>, <span>F = qv × B</span>, <span>EMF = −N·dΦ/dt</span></li>
+            <li><span data-tex="q = n e">q = n·e</span>, e = 1.602×10<sup>−19</sup> C — charge is quantised and conserved</li>
+            <li><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q₁q₂|/r²</span>, added as vectors</li>
+            <li><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = kq/r²</span> — the direction rule: push on a + test charge</li>
+            <li>Ch1 &amp; Ch3: <span data-tex="V = IR">V = IR</span>, <span data-tex="\vec{F} = q\vec{v} \times \vec{B}">F = qv × B</span>, <span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span></li>
           </ul>
         </div>
       </div>
@@ -480,16 +440,16 @@
               <tr><th>Concept</th><th>Equation</th><th>Units</th><th>What it tells you</th></tr>
             </thead>
             <tbody>
-              <tr><td class="txt">Quantised charge</td><td><span>q = n·e</span></td><td>C</td><td class="txt">Charge comes in whole electron parcels; 1 C = 6.24×10<sup>18</sup> of them</td></tr>
-              <tr><td class="txt">Coulomb force</td><td><span>F = k·|q<sub>1</sub>q<sub>2</sub>| / r<sup>2</sup></span></td><td>N</td><td class="txt">Inverse square: 2× the distance → ¼ the force; signs pick direction only</td></tr>
-              <tr><td class="txt">Superposition</td><td><span>F⃗<sub>net</sub> = F⃗₁ + F⃗₂ + …</span></td><td>N</td><td class="txt">Forces and fields add as vectors (components), never as plain numbers</td></tr>
-              <tr><td class="txt">Electric field</td><td><span>E = F/|q₀| = k·q/r<sup>2</sup></span></td><td>N/C</td><td class="txt">Force per unit positive test charge; E points the way a + charge is pushed</td></tr>
-              <tr><td class="txt">Force in a field</td><td><span>F = |q₀|·E</span></td><td>N</td><td class="txt">A negative charge feels it opposite E</td></tr>
-              <tr><td class="txt">Bohr speed</td><td><span>v = √(ke²/(mₑr))</span></td><td>m/s</td><td class="txt">Coulomb pull as centripetal force: 2.19×10⁶ m/s at r = 5.29×10⁻¹¹ m</td></tr>
-              <tr><td class="txt">Ch1 · Ohm’s law</td><td><span>V = I·R</span>, <span>P = VI</span></td><td>V, A, Ω, W</td><td class="txt">Voltage drives current against resistance; power is the rate of heating</td></tr>
-              <tr><td class="txt">Ch1 · networks</td><td><span>R<sub>eq</sub> = ΣRᵢ</span> / <span>1/R<sub>eq</sub> = Σ1/Rᵢ</span></td><td>Ω</td><td class="txt">Series adds; parallel adds conductances (always smaller than the smallest)</td></tr>
-              <tr><td class="txt">Ch3 · magnetic force</td><td><span>F = q·v × B</span>, <span>r = mv/(|q|B)</span></td><td>N, m</td><td class="txt">Perpendicular to v and B → bends paths, never does work</td></tr>
-              <tr><td class="txt">Ch3 · Faraday</td><td><span>EMF = −N·dΦ/dt</span>, <span>Φ = B·A·cosθ</span></td><td>V, Wb</td><td class="txt">Only a <em>changing</em> flux induces; the minus is Lenz’s law</td></tr>
+              <tr><td class="txt">Quantised charge</td><td><span data-tex="q = n e">q = n·e</span></td><td>C</td><td class="txt">Charge comes in whole electron parcels; 1 C = 6.24×10<sup>18</sup> of them</td></tr>
+              <tr><td class="txt">Coulomb force</td><td><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q<sub>1</sub>q<sub>2</sub>| / r<sup>2</sup></span></td><td>N</td><td class="txt">Inverse square: 2× the distance → ¼ the force; signs pick direction only</td></tr>
+              <tr><td class="txt">Superposition</td><td><span data-tex="\vec{F}_{net} = \vec{F}_1 + \vec{F}_2 + \dots">F⃗<sub>net</sub> = F⃗₁ + F⃗₂ + …</span></td><td>N</td><td class="txt">Forces and fields add as vectors (components), never as plain numbers</td></tr>
+              <tr><td class="txt">Electric field</td><td><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = k·q/r<sup>2</sup></span></td><td>N/C</td><td class="txt">Force per unit positive test charge; E points the way a + charge is pushed</td></tr>
+              <tr><td class="txt">Force in a field</td><td><span data-tex="F = |q_0| E">F = |q₀|·E</span></td><td>N</td><td class="txt">A negative charge feels it opposite E</td></tr>
+              <tr><td class="txt">Bohr speed</td><td><span data-tex="v = \sqrt{ke^2/(m_e r)}">v = √(ke²/(mₑr))</span></td><td>m/s</td><td class="txt">Coulomb pull as centripetal force: 2.19×10⁶ m/s at r = 5.29×10⁻¹¹ m</td></tr>
+              <tr><td class="txt">Ch1 · Ohm’s law</td><td><span data-tex="V = IR">V = I·R</span>, <span data-tex="P = VI">P = VI</span></td><td>V, A, Ω, W</td><td class="txt">Voltage drives current against resistance; power is the rate of heating</td></tr>
+              <tr><td class="txt">Ch1 · networks</td><td><span data-tex="R_{eq} = \sum R_i">R<sub>eq</sub> = ΣRᵢ</span> / <span data-tex="1/R_{eq} = \sum 1/R_i">1/R<sub>eq</sub> = Σ1/Rᵢ</span></td><td>Ω</td><td class="txt">Series adds; parallel adds conductances (always smaller than the smallest)</td></tr>
+              <tr><td class="txt">Ch3 · magnetic force</td><td><span data-tex="\vec{F} = q\,\vec{v} \times \vec{B}">F = q·v × B</span>, <span data-tex="r = mv/(|q|B)">r = mv/(|q|B)</span></td><td>N, m</td><td class="txt">Perpendicular to v and B → bends paths, never does work</td></tr>
+              <tr><td class="txt">Ch3 · Faraday</td><td><span data-tex="\mathcal{E} = -N\,d\Phi/dt">EMF = −N·dΦ/dt</span>, <span data-tex="\Phi = BA\cos\theta">Φ = B·A·cosθ</span></td><td>V, Wb</td><td class="txt">Only a <em>changing</em> flux induces; the minus is Lenz’s law</td></tr>
             </tbody>
           </table>
         </div>

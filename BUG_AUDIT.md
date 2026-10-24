@@ -102,24 +102,6 @@ the gates today:
   the css or js to generate an image". The smoke size assertion (1200×630 IHDR)
   still guards the committed PNG; the derived-counts mechanism retired with the
   renderer (the artwork carries no counts).
-- **Cosmic redesign (2026-10-24, user directive + friend's mockup):** full-site
-  restyle in place (no parallel site): one `--cs-*` token set in `css/input.css`
-  (cosmic skin layer) drives navbar/hero nebula, light lavender panels, gradient
-  pills, sparkle accents on home, chapters, quiz, settings and footer; hero rebuilt
-  (planet mascot, field-line motif, frosted progress card fed by real saved
-  progress, written-law strip), quick-links panel with real anchors, journey stats
-  strip; og-card replaced by AI-generated cosmic artwork without formula graphics
-  (?v=4). Formula graphics removed on landing/hero only (hero strip, reference
-  table, second law list — all now plain written text); intro chips and all
-  lesson/sim equations retained (locked intro; lessons untouched).
-- **Cosmic redesign contract changes (2026-10-24, user directive: full-site
-  redesign off the friend's cosmic mockup):** (1) smoke + check-scope gradient ban
-  lifted site-wide (gradients are the directed design language); backdrop-filter
-  and blur/drop-shadow filters remain banned outside `#introOverlay`; the frosted
-  progress card fakes glass with translucency only. (2) smoke hero assertions
-  re-pointed: the KaTeX hero strip is gone — the four governing laws ship as
-  plain written text (`.law-strip`), and `main`/`.hero` must carry zero
-  `[data-tex]` graphics; lesson/sim and intro formulas untouched.
 - **Start-CTA focus gate (PHASE-10 follow-up):** the intro CTA is
   `visibility: hidden` until it pops so `introSkip` stays the first tab stop
   (`a11y-verify` gate A0).

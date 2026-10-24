@@ -163,11 +163,8 @@ with the S4 insert at footage tempo (user directive 2026-10-24 00:20 fix).
 
 ## 5. Standing deviations (policy — do not “fix” these back)
 
-1. **Palette:** superseded 2026-10-24 by the cosmic redesign directive — the site now
-   runs on the lavender/indigo cosmic token set (`--cs-*` in `css/input.css`, extracted
-   in the redesign notes); the footage’s yellow field maps to the nebula indigo, the
-   old pink identity survives only as the rose `+` charge accent. The intro overlay
-   keeps its own footage-derived palette (locked).
+1. **Palette** stays the site’s pink identity (user choice 2026-10-23; footage yellow field →
+   pink, blue → plum).
 2. **Motion-blur smear frames → whip-squash** (`in-whipx`, 30 ms steps) site-wide; blur
    filters are banned by the flat-art rules (no gradients, backdrop-filter, shadowBlur,
    blur) — **except the intro overlay** (user directive 2026-10-24 “with blur and stuff”):
