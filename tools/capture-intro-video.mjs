@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Record the site's opening as a smooth WebM via Playwright video capture:
-   loader -> #introOverlay composition (~11.7 s, the 1:6 reference cut) ->
+   loader -> #introOverlay composition (~14 s, the v5 chorus cut from footage 21 s) ->
    homepage reveal (slam /
    corner / rise staggers from js/motion.js), then finalize the video.
 

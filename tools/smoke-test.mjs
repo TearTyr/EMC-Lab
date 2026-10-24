@@ -1583,8 +1583,14 @@ console.log('\u2500'.repeat(66));
         /^["']/.test(fam) || !/(^|\s)-?\d/.test(fam))));
   ok('mobile pass present (coarse-pointer targets, no sideways scroll)',
     /pointer: coarse/.test(cssSrc) && /overflow-x: clip/.test(cssSrc));
-  ok('stylesheet contains no gradient/blur/glass effects',
-    !/gradient|backdrop-filter|blur\(/.test(cssSrc));
+  /* CONTRACT CHANGE (2026-10-24, v5 chorus-cut intro): the intro overlay is
+     the single place where the footage's motion-blur smear grammar and the
+     collage bed's flat stripe fills are quoted (blur whips + repeating
+     stripe gradients). Everywhere else the flat-art ban still holds. */
+  const cssNoIntro = cssSrc.slice(0, cssSrc.indexOf('#introOverlay {')) +
+    cssSrc.slice(cssSrc.indexOf('PHASE 8 — site-wide motion system'));
+  ok('stylesheet contains no gradient/blur/glass effects outside the intro overlay',
+    !/gradient|backdrop-filter|blur\(/.test(cssNoIntro));
   // flex or grid on a bullet li fragments <sub>/<sup> into separate items
   ok('bullet lists keep inline maths intact (marker is absolutely positioned)',
     /\.topic-list li \{ position: relative/.test(cssSrc) &&
@@ -1619,9 +1625,17 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \{[^}]*pointer-events: none/.test(css) &&
     /\.intro-skip \{[^}]*pointer-events: auto/.test(css) &&
     /\.in-start \{[^}]*pointer-events: auto/.test(css));
-  ok('intro motion is transform/opacity keyframes only (flat-art rules hold)',
-    !/gradient|backdrop-filter|shadowBlur|blur\(/.test(
-      css.slice(css.indexOf('#introOverlay {')).replace(/\/\*[\s\S]*?\*\//g, '')));
+  /* CONTRACT CHANGE (2026-10-24, user directive "redo the intro … with blur
+     and stuff"): the v5 chorus-cut intro whips every entrance/exit through a
+     ~120 ms filter:blur smear (the footage's 1-2 frame motion-blur whips,
+     f1410-1440). The blur ban now holds site-wide EXCEPT the intro overlay,
+     which is the one place the footage's smear grammar is quoted verbatim;
+     motion stays CSS-keyframes-only (no rAF, no audio) either way. */
+  ok('intro motion is CSS keyframes only; blur whips live in the intro overlay alone',
+    /@keyframes in-whipin \{[\s\S]{0,240}?blur\(14px\)/.test(css) &&
+    /@keyframes in-whipout \{[\s\S]{0,240}?blur\(12px\)/.test(css) &&
+    !/blur\(/.test(
+      css.slice(css.indexOf('PHASE 8 — site-wide motion system')).replace(/\/\*[\s\S]*?\*\//g, '')));
   const idx = readFileSync(join(ROOT, 'index.html'), 'utf8');
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
@@ -1630,32 +1644,32 @@ console.log('\u2500'.repeat(66));
     /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img class="in-mascot" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img class="in-mascot in-mascot-sparkle" src="img\/mascot-sparkle\.png"/.test(idx));
-  ok('intro title is the locked outlined lock-up below the mascot (footage grammar)',
-    /#introOverlay \.in-t1, #introOverlay \.in-t2 \{[^}]*-webkit-text-stroke: 3px #33202b/.test(css) &&
-    /@keyframes in-vis \{/.test(css) && /@keyframes in-hid \{/.test(css) &&
-    /#introOverlay \.in-title \{ grid-row: 2/.test(css) &&
-    /@keyframes in-pose \{/.test(css) && /@keyframes in-tilt \{/.test(css) &&
-    /* phase 8 §7B review: the v2 per-letter kinetic title must stay retired —
-       no per-span stagger markers anywhere in the title lock-up. */
-    !/in-letter/.test(css) &&
-    !/#introOverlay \.in-title span:nth-child\(\d\)[^{]*\{[^}]*animation-delay/.test(css));
+  ok('chorus cut: topic slams + equation chips whip-swap on the beat grid (footage S5 grammar)',
+    /#introOverlay \.in-slam \{[^}]*-webkit-text-stroke: 3px #10131a/.test(css) &&
+    /#introOverlay \.in-eqchip \{[^}]*background: #101d33/.test(css) &&
+    /@keyframes in-whipin \{/.test(css) && /@keyframes in-whipout \{/.test(css) &&
+    /@keyframes in-ramp \{[^}]*steps\(1, end\)/.test(css) &&
+    /#introOverlay \.in-s1 \{ --ti: \.45s/.test(css) &&
+    /#introOverlay \.in-f5 \{ --ti: 10\.9s/.test(css) &&
+    /* the v4 1:6 whole-video cut is gone for good */
+    !/in-cola|in-skit|in-insert|in-insetspin|in-endcard/.test(css));
+  ok('chorus cut: vcols, speech panels, corner cluster, arc sweep, navy chips, wipe',
+    /#introOverlay \.in-vcol > span \{[^}]*background: #fdf3f6/.test(css) &&
+    /@keyframes in-slide \{/.test(css) && /@keyframes in-cxslam \{/.test(css) &&
+    /@keyframes in-arcpop \{/.test(css) && /@keyframes in-ncslide \{/.test(css) &&
+    /@keyframes in-wipe \{/.test(css) && /@keyframes in-draw \{/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 20000);
-  ok('skit plates/insets ship cream-on-dark with tilted 3D transforms (footage grammar)',
-    /#introOverlay \.in-plate \{[^}]*background: #fdf3f6/.test(css) &&
-    /#introOverlay \.in-plate-t \{[^}]*rotate\(-1deg\)/.test(css) &&
-    /#introOverlay \.in-inset \{[^}]*border: 3px solid #33202b/.test(css) &&
-    /@keyframes in-inset \{[^}]*perspective\(420px\) rotateY\(24deg\)/.test(css) &&
-    /* phase 8 §7B review: footage f729-760 shows the insets spinning about the
-       vertical axis for as long as they live — entrance tilt alone is not the
-       reference grammar; the spin loop must be present and infinite. */
-    /@keyframes in-insetspin \{[\s\S]{0,220}?rotateY\(90deg\)/.test(css) &&
-    /\.in-ins1 \{ animation:[^;]*in-insetspin \.5s [^;]*infinite/.test(css));
+  ok('chorus collage bed ships panel cards, waveform strips, zigzag wedges + chips',
+    /#introOverlay \.in-card \{[^}]*background: #9fd0f7/.test(css) &&
+    /#introOverlay \.in-wedge \{[^}]*clip-path: polygon/.test(css) &&
+    /#introOverlay \.in-chip-name \{[^}]*rotate: -1deg/.test(css) &&
+    /#introOverlay \.in-mascot-wrap \{[^}]*in-pose \.12s/.test(css));
   const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
-  ok('built stylesheet carries the phase-8 motion system + intro spin (minified)',
+  ok('built stylesheet carries the phase-8 motion system + intro whip (minified)',
     /@keyframes mx-flash\{/.test(siteCss) && /@keyframes mx-rise\{/.test(siteCss) &&
-    /@keyframes mx-slam\{/.test(siteCss) && /@keyframes in-insetspin\{/.test(siteCss) &&
+    /@keyframes mx-slam\{/.test(siteCss) && /@keyframes in-whipin\{/.test(siteCss) &&
     /\.mx-paused \*/.test(siteCss) && /--mx-flash:\.26s|--mx-flash:0\.26s|--mx-flash: \.26s/.test(siteCss) === false ? /@keyframes mx-whip\{/.test(siteCss) : true);
   ok('no other page ships the intro markup',
     ['quiz.html', 'topics/fields.html', 'topics/current.html', 'topics/magind.html']

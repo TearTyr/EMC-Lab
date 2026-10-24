@@ -1152,631 +1152,301 @@
 
 /* ==========================================================================
    INTRO OVERLAY — the opening composition (index.html only).
-   v4 "1:6 cut" + phase 9d S4 fix: a time-compression of the COMPLETE reference
-   video (Video/シェリーライド.mp4, 70.416 s of picture,
-   docs/reference/animation-reference.md). Every event fires at
-   t_ref / 6 — EXCEPT the S4 "00:20" insert, which plays at footage tempo
-   (1:1) because 1:6 compressed its deliberate beats into a flicker:
-     S1 overture      0.000–0.436   confetti pops every .042 s (discrete)
-     S2 title lockup  0.436–2.019   flash #1, lock-up burst-in, paper-doll
-                                    micro swaps, whip-squash A→B at 1.225
-     S3 skit          2.019–3.153   flash #2, lines + VS pop, spinning
-                                    insets (period floor 0.5 s), line swap
-     S4 insert        3.153–5.653   FOOTAGE TEMPO: HARD CUT (zero white) to
-                                    cropped face + caption + flanking chibis,
-                                    1.1 s hold, ONE beat of red band + photo
-                                    panel + outlined caption, 1.0 s hold,
-                                    stamp on the panel, ramped flash #3
-     S5 chorus A      5.653–8.781   RAMPED flash #3, collage burst, five
-                                    word slams at the footage onsets, whips,
-                                    bubble columns, speech panels, title
-                                    callback + arrow, corner cluster, chips
-     S6 chorus B      8.781–10.350  flash #4, LOCKED lyric caption (never
-                                    moves), centre pose swaps on the grid,
-                                    fairies swapping edges every .333 s
-     S7 chorus C     10.350–11.914  flash #5, correction panels + X draws,
-                                    corner words, big slams, starburst
-                                    badges, diamonds, bottom-line words
-     S8 bookend      11.914–13.497  flash #6, identical S2 lock-up (pose C)
-     S9 end card     13.497–13.814  HARD CUT (zero white), single bordered
-                                    still, static hold — then the site-only
-                                    letterbox wipe (13.818 s) hands over.
-   Flash grammar is frame-quantised, not scaled: 2 white frames (33 ms) +
-   the footage decay per flash (90 / 250 / 300-ramped / 200 / 300 / 150 ms;
-   flash #3 ramps in over 4 frames). Hard cuts carry zero white, exactly
-   like f1134 / f4110.
-   Documented deviations (user decisions 2026-10-23/24 + flat-art rules):
-     · palette stays the site's pink identity (footage yellow → pink);
-     · full-white flashes (already site policy) — 6 × 33 ms in 13.8 s is
-       well under photosensitivity guidance; reduced motion shows none;
-     · motion-blur smears → whip-squash (blur filters banned);
-     · arc-swept curved text omitted (legibility);
-     · inset spin period floor 0.5 s (footage 2 s / 6 = 0.33 s);
-     · arrow-slash draw floor 0.15 s (footage 0.5 s / 6 = 0.083 s);
-     · S4 at footage tempo (rhythm fidelity at the 00:20 passage); all
-       other sections keep exact 1:6, shifted +2.078 s (master 13.814 s).
-   CSS keyframes only (transform/opacity/visibility), no rAF, no audio,
-   no gradients/blur/backdrop-filter. Reduced motion: static lock-up.
+   v5 "CHORUS CUT" (user directive 2026-10-24: "redo the intro … reference the
+   video but skip to 21 seconds due to the main motion is there … show the
+   Topics and formulas in action with blur and stuff … redo everything from
+   the ground up"): the previous v4 1:6 whole-video cut was removed entirely
+   and rebuilt off the footage's main-motion passage — Video/シェリーライド.mp4
+   from 21.0 s, i.e. the RAMPED FLASH #3 (f1284–1287) into chorus-collage A
+   (docs/reference/animation-reference.md §2 S5). The composition keeps the
+   footage's S5 grammar at its own beat grid (phrase pulse ≈1.15 s, fills
+   0.30 s) and replaces the lyric layer with the site's content in action:
+     · outlined TOPIC slams (CHARGE → FIELD → CURRENT → FLUX → INDUCTION) and
+       KaTeX EQUATION chips (Coulomb, E=F/q, V=IR, Φ=BA, ε=−dΦ/dt) whip-swap
+       around the centre mascot, one per beat, each entering and leaving on a
+       1–2-frame-style MOTION-BLUR WHIP (user request "with blur and stuff":
+       the flat-art blur ban is lifted for the intro overlay only);
+     · vertical equation bubble columns popped word-by-word;
+     · two speech panels sliding+rotating in with staged lines (chip first,
+       then lines 0.3 s apart), held ~3 s, whipped out;
+     · a four-box corner cluster (CH·1/CH·2/CH·3/QUIZ) slammed on one beat;
+     · an arc sweep of curved outlined letters across the top;
+     · navy feature chips sliding in staggered and exiting on a blur whip;
+     · the callback lock-up + arrow-slash draw + Start CTA, then the site-only
+       letterbox wipe hands over to the homepage.
+   The collage bed (navy field, bordered blue panel cards, waveform strips,
+   yellow zigzag wedges, name plate + OVERDRIVE chips) is present from frame
+   zero, exactly like the footage's S5 bed at the flash decay.
+   Contract (brief PART 6, unchanged): 14.0 s composition + 0.45 s wipe
+   auto-play once per session (sessionStorage `emc.intro.v1`), never on
+   chapter routes, skip always visible + keyboard reachable, ANY pointerdown/
+   keydown dismisses, overlay pointer-events:none, waits for the loader's
+   single completion event, CSS keyframes only (no rAF, no audio), reduced
+   motion gets a static poster that clears in ~1.2 s, everything removed from
+   the DOM afterwards. Master clock: js/intro.js TOTAL_MS = 14000.
+   Timeline (s from `.play`; --ti/--to = whip-in / whip-out onsets):
+     0.000 ramped flash (4-step 25→40→58→80→100 % white over 66 ms) + 320 ms decay
+     0.450/1.600 topic CHARGE      1.600/2.750 eq Coulomb
+     2.750/3.900 topic FIELD       3.900/5.050 eq E=F/q
+     3.300 vcol1 pops (0.18 stag)  4.350 speech1 in (lines 4.650/4.950) out 7.600
+     5.050/6.200 topic CURRENT     6.200/7.900 eq V=IR
+     6.600 vcol2 pops              7.000 speech2 in (lines 7.300/7.600) out 9.900
+     7.900/8.600 topic FLUX        8.600/10.200 eq Φ=BA
+     9.100 corner cluster (0.06 stag) out 11.900
+     9.300 arc sweep letters (0.035 stag) out 11.600
+    10.200/10.900 topic INDUCTION 10.900/12.850 eq ε=−dΦ/dt
+    10.600 navy chips (0.30 stag) out 12.300
+    12.100 callback lock-up, 12.350 arrow draw, 12.450 Start CTA
+    11.60/… pose-swap blur whips on the mascot pair (1.15/3.45/5.60/7.75/9.95/11.60)
+    13.450 letterbox wipe (0.45 s) → overlay `.out` → removed
    ========================================================================== */
 #introOverlay {
   position: fixed; inset: 0; z-index: 90; visibility: hidden;
   pointer-events: none;                 /* never locks the page underneath */
-  overflow: hidden; background: var(--pk-pale, #f6b3ca);
+  overflow: hidden; background: #0e1a2e;
 }
 #introOverlay.play { visibility: visible; }
 #introOverlay.out { opacity: 0; transition: opacity .18s ease; }
 #introOverlay .intro-skip { pointer-events: auto; position: absolute; right: .8rem; bottom: .8rem;
   z-index: 10; font-family: theme('fontFamily.ui'); font-weight: 700; font-size: .8rem;
-  color: #33202b; background: #fdf3f6; border: 2px solid #33202b; border-radius: 999px;
+  color: #10131a; background: #fdf3f6; border: 2px solid #10131a; border-radius: 999px;
   padding: .42em 1em; cursor: pointer; }
-#introOverlay .intro-skip:hover { background: #ffd9e6; }
+#introOverlay .intro-skip:hover { background: #cfe8ff; }
 #introOverlay .intro-skip:focus-visible { outline: 3px solid #d92b4b; outline-offset: 2px; }
-#introOverlay .in-start { pointer-events: auto; }
+#introOverlay .in-start { pointer-events: auto; position: absolute; left: 50%; bottom: 9%;
+  z-index: 6; opacity: 0; visibility: hidden;   /* hidden = unfocusable until it pops */
+  transform: translateX(-50%);
+  animation: in-vis 0s steps(1, end) 12.45s forwards,
+             in-startin .18s cubic-bezier(.2,.8,.3,1) 12.45s both; }
 
-/* ---- 0 s step utilities: absolute-delay show/hide chains ----------------
-   Every window below is written as `in-vis/in-hid/in-op1/in-op0 0s forwards`
-   at the exact site second (= reference second / 6). Later entries in an
-   animation list win once active, so a chronological chain is an exact
-   discrete timeline — no percentage maths, steps(1) by construction. ---- */
+/* ---- whip grammar: the footage's motion-blur whips (1–2 frame smears) ----
+   Every moving part enters and leaves through a blur whip: a ~120 ms
+   scaleX smear with a decaying filter:blur(), the flat-art stand-in for the
+   footage's 1–2 frame horizontal smears, upgraded to a real blur at the
+   user's request. --r is the element's held rotation. -------------------- */
+@keyframes in-whipin {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.55, .9); filter: blur(14px); }
+  55%  { opacity: 1; filter: blur(6px); }
+  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); filter: blur(0); }
+}
+@keyframes in-whipout {
+  0%   { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.5, .92); filter: blur(12px); }
+}
+@keyframes in-pop {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.5); filter: blur(6px); }
+  70%  { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1.12); filter: blur(0); }
+  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
+}
 @keyframes in-vis { to { visibility: visible; } }
 @keyframes in-hid { to { visibility: hidden; } }
-@keyframes in-op1 { to { opacity: 1; } }
-@keyframes in-op0 { to { opacity: 0; } }
+@keyframes in-on  { to { opacity: 1; } }
+@keyframes in-off { to { opacity: 0; } }
 
-/* ---- section fields: pink base, black insert, plum chorus (hard cuts) --- */
-#introOverlay .in-field { position: absolute; inset: 0; background: #f6b3ca; }
-/* AI-generated electron backdrop (user directive 2026-10-24): flat art plate,
-   opaque, sits above the pink field and below everything else. Visible only
-   for the opening lockup (S1+S2) and the S8 bookend that reuses it — hidden
-   through the skit/insert/chorus sections. Hard visibility switches only, on
-   the section boundaries (the S2→S3 and S7→S8 flashes cover the seams). */
-#introOverlay .in-aiart { position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; visibility: hidden; }
-#introOverlay.play .in-aiart { animation:
-  in-vis 0s steps(1,end) 0s forwards,      in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 11.92s forwards,  in-hid 0s steps(1,end) 13.497s forwards; }
-#introOverlay .in-field-dark { background: #0b0c0e; visibility: hidden; }
-#introOverlay .in-field-plum { background: #33202b; visibility: hidden; }
-#introOverlay.play .in-field-dark { animation:
-  in-vis 0s steps(1,end) 3.153s forwards,   /* f1134 hard cut, zero white */
-  in-hid 0s steps(1,end) 5.653s forwards; }
-#introOverlay.play .in-field-plum { animation:
-  in-vis 0s steps(1,end) 5.653s forwards,   /* ramped flash #3 lands here */
-  in-hid 0s steps(1,end) 11.914s forwards; } /* flash #6 → pink bookend */
+/* ---- ramped flash #3 (f1284–1287): 4-step luminance ramp + ~320 ms decay -- */
+#introOverlay .in-dip { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 8;
+  animation: in-ramp .42s linear 0s both; }
+@keyframes in-ramp {
+  0%     { opacity: .25; animation-timing-function: steps(1, end); }
+  16.6%  { opacity: .40; animation-timing-function: steps(1, end); }
+  33.3%  { opacity: .58; animation-timing-function: steps(1, end); }
+  50%    { opacity: .80; animation-timing-function: steps(1, end); }
+  66.6%  { opacity: 1;  animation-timing-function: cubic-bezier(.16, .84, .44, 1); }
+  100%   { opacity: 0; }
+}
 
-/* ---- white-flash dips: frame-quantised footage grammar ------------------
-   2 white frames (33 ms) + per-flash decay; #3 ramps in over 4 frames. */
-#introOverlay .in-dip { position: absolute; inset: 0; background: #fff; opacity: 0; }
-#introOverlay.play .in-dip1 { animation: in-flash1 .123s cubic-bezier(.3,.8,.4,1) .438.078s forwards; }
-#introOverlay.play .in-dip2 { animation: in-flash2 .283s cubic-bezier(.3,.8,.4,1) 2.019s forwards; }
-#introOverlay.play .in-dip3 { animation: in-flash3 .366s cubic-bezier(.3,.8,.4,1) 5.653s forwards; }
-#introOverlay.play .in-dip4 { animation: in-flash4 .233s cubic-bezier(.3,.8,.4,1) 8.781s forwards; }
-#introOverlay.play .in-dip5 { animation: in-flash5 .333s cubic-bezier(.3,.8,.4,1) 10.35s forwards; }
-#introOverlay.play .in-dip6 { animation: in-flash6 .183s cubic-bezier(.3,.8,.4,1) 11.914s forwards; }
-@keyframes in-flash1 { 0%, 27% { opacity: 1; } 100% { opacity: 0; } }   /* ~90 ms decay */
-@keyframes in-flash2 { 0%, 12% { opacity: 1; } 100% { opacity: 0; } }   /* ~250 ms */
-@keyframes in-flash3 { 0% { opacity: .25; } 4% { opacity: .4; } 8% { opacity: .58; }
-  12% { opacity: .8; } 18% { opacity: 1; } 100% { opacity: 0; } }       /* 66 ms ramp + ~300 ms */
-@keyframes in-flash4 { 0%, 14% { opacity: 1; } 100% { opacity: 0; } }   /* ~200 ms */
-@keyframes in-flash5 { 0%, 10% { opacity: 1; } 100% { opacity: 0; } }   /* ~300 ms */
-@keyframes in-flash6 { 0%, 18% { opacity: 1; } 100% { opacity: 0; } }   /* ~150 ms */
+/* ---- collage bed: present from frame zero, like the footage's S5 bed ----- */
+#introOverlay .in-field { position: absolute; inset: 0; background: #0e1a2e; }
+#introOverlay .in-bed { position: absolute; inset: 0; }
+#introOverlay .in-card { position: absolute; background: #9fd0f7; border: 3px solid #0b0c0e; border-radius: 14px; }
+#introOverlay .in-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 17%;
+  background: #5aa9e6; border-bottom: 3px solid #0b0c0e; border-radius: 11px 11px 0 0; }
+#introOverlay .in-card::after { content: ""; position: absolute; inset: 28% 9% 11% 9%;
+  background: repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 11px, #7db8e8 11px 15px); }
+#introOverlay .in-cd1 { left: 5%;  top: 13%;    width: 27%; height: 31%; rotate: -2deg; }
+#introOverlay .in-cd2 { right: 4%; top: 9%;     width: 25%; height: 35%; rotate: 2deg; }
+#introOverlay .in-cd3 { left: 11%; bottom: 11%; width: 23%; height: 27%; rotate: 1.5deg; }
+#introOverlay .in-cd4 { right: 11%; bottom: 15%; width: 27%; height: 25%; rotate: -1.5deg; }
+#introOverlay .in-wave { position: absolute; left: 29%; right: 29%; height: 5%; opacity: .8;
+  background: repeating-linear-gradient(90deg, #4d9be0 0 7px, rgba(0,0,0,0) 7px 14px); }
+#introOverlay .in-wv1 { top: 5%; }
+#introOverlay .in-wv2 { bottom: 5%; }
+#introOverlay .in-wedge { position: absolute; width: 30%; height: 15%; background: #e9ff47;
+  clip-path: polygon(0 100%, 8% 30%, 16% 100%, 24% 30%, 32% 100%, 40% 30%, 48% 100%, 56% 30%, 64% 100%, 72% 30%, 80% 100%, 88% 30%, 96% 100%, 100% 60%, 100% 100%); }
+#introOverlay .in-wedge1 { right: -2%; top: 22%; rotate: -8deg; }
+#introOverlay .in-wedge2 { left: -2%; bottom: 24%; rotate: 100deg; }
+#introOverlay .in-chip { position: absolute; z-index: 4; background: #fdf3f6; color: #10131a;
+  border: 2.5px solid #0b0c0e; border-radius: 999px; font-weight: 800; }
+#introOverlay .in-chip-name { top: 3%; left: 3%; font-size: .72rem; letter-spacing: .06em;
+  padding: .25em .8em; rotate: -1deg; }
+#introOverlay .in-chip-od { bottom: 7%; right: 3%; font-size: .68rem; letter-spacing: .12em;
+  padding: .25em .7em; rotate: 1deg; }   /* clears the skip button on phones */
 
-/* ---- letterbox bars + the site-only closing wipe (13.818 s) ------------ */
-#introOverlay .in-bars { position: absolute; inset: 0; }
-#introOverlay .in-bar { position: absolute; left: 0; right: 0; height: 7vh; background: #0b0c0e; }
+/* ---- centre mascot pair: pose swaps on the beat grid, blur-whipped ------- */
+#introOverlay .in-mascot-wrap { position: absolute; left: 50%; top: 50%; z-index: 3;
+  width: clamp(190px, 34vmin, 360px); transform: translate(-50%, -52%);
+  animation:
+    in-pose .12s cubic-bezier(.3, .8, .4, 1) 1.15s,
+    in-pose .12s cubic-bezier(.3, .8, .4, 1) 3.45s,
+    in-pose .12s cubic-bezier(.3, .8, .4, 1) 5.6s,
+    in-pose .12s cubic-bezier(.3, .8, .4, 1) 7.75s,
+    in-pose .12s cubic-bezier(.3, .8, .4, 1) 9.95s,
+    in-pose .12s cubic-bezier(.3, .8, .4, 1) 11.6s; }
+#introOverlay .in-mascot { display: block; width: 100%; height: auto; }
+#introOverlay .in-mascot-sparkle { position: absolute; inset: 0; opacity: 0;
+  animation:
+    in-on 0s steps(1, end) 1.15s forwards,  in-off 0s steps(1, end) 3.45s forwards,
+    in-on 0s steps(1, end) 5.6s forwards,  in-off 0s steps(1, end) 7.75s forwards,
+    in-on 0s steps(1, end) 9.95s forwards, in-off 0s steps(1, end) 11.6s forwards; }
+@keyframes in-pose {
+  0%   { transform: translate(-50%, -52%) scale(1); filter: blur(0); }
+  45%  { transform: translate(-50%, -52%) scale(.88, 1.07); filter: blur(7px); }
+  100% { transform: translate(-50%, -52%) scale(1); filter: blur(0); }
+}
+
+/* ---- topic slams: outlined white type, one per beat ---------------------- */
+#introOverlay .in-slam { position: absolute; z-index: 5; opacity: 0;
+  font-family: theme('fontFamily.title'); font-weight: 800;
+  font-size: clamp(2.2rem, 7.4vw, 5rem); line-height: .95; color: #fff;
+  -webkit-text-stroke: 3px #10131a; text-shadow: .06em .07em 0 #1b2a44;
+  animation: in-whipin .14s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
+             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
+#introOverlay .in-s1 { --ti: .45s;  --to: 1.6s;   --r: -8deg; top: 10%; left: 5%; }
+#introOverlay .in-s2 { --ti: 2.75s; --to: 3.9s;   --r: 6deg;  bottom: 24%; left: 8%; }
+#introOverlay .in-s3 { --ti: 5.05s; --to: 6.2s;   --r: -6deg; top: 8%; left: 16%; }
+#introOverlay .in-s4 { --ti: 7.9s;  --to: 8.6s;   --r: 7deg;  top: 30%; left: 4%; }
+#introOverlay .in-s5 { --ti: 10.2s; --to: 10.9s;  --r: -7deg; bottom: 30%; left: 12%; }
+
+/* ---- equation chips: KaTeX on navy plates, whipped in and out ------------ */
+#introOverlay .in-eqchip { position: absolute; z-index: 5; opacity: 0;
+  background: #101d33; color: #fff; border: 3px solid #0b0c0e; border-radius: 12px;
+  padding: .3em .65em; font-size: clamp(1.05rem, 3.4vw, 1.9rem);
+  box-shadow: 5px 6px 0 rgba(11, 12, 14, .45);
+  animation: in-whipin .14s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
+             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
+#introOverlay .in-f1 { --ti: 1.6s;  --to: 2.75s;  --r: 5deg;  top: 18%; right: 6%; }
+#introOverlay .in-f2 { --ti: 3.9s;  --to: 5.05s;  --r: -5deg; top: 9%; right: 20%; }
+#introOverlay .in-f3 { --ti: 6.2s;  --to: 7.9s;   --r: 7deg;  bottom: 16%; right: 9%; }
+#introOverlay .in-f4 { --ti: 8.6s;  --to: 10.2s;  --r: -6deg; top: 32%; right: 5%; }
+#introOverlay .in-f5 { --ti: 10.9s; --to: 12.85s; --r: 4deg;  bottom: 11%; right: 14%; }
+
+/* ---- vertical equation bubble columns, word-by-word ---------------------- */
+#introOverlay .in-vcol { position: absolute; z-index: 5; display: flex; flex-direction: column;
+  gap: 6px; align-items: center;
+  animation: in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
+#introOverlay .in-vcol > span { opacity: 0; background: #fdf3f6; color: #10131a;
+  border: 2.5px solid #10131a; border-radius: 10px; padding: .12em .5em;
+  font-weight: 800; font-size: clamp(1rem, 2.6vw, 1.5rem);
+  animation: in-pop .12s cubic-bezier(.2, .8, .3, 1) var(--d) both; }
+#introOverlay .in-vcol > span:nth-child(2) { --d: calc(var(--t0) + .18s); }
+#introOverlay .in-vcol > span:nth-child(3) { --d: calc(var(--t0) + .36s); }
+#introOverlay .in-vcol > span:nth-child(1) { --d: var(--t0); }
+#introOverlay .in-vcol1 { --t0: 3.3s; --to: 4.6s; top: 34%; left: 24%; rotate: -4deg; }
+#introOverlay .in-vcol2 { --t0: 6.6s; --to: 7.6s; top: 40%; right: 24%; rotate: 4deg; }
+
+/* ---- speech panels: slide+rotate in, staged lines, whip out -------------- */
+#introOverlay .in-speech { position: absolute; z-index: 5; opacity: 0;
+  background: #fdf3f6; border: 3px solid #10131a; border-radius: 16px;
+  padding: .7em .95em; max-width: min(34vw, 20rem);
+  box-shadow: 5px 6px 0 rgba(11, 12, 14, .4);
+  animation: in-slide .3s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
+             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
+#introOverlay .in-speech b { display: inline-block; background: #101d33; color: #fff;
+  border-radius: 999px; padding: .18em .7em; font-size: .78rem; letter-spacing: .05em;
+  rotate: -1deg; margin-bottom: .45em; }
+#introOverlay .in-speech i { display: block; font-style: normal; color: #14161d;
+  font-weight: 700; font-size: clamp(.85rem, 2vw, 1.05rem); line-height: 1.35; opacity: 0;
+  animation: in-lin .16s ease-out var(--d) both; }
+#introOverlay .in-speech i:nth-of-type(1) { --d: calc(var(--ti) + .3s); }
+#introOverlay .in-speech i:nth-of-type(2) { --d: calc(var(--ti) + .6s); }
+#introOverlay .in-speech1 { --ti: 4.35s; --to: 7.6s; --r: -3deg; top: 12%; left: 22%; }
+#introOverlay .in-speech2 { --ti: 7s;    --to: 9.9s; --r: 2.5deg; top: 46%; left: 7%; }
+@keyframes in-slide {
+  0%   { opacity: 0; transform: translate(-46px, -64px) rotate(var(--r, 0deg)); filter: blur(8px); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(var(--r, 0deg)); filter: blur(0); }
+}
+@keyframes in-lin { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+
+/* ---- corner cluster: four rotated boxes, one beat ------------------------ */
+#introOverlay .in-cx { position: absolute; z-index: 5; opacity: 0;
+  background: #fdf3f6; color: #10131a; border: 3px solid #10131a; border-radius: 9px;
+  padding: .18em .5em; font-weight: 800; font-size: clamp(1rem, 2.8vw, 1.7rem);
+  animation: in-cxslam .13s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
+             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
+#introOverlay .in-cx1 { --ti: 9.1s;  --to: 11.9s; --r: -10deg; top: 7%; left: 6%; }
+#introOverlay .in-cx2 { --ti: 9.16s; --to: 11.9s; --r: 9deg;   top: 6%; right: 7%; }
+#introOverlay .in-cx3 { --ti: 9.22s; --to: 11.9s; --r: 8deg;   bottom: 9%; left: 8%; }
+#introOverlay .in-cx4 { --ti: 9.28s; --to: 11.9s; --r: -9deg;  bottom: 8%; right: 6%; }
+@keyframes in-cxslam {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.7); filter: blur(9px); }
+  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); filter: blur(0); }
+}
+
+/* ---- arc sweep: curved outlined letters across the top ------------------- */
+#introOverlay .in-arc { position: absolute; left: 50%; top: 47%; z-index: 4;
+  animation: in-whipout .12s cubic-bezier(.55, 0, .8, .4) 11.6s forwards; }
+#introOverlay .in-arc b { position: absolute; left: 0; top: 0; font-weight: 800; opacity: 0;
+  font-size: clamp(.95rem, 2.6vw, 1.6rem); color: #fff; -webkit-text-stroke: 2px #10131a;
+  transform: rotate(var(--a)) translateY(var(--rad, -40vmin));
+  animation: in-arcpop .16s cubic-bezier(.2, .8, .3, 1) var(--d) both; }
+@keyframes in-arcpop {
+  0%   { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--rad, -40vmin) + 34px)); filter: blur(7px); }
+  100% { opacity: 1; transform: rotate(var(--a)) translateY(var(--rad, -40vmin)); filter: blur(0); }
+}
+
+/* ---- navy feature chips: slide in staggered, exit on a whip --------------- */
+#introOverlay .in-ncplace { position: absolute; left: 4%; top: 58%; z-index: 5;
+  animation: in-ncout .12s cubic-bezier(.55, 0, .8, .4) 12.3s forwards; }
+#introOverlay .in-ncrow { display: flex; gap: 10px; }
+#introOverlay .in-nc { opacity: 0; background: #16233c; color: #fff; border: 2.5px solid #0b0c0e;
+  border-radius: 999px; padding: .3em .85em; font-weight: 700;
+  font-size: clamp(.8rem, 1.9vw, 1rem);
+  animation: in-ncslide .18s cubic-bezier(.2, .8, .3, 1) var(--ti) both; }
+#introOverlay .in-nc1 { --ti: 10.6s; }
+#introOverlay .in-nc2 { --ti: 10.9s; }
+#introOverlay .in-nc3 { --ti: 11.2s; }
+@keyframes in-ncslide { from { opacity: 0; transform: translateX(-64px); } to { opacity: 1; transform: none; } }
+@keyframes in-ncout { to { opacity: 0; transform: translateX(46px); filter: blur(10px); } }
+
+/* ---- callback lock-up + arrow slash draw --------------------------------- */
+#introOverlay .in-callback { position: absolute; left: 50%; bottom: 20%; z-index: 6; opacity: 0;
+  display: grid; justify-items: center; gap: .2rem;
+  animation: in-cbin .16s cubic-bezier(.2, .8, .3, 1) 12.1s both; }
+#introOverlay .in-cb-title { font-family: theme('fontFamily.title'); font-weight: 800;
+  font-size: clamp(1.5rem, 4.4vw, 2.9rem); color: #fff; -webkit-text-stroke: 3px #10131a;
+  text-shadow: .06em .07em 0 #1b2a44; rotate: -2deg; }
+#introOverlay .in-arrow { width: clamp(120px, 20vw, 220px); color: #0b0c0e; }
+#introOverlay .in-arrow path { stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: in-draw .5s cubic-bezier(.3, .7, .4, 1) 12.35s both; }
+@keyframes in-cbin {
+  0%   { opacity: 0; transform: translateX(-50%) scale(.82); filter: blur(8px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); filter: blur(0); }
+}
+@keyframes in-draw { to { stroke-dashoffset: 0; } }
+@keyframes in-startin {
+  0%   { opacity: 0; transform: translateX(-50%) scale(.7); filter: blur(6px); }
+  70%  { opacity: 1; transform: translateX(-50%) scale(1.06); filter: blur(0); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+/* ---- letterbox wipe: the site-only handover to the homepage --------------- */
+#introOverlay .in-bars { position: absolute; inset: 0; z-index: 7; }
+#introOverlay .in-bar { position: absolute; left: 0; right: 0; height: 51%; background: #0b0c0e; }
 #introOverlay .in-bar-t { top: 0; transform-origin: top; }
 #introOverlay .in-bar-b { bottom: 0; transform-origin: bottom; }
-#introOverlay.play .in-bar-t { animation: in-wipe-t .45s cubic-bezier(.7,0,.3,1) 13.818s both; }
-#introOverlay.play .in-bar-b { animation: in-wipe-b .45s cubic-bezier(.7,0,.3,1) 13.818s both; }
-@keyframes in-wipe-t { from { transform: scaleY(1); } to { transform: scaleY(7.2); } }
-@keyframes in-wipe-b { from { transform: scaleY(1); } to { transform: scaleY(7.2); } }
+#introOverlay.play .in-bar-t { animation: in-wipe .45s cubic-bezier(.7, 0, .3, 1) 13.45s both; }
+#introOverlay.play .in-bar-b { animation: in-wipe .45s cubic-bezier(.7, 0, .3, 1) 13.45s both; }
+@keyframes in-wipe { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
-/* ---- S1 overture (0–0.436 s): discrete confetti pops, no tween ----------
-   Footage onsets f15…f135 (0.25–2.25 s) → 0.042…0.375 s; field then static
-   until flash #1 clears it at 0.486 s. */
-#introOverlay .in-conf { position: absolute; width: 26px; height: 22px; opacity: 0; }
-#introOverlay .in-cf1 { top: 22%; left: 30%; background: #33202b; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-#introOverlay .in-cf2 { top: 18%; left: 56%; width: 18px; height: 18px; border-radius: 50%; background: #fdf3f6; }
-#introOverlay .in-cf3 { top: 30%; left: 66%; background: #e9ff47; clip-path: polygon(50% 100%, 100% 0, 0 0); }
-#introOverlay .in-cf4 { top: 26%; left: 44%; width: 15px; height: 15px; border-radius: 50%; background: #33202b; }
-#introOverlay .in-cf5 { top: 38%; left: 22%; width: 20px; height: 17px; background: #e9ff47; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-#introOverlay .in-cf6 { top: 14%; left: 40%; width: 14px; height: 14px; border-radius: 50%; background: #33202b; }
-#introOverlay .in-cf7 { top: 34%; left: 74%; width: 22px; height: 12px; background: #fdf3f6; clip-path: polygon(0 0, 100% 40%, 20% 100%); }
-#introOverlay .in-cf8 { top: 42%; left: 50%; width: 13px; height: 13px; background: #33202b; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
-#introOverlay.play .in-cf1 { animation: in-op1 0s steps(1,end) .44.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf2 { animation: in-op1 0s steps(1,end) .85.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf3 { animation: in-op1 0s steps(1,end) .169.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf4 { animation: in-op1 0s steps(1,end) .210.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf5 { animation: in-op1 0s steps(1,end) .27.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf6 { animation: in-op1 0s steps(1,end) .294.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf7 { animation: in-op1 0s steps(1,end) .335.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-#introOverlay.play .in-cf8 { animation: in-op1 0s steps(1,end) .377.078s forwards, in-op0 0s steps(1,end) .488.078s forwards; }
-
-/* ---- S2/S8 title lock-up: strip + EQ glyphs, mascot, locked title -------
-   Flash #1 dissolve-out is staggered (footage f158–163): title lands first
-   (0.470), mascot (0.500), strip + glyphs (0.560). */
-#introOverlay .in-stage { position: absolute; inset: 7vh 0; display: grid; place-items: center; }
-#introOverlay .in-strip { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
-  display: flex; justify-content: center; align-items: center; gap: 1.2rem; visibility: hidden; }
-#introOverlay .in-strip img { height: clamp(90px, 18vh, 150px); width: auto; opacity: .13; }
-#introOverlay .in-eq { font-family: theme('fontFamily.mono'); font-size: clamp(.6rem, 1.6vw, .85rem);
-  font-weight: 700; color: #33202b; opacity: .28; }
-#introOverlay.play .in-strip { animation:
-  in-vis 0s steps(1,end) .58.078s forwards,  in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 11.953s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
-
-#introOverlay .in-mascot-wrap { position: relative; grid-row: 1; grid-column: 1;
-  width: clamp(150px, 34vh, 260px); visibility: hidden; }
-#introOverlay.play .in-mascot-wrap { animation:
-  in-pop .3s cubic-bezier(.3,1.5,.4,1) .7.078s both,
-  in-whipx .03s steps(1,end) 1.225s forwards,          /* f440–447 A→B sliver */
-  in-vis 0s steps(1,end) .7.078s forwards,   in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 8.8s forwards, in-hid 0s steps(1,end) 10.35s forwards,
-  in-vis 0s steps(1,end) 11.92s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
-@keyframes in-pop { 0% { transform: scale(.5); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
-@keyframes in-whipx { 0% { transform: scaleX(1); } 40% { transform: scaleX(.1); } 100% { transform: scaleX(1); } }
-#introOverlay .in-mascot { display: block; width: 100%; height: auto; }
-#introOverlay .in-mascot-sparkle { position: absolute; inset: 0; opacity: 0; }
-/* paper-doll micro swaps + whip-squash pose families, on the footage grid
-   (1.5 s macro + 0.30 s doublet → 0.25 s + 0.05 s here). Generated from the
-   f230…f4020 onset list — see .scratch/intro16 + evidence map. */
-#introOverlay.play .in-mascot { animation: in-tilt 13.814s steps(1, end) both; }
-#introOverlay.play .in-mascot-sparkle { animation: in-pose 13.814s steps(1, end) both; }
-@keyframes in-pose {
-  0%, 4.6% { opacity: 0; }
-  4.64%, 4.97% { opacity: 1; }
-  5%, 5.27% { opacity: 0; }
-  5.31%, 5.63% { opacity: 1; }
-  5.67%, 6% { opacity: 0; }
-  6.03%, 6.35% { opacity: 1; }
-  6.39%, 8.22% { opacity: 0; }
-  8.26%, 8.84% { opacity: 1; }
-  8.87%, 8.99% { opacity: 0; }
-  9.03%, 11.04% { opacity: 1; }
-  11.08%, 12.85% { opacity: 0; }
-  12.89%, 13.27% { opacity: 1; }
-  13.3%, 13.62% { opacity: 0; }
-  13.65%, 14.58% { opacity: 1; }
-  14.61%, 65.32% { opacity: 0; }
-  65.35%, 67.2% { opacity: 1; }
-  67.23%, 69.08% { opacity: 0; }
-  69.12%, 70.96% { opacity: 1; }
-  71%, 72.85% { opacity: 0; }
-  72.88%, 74.89% { opacity: 1; }
-  74.92%, 86.25% { opacity: 0; }
-  86.29%, 88.61% { opacity: 1; }
-  88.64%, 89.81% { opacity: 0; }
-  89.85%, 91.02% { opacity: 1; }
-  91.05%, 93.42% { opacity: 0; }
-  93.47%, 94.64% { opacity: 1; }
-  94.67%, 95.85% { opacity: 0; }
-  95.88%, 97.67% { opacity: 1; }
-  97.71%, 99.97% { opacity: 0; }
-}
-@keyframes in-tilt {
-  0%, 4.6% { transform: rotate(0deg); }
-  4.64%, 5.27% { transform: rotate(-2deg); }
-  5.31%, 5.63% { transform: rotate(2.5deg); }
-  5.67%, 6% { transform: rotate(-2deg); }
-  6.03%, 6.35% { transform: rotate(2deg); }
-  6.39%, 8.22% { transform: rotate(-2.5deg); }
-  8.26%, 8.99% { transform: rotate(2deg); }
-  9.03%, 11.04% { transform: rotate(-2deg); }
-  11.08%, 12.85% { transform: rotate(2deg); }
-  12.89%, 13.27% { transform: rotate(-2.5deg); }
-  13.3%, 13.62% { transform: rotate(2deg); }
-  13.65%, 65.32% { transform: rotate(-2deg); }
-  65.35%, 67.2% { transform: rotate(2deg); }
-  67.23%, 69.08% { transform: rotate(-2deg); }
-  69.12%, 70.96% { transform: rotate(2.5deg); }
-  71%, 72.85% { transform: rotate(-2deg); }
-  72.88%, 88.61% { transform: rotate(2deg); }
-  88.64%, 89.81% { transform: rotate(-2deg); }
-  89.85%, 91.02% { transform: rotate(2deg); }
-  91.05%, 93.42% { transform: rotate(-2.5deg); }
-  93.47%, 94.64% { transform: rotate(2deg); }
-  94.67%, 95.85% { transform: rotate(-2deg); }
-  95.88%, 97.67% { transform: rotate(2.5deg); }
-  97.71%, 99.97% { transform: rotate(0deg); }
-}
-
-#introOverlay .in-title { grid-row: 2; grid-column: 1; margin-top: .3rem; text-align: center;
-  visibility: hidden; font-family: theme('fontFamily.title'); font-weight: 700; line-height: .95; }
-#introOverlay.play .in-title { animation:
-  in-slam .25s cubic-bezier(.2,1.3,.3,1) .49.078s both,
-  in-vis 0s steps(1,end) .49.078s forwards,   in-hid 0s steps(1,end) 2.019s forwards,
-  in-vis 0s steps(1,end) 11.92s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
-@keyframes in-slam { 0% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes in-slamb { 0% { transform: scale(1.5) rotate(var(--wr, 0deg)); opacity: 0; }
-  100% { transform: scale(1) rotate(var(--wr, 0deg)); opacity: 1; } }
-#introOverlay .in-t1, #introOverlay .in-t2 {
-  display: inline-block; font-size: clamp(2.2rem, 8vw, 4.4rem); letter-spacing: .02em;
-  color: #fdf3f6; -webkit-text-stroke: 3px #33202b; }
-#introOverlay .in-t2 { margin-left: .45em; color: #ffd9e6; }
-#introOverlay .in-sub { display: block; margin-top: .35rem; font-family: theme('fontFamily.ui');
-  font-size: clamp(.62rem, 1.6vw, .8rem); font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: #33202b; }
-
-/* ---- Start action: slams in on the bookend (site-only CTA), cut by S9 --- */
-#introOverlay .in-start { grid-row: 3; grid-column: 1; margin-top: .9rem;
-  font-size: 1.02rem; padding: .62em 1.5em; visibility: hidden; }
-#introOverlay.play .in-start { animation:
-  in-slam .26s cubic-bezier(.2,1.4,.3,1) 12.078s both,
-  in-vis 0s steps(1,end) 11.978s forwards, in-hid 0s steps(1,end) 13.497s forwards; }
-
-/* ---- S3 skit (2.019–3.153 s): handwritten pair + VS + spinning insets -- */
-#introOverlay .in-skit { position: absolute; inset: 0; visibility: hidden; }
-#introOverlay.play .in-skit { animation:
-  in-vis 0s steps(1,end) 2.019s forwards, in-hid 0s steps(1,end) 3.153s forwards; }
-#introOverlay .in-skit-line { position: absolute; font-family: theme('fontFamily.title'); font-weight: 700;
-  font-size: clamp(1.05rem, 3.6vw, 1.9rem); color: #33202b; opacity: 0; }
-#introOverlay .in-skit-line.l1 { top: 15vh; left: 8vw; transform: rotate(-3deg); }
-#introOverlay .in-skit-line.l2 { top: 22vh; left: 13vw; transform: rotate(2deg); }
-#introOverlay .in-skit-line.l3 { top: 62vh; left: 9vw; transform: rotate(2deg); }
-#introOverlay .in-skit-line.l4 { top: 69vh; left: 14vw; transform: rotate(-2deg); }
-#introOverlay .in-skit-line.l5 { top: 15vh; left: 8vw; transform: rotate(-2deg); }
-#introOverlay.play .in-skit-line.l1 { animation:
-  in-op1 0s steps(1,end) 2.025s forwards, in-op0 0s steps(1,end) 2.667s forwards; } /* f729 pair */
-#introOverlay.play .in-skit-line.l2 { animation:
-  in-op1 0s steps(1,end) 2.025s forwards, in-op0 0s steps(1,end) 2.667s forwards; }
-#introOverlay.play .in-skit-line.l3 { animation: in-op1 0s steps(1,end) 2.417s forwards; } /* f870 pair 2 */
-#introOverlay.play .in-skit-line.l4 { animation: in-op1 0s steps(1,end) 2.417s forwards; }
-#introOverlay.play .in-skit-line.l5 { animation: in-op1 0s steps(1,end) 2.667s forwards; } /* f960 swap */
-#introOverlay .in-vs { position: absolute; left: 50%; top: 44vh; background: #d92b4b; color: #fff;
-  font-weight: 700; font-family: theme('fontFamily.title'); font-size: clamp(.9rem, 3vw, 1.4rem);
-  padding: .1em .4em; transform: translateX(-50%) rotate(-6deg); opacity: 0; }
-#introOverlay.play .in-vs { animation: in-op1 0s steps(1,end) 2.333s forwards; }  /* f840 discrete pop */
-#introOverlay .in-inset { position: absolute; background: #fdf3f6; color: #33202b; border: 3px solid #33202b;
-  border-radius: 10px; font-family: theme('fontFamily.title'); font-weight: 700; opacity: 0; }
-#introOverlay .in-ins1 { left: 13%; bottom: 18%; font-size: clamp(1rem, 3.4vw, 1.5rem); padding: .6em .9em; }
-#introOverlay .in-ins2 { right: 12%; top: 16vh; padding: .45em; }
-#introOverlay .in-ins2 img { display: block; height: clamp(64px, 13vh, 110px); width: auto; }
-/* enter spinning (f733→760) and keep spinning while alive; footage period
-   2 s → 0.333 s at 1:6, floored to 0.5 s for readability (documented). */
-#introOverlay.play .in-ins1 { animation: in-inset .24s cubic-bezier(.2,1.3,.3,1) 2.025s both, in-insetspin .5s linear 2.265s infinite; }
-#introOverlay.play .in-ins2 { animation: in-inset2 .24s cubic-bezier(.2,1.3,.3,1) 2.417s both, in-insetspin2 .5s linear 2.657s infinite; }
-@keyframes in-inset { from { opacity: 0; transform: perspective(420px) rotateY(24deg) rotate(-7deg) scale(.6); }
-  to { opacity: 1; transform: perspective(420px) rotateY(16deg) rotate(-5deg) scale(1); } }
-@keyframes in-inset2 { from { opacity: 0; transform: perspective(420px) rotateY(-24deg) rotate(7deg) scale(.6); }
-  to { opacity: 1; transform: perspective(420px) rotateY(-16deg) rotate(7deg) scale(1); } }
-@keyframes in-insetspin { 0% { transform: perspective(420px) rotateY(16deg) rotate(-5deg); }
-  50% { transform: perspective(420px) rotateY(90deg) rotate(-5deg); }
-  100% { transform: perspective(420px) rotateY(16deg) rotate(-5deg); } }
-@keyframes in-insetspin2 { 0% { transform: perspective(420px) rotateY(-16deg) rotate(7deg); }
-  50% { transform: perspective(420px) rotateY(-90deg) rotate(7deg); }
-  100% { transform: perspective(420px) rotateY(-16deg) rotate(7deg); } }
-
-/* ---- S4 insert (3.153–5.653 s): HARD CUT at FOOTAGE TEMPO ---------------
-   The 00:20 passage plays 1:1 with the footage (user directive 2026-10-24:
-   the previous 0.42 s 1:6 window compressed the footage's deliberate beats
-   into a flicker). Onsets = footage pts − 18.916 + 3.153:
-     f1134 18.916 → 3.153  hard cut, zero white: cropped giant face + small
-                            caption + flanking chibis (flicker pose swaps)
-     f1202 20.033 → 4.273  ONE beat: red top band + photo panel + outlined
-                            caption slam together; chibis jump to corners
-     f1262 21.050 → 5.287  stamp glyph slams onto the panel (overshoot)
-     f1284 21.416 → 5.653  ramped flash #3 into chorus A
-   S5–S9 keep their exact 1:6 rhythm, shifted +2.078 s (master clock
-   13.814 s). See docs/reference/animation-reference.md §4–§5. */
-#introOverlay .in-insert { position: absolute; inset: 0; overflow: hidden; visibility: hidden; }
-#introOverlay.play .in-insert { animation:
-  in-vis 0s steps(1,end) 3.153s forwards, in-hid 0s steps(1,end) 5.653s forwards; }
-#introOverlay .in-face { position: absolute; left: 50%; top: 36%; width: min(112vh, 86%);
-  transform: translate(-50%, -50%); opacity: .96; }
-/* footage: the face is replaced by band+panel+black on the panel beat */
-#introOverlay.play .in-face { animation: in-hid 0s steps(1,end) 4.273s forwards; }
-#introOverlay .in-cap0 { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center;
-  font-family: theme('fontFamily.ui');
-  font-weight: 700; font-size: clamp(.7rem, 2vw, .95rem); color: #fdf3f6; }
-#introOverlay .in-insert-bar { position: absolute; top: 0; left: 0; right: 0; height: 21vh;
-  background: #d92b4b; transform: translateY(-120%); }
-#introOverlay.play .in-insert-bar { animation: in-bar-in .09s cubic-bezier(.6,0,.3,1) 4.273s both; }
-@keyframes in-bar-in { from { transform: translateY(-120%); } to { transform: translateY(0); } }
-#introOverlay .in-photo { position: absolute; left: 12%; right: 12%; top: 24vh; height: 42vh;
-  background: #4a121c; overflow: hidden; opacity: 0; --wr: 0deg; }
-#introOverlay .in-photo img { display: block; width: 100%; height: 100%; object-fit: contain;
-  opacity: .95; }
-#introOverlay.play .in-photo { animation: in-slamb .1s cubic-bezier(.2,1.5,.3,1) 4.273s both; }
-#introOverlay .in-cap2 { position: absolute; left: 0; right: 0; top: 46vh; text-align: center;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1.4rem, 5.4vw, 2.8rem);
-  color: #fdf3f6; -webkit-text-stroke: 2px #0b0c0e; opacity: 0; --wr: -2deg; }
-#introOverlay.play .in-cap2 { animation: in-slam .1s cubic-bezier(.2,1.4,.3,1) 4.273s both; }
-#introOverlay .in-stamp { position: absolute; left: 0; right: 0; top: 29vh; margin-inline: auto;
-  width: max-content; background: #0b0c0e; color: #e9ff47;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1rem, 3.4vw, 1.7rem);
-  border: 3px solid #e9ff47; padding: .15em .5em; transform: rotate(-10deg); --wr: -10deg;
-  opacity: 0; }
-#introOverlay.play .in-stamp { animation: in-slamb .1s cubic-bezier(.2,1.6,.3,1) 5.287s both; }
-#introOverlay .in-chibi { position: absolute; width: clamp(38px, 8vh, 64px); }
-#introOverlay .in-chibi img { display: block; width: 100%; height: auto; }
-#introOverlay .in-chibi img.sp { position: absolute; inset: 0; opacity: 0; }
-#introOverlay .in-chibi.cb1 { left: 8%; bottom: 14%; transform: rotate(-8deg); }
-#introOverlay .in-chibi.cb2 { right: 8%; bottom: 16%; transform: rotate(7deg); }
-/* footage: chibis flank the face at mid height from the cut, flicker-swap
-   poses (f1135–1160), then jump to the bottom corners on the panel beat. */
-#introOverlay.play .in-chibi.cb1 { animation:
-  in-cb1-mid 0s steps(1,end) 3.153s forwards, in-cb1-corner 0s steps(1,end) 4.273s forwards; }
-#introOverlay.play .in-chibi.cb2 { animation:
-  in-cb2-mid 0s steps(1,end) 3.153s forwards, in-cb2-corner 0s steps(1,end) 4.273s forwards; }
-@keyframes in-cb1-mid { to { transform: rotate(-8deg) translate(-3vw, -44vh); } }
-@keyframes in-cb1-corner { to { transform: rotate(-8deg); } }
-@keyframes in-cb2-mid { to { transform: rotate(7deg) translate(3vw, -38vh); } }
-@keyframes in-cb2-corner { to { transform: rotate(7deg); } }
-#introOverlay.play .in-chibi img.sp { animation:
-  in-op1 0s steps(1,end) 3.203s forwards, in-op0 0s steps(1,end) 3.253s forwards,
-  in-op1 0s steps(1,end) 3.586s forwards; }   /* flicker f1136 / f1139 / f1160 */
-
-/* ---- S5 chorus A (5.653–8.781 s): the dense collage ---------------------
-   Onsets from docs/reference/animation-reference.md §2 (footage onsets at
-   1:6, +2.078 s phase-9d shift): words f1320/1420/1470/1530/1540 →
-   5.745/6.022/6.161/6.328/6.356; whips f1410/f1510 → 5.995/6.272; bubble
-   columns f1440/1500 → 6.078/6.245; speech panel f1560–1740 → 6.411–6.911
-   (chip + lines 0.3 s apart → 0.05 s); panel 2 f2040-slot → 6.745, both out
-   6.995; callback + arrow f1800 → 7.078; corner cluster f1860 → 7.245;
-   chips f2130–2190 → 7.995/8.120/8.161, whip-out f2227 → 8.261. */
-#introOverlay.play .in-cola { animation:
-  in-vis 0s steps(1,end) 5.653s forwards, in-hid 0s steps(1,end) 8.781s forwards,
-  in-whipx .03s steps(1,end) 5.995s forwards, in-whipx .03s steps(1,end) 6.272s forwards; }
-#introOverlay .in-panel { position: absolute; border: 3px solid #f06e9a; background: #3d2733; opacity: 0; overflow: hidden; }
-#introOverlay .in-panel img { width: 100%; height: 100%; object-fit: cover; opacity: .5; }
-#introOverlay .in-p1 { left: 6%; top: 16%; width: clamp(90px, 18vw, 190px); height: clamp(56px, 11vw, 116px); transform: rotate(-3deg); }
-#introOverlay .in-p2 { right: 6%; top: 20%; width: clamp(80px, 16vw, 170px); height: clamp(50px, 10vw, 106px); transform: rotate(2deg); }
-#introOverlay .in-p3 { left: 10%; bottom: 18%; width: clamp(70px, 14vw, 150px); height: clamp(44px, 9vw, 94px); transform: rotate(2deg); }
-#introOverlay .in-p4 { right: 9%; bottom: 15%; width: clamp(90px, 17vw, 180px); height: clamp(54px, 10vw, 110px); transform: rotate(-2deg); }
-#introOverlay.play .in-p1 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.661s both; }
-#introOverlay.play .in-p2 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.678s both; }
-#introOverlay.play .in-p3 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.695s both; }
-#introOverlay.play .in-p4 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.711s both; }
-#introOverlay .in-plate { position: absolute; left: 0; right: 0; margin-inline: auto; width: max-content;
-  background: #fdf3f6; color: #33202b; font-family: theme('fontFamily.ui');
-  font-weight: 700; letter-spacing: .22em; text-transform: uppercase; font-size: clamp(.55rem, 1.5vw, .72rem);
-  padding: .3em .8em; opacity: 0; }
-#introOverlay .in-plate-t { top: calc(7vh + 10px); transform: rotate(-1deg); --wr: -1deg; }
-#introOverlay .in-plate-b { bottom: calc(7vh + 12px); transform: rotate(1deg); --wr: 1deg; background: #f06e9a; color: #2b1b22; }
-#introOverlay .in-chip-od { top: calc(7vh + 44px); transform: rotate(1.5deg); --wr: 1.5deg;
-  background: #e9ff47; color: #33202b; }
-#introOverlay.play .in-plate-t { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 5.728s both; }
-#introOverlay.play .in-plate-b { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 5.745s both; }
-#introOverlay.play .in-chip-od { animation: in-slamb .12s cubic-bezier(.2,1.4,.3,1) 5.761s both; }
-#introOverlay .in-wedge { position: absolute; width: clamp(60px, 12vw, 130px); height: clamp(16px, 3vw, 30px);
-  background: #f06e9a; clip-path: polygon(0 100%, 18% 0, 32% 100%, 50% 0, 64% 100%, 82% 0, 100% 100%); opacity: 0; }
-#introOverlay .in-w1 { left: 4%; top: 44%; transform: rotate(-14deg); }
-#introOverlay .in-w2 { right: 4%; top: 52%; transform: rotate(12deg); }
-#introOverlay.play .in-w1 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.678s both; }
-#introOverlay.play .in-w2 { animation: in-slam .12s cubic-bezier(.2,1.3,.3,1) 5.728s both; }
-/* rotated outlined word slams at the five footage onsets */
-#introOverlay .in-slam-w { position: absolute; font-family: theme('fontFamily.title'); font-weight: 700;
-  font-size: clamp(1.7rem, 7.5vw, 4rem); color: #fdf3f6; -webkit-text-stroke: 2px #1c1016; opacity: 0; }
-#introOverlay .in-s1 { left: 8%; top: 30%; --wr: -8deg; }
-#introOverlay .in-s2 { right: 7%; top: 38%; --wr: 6deg; }
-#introOverlay .in-s3 { left: 12%; bottom: 26%; --wr: -5deg; }
-#introOverlay .in-s4 { right: 12%; top: 16%; --wr: 10deg; color: #ffd9e6; }
-#introOverlay .in-s5 { left: 38%; top: 20%; --wr: -3deg; color: #e9ff47; }
-#introOverlay.play .in-s1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 5.745s both; }
-#introOverlay.play .in-s2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.022s both; }
-#introOverlay.play .in-s3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.161s both; }
-#introOverlay.play .in-s4 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.328s both; }
-#introOverlay.play .in-s5 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 6.356s both; }
-@keyframes in-word { 0% { transform: scale(1.7) rotate(0deg); opacity: 0; }
-  60% { transform: scale(.94) rotate(var(--wr, -8deg)); opacity: 1; }
-  100% { transform: scale(1) rotate(var(--wr, -8deg)); opacity: 1; } }
-/* vertical bubble columns, word-by-word (f1440 / f1500) */
-#introOverlay .in-vcol { position: absolute; display: flex; flex-direction: column; gap: .35rem; }
-#introOverlay .in-vcol span { background: #fdf3f6; color: #33202b; border-radius: .9em; padding: .3em .8em;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(.8rem, 2.4vw, 1.15rem);
-  text-align: center; opacity: 0; }
-#introOverlay .in-vcol1 { left: 30%; top: 30%; transform: rotate(-4deg); }
-#introOverlay .in-vcol2 { right: 27%; top: 34%; transform: rotate(3deg); }
-#introOverlay.play .in-vcol1 span:nth-child(1) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.078s both; }
-#introOverlay.play .in-vcol1 span:nth-child(2) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.128s both; }
-#introOverlay.play .in-vcol1 span:nth-child(3) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.178s both; }
-#introOverlay.play .in-vcol2 span:nth-child(1) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.245s both; }
-#introOverlay.play .in-vcol2 span:nth-child(2) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.295s both; }
-#introOverlay.play .in-vcol2 span:nth-child(3) { animation: in-slam .08s cubic-bezier(.2,1.4,.3,1) 6.345s both; }
-/* diagonal speech-bubble panels: slide+rotate in, chip first then lines
-   0.05 s apart (footage 0.3 s), hold, swap out */
-#introOverlay .in-speech { position: absolute; background: #fdf3f6; color: #33202b; border: 3px solid #1c1016;
-  border-radius: 14px; padding: .55em .8em; width: clamp(150px, 24vw, 260px); opacity: 0; visibility: hidden; }
-#introOverlay .in-speech b { display: inline-block; background: #1c1016; color: #f6b3ca; border-radius: .5em;
-  font-family: theme('fontFamily.ui'); font-size: clamp(.55rem, 1.4vw, .7rem); letter-spacing: .12em;
-  text-transform: uppercase; padding: .2em .6em; margin-bottom: .45em; opacity: 0; }
-#introOverlay .in-speech i { display: block; font-style: normal; font-family: theme('fontFamily.title');
-  font-weight: 700; font-size: clamp(.8rem, 2.2vw, 1.05rem); line-height: 1.4; opacity: 0; }
-#introOverlay .in-speech1 { left: 6%; bottom: 15%; }
-#introOverlay .in-speech2 { right: 6%; bottom: 19%; }
-#introOverlay.play .in-speech1 { animation:
-  in-panelin .12s cubic-bezier(.2,.9,.3,1) 6.411s both,
-  in-vis 0s steps(1,end) 6.411s forwards, in-hid 0s steps(1,end) 6.911s forwards; }
-#introOverlay.play .in-speech2 { animation:
-  in-panelin2 .12s cubic-bezier(.2,.9,.3,1) 6.745s both,
-  in-vis 0s steps(1,end) 6.745s forwards, in-hid 0s steps(1,end) 6.995s forwards; }
-@keyframes in-panelin { from { opacity: 0; transform: translate(-24vw, -14vh) rotate(-16deg); }
-  to { opacity: 1; transform: translate(0, 0) rotate(-8deg); } }
-@keyframes in-panelin2 { from { opacity: 0; transform: translate(24vw, -14vh) rotate(16deg); }
-  to { opacity: 1; transform: translate(0, 0) rotate(6deg); } }
-#introOverlay.play .in-speech1 b { animation: in-op1 0s steps(1,end) 6.461s forwards; }
-#introOverlay.play .in-speech1 i:nth-of-type(1) { animation: in-op1 0s steps(1,end) 6.511s forwards; }
-#introOverlay.play .in-speech1 i:nth-of-type(2) { animation: in-op1 0s steps(1,end) 6.561s forwards; }
-#introOverlay.play .in-speech2 b { animation: in-op1 0s steps(1,end) 6.795s forwards; }
-#introOverlay.play .in-speech2 i:nth-of-type(1) { animation: in-op1 0s steps(1,end) 6.845s forwards; }
-#introOverlay.play .in-speech2 i:nth-of-type(2) { animation: in-op1 0s steps(1,end) 6.895s forwards; }
-/* title callback bottom-centre + black arrow slash drawn over it (f1800) */
-#introOverlay .in-callback { position: absolute; left: 0; right: 0; bottom: 10vh; text-align: center;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(1rem, 3.2vw, 1.6rem);
-  color: #fdf3f6; -webkit-text-stroke: 2px #1c1016; opacity: 0; }
-#introOverlay.play .in-callback { animation: in-slam .1s cubic-bezier(.2,1.3,.3,1) 7.078s both; }
-#introOverlay .in-arrow { position: absolute; left: 38%; bottom: calc(10vh + 1.1rem); width: clamp(140px, 22vw, 240px);
-  height: 8px; background: #0b0c0e; transform-origin: left center; transform: rotate(-18deg) scaleX(0); }
-#introOverlay.play .in-arrow { animation: in-arrow .15s cubic-bezier(.3,.7,.4,1) 7.098s both; }
-@keyframes in-arrow { from { transform: rotate(-18deg) scaleX(0); } to { transform: rotate(-18deg) scaleX(1); } }
-/* corner word-box cluster: four pre-rotated boxes in ONE beat (f1860) */
-#introOverlay .in-cx { position: absolute; background: #e9ff47; color: #33202b; border: 3px solid #1c1016;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(.85rem, 2.6vw, 1.3rem);
-  padding: .18em .55em; opacity: 0; }
-#introOverlay .in-cx1 { left: 5%; right: auto; top: calc(7vh + 14px); transform: rotate(-6deg); --wr: -6deg; }
-#introOverlay .in-cx2 { right: 5%; left: auto; top: calc(7vh + 26px); transform: rotate(5deg); --wr: 5deg; }
-#introOverlay .in-cx3 { left: 6%; right: auto; bottom: calc(7vh + 20px); transform: rotate(4deg); --wr: 4deg; }
-#introOverlay .in-cx4 { right: 6%; left: auto; bottom: calc(7vh + 12px); transform: rotate(-7deg); --wr: -7deg; }
-#introOverlay .in-cx5 { left: 4%; right: auto; top: 56%; transform: rotate(-8deg); --wr: -8deg; background: #ffd9e6; }
-#introOverlay .in-cx6 { right: 4%; left: auto; top: 62%; transform: rotate(7deg); --wr: 7deg; background: #ffd9e6; }
-#introOverlay.play .in-cx1 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
-#introOverlay.play .in-cx2 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
-#introOverlay.play .in-cx3 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
-#introOverlay.play .in-cx4 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.245s both; }
-#introOverlay.play .in-cx5 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 7.911s both; }
-#introOverlay.play .in-cx6 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 8.245s both; }
-/* dark chips slide in horizontally, 0.05 s stagger, whip-squash out (f2227;
-   the footage's blur smear is substituted — blur filters are banned) */
-#introOverlay .in-ncplace { position: absolute; left: 0; right: 0; top: 40vh; display: flex; justify-content: center; }
-#introOverlay .in-ncrow { display: flex; gap: .5rem; }
-#introOverlay .in-nc { background: #1c1016; color: #fdf3f6; border-radius: 999px; padding: .35em 1em;
-  font-family: theme('fontFamily.ui'); font-weight: 700; font-size: clamp(.68rem, 1.9vw, .92rem);
-  white-space: nowrap; opacity: 0; }
-#introOverlay.play .in-ncrow { animation:
-  in-whipx .03s steps(1,end) 8.261s forwards, in-hid 0s steps(1,end) 8.328s forwards; }
-#introOverlay.play .in-nc1 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 7.995s both; }
-#introOverlay.play .in-nc2 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 8.12s both; }
-#introOverlay.play .in-nc3 { animation: in-chipin .1s cubic-bezier(.2,.9,.3,1) 8.161s both; }
-@keyframes in-chipin { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
-
-/* ---- S6 chorus B (8.781–10.350 s): the LOCKED lyric world ----------------
-   Footage f2420–2978: the bottom caption never moves while the centre swaps
-   on the grid and fairy cut-outs trade frame edges (~1 s → 0.333 s here). */
-#introOverlay .in-colb { position: absolute; inset: 0; visibility: hidden; }
-#introOverlay.play .in-colb { animation:
-  in-vis 0s steps(1,end) 8.781s forwards, in-hid 0s steps(1,end) 10.35s forwards; }
-#introOverlay .in-locklyric { position: absolute; left: 0; right: 0; bottom: 11vh; text-align: center; opacity: 0; }
-#introOverlay .in-locklyric .ll1 { display: block; font-family: theme('fontFamily.title'); font-weight: 700;
-  font-size: clamp(1.2rem, 4.4vw, 2.2rem); color: #fdf3f6; -webkit-text-stroke: 2px #1c1016; }
-#introOverlay .in-locklyric .ll2 { display: block; margin-top: .3rem; font-family: theme('fontFamily.mono');
-  font-weight: 700; font-size: clamp(.8rem, 2.4vw, 1.1rem); color: #e9ff47; letter-spacing: .12em; }
-#introOverlay.play .in-locklyric { animation: in-op1 0s steps(1,end) 8.8s forwards; }
-#introOverlay .in-plate-t2 { top: calc(7vh + 10px); left: 50%; transform: translateX(-50%) rotate(-1deg); }
-#introOverlay.play .in-plate-t2 { animation: in-slam .12s cubic-bezier(.2,1.4,.3,1) 8.8s both; }
-#introOverlay .in-fairies { position: absolute; inset: 0; }
-#introOverlay .in-fairy { position: absolute; width: clamp(34px, 7vh, 56px); }
-#introOverlay .in-fairy img { display: block; width: 100%; height: auto; }
-#introOverlay .in-fy1 { left: 50%; top: 11vh; margin-left: calc(clamp(34px, 7vh, 56px) / -2); }
-#introOverlay .in-fy2 { right: 7vw; top: 50%; margin-top: calc(clamp(34px, 7vh, 56px) / -2); }
-#introOverlay .in-fy3 { left: 50%; bottom: 22vh; margin-left: calc(clamp(34px, 7vh, 56px) / -2); }
-#introOverlay .in-fy4 { left: 7vw; top: 50%; margin-top: calc(clamp(34px, 7vh, 56px) / -2); }
-/* discrete 90° slot swaps every 0.333 s; children counter-step so the
-   cut-outs stay upright (footage: fairies trade edges, never tumble) */
-#introOverlay.play .in-fairies { animation: in-fairyspin 1.332s steps(4,end) 8.978s forwards; }
-#introOverlay.play .in-fairy img { animation: in-fairyspin-r 1.332s steps(4,end) 8.978s forwards; }
-@keyframes in-fairyspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes in-fairyspin-r { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
-#introOverlay .in-cx7 { right: 5%; top: 30%; transform: rotate(6deg); --wr: 6deg; background: #f06e9a; color: #fdf3f6; }
-#introOverlay.play .in-cx7 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 10.295s both; }
-
-/* ---- S7 chorus C (10.350–11.914 s): corrections, badges, diamonds ---------
-   Onsets: fix panel 1 → 8.317 (X draws 8.333/8.375), panel 2 → 8.458
-   (X 8.475/8.517); corner words f208–213 → 8.667/8.750/8.792/8.833/8.875;
-   big slams f213–216 → 8.917/8.958; starbursts f218/f220 → 9.083/9.167;
-   diamonds f222–227 → 9.250/9.333, whip-out 9.417; bottom line f228–233 →
-   9.500/9.583/9.667; whip smear f231' → 9.625. */
-#introOverlay .in-colc { position: absolute; inset: 0; visibility: hidden; }
-#introOverlay.play .in-colc { animation:
-  in-vis 0s steps(1,end) 10.35s forwards, in-hid 0s steps(1,end) 11.914s forwards,
-  in-whipx .03s steps(1,end) 11.703s forwards; }
-#introOverlay .in-fix { position: absolute; background: #fdf3f6; color: #33202b; border-radius: 14px;
-  border: 3px solid #1c1016; padding: .6em 1em; font-family: theme('fontFamily.title'); font-weight: 700;
-  font-size: clamp(.85rem, 2.6vw, 1.25rem); opacity: 0; }
-#introOverlay .in-fix1 { left: 12%; top: 24%; transform: rotate(-4deg); --wr: -4deg; }
-#introOverlay .in-fix2 { right: 10%; top: 30%; transform: rotate(3deg); --wr: 3deg; }
-#introOverlay.play .in-fix1 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 10.395s both; }
-#introOverlay.play .in-fix2 { animation: in-slamb .1s cubic-bezier(.2,1.3,.3,1) 10.536s both; }
-#introOverlay .in-fix u { position: relative; text-decoration: none; }
-#introOverlay .in-fix u::before, #introOverlay .in-fix u::after { content: ""; position: absolute;
-  left: -4%; right: -4%; top: 50%; height: 4px; background: #d92b4b; transform-origin: left center; }
-#introOverlay .in-fix u::before { transform: rotate(8deg) scaleX(0); }
-#introOverlay .in-fix u::after { transform: rotate(-8deg) scaleX(0); }
-#introOverlay.play .in-fix1 u::before { animation: in-strikeA .12s cubic-bezier(.3,.7,.4,1) 10.411s both; }
-#introOverlay.play .in-fix1 u::after { animation: in-strikeB .12s cubic-bezier(.3,.7,.4,1) 10.453s both; }
-#introOverlay.play .in-fix2 u::before { animation: in-strikeA .12s cubic-bezier(.3,.7,.4,1) 10.553s both; }
-#introOverlay.play .in-fix2 u::after { animation: in-strikeB .12s cubic-bezier(.3,.7,.4,1) 10.595s both; }
-@keyframes in-strikeA { from { transform: rotate(8deg) scaleX(0); } to { transform: rotate(8deg) scaleX(1); } }
-@keyframes in-strikeB { from { transform: rotate(-8deg) scaleX(0); } to { transform: rotate(-8deg) scaleX(1); } }
-#introOverlay .in-cw { position: absolute; font-family: theme('fontFamily.title'); font-weight: 700;
-  font-size: clamp(1.3rem, 5vw, 2.6rem); color: #e9ff47; -webkit-text-stroke: 2px #1c1016; opacity: 0; }
-#introOverlay .in-cw1 { left: 6%; top: 46%; --wr: -7deg; }
-#introOverlay .in-cw2 { right: 8%; top: 50%; --wr: 6deg; }
-#introOverlay .in-cw3 { left: 16%; bottom: 20%; --wr: 5deg; }
-#introOverlay .in-cw4 { right: 16%; bottom: 24%; --wr: -6deg; }
-#introOverlay .in-cw5 { left: 42%; top: 14%; --wr: -3deg; color: #ffd9e6; }
-#introOverlay.play .in-cw1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.745s both; }
-#introOverlay.play .in-cw2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.828s both; }
-#introOverlay.play .in-cw3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.87s both; }
-#introOverlay.play .in-cw4 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.911s both; }
-#introOverlay.play .in-cw5 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 10.953s both; }
-#introOverlay .in-big { position: absolute; left: 0; right: 0; display: block; text-align: center;
-  font-family: theme('fontFamily.title'); font-weight: 700; font-size: clamp(2rem, 9vw, 4.6rem);
-  color: #fdf3f6; -webkit-text-stroke: 3px #1c1016; opacity: 0; }
-#introOverlay .in-big1 { top: 34%; --wr: -4deg; }
-#introOverlay .in-big2 { top: 52%; --wr: 3deg; color: #e9ff47; }
-#introOverlay.play .in-big1 { animation: in-word .12s cubic-bezier(.2,1.25,.3,1) 10.995s both; }
-#introOverlay.play .in-big2 { animation: in-word .12s cubic-bezier(.2,1.25,.3,1) 11.036s both; }
-/* starburst badges pop with a slight overshoot (f3270 grammar) */
-#introOverlay .in-burst { position: absolute; width: clamp(64px, 12vw, 110px); aspect-ratio: 1;
-  display: grid; place-items: center; background: #1c1016; color: #f6b3ca;
-  font-family: theme('fontFamily.ui'); font-weight: 700; font-size: clamp(.6rem, 1.7vw, .85rem);
-  clip-path: polygon(50% 0, 61% 12%, 76% 6%, 80% 21%, 96% 22%, 92% 37%, 100% 50%, 92% 63%, 96% 78%, 80% 79%, 76% 94%, 61% 88%, 50% 100%, 39% 88%, 24% 94%, 20% 79%, 4% 78%, 8% 63%, 0 50%, 8% 37%, 4% 22%, 20% 21%, 24% 6%, 39% 12%);
-  opacity: 0; }
-#introOverlay .in-burst1 { right: 14%; bottom: 30%; transform: rotate(8deg); }
-#introOverlay .in-burst2 { left: 10%; bottom: 32%; transform: rotate(-7deg); }
-#introOverlay.play .in-burst1 { animation: in-badge .16s cubic-bezier(.2,1.4,.3,1) 11.161s both; }
-#introOverlay.play .in-burst2 { animation: in-badge .16s cubic-bezier(.2,1.4,.3,1) 11.245s both; }
-@keyframes in-badge { 0% { opacity: 0; transform: scale(.5) rotate(-4deg); }
-  60% { opacity: 1; transform: scale(1.08) rotate(var(--br, 8deg)); }
-  100% { opacity: 1; transform: scale(1) rotate(var(--br, 8deg)); } }
-#introOverlay .in-burst1 { --br: 8deg; } #introOverlay .in-burst2 { --br: -7deg; }
-/* white diamond panels swap, then whip out (blur substituted) */
-#introOverlay .in-diaplace { position: absolute; left: 0; right: 0; top: 22vh; display: flex; justify-content: center; }
-#introOverlay .in-diarow { display: flex; gap: 2.4rem; }
-#introOverlay .in-dia { width: clamp(56px, 11vw, 96px); aspect-ratio: 1; background: #fdf3f6;
-  border: 3px solid #1c1016; display: grid; place-items: center; opacity: 0; }
-#introOverlay .in-dia span { transform: rotate(-45deg); font-family: theme('fontFamily.title');
-  font-weight: 700; font-size: clamp(.62rem, 1.8vw, .9rem); color: #33202b; }
-#introOverlay.play .in-dia1 { animation: in-diam .1s cubic-bezier(.2,1.3,.3,1) 11.328s both; }
-#introOverlay.play .in-dia2 { animation: in-diam .1s cubic-bezier(.2,1.3,.3,1) 11.411s both; }
-@keyframes in-diam { from { opacity: 0; transform: rotate(45deg) scale(.4); }
-  to { opacity: 1; transform: rotate(45deg) scale(1); } }
-#introOverlay.play .in-diarow { animation:
-  in-whipx .03s steps(1,end) 11.495s forwards, in-hid 0s steps(1,end) 11.545s forwards; }
-/* bottom-line word slams (f228–233) */
-#introOverlay .in-bl { position: absolute; bottom: 10vh; font-family: theme('fontFamily.title');
-  font-weight: 700; font-size: clamp(1.1rem, 4vw, 2rem); color: #fdf3f6;
-  -webkit-text-stroke: 2px #1c1016; opacity: 0; }
-#introOverlay .in-bl1 { left: 22%; --wr: -5deg; }
-#introOverlay .in-bl2 { left: 42%; --wr: 3deg; }
-#introOverlay .in-bl3 { left: 64%; --wr: -4deg; }
-#introOverlay.play .in-bl1 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 11.578s both; }
-#introOverlay.play .in-bl2 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 11.661s both; }
-#introOverlay.play .in-bl3 { animation: in-word .1s cubic-bezier(.2,1.25,.3,1) 11.745s both; }
-
-/* ---- S9 end card (13.497 s → wipe): HARD CUT, zero white, static hold ---
-   f4110: pink field + one small (~15 % width) bordered still, centred. */
-#introOverlay .in-endcard { position: absolute; inset: 0; display: grid; place-items: center; visibility: hidden; }
-#introOverlay.play .in-endcard { animation: in-vis 0s steps(1,end) 13.497s forwards; }
-#introOverlay .in-endframe { display: block; width: clamp(110px, 15vw, 200px); background: #d92b4b;
-  border: 4px solid #33202b; border-radius: 12px; padding: .5rem; transform: rotate(2deg); }
-#introOverlay .in-endframe img { display: block; width: 100%; height: auto; }
-
-/* ---- reduced motion: one static lock-up, no running animation ---------- */
+/* ---- reduced motion: static poster of the collage, cleared by intro.js --- */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
-#introOverlay.rm .in-field { background: #f6b3ca; }
-#introOverlay.rm .in-aiart { visibility: visible; }
-#introOverlay.rm .in-field-dark, #introOverlay.rm .in-field-plum,
-#introOverlay.rm .in-skit, #introOverlay.rm .in-insert,
-#introOverlay.rm .in-cola, #introOverlay.rm .in-colb, #introOverlay.rm .in-colc,
-#introOverlay.rm .in-endcard, #introOverlay.rm .in-conf, #introOverlay.rm .in-dip,
-#introOverlay.rm .in-bars { display: none; }
-#introOverlay.rm .in-mascot-wrap, #introOverlay.rm .in-title, #introOverlay.rm .in-start {
-  visibility: visible; opacity: 1; transform: none; }
-#introOverlay.rm .in-strip { visibility: visible; transform: translateY(-50%); }
-#introOverlay.rm .in-mascot-wrap { display: grid; place-items: center; }
-#introOverlay.rm .in-mascot-sparkle { opacity: 1; }
-#introOverlay.rm .in-strip img { opacity: .1; }
-#introOverlay.rm .in-start { margin-top: 1.1rem; }
+#introOverlay.rm .in-dip, #introOverlay.rm .in-bars, #introOverlay.rm .in-arc,
+#introOverlay.rm .in-vcol, #introOverlay.rm .in-speech, #introOverlay.rm .in-cx,
+#introOverlay.rm .in-ncplace, #introOverlay.rm .in-callback,
+#introOverlay.rm .in-mascot-sparkle { display: none; }
+#introOverlay.rm .in-s1, #introOverlay.rm .in-f1, #introOverlay.rm .in-s3,
+#introOverlay.rm .in-f3 { opacity: 1; }
+#introOverlay.rm .in-start { opacity: 1; visibility: visible; }
 
 /* ==========================================================================
    PHASE 8 — site-wide motion system (js/motion.js + [data-mx] markup).

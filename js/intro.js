@@ -1,20 +1,17 @@
-/* EMC Lab — the YTPMV-inspired opening (index.html only).
-   v4 "1:6 cut" (user request 2026-10-23: near 1-to-1 with the reference):
-   a uniform time-compression of the COMPLETE reference video
-   (Video/シェリーライド.mp4, 70.416 s → 11.736 s; every event at t_ref/6).
-   All nine sections in order — confetti overture, flash #1 + title lock-up
-   with paper-doll swaps and the f440 whip-squash, flash #2 + VS skit with
-   spinning insets, the zero-white hard cut into the black/red insert with
-   staged slams, the ramped flash #3 into chorus A (word slams at the exact
-   footage onsets, speech panels, corner cluster, chip slides), flash #4 +
-   chorus B's locked lyric caption with edge-swapping fairies, flash #5 +
-   chorus C (correction panels with X-draws, starburst badges, diamonds,
-   bottom-line slams), flash #6 + the bookend callback, and the second
-   zero-white hard cut into the single-card end state — then the site-only
-   letterbox wipe hands over to the homepage. Timing map:
-   docs/reference/animation-reference.md. CSS keyframes only.
-   Contract (brief PART 6, duration amended by the 1:6 request):
-     - 11.74 s composition + 0.45 s wipe auto-play, once per session
+/* EMC Lab — the opening composition (index.html only).
+   v5 "CHORUS CUT" (user directive 2026-10-24: redo the intro from the ground
+   up off the reference video's main-motion passage — "skip to 21 seconds due
+   to the main motion is there", "show the Topics and formulas in action with
+   blur and stuff"). The v4 1:6 whole-video cut was deleted; this composition
+   starts where the footage's main motion starts: the ramped flash #3 at
+   21.4 s (Video/シェリーライド.mp4 f1284) into chorus-collage A, and runs that
+   section's grammar at its own beat grid with the site's topics + equations
+   as the lyric layer (see the timeline table in css/input.css INTRO OVERLAY).
+   Motion-blur whips (filter:blur smears, ~120 ms) carry every entrance and
+   exit, per the user's "with blur and stuff" — the flat-art blur ban stays
+   lifted for the intro overlay only.
+   Contract (brief PART 6, unchanged by the rebuild):
+     - 14.0 s composition + 0.45 s letterbox wipe auto-play, once per session
        (sessionStorage `emc.intro.v1`; NEVER touches the progress keys),
        in-memory fallback when storage is blocked;
      - never plays on chapter routes (index.html#/chX) or other pages;
@@ -23,8 +20,8 @@
        are never locked while it plays;
      - waits for the loader's single completion event; a loader fatal card
        cancels it entirely;
-     - CSS keyframes only (transform/opacity), no rAF loop, no audio;
-     - reduced motion gets a static composition that clears in ~1.2 s;
+     - CSS keyframes only (transform/opacity/filter), no rAF loop, no audio;
+     - reduced motion gets a static poster that clears in ~1.2 s;
      - everything is removed from the DOM afterwards: no timers, listeners or
        nodes left behind (introspection on window.EMC_INTRO for the gates). */
 (function () {
@@ -32,8 +29,7 @@
   if (!overlay) return;
 
   const KEY = 'emc.intro.v1';
-  const TOTAL_MS = 14330;         // 13.814 s composition (S1–S3 & S5–S9 at 1:6,
-                                  // S4 at footage tempo) + wipe + slack
+  const TOTAL_MS = 14000;         // 13.45 s picture + 0.45 s wipe + slack
   const EXIT_MS = 620;            // exit animation + safety margin
   const RM_MS = 1200;             // reduced-motion static hold
   let timers = [];
@@ -71,6 +67,27 @@
     overlay.classList.add('out');
     later(remove, 180);
   }
+
+  /* Arc sweep letters: the curved outlined line is authored as plain text in
+     the markup (data-arc) and fanned out here — one <b> per glyph with its
+     angle (--a) and staggered onset (--d); the motion itself stays in CSS. */
+  (function buildArc() {
+    const arc = overlay.querySelector('.in-arc[data-arc]');
+    if (!arc) return;
+    const text = arc.getAttribute('data-arc') || '';
+    const mid = (text.length - 1) / 2;
+    let vis = 0;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === ' ') continue;
+      const b = document.createElement('b');
+      b.textContent = ch;
+      b.style.setProperty('--a', ((i - mid) * 4.6).toFixed(2) + 'deg');
+      b.style.setProperty('--d', (9.3 + vis * 0.035).toFixed(3) + 's');
+      arc.appendChild(b);
+      vis++;
+    }
+  })();
 
   /* Do not play on chapter deep links, replays, or when the loader failed. */
   const hash = location.hash || '';

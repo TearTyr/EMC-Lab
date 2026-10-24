@@ -109,7 +109,19 @@ for (const f of activeFiles()) {
   if (!/\.(css|js|html)$/.test(f)) continue;
   const rel = relative(ROOT, f);
   if (rel.startsWith('vendor')) continue;
-  const s = readFileSync(f, 'utf8');
+  let s = readFileSync(f, 'utf8');
+  /* CONTRACT CHANGE (2026-10-24, intro v5 "chorus cut"): the intro overlay is
+     the single sanctioned home of the footage's motion-blur whips and the
+     collage bed's flat stripe gradients (user directive: redo the intro off
+     the video's 21 s main-motion passage "with blur and stuff"). Strip the
+     #introOverlay block (up to the PHASE-8 motion system) before the ban
+     scan; the ban still covers every other byte of every active file, and
+     smoke-test asserts the whips exist nowhere after the PHASE-8 boundary. */
+  if (/\.css$/.test(rel)) {
+    const i = s.indexOf('#introOverlay');
+    const j = s.indexOf('@keyframes mx-flash');
+    if (i >= 0 && j > i) s = s.slice(0, i) + s.slice(j);
+  }
   for (const [re, name] of BANNED) {
     re.lastIndex = 0;
     const m = re.exec(s);

@@ -105,116 +105,71 @@
 </head>
 
 <body class="emc">
-  <!-- YTPMV-inspired opening: original composition, site assets only, CSS
-       keyframes only. pointer-events:none except skip/start, so nothing is
-       ever locked; js/intro.js owns its lifecycle (once per session, skipped
-       on chapter routes, static under reduced motion, fully removed after). -->
+  <!-- Opening composition v5 "chorus cut": rebuilt from the ground up off the
+       MAIN-MOTION passage of the reference footage (Video/シェリーライド.mp4
+       from 21.0 s — the ramped flash into chorus-collage A, see docs/reference/
+       animation-reference.md §2 S5). The footage's lyric layer is replaced by
+       the site's own content in action: outlined TOPIC slams and KaTeX
+       EQUATION chips whip-swap on the beat grid with motion-blur whips,
+       vertical equation bubble columns pop word-by-word, speech panels
+       slide+rotate in with staged lines, a four-box corner cluster slams on
+       one beat, an arc sweep crosses the top, navy feature chips slide in and
+       exit on a whip, then the callback lock-up + Start CTA and the letterbox
+       wipe hand over to the homepage. CSS keyframes only; pointer-events:none
+       except skip/start, so nothing is ever locked; js/intro.js owns the
+       lifecycle (once per session, skipped on chapter routes, static under
+       reduced motion, fully removed after). -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
     <i class="in-field" aria-hidden="true"></i>
-    <img class="in-aiart" src="img/intro-electrons.png" width="1600" height="1000" alt="" aria-hidden="true">
-    <i class="in-field in-field-dark" aria-hidden="true"></i>
-    <i class="in-field in-field-plum" aria-hidden="true"></i>
-    <div class="in-strip" aria-hidden="true">
-      <img src="img/mascot.png" alt=""><span class="in-eq">V=IR</span>
-      <img src="img/mascot.png" alt=""><img src="img/mascot.png" alt="">
-      <span class="in-eq">E=F/q</span>
-      <img src="img/mascot.png" alt=""><img src="img/mascot.png" alt="">
-      <span class="in-eq">&Phi;=BA</span>
-      <img src="img/mascot.png" alt="">
+    <div class="in-bed" aria-hidden="true">
+      <i class="in-card in-cd1"></i><i class="in-card in-cd2"></i>
+      <i class="in-card in-cd3"></i><i class="in-card in-cd4"></i>
+      <i class="in-wave in-wv1"></i><i class="in-wave in-wv2"></i>
+      <i class="in-wedge in-wedge1"></i><i class="in-wedge in-wedge2"></i>
     </div>
-    <i class="in-conf in-cf1" aria-hidden="true"></i><i class="in-conf in-cf2" aria-hidden="true"></i>
-    <i class="in-conf in-cf3" aria-hidden="true"></i><i class="in-conf in-cf4" aria-hidden="true"></i>
-    <i class="in-conf in-cf5" aria-hidden="true"></i><i class="in-conf in-cf6" aria-hidden="true"></i>
-    <i class="in-conf in-cf7" aria-hidden="true"></i><i class="in-conf in-cf8" aria-hidden="true"></i>
-    <div class="in-stage">
-      <span class="in-mascot-wrap" aria-hidden="true">
-        <img class="in-mascot" src="img/mascot.png" width="355" height="360" alt="">
-        <img class="in-mascot in-mascot-sparkle" src="img/mascot-sparkle.png" width="355" height="360" alt="">
-      </span>
-      <div class="in-title" aria-hidden="true">
-        <span class="in-t1">EMC</span><span class="in-t2">LAB</span>
-        <i class="in-sub">circuits &middot; fields &middot; magnetism</i>
-      </div>
-      <a class="btn btn-primary in-start" href="topics/current.html">Start Learning</a>
+    <span class="in-chip in-chip-name" aria-hidden="true">EMC LAB</span>
+    <span class="in-chip in-chip-od" aria-hidden="true">SIM OVERDRIVE</span>
+    <span class="in-mascot-wrap" aria-hidden="true">
+      <img class="in-mascot" src="img/mascot.png" width="355" height="360" alt="">
+      <img class="in-mascot in-mascot-sparkle" src="img/mascot-sparkle.png" width="355" height="360" alt="">
+    </span>
+    <!-- topic slams: outlined white type, one per beat, blur-whip in and out -->
+    <span class="in-slam in-s1" aria-hidden="true">CHARGE</span>
+    <span class="in-slam in-s2" aria-hidden="true">FIELD</span>
+    <span class="in-slam in-s3" aria-hidden="true">CURRENT</span>
+    <span class="in-slam in-s4" aria-hidden="true">FLUX</span>
+    <span class="in-slam in-s5" aria-hidden="true">INDUCTION</span>
+    <!-- equation chips: typeset by the site-wide [data-tex] KaTeX pipeline -->
+    <span class="in-eqchip in-f1" aria-hidden="true"><span data-tex="F = k\dfrac{q_1 q_2}{r^2}">F = k·q₁q₂/r²</span></span>
+    <span class="in-eqchip in-f2" aria-hidden="true"><span data-tex="E = \dfrac{F}{q}">E = F/q</span></span>
+    <span class="in-eqchip in-f3" aria-hidden="true"><span data-tex="V = I R">V = I·R</span></span>
+    <span class="in-eqchip in-f4" aria-hidden="true"><span data-tex="\Phi = B A">Φ = B·A</span></span>
+    <span class="in-eqchip in-f5" aria-hidden="true"><span data-tex="\varepsilon = -\dfrac{d\Phi}{dt}">ε = −dΦ/dt</span></span>
+    <!-- vertical equation bubble columns, popped word-by-word -->
+    <span class="in-vcol in-vcol1" aria-hidden="true"><span>E</span><span>=</span><span>F/q</span></span>
+    <span class="in-vcol in-vcol2" aria-hidden="true"><span>V</span><span>=</span><span>I·R</span></span>
+    <!-- speech panels: chip first, then the lines 0.3 s apart -->
+    <div class="in-speech in-speech1" aria-hidden="true"><b>coulomb's law</b><i>like charges repel</i><i>force falls off as r²</i></div>
+    <div class="in-speech in-speech2" aria-hidden="true"><b>ohm's law</b><i>voltage pushes</i><i>current follows</i></div>
+    <!-- corner cluster: four rotated boxes slam on one beat -->
+    <span class="in-cx in-cx1" aria-hidden="true">CH·1</span>
+    <span class="in-cx in-cx2" aria-hidden="true">CH·2</span>
+    <span class="in-cx in-cx3" aria-hidden="true">CH·3</span>
+    <span class="in-cx in-cx4" aria-hidden="true">QUIZ</span>
+    <!-- arc sweep: curved outlined text (letter spans built by js/intro.js) -->
+    <span class="in-arc" data-arc="ELECTROMAGNETICS IN MOTION" aria-hidden="true"></span>
+    <!-- navy feature chips slide in, exit on a blur whip -->
+    <div class="in-ncplace" aria-hidden="true"><div class="in-ncrow">
+      <span class="in-nc in-nc1">live sims</span><span class="in-nc in-nc2">24 questions</span><span class="in-nc in-nc3">zero rote</span>
+    </div></div>
+    <!-- callback lock-up + arrow slash, then the Start CTA before the wipe -->
+    <div class="in-callback" aria-hidden="true">
+      <span class="in-cb-title">EMC LAB</span>
+      <svg class="in-arrow" viewBox="0 0 220 90" aria-hidden="true"><path pathLength="1" d="M6 78 C 70 66, 140 40, 202 14 M186 12 l18 1 -7 17" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div class="in-skit" aria-hidden="true">
-      <span class="in-skit-line l1">memorize formulas?</span>
-      <span class="in-skit-line l2">just read slides?</span>
-      <span class="in-skit-line l3">play with them!</span>
-      <span class="in-skit-line l4">build the circuit!</span>
-      <span class="in-skit-line l5">go hands-on!</span>
-      <span class="in-vs">VS</span>
-      <span class="in-inset in-ins1">V = I&middot;R</span>
-      <span class="in-inset in-ins2"><img src="img/mascot-sparkle.png" alt=""></span>
-    </div>
-    <div class="in-insert" aria-hidden="true">
-      <img class="in-face" src="img/mascot-sparkle.png" alt="">
-      <span class="in-cap0">you ok?</span>
-      <i class="in-insert-bar" aria-hidden="true"></i>
-      <span class="in-photo"><img src="img/mascot.png" alt=""></span>
-      <span class="in-cap2">LET'S GO!</span>
-      <span class="in-stamp">GO!</span>
-      <span class="in-chibi cb1"><img src="img/mascot.png" alt=""><img class="sp" src="img/mascot-sparkle.png" alt=""></span>
-      <span class="in-chibi cb2"><img src="img/mascot-sparkle.png" alt=""><img class="sp" src="img/mascot.png" alt=""></span>
-    </div>
-    <div class="in-cola" aria-hidden="true">
-      <i class="in-panel in-p1"><img src="img/mascot.png" alt=""></i>
-      <i class="in-panel in-p2"><img src="img/mascot-sparkle.png" alt=""></i>
-      <i class="in-panel in-p3"><img src="img/mascot-sparkle.png" alt=""></i>
-      <i class="in-panel in-p4"><img src="img/mascot.png" alt=""></i>
-      <span class="in-plate in-plate-t">EMC Lab</span>
-      <span class="in-plate in-chip-od">Ohm drive</span>
-      <span class="in-plate in-plate-b">100% cute</span>
-      <i class="in-wedge in-w1" aria-hidden="true"></i><i class="in-wedge in-w2" aria-hidden="true"></i>
-      <span class="in-slam-w in-s1">VOLTS</span>
-      <span class="in-slam-w in-s2">AMPS</span>
-      <span class="in-slam-w in-s3">OHMS</span>
-      <span class="in-slam-w in-s4">FIELDS</span>
-      <span class="in-slam-w in-s5">FORCE</span>
-      <span class="in-vcol in-vcol1"><span>V</span><span>=</span><span>I&middot;R</span></span>
-      <span class="in-vcol in-vcol2"><span>E</span><span>=</span><span>F/q</span></span>
-      <div class="in-speech in-speech1"><b>tutorial</b><i>voltage pushes</i><i>current flows</i></div>
-      <div class="in-speech in-speech2"><b>ohm's law</b><i>V = I &middot; R</i><i>that's the groove</i></div>
-      <span class="in-callback">EMC LAB</span>
-      <i class="in-arrow" aria-hidden="true"></i>
-      <span class="in-cx in-cx1">BUILD</span><span class="in-cx in-cx2">TEST</span>
-      <span class="in-cx in-cx3">SPARK</span><span class="in-cx in-cx4">LEARN</span>
-      <span class="in-cx in-cx5">HANDS</span><span class="in-cx in-cx6">ON!</span>
-      <div class="in-ncplace"><div class="in-ncrow">
-        <span class="in-nc in-nc1">live sims</span><span class="in-nc in-nc2">24 questions</span><span class="in-nc in-nc3">zero rote</span>
-      </div></div>
-    </div>
-    <div class="in-colb" aria-hidden="true">
-      <span class="in-plate in-plate-t2">EMC Lab</span>
-      <div class="in-locklyric"><span class="ll1">cool ohm's law solo</span><span class="ll2">V = I &middot; R</span></div>
-      <div class="in-fairies">
-        <span class="in-fairy in-fy1"><img src="img/mascot-sparkle.png" alt=""></span>
-        <span class="in-fairy in-fy2"><img src="img/mascot.png" alt=""></span>
-        <span class="in-fairy in-fy3"><img src="img/mascot-sparkle.png" alt=""></span>
-        <span class="in-fairy in-fy4"><img src="img/mascot.png" alt=""></span>
-      </div>
-      <span class="in-cx in-cx7">NEXT!</span>
-    </div>
-    <div class="in-colc" aria-hidden="true">
-      <div class="in-fix in-fix1"><u>just memorize</u></div>
-      <div class="in-fix in-fix2"><u>skip the lab</u></div>
-      <span class="in-cw in-cw1">NO</span><span class="in-cw in-cw2">ROTE</span>
-      <span class="in-cw in-cw3">READ</span><span class="in-cw in-cw4">ONLY</span>
-      <span class="in-cw in-cw5">SIM!</span>
-      <span class="in-big in-big1">FIELDS!</span><span class="in-big in-big2">NOW!</span>
-      <i class="in-burst in-burst1">24 Qs</i><i class="in-burst in-burst2">3 WORLDS</i>
-      <div class="in-diaplace"><div class="in-diarow">
-        <span class="in-dia in-dia1"><span>REAL</span></span><span class="in-dia in-dia2"><span>FUN</span></span>
-      </div></div>
-      <span class="in-bl in-bl1">no</span><span class="in-bl in-bl2">excuses</span><span class="in-bl in-bl3">left</span>
-    </div>
-    <div class="in-endcard" aria-hidden="true">
-      <span class="in-endframe"><img src="img/mascot-sparkle.png" alt=""></span>
-    </div>
+    <a class="btn btn-primary in-start" href="topics/current.html">Start Learning</a>
     <div class="in-bars" aria-hidden="true"><i class="in-bar in-bar-t"></i><i class="in-bar in-bar-b"></i></div>
-    <i class="in-dip in-dip1" aria-hidden="true"></i><i class="in-dip in-dip2" aria-hidden="true"></i>
-    <i class="in-dip in-dip3" aria-hidden="true"></i><i class="in-dip in-dip4" aria-hidden="true"></i>
-    <i class="in-dip in-dip5" aria-hidden="true"></i><i class="in-dip in-dip6" aria-hidden="true"></i>
+    <i class="in-dip" aria-hidden="true"></i>
     <button class="intro-skip" id="introSkip" type="button">Skip intro &rarr;</button>
   </div>
   <a class="skip-link" href="#main">Skip to main content</a>

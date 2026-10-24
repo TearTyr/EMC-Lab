@@ -106,17 +106,48 @@ pattern to its final state instantly — content is never hidden behind an anima
 | 19 | end card | single small bordered still, static ~1.9 s | session-complete card; intro S9 | existing |
 | 20 | beat grid | pulse 1.15–1.20 s, fills 0.30 s, sub 0.55–0.60 s | UI fractions 120–300 ms | CSS vars |
 
-## 4. Site intro — 1:6 cut with the S4 passage at footage tempo (current)
+## 4. Site intro — v5 “chorus cut” from footage 21 s (current)
 
-User directive 2026-10-23: make the intro “near 1 to 1 with the reference video”, at ~12 s;
-implemented as a uniform 1:6 time-compression. User directive 2026-10-24 (00:20 fix): the
-S4 insert plays at **footage tempo (1:1)** — at 1:6 its deliberate beats (1.1 s and 1.0 s
-holds) collapsed into a 0.42 s flicker that matched neither the footage’s composition nor
-its rhythm. All other sections keep exact 1:6 rhythm, shifted +2.078 s. Master composition
-**13.814 s**, then the site-only letterbox wipe (0.45 s) hands over to the homepage;
-`js/intro.js` `TOTAL_MS = 14330`. Once-per-session contract (`emc.intro.v1` key), skip on
-any key/pointer, never on chapter routes, `pointer-events: none` overlay except the
-skip/CTA controls.
+User directive 2026-10-24: redo the intro from the ground up, referencing the
+video **but skipping to 21 s — “the main motion is there”** — and show the
+**Topics and formulas in action, “with blur and stuff”**. The v4 1:6 whole-video
+cut was removed entirely and rebuilt off the footage’s main-motion passage:
+the ramped flash #3 (f1284–1287, 21.416 s) into chorus-collage A (§2 S5), run
+at that section’s own beat grid (phrase pulse ≈1.15 s, fills 0.30 s). The lyric
+layer is the site’s content in action — outlined topic slams and KaTeX equation
+chips whip-swap around the centre mascot, vertical equation bubble columns pop
+word-by-word, speech panels slide+rotate in with staged lines, a corner cluster
+slams on one beat, an arc sweep crosses the top, navy feature chips slide in
+and exit on a whip, then the callback lock-up + arrow slash + Start CTA and the
+letterbox wipe hand over to the homepage. Every entrance/exit rides a ~120 ms
+motion-blur whip (`in-whipin`/`in-whipout`, blur 14→0→12 px) — the footage’s
+1–2 frame smears quoted as a real blur at the user’s request (§5.2 exception).
+Master clock `js/intro.js` `TOTAL_MS = 14000` (13.45 s picture + 0.45 s wipe);
+the once-per-session contract (§6) is unchanged. Collage bed (navy field,
+bordered panel cards, waveform strips, zigzag wedges, name plate + OVERDRIVE
+chips) is present from frame zero, like the footage’s S5 bed at flash decay.
+
+| t (s) | event |
+|---|---|
+| 0.000 | ramped flash #3 grammar: 4-step 25→40→58→80→100 % white (66 ms) + ~320 ms decay |
+| 0.450–1.600 | topic slam CHARGE · 1.600–2.750 eq chip Coulomb (KaTeX) |
+| 2.750–3.900 | topic FIELD · 3.300 vcol1 pops (E / = / F/q, 0.18 stag) · 3.900–5.050 eq E=F/q |
+| 4.350–7.600 | speech panel 1 (chip 4.350, lines 4.650/4.950) · 5.050–6.200 topic CURRENT |
+| 6.200–7.900 | eq V=IR · 6.600 vcol2 pops · 7.000–9.900 speech panel 2 (lines 7.300/7.600) |
+| 7.900–8.600 | topic FLUX · 8.600–10.200 eq Φ=BA |
+| 9.100 | corner cluster CH·1/CH·2/CH·3/QUIZ (0.06 stag, out 11.900) · 9.300 arc sweep letters (0.035 stag, out 11.600) |
+| 10.200–10.900 | topic INDUCTION · 10.600 navy chips live sims/24 questions/zero rote (0.30 stag, out 12.300) · 10.900–12.850 eq ε=−dΦ/dt |
+| 12.100/12.350/12.450 | callback lock-up / arrow-slash draw / Start CTA |
+| 1.15…11.60 | mascot pose-swap blur whips (1.15/3.45/5.60/7.75/9.95/11.60) |
+| 13.450 | letterbox wipe (0.45 s) → `.out` → overlay removed |
+
+### 4.1 Retired: v4 1:6 cut with the S4 passage at footage tempo
+
+Superseded 2026-10-24 by the v5 chorus cut (markup, CSS block and timing all
+deleted; git history retains the implementation). Kept for provenance: v4 was a
+uniform 1:6 time-compression of the complete video (user directive 2026-10-23
+“near 1 to 1 with the reference video”), master 13.814 s, `TOTAL_MS = 14330`,
+with the S4 insert at footage tempo (user directive 2026-10-24 00:20 fix).
 
 | # | section | t_ref (s) | t_site (s) | boundary transition |
 |---|---|---|---|---|
@@ -129,42 +160,20 @@ skip/CTA controls.
 | S7 | chorus C corrections | 49.633–59.016 | 10.350–11.914 | flash #5 (33 ms + ~300 ms) |
 | S8 | bookend callback | 59.016–68.516 | 11.914–13.497 | flash #6 (33 ms + ~150 ms) |
 | S9 | end card | 68.516–70.416 | 13.497–13.814 | hard cut f4110, zero white |
-| — | site-only wipe + handover | — | 13.818–14.27 | bars scaleY 1→7.2, then overlay `.out` |
-
-### S4 event onsets (footage tempo, measured from f1128–1296 this session)
-
-| footage | t_ref | t_site | site event |
-|---|---|---|---|
-| f1134 | 18.916 | 3.153 | HARD CUT, zero white: black field, cropped giant face (top+bottom clipped, ~60 % width), small caption centred on the black below, two chibis flanking at mid height |
-| f1135–1160 | 18.93–19.35 | 3.203/3.253/3.586 | chibi flicker pose-swaps (discrete, 1–2 frame grammar) |
-| f≈1202 | 20.033 | 4.273 | ONE beat: red top band + photo panel (dark-red still + sticker) + outlined caption slam together; face hidden; chibis jump to the bottom corners |
-| f≈1262 | 21.050 | 5.287 | stamp glyph slams onto the panel centre with slight overshoot |
-| f1284 | 21.416 | 5.653 | ramped flash #3 (4-frame ramp + ~300 ms decay) into chorus A |
-
-Holds: cut→panel 1.12 s, panel→stamp 1.01 s, stamp→flash 0.37 s — the footage’s own.
-Every other intro event keeps `t_site = t_ref/6 + 2.078` (S5–S9) or `t_ref/6` (S1–S3); the
-`animation-delay` of each intro keyframe in `css/input.css` encodes exactly that, unless a
-readability floor applies (§5).
-
-Flashes are 2-frame events in the footage; scaling 33 ms by 1/6 would be sub-frame, so all
-six keep the **footage frame grammar** (33 ms white + the footage’s own decay). Six 33 ms
-flashes across 11.7 s ≈ 0.5 Hz — far below photosensitivity guidance; reduced motion shows
-none. Hard cuts (S4, S9) carry zero white, exactly like f1134/f4110.
-
-Event-level onsets are the `t_ref/6` images of §2 (e.g. confetti pops at 0.042/0.083/0.167/
-0.208/0.250/0.292/0.333/0.375 s; whip-squash 1.225–1.245 s, pose B lands 1.247 s; skit lines
-2.025 s, VS 2.333 s, line 3 swap 2.667 s; insert slams from 3.333 s; corner cluster 5.167 s;
-locked lyric 6.722 s; starbursts 9.083/9.167 s; Start CTA 10.0 s site-only). The `animation-delay`
-value of every intro keyframe in `css/input.css` is exactly `t_ref/6` unless a readability
-floor applies (below).
 
 ## 5. Standing deviations (policy — do not “fix” these back)
 
 1. **Palette** stays the site’s pink identity (user choice 2026-10-23; footage yellow field →
    pink, blue → plum).
-2. **Motion-blur smear frames → whip-squash** (`in-whipx`, 30 ms steps); blur filters are
-   banned by the flat-art rules (no gradients, backdrop-filter, shadowBlur, blur).
-3. **Arc-swept curved text omitted** (decorative, hurts scanability).
+2. **Motion-blur smear frames → whip-squash** (`in-whipx`, 30 ms steps) site-wide; blur
+   filters are banned by the flat-art rules (no gradients, backdrop-filter, shadowBlur,
+   blur) — **except the intro overlay** (user directive 2026-10-24 “with blur and stuff”):
+   the v5 chorus cut quotes the footage’s 1–2 frame smears as real ~120 ms filter:blur
+   whips (`in-whipin`/`in-whipout`). The ban holds everywhere else and smoke-test asserts
+   both halves of that split.
+3. **Arc-swept curved text omitted site-wide** (decorative, hurts scanability) — the v5
+   intro adopts one arc sweep (“ELECTROMAGNETICS IN MOTION”, 9.300–11.600 s) as a direct
+   quote of footage f2010–2100; user directive supersedes the omission inside the intro.
 4. **Orbiting fairies discretised** into 0.333 s position swaps (continuous peripheral
    motion stays a do-not-copy).
 5. **Readability floors** where 1:6 scaling would be sub-perceptual: inset spin period
@@ -176,22 +185,21 @@ floor applies (below).
    (always visible; any key/pointer dismisses).
 7. Full-white 255 flashes dimmed to ≤85 % white **site-wide** for photosensitivity comfort
    (the intro keeps the frame grammar but the same cap).
-8. **AI-generated electron backdrop** (user directive 2026-10-24): flat art plate
-   `img/intro-electrons.png` (corner orbit motifs + field-line waves carrying electron
-   beads, site palette, bg snapped to #f6b3ca) as an opaque layer between the pink field
-   and everything else. Visible only for the opening lockup (0–2.019 s) and the S8
-   bookend (11.92–13.497 s) via hard `in-vis/in-hid` step switches — the #2/#6 flashes
-   mask the seams; static-visible under reduced motion. The footage's S1/S2/S8 fields are
-   flat: this is deliberate site-only decoration, not footage content.
+8. **AI-generated electron backdrop** — retired with the v4 cut (the plate
+   `img/intro-electrons.png` remains in `img/` but no page references it). It was
+   site-only decoration for the v4 opening lockup/bookend; the v5 chorus cut opens
+   on the collage bed instead, matching the footage’s S5.
 
 ## 6. Contract/gate surface touched by the intro
 
-- `js/intro.js` — `TOTAL_MS` (14330), once-per-session key, skip wiring, `emc:loader-done` order.
-- `tools/intro-verify.mjs` — auto-end window 13.6–16.6 s after `load`; overlay-removal
-  waits 20 s. `tools/smoke-test.mjs` — jsdom removal window 13.9–16.3 s, CSS markers
-  `in-vis`/`in-hid`, spin marker 0.5 s. `tools/screenshots.mjs` presets the intro key.
-  `tools/capture-intro-video.mjs` removal wait 25 s. Every change is logged in the
-  `BUG_AUDIT.md` test-change log with justification.
+- `js/intro.js` — `TOTAL_MS` (14000), once-per-session key, skip wiring, `emc:loader-done`
+  order, arc-letter builder for `.in-arc[data-arc]`.
+- `tools/intro-verify.mjs` — auto-end window 13.6–16.6 s after `load` (v5 lands inside it
+  unchanged); overlay-removal waits 20 s. `tools/smoke-test.mjs` — jsdom removal window
+  13.9–16.3 s, CSS markers `in-whipin`/`in-whipout`/`in-ramp`/`in-wipe`, beat onsets
+  `--ti` of `.in-s1`/`.in-f5`, bed markers, and the no-blur-outside-intro split.
+  `tools/screenshots.mjs` presets the intro key. `tools/capture-intro-video.mjs` removal
+  wait 25 s. Every change is logged in the `BUG_AUDIT.md` test-change log with justification.
 
 ## 7. How to re-derive / verify
 
