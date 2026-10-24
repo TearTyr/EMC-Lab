@@ -103,21 +103,17 @@ Video/                the original reference MP4 (analysis source; never shipped
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro (v4 "reference cut").** The homepage opens with a
-  ~14.3 s original composition whose editing grammar and timing are transcribed
-  from the inspected reference footage (`Video/シェリーライド.mp4`, dev-only,
-  never shipped): every section of the footage plays at 1:6 time-compression —
-  confetti pops, white flash, the drawn mascot with the locked outlined title
-  over a silhouette strip and paper-doll pose swaps, a VS skit with tilted inset
-  stills, a collage chorus with rotated word slams on a 1.16 s phrase grid,
-  white-flash dips and a bookend callback — EXCEPT the black insert passage at
-  footage 00:20, which plays at footage tempo (hard cut → cropped face +
-  caption + flanking chibis, one-beat red band + photo panel + outlined
-  caption, stamp, ramped flash) because 1:6 compressed its beats into a
-  flicker. Skippable, once per session
-  (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to
-  a static card under `prefers-reduced-motion`. `npm run intro-verify` proves the
-  whole contract; the timing map lives in `docs/reference/animation-reference.md`.
+- **Once-per-session intro (v5 “chorus cut”).** The homepage opens with a
+  14-second original composition based on the reference video's main-motion
+  section from about 00:21 onward. It adapts the footage's staggered topic slams,
+  equation chips, speech panels, corner clusters, whip transitions, and closing
+  callback to EMC Lab's physics topics, formulas, mascot, and pink/plum palette.
+  It is an adaptation, not a frame-for-frame copy. The original MP4 is a
+  development reference only and is never shipped. The intro is skippable,
+  plays once per session (`emc.intro.v1`), never plays on chapter routes, and
+  respects reduced-motion settings. `npm run intro-verify` checks its lifecycle;
+  the timing map and deliberate deviations are documented in
+  `docs/reference/animation-reference.md`.
   The client's drawn mascot artwork anchors every brand surface
   (hero, header/footer marks, favicon set, social card) — no SVG-generated
   mascot art remains; the hero mascot is capped (capped layout
