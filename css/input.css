@@ -1449,15 +1449,12 @@
 #introOverlay.rm .in-start { opacity: 1; visibility: visible; }
 
 /* ==========================================================================
-   PHASE 8 — site-wide motion system (js/motion.js + [data-mx] markup).
-   Grammar transcribed from the reference footage
-   (docs/reference/animation-reference.md): discrete pops, rotated slams, staggered reveals,
-   squash-whip state swaps, 2-frame white flash dips at section boundaries,
-   rotateY inset spin, staggered slide panels. Transform/opacity only (flat
-   art rules: no gradients, no blur/shadow filters, no layout animation).
-   Interaction budgets: snaps/pops <=160 ms, slams <=200 ms, rises <=240 ms,
-   flash dip 260 ms — content is never behind motion for longer than a fill.
-   Reduced motion: everything collapses to final states (below).
+   Site-wide motion system (js/motion.js + [data-mx] markup).
+   The shared motion patterns are documented in
+   docs/reference/animation-reference.md: discrete pops, rotated slams,
+   staggered reveals, squash-whip swaps, flash dips, inset spins and slides.
+   Keep effects brief, preserve readability, and reveal content immediately
+   when reduced motion is enabled.
    ========================================================================== */
 :root { --beat: 1.16s; --sub: .58s; --fill: .29s;
   --mx-snap: 90ms; --mx-pop: 160ms; --mx-slam: 180ms; --mx-rise: 240ms;
@@ -1500,8 +1497,8 @@
 /* hidden tab: pause every decorative animation (intro incl.) — §8 */
 .mx-paused *, .mx-paused *::before, .mx-paused *::after { animation-play-state: paused !important; }
 
-/* ---- phase 9 (full-video addendum): four more reference patterns ---------
-   Transcribed from the COMPLETE reference pass, not just the intro — see
+/* ---- Additional shared motion patterns ----------------------------------
+   Transcribed from the complete reference pass — see
    docs/reference/animation-reference.md §3 rows 8, 11, 12, 13, 14.
    11 staged line reveal: speech-bubble panels typed their lines 0.3 s apart
       (footage f1560-1740); site panels stagger children 90 ms.
@@ -1544,7 +1541,7 @@
   .fbadge, .opt.wrong::after { animation: none !important; }
 }
 
-/* ---- phase 8 §6: chapter header sticker art (generated flat art; symbols
+/* ---- Chapter header sticker art (flat art; symbols
        are deterministic HTML overlays so the physics labels are always
        exact; frame rides the reference's slow rotateY inset spin) -------- */
 .ch-art { margin: 1.1rem auto 0; max-width: 232px; text-align: center; }

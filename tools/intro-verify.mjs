@@ -2,9 +2,9 @@
 /* ==========================================================================
    EMC Lab — intro contract verification (brief PART 6.4).
    Run: node tools/intro-verify.mjs
-     1 fresh session: plays after boot, auto-ends <= ~12.5 s, removes itself,
-       sets its own session key (never a progress key), leaves 0 timers /
-       0 listeners / 0 rAF chains (CSS-only motion);
+     1 fresh session: plays after boot, auto-ends after the 14 s composition,
+       removes itself, sets its own session key (never a progress key), leaves
+       0 timers / 0 listeners / 0 rAF chains (CSS-only motion);
      2 any keydown (Escape) dismisses mid-play;
      3 same-context second visit: no replay;
      4 chapter hash route on a fresh session: no intro at all;
@@ -69,15 +69,11 @@ async function ctxPage(opts = {}) {
   const playingAt = Date.now() - t0;
   const rafs = await pg.evaluate(() => window.EMC.stats().rafs);
   ok('1 intro plays shortly after boot with zero rAF chains (CSS-only)', rafs === 0, `rafs=${rafs}, play at ~${playingAt} ms`);
-  /* CONTRACT CHANGE (2026-10-23, user request "near 1:1 with the reference
-     video"): the composition is now the uniform 1:6 time-compression of the
-     full 70.416 s reference (11.736 s + 0.45 s wipe + 0.18 s exit), so the
-     auto-end window moved from 3-6 s to 11.5-14.5 s after 'load'. Skip is
-     still instant on any key/pointer, still once-per-session. Justification
-     logged in BUG_AUDIT.md (test-change log). */
+  /* The current chorus cut is 14 seconds long. Allow a small margin for
+     page boot and the exit animation, but fail if it ends too early or hangs. */
   await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
   const endedAt = Date.now() - t0;
-  ok('1 intro auto-ends within the 9d window (13.6-16.6 s incl. boot)', endedAt > 13600 && endedAt < 16600, `${endedAt} ms`);
+  ok('1 intro auto-ends within the 13.6-16.6 s window, including boot', endedAt > 13600 && endedAt < 16600, `${endedAt} ms`);
   const st = await pg.evaluate(() => ({
     intro: window.EMC_INTRO.state(),
     flag: sessionStorage.getItem('emc.intro.v1'),
