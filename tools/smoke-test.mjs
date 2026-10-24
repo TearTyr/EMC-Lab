@@ -16,8 +16,8 @@
 
    Exits 1 if any assertion fails.
    ========================================================================== */
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { join, resolve, dirname, normalize, sep } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
 
@@ -1299,12 +1299,11 @@ console.log('\u2500'.repeat(66));
   const pages = ['index.html', 'quiz.html', 'topics/fields.html',
     'topics/current.html', 'topics/magind.html'];
   // ---- #15 favicon artwork must equal the header brand mark -------------
-  // the committed img/favicon.svg is the single artwork source; the ICO and
-  // apple-touch PNGs are rasterisations of it (generated, then committed).
-  const favSvg = readFileSync(join(ROOT, 'img/favicon.svg'), 'utf8');
-  const favTokens = ['M15 15 C13 7 19 5 21 11', 'M33 15 C35 7 29 5 27 11',
-                     'rx="16" ry="15"', 'cx="18.5" cy="26"', 'cx="29.5" cy="26"',
-                     'cx="13.5" cy="30"', 'cx="34.5" cy="30"'];
+  // The client-supplied DRAWN mascot (img/mascot.png) is the single artwork
+  // source (client directive: every design/SVG-generated mascot image is
+  // replaced by the drawn artwork). The header brand mark references that file
+  // directly; the ICO and apple-touch PNGs are committed rasterisations of it.
+  // The old SVG-path token comparison is superseded - see BUG_AUDIT test log.
   for (const p of pages) {
     const html = readFileSync(join(ROOT, p), 'utf8');
     ok(`${p}: declares a viewport`, /name="viewport"/.test(html));
@@ -1392,14 +1391,18 @@ console.log('\u2500'.repeat(66));
     }
 
     // ---- #15 favicon artwork must equal the header brand mark -------------
-    const brandMark = (html.match(/<svg class="brand-mark"[\s\S]*?<\/svg>/) || ['', ''])[0];
-    ok(`${p}: favicon artwork matches the header brand mark`,
-      brandMark.length > 100 && favTokens.every(t => favSvg.includes(t) && brandMark.includes(t)));
-    ok(`${p}: ships the full favicon set (ico + svg + apple-touch) with relative hrefs`,
+    const brandMark = (html.match(/<img class="brand-mark"[^>]*>/) || ['', ''])[0];
+    const brandSrc = (brandMark.match(/src="([^"]+)"/) || ['', ''])[1];
+    const iconHref = (html.match(/<link rel="icon" href="([^"]+)" type="image\/png">/) || ['', ''])[1];
+    const resolveArt = (h) => normalize(join(dirname(p), h)).split(sep).join('/');
+    ok(`${p}: favicon artwork matches the header brand mark (drawn mascot file)`,
+      brandSrc !== '' && iconHref !== '' && brandSrc === iconHref &&
+      resolveArt(brandSrc) === 'img/mascot.png' && existsSync(join(ROOT, 'img/mascot.png')));
+    ok(`${p}: ships the full favicon set (ico + png + apple-touch) with relative hrefs`,
       /rel="icon" href="(?:\.\.\/)?favicon\.ico" type="image\/x-icon"/.test(html) &&
-      /rel="icon" href="(?:\.\.\/)?img\/favicon\.svg" type="image\/svg\+xml"/.test(html) &&
+      /rel="icon" href="(?:\.\.\/)?img\/mascot\.png" type="image\/png"/.test(html) &&
       /rel="apple-touch-icon" href="(?:\.\.\/)?img\/apple-touch-icon\.png"/.test(html) &&
-      !/rel="icon" href="data:/.test(html));
+      !/rel="icon" href="data:/.test(html) && !/favicon\.svg/.test(html));
   }
   // ---- #15b the favicon/crawler files are real committed binaries ----------
   const ico = readFileSync(join(ROOT, 'favicon.ico'));
@@ -1623,6 +1626,37 @@ console.log('\u2500'.repeat(66));
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
     /class="btn btn-primary in-start" href="topics\/current\.html"/.test(idx));
+  ok('hero + intro use the supplied mascot art with explicit dimensions (no CLS)',
+    /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
+    /<img class="in-mascot" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
+    /<img class="in-mascot in-mascot-sparkle" src="img\/mascot-sparkle\.png"/.test(idx));
+  ok('intro title is the locked outlined lock-up below the mascot (footage grammar)',
+    /#introOverlay \.in-t1, #introOverlay \.in-t2 \{[^}]*-webkit-text-stroke: 3px #33202b/.test(css) &&
+    /@keyframes in-vis \{/.test(css) && /@keyframes in-hid \{/.test(css) &&
+    /#introOverlay \.in-title \{ grid-row: 2/.test(css) &&
+    /@keyframes in-pose \{/.test(css) && /@keyframes in-tilt \{/.test(css) &&
+    /* phase 8 §7B review: the v2 per-letter kinetic title must stay retired —
+       no per-span stagger markers anywhere in the title lock-up. */
+    !/in-letter/.test(css) &&
+    !/#introOverlay \.in-title span:nth-child\(\d\)[^{]*\{[^}]*animation-delay/.test(css));
+  ok('the mascot reaction pair ships as transparent sticker assets',
+    existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
+    statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 20000);
+  ok('skit plates/insets ship cream-on-dark with tilted 3D transforms (footage grammar)',
+    /#introOverlay \.in-plate \{[^}]*background: #fdf3f6/.test(css) &&
+    /#introOverlay \.in-plate-t \{[^}]*rotate\(-1deg\)/.test(css) &&
+    /#introOverlay \.in-inset \{[^}]*border: 3px solid #33202b/.test(css) &&
+    /@keyframes in-inset \{[^}]*perspective\(420px\) rotateY\(24deg\)/.test(css) &&
+    /* phase 8 §7B review: footage f729-760 shows the insets spinning about the
+       vertical axis for as long as they live — entrance tilt alone is not the
+       reference grammar; the spin loop must be present and infinite. */
+    /@keyframes in-insetspin \{[\s\S]{0,220}?rotateY\(90deg\)/.test(css) &&
+    /\.in-ins1 \{ animation:[^;]*in-insetspin \.5s [^;]*infinite/.test(css));
+  const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
+  ok('built stylesheet carries the phase-8 motion system + intro spin (minified)',
+    /@keyframes mx-flash\{/.test(siteCss) && /@keyframes mx-rise\{/.test(siteCss) &&
+    /@keyframes mx-slam\{/.test(siteCss) && /@keyframes in-insetspin\{/.test(siteCss) &&
+    /\.mx-paused \*/.test(siteCss) && /--mx-flash:\.26s|--mx-flash:0\.26s|--mx-flash: \.26s/.test(siteCss) === false ? /@keyframes mx-whip\{/.test(siteCss) : true);
   ok('no other page ships the intro markup',
     ['quiz.html', 'topics/fields.html', 'topics/current.html', 'topics/magind.html']
       .every(f => !/id="introOverlay"/.test(readFileSync(join(ROOT, f), 'utf8'))));
@@ -1632,11 +1666,24 @@ console.log('\u2500'.repeat(66));
   ok('a fresh session plays the intro after boot',
     run1.doc.getElementById('introOverlay') !== null &&
     run1.doc.getElementById('introOverlay').classList.contains('play'));
-  await new Promise(r => setTimeout(r, 5600));
+  /* phase 8 §7C: deterministic completion wait — poll for overlay removal
+     instead of sleeping; the measured removal time is asserted against the
+     composition window. CONTRACT CHANGE (2026-10-23, user request "near 1:1
+     with the reference video"): the intro is now the uniform 1:6 compression
+     of the full 70.416 s reference = 11.736 s + wipe slack, TOTAL_MS 12250
+     + 180 ms exit + polling slack → [11800, 14200] ms. Logged in BUG_AUDIT. */
+  const tEnd0 = Date.now();
+  let removedAt = -1;
+  while (Date.now() - tEnd0 < 15500) {
+    if (!run1.doc.getElementById('introOverlay')) { removedAt = Date.now() - tEnd0; break; }
+    await new Promise(r => setTimeout(r, 50));
+  }
   const st1 = run1.win.EMC_INTRO.state();
   ok('the intro removes itself and leaves zero timers/listeners',
     run1.doc.getElementById('introOverlay') === null && st1.timers === 0 && st1.listeners === 0 &&
     run1.win.sessionStorage.getItem('emc.intro.v1') === '1', JSON.stringify(st1));
+  ok('auto-end is deterministic inside the composition window (no fixed-sleep padding)',
+    removedAt >= 11800 && removedAt <= 14200, `removed at ~${removedAt} ms`);
   run1.win.close();
 
   const run2 = await loadPage('index.html', {}, { session: { 'emc.intro.v1': '1' } });
@@ -1653,8 +1700,13 @@ console.log('\u2500'.repeat(66));
   await frames(run4.win, 2);
   const rmOn = run4.doc.getElementById('introOverlay');
   ok('reduced motion gets the static composition', rmOn !== null && rmOn.classList.contains('rm'));
-  await new Promise(r => setTimeout(r, 1900));
-  ok('the reduced-motion intro clears quickly', run4.doc.getElementById('introOverlay') === null);
+  const tRm0 = Date.now();
+  let rmAt = -1;
+  while (Date.now() - tRm0 < 3500) {
+    if (!run4.doc.getElementById('introOverlay')) { rmAt = Date.now() - tRm0; break; }
+    await new Promise(r => setTimeout(r, 50));
+  }
+  ok('the reduced-motion intro clears quickly', run4.doc.getElementById('introOverlay') === null && rmAt >= 0 && rmAt < 2800, `removed at ~${rmAt} ms`);
   run4.win.close();
 }
 

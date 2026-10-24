@@ -13,9 +13,9 @@ ok   ch1 circuit: series bank R = 79.00 ohm — 79.00 Ω
 ok   ch1 circuit: total R = 94.00 ohm — 94.00 Ω
 ok   ch1 circuit: I = 12/94 A — got 0.128, want 0.1276595744680851 (tol 1%)
 ok   ch1 circuit: Kirchhoff V(bank)+V(bulb) = 12 V — got 12.01, want 12 (tol 0.5%)
-ok   ch3 Lorentz: RK4 orbit matches r = mv/|q|B within 1% — r=0.00418 m, |RK4-theory|=4.3e-17 m
+ok   ch3 Lorentz: RK4 orbit matches r = mv/|q|B within 1% — r=0.00418 m, |RK4-theory|=8.7e-22 m
 ok   ch3 Lorentz: force readout is live and finite 
-ok   ch3 Faraday: emf opposes dPhi/dt on every moving sample (Lenz minus sign) — 11/11 opposed
+ok   ch3 Faraday: emf opposes dPhi/dt on every moving sample (Lenz minus sign) — 12/12 opposed
 ok   ch3 Lenz: direction readout explains the opposition while moving — Flux is increasing. Lenz’s law: the induced current flows so as to oppose the in
 page/console errors: none
 LECTURE VALUES + SIM PHYSICS PASS

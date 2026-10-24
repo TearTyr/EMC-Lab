@@ -56,6 +56,13 @@ Z ✓ · L ✓ · D ✓ · C ✓ · N ✓ · S ✓ · Q ✓ · P ✓ · X ✓(lo
 - [x] Phase 5: mascot restored as identity anchor (hero capped area, cheers, intro),
       micro-polish (focus-within cards, numeral emphasis); MASCOT-01 documents the
       deliberate reversal of the earlier scope lock + the justified smoke change.
+- [x] Reference-verification pass (follow-up): playback blocked at every route
+      (watch bot-gate, embed error 153, yt-dlp bot-gate on all clients, storyboards
+      403, six Invidious/Piped fronts down, no captions); inspected the locally
+      accessible footage stills (thumbnail + timeline-quartile frames,
+      evidence/phase6/reference/) and adopted their flat-field hard-cut rhythm,
+      diagonal panels and a colour-collision play into the intro; full log in
+      AUDIT-REPORT.md §9A. Video NOT watched — stated explicitly.
 - [x] Phase 6: FULL regression green: check/test(550)/interact/shell/perf/guard/shots/
       build + loader 16 + nav 31 + stability 35 + quiz 18 + lecture 19 + a11y 22 +
       intro 10 + matrix (Chrome 156/Firefox 157/Edge 156) — evidence/phase6/.
@@ -72,6 +79,18 @@ Z ✓ · L ✓ · D ✓ · C ✓ · N ✓ · S ✓ · Q ✓ · P ✓ · X ✓(lo
       harness asserts "overlay paints only if boot exceeded the 150 ms gate" instead of
       assuming every load is fast (3/3 stable runs).
 
+## Third round (mascot art + second reference + motion-graphics type) — COMPLETE
+- [x] Attached mascot PNGs processed (white-bg removal via min-channel alpha, crop,
+      resize) -> img/mascot.png + img/mascot-sparkle.png; hero/intro/cheers use them
+      (MASCOT-02; first luminance cutout left the body semi-transparent - fixed).
+- [x] Second reference video (8CilACT9uFs): access ladder re-run, playback blocked at
+      every route; thumbnail + quartile frames inspected -> letterbox, sticker plates,
+      arrow slash, per-letter kinetic title adopted; INTRO-02 fixed four composition
+      defects found by frame review. Video NOT watched - stated in AUDIT-REPORT §9A.
+- [x] Full regression green: check 0 / smoke 554 / interact / shell / perf / guard /
+      shots / build + loader 16, nav 31, stability 35, quiz 18, lecture 19, a11y 22,
+      intro 10, matrix ×3 engines (evidence/phase6/).
+
 ## Remaining (handed over)
 1. Merge + deploy `fix/emc-audit` (needs credentials) → then re-verify live URL.
 2. `bun install` to refresh bun.lock for the new devDeps before merge.
@@ -83,3 +102,136 @@ Z ✓ · L ✓ · D ✓ · C ✓ · N ✓ · S ✓ · Q ✓ · P ✓ · X ✓(lo
 - clone landed in /tmp (HOME=/tmp) → moved under /home/user (worked).
 - No fix consumed 3 failed attempts; the quiz `lastJump` scope leak was caught by retest and
   fixed on its second iteration (recorded in BUG_AUDIT A11Y-01).
+
+## Phase 7 — drawn-mascot identity + footage-driven intro v3 (2026-10-23)
+- Fetched origin/main: user merged earlier work (`719edc8`), added `405af20` fixes
+  and `2e836f8` with `Video/シェリーライド.mp4`; merged into `fix/emc-audit` (`33afc78`).
+- VIDEO INSPECTED for real: metadata + contact sheets + cut pairs viewed, audio
+  onset envelope analysed → `evidence/phase7/reference-analysis.md`.
+- Intro v3 rebuilt on the footage's grammar (5.8 s, 1.16 s phrases): confetti →
+  flash → locked mascot+title over silhouette strip with pose swaps → VS skit
+  with tilted insets → black/red insert → collage chorus with rotated word
+  slams → white-flash dips → bookend → wipe home. intro-verify 10/10.
+- BRAND-01: all SVG-generated mascot art replaced by the drawn PNGs (brand
+  marks ×10, favicon.ico + apple-touch regenerated, favicon.svg deleted, OG
+  card regenerated); smoke #15 rewritten to the drawn-artwork contract.
+- Gates (evidence/phase7/): check 0 · test 554/554 · interact PASS · shell PASS ·
+  perf 380K<500K · guard OK · shots 0 · build:public 72 files/196 refs ·
+  loader 16/16 · nav 31/31 · stability 35/35 · quiz 18/18 · lecture 19/19 ·
+  a11y 22/22 · intro 10/10 · matrix PASS ×3 · sweep 0 overflow/0 third-party.
+- Deployment still not performed (no credentials) — production unverified.
+
+## Phase 8 — transitions system, assets, bug fixes (2026-10-23, master prompt v4)
+- [x] §1 inspect: branch `fix/emc-audit` continued (no reset); favicon defect found on inspection (48×49 entry).
+- [x] §2 GIF: intro-section GIF (0→12.12 s) — later SUPERSEDED by phase-9 full-video
+      segments (see phase 9 below); file removed in phase-9 cleanup, notes kept.
+- [x] §3 footage: ALL 4226 frames decoded; per-frame diff+luminance series; 111 transition
+      clusters; showinfo PTS map (CFR check); 9 overview sheets @2 fps + 4 intro sheets @4 fps
+      read sequentially; 15 event strips (consecutive 60 fps frames) around every cut/flash/swap/
+      whip; honest review log (what was read vs numeric vs saved).
+- [x] §4 `evidence/phase8/reference-timeline.md`: frame-accurate event table, flash grammar
+      (2 white frames + 150–300 ms decay), hard-cut rule, spin loop, whip squash, beat grid,
+      translation rules + logged deviations.
+- [x] §5 MOTION-01 site-wide system (rise/slam/slide/pop/whip/flash/spin; js/motion.js;
+      shell view events; quiz whip after synchronous state; dropdown pop; hidden-tab pause;
+      reduced-motion final states) — motion-verify 10/10.
+- [x] §6 ASSET-01: asset plan + 3 generated physics-correct chapter diagrams (2 regenerations
+      for arrow correctness), palette PNGs, HTML symbol overlays, asset-verify 8×6 PASS.
+- [x] §7 bug fixes: BRAND-02 favicon square entries; §7B three v2 assertions re-reviewed +
+      strengthened (negative markers, spin requirement); INTRO-04 deterministic waits +
+      auto-end window; INTRO-05 re-init guards 9/10; §7D confetti contrast/size + inset scale +
+      continuous spin (frame strips before/after); §7E css build verified (tokens, keyframes in
+      built css, no dead v2 rules); §7F loader contract + nav re-verified (loader 16/16, nav 31/31).
+- [x] §8 robustness: whip never gates state; flash pointer-transparent + single-instance +
+      interrupted-nav cleanup; mx-paused on hidden; no duplicate listeners (stability 35/35).
+- [~] §9 suite: check 0 · test 556/556 · interact PASS · shell PASS · stability PASS · nav 31/31 ·
+      loader 16/16 · quiz 18/18 · lecture 19/19 · a11y 22/22 · intro 12/12 · motion 10/10 ·
+      asset 8×6 PASS · perf budgets PASS · sweep 0 overflow · matrix Chrome 11/11
+      (firefox/edge UNTESTED — ENV-01) · perf:guard/shots NOT re-run after session thread-budget
+      exhaustion (ENV-01; last green = phase 7 + earlier this session for perf).
+- [x] §10/11: acceptance evidence in `evidence/phase8/`; final report in AUDIT-REPORT §11.
+- Deployment still not performed (no credentials) — production unverified.
+
+## Phase 9 — full-video addendum (2026-10-24)
+- [x] §1 source measured: 70.47 s container / 4225 decoded frames (last pts 70.416),
+      1920×1080 h264 60 fps + AAC stereo + attached PNG cover; md5 unchanged;
+      duplicate `.scratch/ref/sherry.mp4` (byte-identical) removed.
+- [x] §2 ENTIRE video converted: 4 consecutive cut-aligned GIF segments
+      (0–18.9 / 18.9–40.2 / 40.2–59.0 / 59.0–end) + 6-window 30 fps flash montage,
+      `evidence/video-analysis/`; seg4 at 20 fps so the true final frame is inside.
+- [x] §3 GIFs re-opened & visually checked (first/mid/last per segment + flash grid):
+      `evidence/video-analysis/gifcheck/`, numeric audit via `tools/gif-verify.py`.
+- [x] §4 complete viewing pass: 12 sequential 4 fps sheets (every frame slot 0→70.25 s)
+      read in order (`evidence/video-analysis/sheets/W01–W12`) + slow-motion strip
+      re-reads of every fast transition (S00/S05/S06/S07/S13).
+- [x] §5 cleanup: duplicate MP4, superseded intro GIF, 2 fps overview sheets (replaced
+      by the 4 fps set), ref-analysis intermediates removed; originals + strips kept.
+- [x] §6 breakdown docs: `reference-analysis.md`, `frame-timeline.md`,
+      `transition-inventory.md` (incl. correction: NO black tail at video end).
+- [x] §7 site-wide transitions extended with 5 patterns from the FULL video:
+      staged line reveal (`data-mx="lines"` on objective lists), corner slam cluster
+      (`data-mx="corner"` on the chapter grid), strikethrough draw on graded-wrong
+      quiz options, starburst badge pop on feedback badges, locked-caption rule
+      (`.mx-lockline` on the Ohm preset row + whip accent on preset jumps).
+- [x] §8 verification: build:css/check/test(556)/quiz/a11y/intro/loader/nav/motion/
+      interact/shell/asset/stability/perf:guard ALL PASS; shots refreshed;
+      build:public deployable (2.1 MB, no evidence/Video refs at runtime);
+      site intro captured as `evidence/phase8/site-intro.gif` (63 frames, 6.29 s,
+      real-time capture, timing-faithful) + frame sheet `site-intro-frames.png`.
+- [x] check-links pre-existing failure found & fixed (introOverlay allowlist,
+      justified in-tool); first `check` run this session had been misread as pass
+      via a pipe exit code — corrected and re-run: exit 0.
+- [ ] Deployment still not performed (no credentials) — production unverified.
+- [ ] Commit not possible this session: `.git` absent from the sandbox snapshot.
+
+### Phase 9b — shareable intro preview (supersedes phase8/site-intro.gif for sharing)
+- [x] `tools/capture-intro-video.mjs`: records loader → #introOverlay (~5.8 s) →
+      homepage reveal via Playwright screencast (25 fps webm, zero page errors),
+      in-memory server, fresh context so the once-per-session intro plays.
+- [x] Two-pass palette encode (full imageio ffmpeg; stats_mode=diff + paletteuse
+      new=1 so flash scenes keep colour), trimmed 0.35 s blank browser paint at
+      the head and the static tail to ~1 s hold.
+- [x] Deliverables in `evidence/phase9/`: `intro-preview.gif` (960×600, 203 f,
+      20 fps, 10.15 s, 4.5 MB), `intro-preview-small.gif` (640×400, 152 f, 15 fps,
+      2.0 MB, for chat apps), `intro-recording.webm` source, `preview-sheet.png`
+      12-frame contact sheet read visually (all acts + reveal confirmed present).
+- [x] Not shipped: evidence/ stays out of `public/` (build:public exclusions
+      unchanged); preview GIFs are share assets, not runtime site assets.
+
+### Phase 9c — the 1:6 cut: site intro near-1:1 with the reference video
+User request (2026-10-23): "could be further improved make it near 1 to 1 with
+the reference video". Decisions taken with the user: uniform 1:6 time
+compression (~12 s intro) + keep the site pink palette.
+- [x] Rebuilt `#introOverlay` as a uniform 1:6 compression of ALL 70.416 s of
+      picture: nine sections in order, every event at t_ref/6 (confetti pops
+      .042-.375 s; flash #1 + staggered lock-up burst; paper-doll micro swaps
+      + f440 whip-squash at 1.225; flash #2 + skit with spinning insets and the
+      2.667 line swap; ZERO-WHITE hard cut into the black/red insert with
+      staged slams 3.333/3.383/3.433 + stamp 3.500; RAMPED flash #3 into chorus
+      A with word slams at the exact footage onsets, whips, bubble columns,
+      staggered speech panels, title callback + arrow, one-beat corner
+      cluster, chip slides + whip-out; flash #4 into chorus B's LOCKED lyric
+      caption with grid pose swaps and 0.333 s fairy edge-swaps; flash #5 into
+      chorus C correction panels with X-draws, corner words, starburst
+      badges, diamonds, bottom-line slams, whip; flash #6 into the bookend
+      callback; second ZERO-WHITE hard cut into the single-card end state).
+      Flash grammar stays frame-quantised (2 white frames + footage decays);
+      blur/gradient/backdrop-filter still absent; reduced motion unchanged.
+- [x] `js/intro.js` TOTAL_MS 5800 → 12250; contract comment rewritten.
+- [x] Timing map doc: `evidence/video-analysis/intro-1to6-map.md` (event
+      table incl. documented deviations: palette, whip-substitution, arc-text
+      omission, discretised fairies, 0.5 s spin / 0.15 s arrow floors).
+- [x] Gates re-pointed where they encoded the old 5.8 s cut (intro-verify
+      window + waits, smoke jsdom window + two css markers, screenshots intro
+      preset, capture timeout) — every change justified in BUG_AUDIT.md
+      test-change log (PHASE 9c entry). Full battery green: check, 556/556
+      smoke, intro-verify (auto-end 12 914 ms), motion, a11y, loader, nav,
+      asset, quiz, interaction, shell, stability, perf (330K index),
+      perf:guard (0 rAF chains, CLS 0.0007).
+- [x] New capture + GIFs in `evidence/intro-1to6/`: `intro-preview.gif`
+      (960x600, 302 f, 20 fps, 15.1 s, 3.3 MB), `intro-preview-small.gif`
+      (640x400, 15 fps, 1.6 MB), source webm, 16-frame `preview-sheet.png`
+      (read visually: all nine acts + wipe + homepage reveal present),
+      `compare-sheet.png` — 15 reference/site frame pairs at t_ref and
+      t_ref/6, read visually: structure matches section-for-section.
+- [ ] Deployment still not performed (no credentials) — production unverified.

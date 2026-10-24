@@ -102,14 +102,19 @@ evidence/             browser-verified audit evidence (screenshots, logs, sweeps
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro.** The homepage opens with a short (~4.6 s) original
-  YTPMV-flavoured composition — mascot pop, title slams, montage cuts, chapter
-  chips, a cheering mascot and a Start-Learning slam — that wipes into the
-  already-rendered homepage. It is skippable (visible button, any key or click),
-  plays once per session under its own storage key, never appears on chapter
-  routes or replays, uses CSS keyframes only (transform/opacity), and reduces to
+- **Once-per-session intro (v3).** The homepage opens with a short (5.8 s)
+  original composition whose editing grammar is transcribed from the inspected
+  reference footage (`Video/シェリーライド.mp4`, dev-only, never shipped): confetti
+  pops, white flash, the drawn mascot with the locked outlined title over a
+  silhouette strip and paper-doll pose swaps, a VS skit with tilted inset
+  stills, a black/red insert cut, a collage chorus with rotated word slams on
+  a 1.16 s phrase grid, white-flash dips and a bookend callback — then a
+  letterbox wipe into the rendered homepage. Skippable, once per session
+  (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to
   a static card under `prefers-reduced-motion`. `npm run intro-verify` proves the
-  whole contract. Denki-chan, the site mascot, anchors the hero (capped layout
+  whole contract. The client's drawn mascot artwork anchors every brand surface
+  (hero, header/footer marks, favicon set, social card) — no SVG-generated
+  mascot art remains; the hero mascot is capped (capped layout
   area, `pointer-events: none`, gentle float) and reacts once to meaningful
   moments (quiz pass, chapter completion) beside word-based state text.
 - **Loader contract.** Page content renders immediately; a segmented accent bar appears
@@ -192,7 +197,9 @@ npm run test           # jsdom smoke test (526 assertions: physics, quiz, loader
 npm run test:interact  # real Chromium drives every sim (mouse/touch/keyboard, rude cases)
 npm run test:shell     # shell stress: rapid route switching, teardown, reduced motion
 npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 16 checks
-npm run intro-verify   # the once-per-session intro contract (PART 6.4), 10 checks
+npm run intro-verify   # the once-per-session intro contract (PART 6.4), 12 checks
+npm run motion-verify  # site-wide motion system (phase 8): reveals, route flash dip, whip, 10 checks
+npm run asset-verify   # image/asset contract: decode, dims, alt, lazy, stretch, art, favicon ICO
 npm run stability-stress # the reported-bug reproduction matrix (nav/Details/typography), 35 checks
 npm run perf           # transfer/DOM/font budgets per page
 npm run perf:guard     # animation-chain budgets, CLS, anchor clearance

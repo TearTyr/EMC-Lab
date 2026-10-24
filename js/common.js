@@ -1149,7 +1149,7 @@ window.EMC = (function () {
           const done = Progress.isTopicDone(id);
           btn.classList.toggle('btn-primary', !done);
           btn.innerHTML = done
-            ? '<svg class="mascot-cheer" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg> Chapter completed \u2713'
+            ? '<img class="mascot-cheer" src="' + (location.pathname.indexOf('/topics/') >= 0 ? '../' : '') + 'img/mascot-sparkle.png" width="34" height="34" alt=""> Chapter completed \u2713'
             : 'Mark chapter as complete';
           btn.setAttribute('aria-pressed', String(done));
         };

@@ -24,7 +24,16 @@ catch { console.error('playwright not found - npm i playwright && npx playwright
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
-    if (e === 'node_modules' || e === '.git' || e === 'public' || e === 'archive' || e === 'shots') continue;
+    /* phase 9: same exclusion set as the other verifiers + Video/.
+       Rationale (written, per testing rules): the walk preloads every
+       served file into RAM; evidence/ (analysis GIFs), docs/, .scratch/
+       and Video/ (46 MB reference MP4) are never requested by any page
+       (comments-only references), and preloading them pushed node RSS
+       to ~110 MB which OOM-killed the chromium renderer on low-RAM CI
+       ('Target crashed' at newPage). No assertion is weakened: a page
+       that DID request these paths would now 404 and be reported by
+       the misses[] check below. */
+    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch', 'Video'].includes(e)) continue;
     const f = path.join(dir, e);
     const st = fs.statSync(f);
     if (st.isDirectory()) walk(f);

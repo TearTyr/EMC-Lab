@@ -48,7 +48,14 @@ const DYNAMIC_IDS = new Set([
   'toastHost', 'quiz-retake', 'quiz-wrong',       // created by toasts / score-card buttons
   'quiz-charts', 'quiz-fallback-bars',            // injected with the score card markup
   'chart-score', 'chart-topics', 'chart-history', // Chart.js canvases inside the score card
-  'bootFatal', 'bootFatalRetry'                   // loader failure card, built at runtime
+  'bootFatal', 'bootFatalRetry',                  // loader failure card, built at runtime
+  // phase 9 (written justification): the intro overlay's markup lives ONLY in
+  // index.html by design (intro contract: one-shot per session on the landing
+  // page). js/intro.js null-guards it (`if (!overlay) return;`) and js/motion.js
+  // probes it only to yield the screen to a playing intro, so on every other
+  // page the reference is intentionally absent-at-runtime, not broken.
+  // Behaviour is covered by intro-verify (10/10) and motion-verify (8/8).
+  'introOverlay'
 ]);
 
 /* ---------- 1 & 2. local links and asset references ---------------------- */

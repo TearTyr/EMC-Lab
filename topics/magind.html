@@ -52,7 +52,7 @@
        home screens. All three carry the same artwork as the header
        brand mark — tools/smoke-test.mjs asserts they stay identical. -->
   <link rel="icon" href="../favicon.ico" type="image/x-icon">
-  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../img/mascot.png" type="image/png">
   <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
   <script>if (window.tailwind) { tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#22d3ee', deep: '#0e1a2e', line: '#1e2f4d' } } } } }; }</script>
   <link rel="stylesheet" href="../css/site.css">
@@ -109,14 +109,7 @@
   <header class="site-header">
     <div class="wrap nav-inner">
       <a class="brand" href="../index.html" aria-label="EMC Lab — home">
-        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
-          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
-          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
-          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
-          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
-        </svg>
+        <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electromagnetics</span></span>
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
@@ -159,10 +152,19 @@
       <p class="lede" data-detail="tech">
         Magnetism arises from moving charge and from the intrinsic spin of particles such as electrons. The magnetic force on a moving charge is always <strong>perpendicular to its velocity</strong> — it changes the charge’s direction but does no work — and a <strong>changing flux</strong> of a field whose lines form <strong>closed loops</strong> through a coil becomes a voltage. This chapter joins the two halves: the Lorentz force, then Faraday’s and Lenz’s laws.
       </p>
+      <figure class="ch-art" data-mx="rise">
+        <span class="ch-art-frame mx-spin">
+          <img src="../img/art-ch3.png" width="480" height="480"
+            alt="Sticker diagram of a bar magnet with closed field loops circling from its north half to its south half, plus a small compass disc whose needle follows the local field.">
+          <b class="ch-sym" style="left:41%;top:52%" aria-hidden="true">N</b>
+          <b class="ch-sym on-dark" style="left:59%;top:52%" aria-hidden="true">S</b>
+        </span>
+        <figcaption class="small muted">Closed loops, no monopoles: out of N, around, into S.</figcaption>
+      </figure>
 
       <div class="card mt-4">
-        <h2 class="h-sub" style="margin-top:0">Learning objectives</h2>
-        <ul class="objectives">
+        <h2 class="h-sub" style="margin-top:0" data-mx="slam">Learning objectives</h2>
+        <ul class="objectives" data-mx="lines">
           <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Describe magnetic field lines and why monopoles are absent.</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Apply F = qv × B and predict orbit radius r = mv/(|q|B) and period T = 2πm/(|q|B).</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Compute magnetic flux Φ = BA·cosθ and explain why only change induces.</span></li>
@@ -944,14 +946,7 @@
     <div class="wrap footer-grid">
       <div>
         <span class="brand" style="pointer-events:none">
-          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M15 15 C13 7 19 5 21 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
-          <path d="M33 15 C35 7 29 5 27 11" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
-          <ellipse cx="24" cy="27" rx="16" ry="15" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/>
-          <circle cx="18.5" cy="26" r="1.7" fill="#2b2d33"/><circle cx="29.5" cy="26" r="1.7" fill="#2b2d33"/>
-          <path d="M22 31 q2 2 4 0" stroke="#2b2d33" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <circle cx="13.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/><circle cx="34.5" cy="30" r="2.4" fill="#f8aebe" opacity=".85"/>
-        </svg>
+          <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
         <p class="small muted" style="margin-top:.6rem">Chapter 3 of 3.</p>
@@ -988,6 +983,7 @@
   <script defer src="../vendor/katex/katex.min.js"></script>
   <script defer src="../js/registry.js"></script>
   <script defer src="../js/common.js"></script>
+  <script defer src="../js/motion.js"></script>
   <script defer src="../js/sim-lorentz.js"></script>
   <script defer src="../js/sim-induction.js"></script>
 </body>

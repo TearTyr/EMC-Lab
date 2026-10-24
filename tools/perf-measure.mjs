@@ -304,7 +304,7 @@ async function rss(browser) {
   const out = [];
   const blank = chromeRSS();
   for (const url of PAGES) {
-    const page = await browser.newPage();
+    const page = wrapPage(await browser.newPage());
     await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
     await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
     await sleep(3000);
@@ -331,7 +331,7 @@ async function guard(browser) {
     if (!ok) fails.push(name);
   };
   const openPage = async url => {
-    const page = await browser.newPage();
+    const page = wrapPage(await browser.newPage());
     await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
     await page.evaluateOnNewDocument(() => {
       const pend = new Set();
@@ -390,7 +390,7 @@ async function guard(browser) {
     await page.close();
   }
   for (const url of ['index.html', 'topics/current.html']) {
-    const page = await browser.newPage();
+    const page = wrapPage(await browser.newPage());
     await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
     await page.evaluateOnNewDocument(() => {
       window.__cls = 0;
@@ -422,7 +422,25 @@ async function guard(browser) {
 
 /* -------------------------------------------------------------------- main */
 const server = await serve();
-const browser = await puppeteer.launch({ args: ['--no-sandbox', '--enable-precise-memory-info', '--disable-background-timer-throttling'] });
+/* phase 8: --disable-dev-shm-usage joins the flag set every other launcher in
+   this repo already passes: the session container ships a 40 KB /dev/shm which
+   crashes Chrome 148 at launch. Measurement logic untouched (TOOL-05). */
+/* phase 8 (TOOL-05): PERF_ENGINE=playwright runs the identical measurements on
+   Playwright's chromium headless shell. Needed only in sandboxes where the
+   kernel thread budget (threads-max) is eaten by unreapable zombie tasks and
+   Chrome 148's larger thread pool cannot start (pthread_create EAGAIN).
+   Default stays puppeteer/Chrome; measurements are page-level and unchanged. */
+let browser;
+if (process.env.PERF_ENGINE === 'playwright') {
+  const { chromium } = await import('playwright');
+  browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
+} else {
+  browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage', '--enable-precise-memory-info', '--disable-background-timer-throttling'] });
+}
+const wrapPage = pg => (pg.setViewport ? pg : Object.assign(pg, {
+  setViewport: v => pg.setViewportSize({ width: v.width, height: v.height }),
+  evaluateOnNewDocument: fn => pg.addInitScript(fn)
+}));
 const version = await browser.version();
 console.log('browser:', version);
 

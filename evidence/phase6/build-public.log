@@ -2,5 +2,5 @@
 > build:public
 > node tools/build-public.mjs
 
-build:public -> public/  (71 files, 1836 KB, 8 pages checked, 170 local refs verified)
+build:public -> public/  (73 files, 1922 KB, 8 pages checked, 173 local refs verified)
 build:public OK — output directory is deployable. (js shipped readable - bun not found) [assets: hashed+minified]

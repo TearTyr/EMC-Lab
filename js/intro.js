@@ -1,10 +1,22 @@
 /* EMC Lab — the YTPMV-inspired opening (index.html only).
-   An original, asset-local presentation: rhythmic cuts, snappy type slams,
-   montage beats and a mascot reaction, resolving into the real homepage.
-   Contract (brief PART 6):
-     - ~4.6 s auto-play, once per session (sessionStorage `emc.intro.v1`;
-       NEVER touches the progress keys), in-memory fallback when storage is
-       blocked;
+   v4 "1:6 cut" (user request 2026-10-23: near 1-to-1 with the reference):
+   a uniform time-compression of the COMPLETE reference video
+   (Video/シェリーライド.mp4, 70.416 s → 11.736 s; every event at t_ref/6).
+   All nine sections in order — confetti overture, flash #1 + title lock-up
+   with paper-doll swaps and the f440 whip-squash, flash #2 + VS skit with
+   spinning insets, the zero-white hard cut into the black/red insert with
+   staged slams, the ramped flash #3 into chorus A (word slams at the exact
+   footage onsets, speech panels, corner cluster, chip slides), flash #4 +
+   chorus B's locked lyric caption with edge-swapping fairies, flash #5 +
+   chorus C (correction panels with X-draws, starburst badges, diamonds,
+   bottom-line slams), flash #6 + the bookend callback, and the second
+   zero-white hard cut into the single-card end state — then the site-only
+   letterbox wipe hands over to the homepage. Timing map:
+   evidence/video-analysis/intro-1to6-map.md. CSS keyframes only.
+   Contract (brief PART 6, duration amended by the 1:6 request):
+     - 11.74 s composition + 0.45 s wipe auto-play, once per session
+       (sessionStorage `emc.intro.v1`; NEVER touches the progress keys),
+       in-memory fallback when storage is blocked;
      - never plays on chapter routes (index.html#/chX) or other pages;
      - skip is always visible + keyboard reachable; ANY pointerdown/keydown
        dismisses; the overlay itself is pointer-events:none so page controls
@@ -20,7 +32,7 @@
   if (!overlay) return;
 
   const KEY = 'emc.intro.v1';
-  const TOTAL_MS = 4600;          // composition length
+  const TOTAL_MS = 12250;         // 11.736 s composition (70.416/6) + wipe + slack
   const EXIT_MS = 620;            // exit animation + safety margin
   const RM_MS = 1200;             // reduced-motion static hold
   let timers = [];

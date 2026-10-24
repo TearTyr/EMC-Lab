@@ -15,7 +15,7 @@ ok   A6 lane rewire is keyboard-operable (Enter ×2 → 10 + 22||47 = 24.99 Ω) 
 ok   A7 battery chip toggles by keyboard with aria-pressed + honest readout — {"on":false,"pressed":"false","it":"0.00 A (no battery)"}
 ok   A8 the whole quiz is answerable by keyboard alone — 24/24
 ok   A9 submit + confirm run from the keyboard; results render — Confirm submission
-ok   A10 graded state uses WORDS (correct / your answer), not colour alone — correct|your answer|your answer|correct badges:24
+ok   A10 graded state uses WORDS (correct / your answer), not colour alone — correct|your answer|correct|correct badges:24
 ok   R1 reduced motion: every reveal-gated block is fully visible — {"revealCount":28,"hidden":0,"runningAnimations":0}
 ok   R1 reduced motion: no decorative animations are running — 0
 ok   R2 reduced motion: Detail toggle still flips + announces (state feedback intact) — {"attr":"off","pressed":"false","label":"OFF","toast":"Details OFF — simplified explanations"}

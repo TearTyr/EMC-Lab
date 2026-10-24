@@ -1,0 +1,19 @@
+ok   [Chrome (chromium 156)] home boots with derived counts 3|13|24 — 3|13|24
+ok   [Chrome (chromium 156)] no boot overlay lingering 
+ok   [Chrome (chromium 156)] chapter #/ch1 mounts — Circuits & Ohm’s Law
+ok   [Chrome (chromium 156)] chapter #/ch2 mounts — Electric Fields & Coulomb’s Law
+ok   [Chrome (chromium 156)] chapter #/ch3 mounts — Magnetism & Induction
+ok   [Chrome (chromium 156)] circuit builder rewire changes the computed R(eq) — 79.00 Ω -> 24.99 Ω
+ok   [Chrome (chromium 156)] battery toggle reports honest zero current — 0.00 A (no battery)
+ok   [Chrome (chromium 156)] quiz: all 24 answered by real clicks — 24
+ok   [Chrome (chromium 156)] quiz submits and scores 100% —  100% 
+ok   [Chrome (chromium 156)] Detail toggle: attr + aria-pressed + label + content agree — {"attr":"off","pressed":"false","label":"OFF","techHidden":true}
+ok   [Chrome (chromium 156)] no page/console errors in the whole run 
+UNTESTED  Firefox (playwright): could not launch (Error: browserType.launch: Failed to launch the browser process.)
+UNTESTED  Edge (msedge channel): could not launch (Error: browserType.launch: Chromium distribution 'msedge' is not found at /opt/microsoft/m)
+
+--- gate B matrix ---
+  PASS     Chrome (chromium 156) 156.0.8078.4
+  UNTESTED Firefox (playwright)
+  UNTESTED Edge (msedge channel)
+BROWSER MATRIX PASS

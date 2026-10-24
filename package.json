@@ -23,6 +23,8 @@
     "lecture-values": "node tools/lecture-values.mjs",
     "a11y-verify": "node tools/a11y-verify.mjs",
     "intro-verify": "node tools/intro-verify.mjs",
+    "motion-verify": "node tools/motion-verify.mjs",
+    "asset-verify": "node tools/asset-verify.mjs",
     "stability-stress": "node tools/stability-stress.mjs"
   },
   "devDependencies": {

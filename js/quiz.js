@@ -20,7 +20,7 @@
      \u2713/\u2717 glyphs, and state must never ride on colour alone). */
   /* Denki-chan cheers beside the word badge on a pass (aria-hidden: the words
      carry the state, the mascot carries the personality). */
-  const CHEER = '<svg class="mascot-cheer" viewBox="0 0 60 56" aria-hidden="true"><path d="M19 13 C17 4 23 2 24.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M41 13 C43 4 37 2 35.5 8" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><ellipse cx="30" cy="32" rx="21" ry="20" fill="#f6f1e5" stroke="#3a3d45" stroke-width="2"/><path d="M20 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 30 q3 -4 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M27 37 q3 3 6 0" stroke="#2b2d33" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="3" fill="#f8aebe" opacity=".85"/><circle cx="45" cy="35" r="3" fill="#f8aebe" opacity=".85"/></svg>';
+  const CHEER = '<img class="mascot-cheer" src="img/mascot-sparkle.png" width="34" height="34" alt="">';
   const FACE_HAPPY = '<span class="fbadge fbadge-ok" aria-hidden="true">Correct</span>';
   const FACE_OOPS = '<span class="fbadge fbadge-no" aria-hidden="true">Not quite</span>';
 
@@ -501,7 +501,7 @@
      initKeyboardAndFocus): while a programmatic jump is in flight, the
      observer must not fight it for the active-card targeting. */
   let lastJump = 0;
-  function gotoQuestion(qid) {
+  function gotoQuestion(qid, whip) {
     const inView = visible().some(q => q.id === qid);
     if (inView === false) {                  // jumping beats filtering: show it
       S.filter = 'all'; syncFilterButtons(); render();
@@ -510,8 +510,11 @@
     if (target !== null && target !== undefined) {
       lastJump = performance.now();
       EMC.scrollToEl(target);
-      S.activeCard = target;
+      /* phase 8: explicit user jumps (arrows, chips, keyboard) land with the
+         reference's squash-whip; observer retargeting never animates. */
+      S.activeCard = target;                 // state first, motion never gates it
       updateNavCur(qid);
+      if (whip && window.EMC_MOTION) window.EMC_MOTION.whip(target);
     }
   }
   function navStep(delta) {
@@ -519,7 +522,7 @@
     let idx = S.order.findIndex(q => q.id === curId);
     if (idx < 0) idx = delta > 0 ? -1 : S.order.length;
     const target = S.order[Math.min(Math.max(idx + delta, 0), S.order.length - 1)];
-    if (target !== null && target !== undefined) gotoQuestion(target.id);
+    if (target !== null && target !== undefined) gotoQuestion(target.id, true);
   }
 
   /* ---- autosave / resume --------------------------------------------------
@@ -1320,7 +1323,7 @@
     navEl.addEventListener('click', e => {
       const chip = e.target.closest('.qnav-chip');
       if (chip === null) return;
-      gotoQuestion(Number(chip.dataset.goto));
+      gotoQuestion(Number(chip.dataset.goto), true);
     });
   }
   const prevBtn = el('qnav-prev');

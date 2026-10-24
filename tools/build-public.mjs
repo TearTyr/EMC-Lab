@@ -87,7 +87,7 @@ const MUST_EXIST = [
   'sitemap.xml',
   'robots.txt',
   'favicon.ico',
-  'img/favicon.svg',
+  'img/mascot.png',
   'img/apple-touch-icon.png',
   'vendor/fonts/g8321-100.woff2',
   'vendor/fonts/g8321-400.woff2',

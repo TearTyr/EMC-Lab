@@ -352,6 +352,11 @@
         rSlider.value = String(toSlider(R));
         apply();
         EMC.toast(`Preset: V = ${fixed(V, 1)} V, R = ${eng(R, 3)} \u03A9`);
+        /* phase 9: preset jump is a real state change; the squash-whip accent
+           (reference footage f440-447) plays over the stage afterwards. The
+           preset row itself is .mx-lockline: a locked caption never moves
+           while the centre swaps (chorus-B rule, f2420-2978). */
+        if (window.EMC_MOTION && canvas) window.EMC_MOTION.whip(canvas);
       });
     });
   }

@@ -413,3 +413,33 @@ and walk this list:
       eager script tags, lazy paint via `whenNear`, no shell chrome.
 - [ ] Hover lift only on hover-capable devices (touch: press feedback instead);
       with reduced motion, nothing translates or fades anywhere on the page.
+
+## Phase-9 tooling notes (2026-10-24)
+- Verifier file-server walk lists: `interaction-test.mjs`, `screenshots.mjs` and
+  `stability-stress.mjs` now exclude `evidence/ docs/ .scratch/ Video/` like the
+  other verifiers. Rationale: the walk preloads every served file into RAM; the
+  46 MB reference MP4 + ~45 MB analysis GIFs pushed node RSS to ~110 MB and the
+  chromium renderer was OOM-killed on low-RAM CI ("Target crashed" at newPage).
+  No assertion changed; a page requesting those paths now 404s into misses[].
+- `perf:guard`/`perf` need a browser: default engine is puppeteer/Chrome; in
+  sandboxes without a Chrome binary use the documented `PERF_ENGINE=playwright`.
+- After an environment reset, puppeteer's own Chrome may be absent while
+  Playwright's cached headless shell exists; `perf` (puppeteer-only) then
+  runs via `PUPPETEER_EXECUTABLE_PATH=~/.cache/ms-playwright/chromium_headless_shell-*/
+  chrome-headless-shell-linux64/chrome-headless-shell npm run perf` (verified
+  2026-10-23, budgets met).
+- Intro capture (phase 9c): the 1:6 cut runs 11.74 s + wipe; capture waits
+  were raised accordingly (intro-verify 18 s, capture tool 22 s). Zombie
+  browser processes from a crashed run cause 'Target crashed' on the next
+  harness's first newPage — `pkill -9 -f chrome` between browser gates.
+- Browser verifiers are RAM-hungry: run them one at a time on ≤1 GB machines
+  (a back-to-back batch crashed one context under contention; standalone reruns
+  passed cleanly — recorded honestly in PROGRESS.md phase 9).
+- `check-links.mjs` DYNAMIC_IDS gained `introOverlay` (written in-tool): the
+  overlay markup exists only in index.html by design; intro.js/motion.js
+  null-guard every reference; intro-verify/motion-verify cover the behaviour.
+  Note: this failure predated the phase-9 work and was first misread as a pass
+  because an early run piped npm into `tail` (pipe exit code); recorded here.
+- GIF verification tool: `tools/gif-verify.py` (frame counts, durations, frozen
+  runs, first/mid/last sample extraction). Site-intro capture:
+  `tools/capture-site-intro.mjs` (real-time screenshot loop + timestamps).

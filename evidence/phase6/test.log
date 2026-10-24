@@ -512,6 +512,10 @@ EMC Lab — runtime smoke test (jsdom)
    ✓ intro overlay never locks the page (overlay pointer-events none, controls auto)
    ✓ intro motion is transform/opacity keyframes only (flat-art rules hold)
    ✓ homepage ships the intro with a visible keyboard-reachable skip + Start action
+   ✓ hero + intro use the supplied mascot art with explicit dimensions (no CLS)
+   ✓ intro title is per-letter kinetic type (six letters, staggered slams)
+   ✓ the mascot reaction pair ships as transparent sticker assets
+   ✓ sticker plates (kicker + chips) ship cream-on-dark with tilted transforms
    ✓ no other page ships the intro markup
    ✓ a fresh session plays the intro after boot
    ✓ the intro removes itself and leaves zero timers/listeners
@@ -598,6 +602,6 @@ EMC Lab — runtime smoke test (jsdom)
    ✓ the dashboard says progress is device-local
 
 ──────────────────────────────────────────────────────────────────
-✅ All 550 assertions passed.
+✅ All 554 assertions passed.
 ──────────────────────────────────────────────────────────────────
 

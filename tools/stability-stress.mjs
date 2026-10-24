@@ -17,7 +17,11 @@ const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
-    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch'].includes(e)) continue;
+    /* phase 9: + Video/ (46 MB reference MP4, never requested by any page).
+       Preloading it into the served-file map plus a long multi-context
+       stress run OOM-killed the renderer on low-RAM CI; misses[] would
+       flag any page that actually requested it. Assertions unchanged. */
+    if (['node_modules', '.git', 'public', 'archive', 'shots', 'evidence', 'docs', '.scratch', 'Video'].includes(e)) continue;
     const f = path.join(dir, e); const st = fs.statSync(f);
     if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
   }

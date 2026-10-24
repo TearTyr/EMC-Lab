@@ -94,7 +94,7 @@
        document order — that keeps shared engines (js/sandbox-core.js) ahead of
        the sims that need them. Scripts index.html already runs, and vendored
        libraries, are skipped. */
-    const HAVE = ['registry.js', 'common.js'];
+    const HAVE = ['registry.js', 'common.js', 'motion.js'];
     const srcs = [];
     doc.querySelectorAll('script[src]').forEach(tag => {
       let src = tag.getAttribute('src') || '';
@@ -141,6 +141,7 @@
     document.title = HOME_TITLE;
     if (!opts || opts.scroll !== false) window.scrollTo(0, 0);
     void token;
+    document.dispatchEvent(new CustomEvent('emc:view-shown', { detail: { view: 'home', root: document } }));
   }
 
   async function activate(id, opts) {
@@ -188,6 +189,7 @@
         if (t) EMC.scrollToEl(t);
         pendingAnchor = null;
       }
+      document.dispatchEvent(new CustomEvent('emc:view-shown', { detail: { view: id, root: body } }));
     } catch (err) {
       if (token !== loadToken) return;
       body.innerHTML = failCard(ch);

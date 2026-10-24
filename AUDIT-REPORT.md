@@ -141,10 +141,50 @@ link regressions, a YTPMV-inspired opening, and mascot-led cute polish.
   line-height (`.lede` = 1.04rem/1.8 ≈ 16.6px, with a `.lede.small` guard rail).
 - **Intro:** see BUG_AUDIT INTRO-01 for the full contract and verification
   (intro-verify 10/10, a11y A0 5/5, smoke +14, frames in `evidence/phase6/intro-frames/`).
-  Reference-video honesty: metadata inspected via YouTube oEmbed and the watch page
-  ("The Larping Tombstone — Larping the Rooms [Green Version]"); the FOOTAGE itself was
-  not inspectable (bot-gate; no frame/audio access), so the composition follows the
-  written design direction using only site-local assets — no copyrighted footage/audio.
+  Reference-video verification log (attempted in order, per the follow-up brief):
+  1. oEmbed metadata: OK — title/author ("The Larping Tombstone — Larping the Rooms
+     [Green Version] (Looping The Rooms Remix)").
+  2. Watch page in real Chromium: page text only; playback bot-gated
+     ("Sign in to confirm that you're not a bot").
+  3. Embed player (autoplay+mute): "Video player configuration error / Error 153".
+  4. yt-dlp (node JS runtime; player clients android,mweb,tv; worst format):
+     "Sign in to confirm you're not a bot" on every client.
+  5. Signed storyboards (i.ytimg.com/sb/…L0-L2): HTTP 403.
+  6. Public Invidious/Piped fronts (6 instances): 502/403/530/DNS failures.
+  7. Caption track (timedtext): HTTP 200, empty body (no captions exist).
+  8. LOCALLY ACCESSIBLE FRAMES (inspected as images, saved in
+     evidence/phase6/reference/): the chosen thumbnail (1280×720) and YouTube's
+     timeline-quartile frames 1.jpg/2.jpg/3.jpg (120×90, ≈25/50/75% of runtime) —
+     these are genuine footage stills, not the chosen thumbnail.
+  **Therefore: the video was NOT watched.** Playback, editing rhythm at frame
+  precision, transitions and audio remain unverified; no claim otherwise is made
+  *(superseded for video 8CilACT9uFs by §9B: the footage became accessible via the
+  repository `Video/` folder and WAS inspected frame-by-frame on 2026-10-23)*
+  anywhere. What the accessible frames show and what was adopted from them:
+  flat saturated single-colour fields swapped per beat (green field with pictogram
+  subjects at ~25%, blue/yellow starburst sign-collage at ~50%, dark field with one
+  glowing accent at ~75%), diagonal flat corner panels and chunky angled display
+  type with scanline duotone in the channel branding. The intro therefore gained
+  (a) hard-cut background field swaps on the montage beats (yellow → pink → dark,
+  steps() timing, flat colours), (b) two outlined diagonal wedges behind the
+  composition, and (c) a colour-collision play (the yellow title half goes dark
+  while the yellow field is up). Everything else follows the written creative
+  direction with site-local assets only; no copyrighted footage or audio is used.
+
+  Second reference video (follow-up brief, id 8CilACT9uFs — 「シェリーライド」 / 제타 Zeta per
+  oEmbed): the SAME access ladder was re-run and blocked identically (embed Error 153,
+  yt-dlp bot-gate on all clients, storyboards 403, no captions attempted-needed). The
+  accessible thumbnail + timeline-quartile frames (evidence/phase6/reference2/) show
+  letterbox bars over flat yellow fields, cut-out subjects, tilted white sticker plates
+  with bold outlined type and diagonal arrow slashes. Adopted from those stills plus the
+  client's "more motion-graphics type" direction: cinematic letterbox for the whole intro,
+  tilted cream sticker plates (kicker + chapter chips), an outlined diagonal arrow slash on
+  the cheer beat, and per-letter kinetic title type (six staggered slams, tracking pop,
+  marker swipe, flat sticker stroke). The attached mascot PNGs (two eye states) replaced the
+  SVG hero/intro/cheer art after white-background removal (MASCOT-02); frame review of our
+  own output caught and fixed four composition defects (INTRO-02). Again: the video was NOT
+  watched — playback, cut precision and audio remain unverified and are claimed nowhere.
+  *(superseded by §9B for this video ID)*
 - **Mascot:** restored as the identity anchor (BUG_AUDIT MASCOT-01); no mascot image was
   attached to the brief (`uploads/` held only the lecture PDF), so the project's own
   Denki-chan artwork is the source.
@@ -152,6 +192,146 @@ link regressions, a YTPMV-inspired opening, and mascot-led cute polish.
   including perf:guard home chains = 0 (the intro adds no JS animation loop) and the
   three-engine browser matrix.
 
+
+## 9B. Phase-7 addendum — footage inspected, intro v3, drawn-mascot identity (2026-10-23)
+
+1. **Reference access upgraded from metadata to footage.** `git fetch origin`
+   succeeded; `origin/main` carries `2e836f8 "Create シェリーライド.mp4"` placing
+   `Video/シェリーライド.mp4` in the repository (the master prompt's preferred
+   route). The file is real media: 46,580,541 bytes, `ftyp isom`, h264 1920×1080
+   @60 fps with an AAC-LC stereo track (ffmpeg 7.0.2 via imageio-ffmpeg).
+   Inspection performed: 6×6 overview contact sheet @2 s, 6×4 opening sheet
+   @0.5 s, ±0.35 s pairs around every scene-cut (thresholds 0.4/0.25), all
+   viewed with the vision tool; audio decoded to WAV and analysed as an RMS
+   onset envelope (67 onsets; first at 1.50 s; chorus phrase pulse 1.15–1.20 s
+   with 0.30 s fills). Timestamped breakdown:
+   `evidence/phase7/reference-analysis.md`; sheets
+   `evidence/phase7/reference-overview-sheet.png`,
+   `.scratch/ref-analysis/opening.png`, `.scratch/ref-analysis/cutpairs.png`.
+2. **What the footage actually does** (correcting the thumbnail-era reading):
+   confetti pops → white flash → character cut-out with the outlined title
+   LOCKED BELOW it over a faint silhouette strip; discrete paper-doll pose
+   swaps on the phrase pulse; VS skit interlude with tilted 3D inset stills on
+   the same field; hard insert cut to a black field with red banner + caption;
+   collage chorus (panel rectangles, name-plate chip top, small chip bottom,
+   wedge slashes, huge rotated outlined lyric slams one per beat, bubble +
+   starburst badges, motion-blur whip); white-flash dips on section cuts;
+   bookend callback to the title field; end card → black.
+3. **Intro v3** transcribes that grammar at EMC-Lab scale: 5.8 s = five 1.16 s
+   phrases; pink/plum field mapping of the reference's yellow/blue; pose swaps
+   via the two drawn eye states; word slams VOLTS/FIELDS/FORCE/SPARK!; bookend
+   then the letterbox wipe into the rendered homepage. Contract re-verified:
+   intro-verify 10/10, matrix ×3 engines, sweep clean, perf index 380 K < 500 K,
+   perf:guard home rAF chains 0. Frames: `evidence/phase7/intro-frames/`.
+4. **Drawn-mascot identity completed (BRAND-01):** every SVG-generated mascot
+   image is gone from live surfaces — header/footer brand marks (10 inline
+   SVGs), the favicon source (`img/favicon.svg` deleted; `favicon.ico` and
+   `img/apple-touch-icon.png` regenerated from `img/mascot.png`), and the
+   social card (`tools/og-card.html` + regenerated `img/og-card.png`). Icon
+   link is now the drawn PNG; smoke #15 asserts artwork identity across brand
+   mark, icon link and file on disk for all five pages.
+5. **Merge:** `origin/main` (user commits `719edc8`, `405af20`, `2e836f8`)
+   merged as `33afc78`; the user's loader telemetry/`emc:loader-done` contract
+   already existed identically here; drawn-PNG artwork kept over the squash's
+   older SVG variants; `Video/` accepted as a dev-only reference — `build:public`
+   copies only the allow-listed dirs, and `public/` was verified to contain no
+   `Video/` or `archive/` content.
+6. **Deployment:** unchanged — no push/Vercel credentials exist; production
+   remains **not verified live** (§10).
+
+## 9C. Phase-8 addendum — transitions, assets, bug fixes (2026-10-23)
+
+**Scope delivered (master prompt v4):** reference GIF, true frame-level footage
+review, frame-accurate transition timeline, site-wide motion system, three
+physics-correct chapter diagrams, favicon/assertion/timing bug fixes, new
+gates, honest environment reporting. All on `fix/emc-audit`, continuing phase 7.
+
+**Reference media & method.** MP4: `Video/シェリーライド.mp4` (70.47 s, 1080p60).
+GIF: phase-8 intro-section GIF (0→12.12 s), SUPERSEDED in phase 9 by full-video
+segments `evidence/video-analysis/reference-full-01…04` (0→70.47 s, verified);
+see `evidence/video-analysis/reference-analysis.md` + `gif-conversion-notes.md`. Frame-by-frame method
+(`reference-review-log.md`): every one of 4226 decoded frames passed through a
+numeric diff/luminance pass; `showinfo` PTS table proved CFR (16.7 ms deltas,
+six anomalies); 111 transition clusters; sequential visual batches = 9 overview
+sheets @2 fps (all read) + 4 intro sheets @4 fps (read) + 15 consecutive-frame
+event strips at 60 fps around every cut/flash/swap/whip (S00/S02/S05/S06 read
+individually, the rest cross-verified in sheets + numeric curves, all saved).
+No real-time player exists in this agent session — stated, not hidden.
+
+**Timeline highlights (verified):** confetti pops 0.25–0.5 s apart over an empty
+field → 2-frame pure-white snap f156–157 (2.616 s) → ~90 ms dissolve + staggered
+lock-up bursts → pose swaps on the 1.15–1.2 s phrase grid with 0.3 s fills →
+whip-squash pose change f440–447 → white-flash dips at 12.116/21.449/40.233/
+49.650/59.033 (2 white frames + 150–300 ms decay) → hard cuts (no flash) at
+18.916 and 68.516 → continuous rotateY inset spin in the skit → rotated word
+slams one per beat → bookend callback → centred end-card still.
+
+**Site changes.** `js/motion.js` (new) + motion CSS block: rise/slam/slide/pop
+(90–300 ms), flash dip 260 ms @85 % white at route boundaries, whip squash,
+slow rotateY spin; `html.mx-js` gate (content visible if JS dies), `mx-paused`
+hidden-tab pause, reduced-motion final states, single-init guard. Hooks:
+`emc:view-shown` from shell home/topic switches; quiz jump whip AFTER
+synchronous state commit; dropdown pop; intro insets now spin continuously
+(4 s, slowed from ~2 s — logged deviation); confetti enlarged + lime accent +
+two extra pieces; insets enlarged. Pages touched: index, quiz, 3 chapters
+(markup), shell.js, quiz.js, common.js untouched beyond HAVE-list in shell,
+css/input.css. Generated assets: `img/art-ch1/2/3.png` (480×480 palette PNGs,
+42–59 KB) with HTML `+ − N S` overlays; two drafts rejected for wrong physics
+(double-headed field line; mixed loop circulation).
+
+**Bug fixes.** favicon.ico rebuilt square 16/32/48 (was 48×49) + decoded-entry
+validation; three v2-era assertions re-reviewed and strengthened (negative
+per-letter markers; `in-insetspin` infinite requirement); fixed 6.6 s/1.9 s
+smoke sleeps replaced by poll-until-removed + explicit auto-end windows
+(5.2–7.4 s / <2.8 s RM); intro-verify grew re-init guards 9–10; shell no longer
+double-fetches motion.js (NAV-04); `perf-measure` gained `--disable-dev-shm-
+usage` + `PERF_ENGINE=playwright` override (TOOL-05, measurements unchanged).
+
+**Test results (actual, this session, post-final-code unless noted):**
+check exit 0 · smoke 556/556 · interact PASS · shell PASS · stability 35/35 ·
+nav 31/31 · loader 16/16 · quiz 18/18 · lecture 19/19 · a11y 22/22 ·
+intro 12/12 · motion 10/10 · asset 8 checks ×6 passes PASS · perf budgets PASS ·
+baseline-sweep 0 overflow/0 third-party (baseline dir restored after) ·
+browser-matrix Chrome 11/11 exit 0 with Firefox+Edge rows UNTESTED (ENV-01) ·
+build:public OK. Logs: `evidence/phase8/*.log`.
+
+**Environment losses (ENV-01, honest):** Firefox 157 content process SIGSEGVs
+in this container (signal 11 even on `data:` URLs; apt lib set + sandbox env
+vars tried — 3-attempt rule honoured); Edge binary absent from the reset base
+image; late-session, ~750 unreapable zombie tasks (parent = session supervisor)
+consume the kernel's 925-thread budget, so every further browser launch fails
+(`pthread_create: EAGAIN`, then target crashes). Consequently `perf:guard` and
+`shots` were not re-run after the last tool-only edit, and matrix firefox/edge
+rows stay UNTESTED here; phase-7 logs record them green on the pre-phase-8
+tree. Zombies do not persist across sessions — rerun the full battery first
+thing next session.
+
+**Showcase (genuine captures, final code):** `evidence/phase8/strips/`
+(SITE-intro-early-fixed, SITE-intro-stages, SITE-chapter-art),
+`evidence/phase8/site-intro.gif` + `site-intro-frames.png` (site intro capture);
+reference viewing sheets now live in `evidence/video-analysis/sheets/` (the old
+2 fps `sheets/` batch was replaced by the denser 4 fps set and removed);
+page screenshots in `shots/` and `.scratch/pages/` (dev area, not shipped).
+
 ## 10. Deployment status
 
 **Not verified live.** https://emc-lab.vercel.app still serves the pre-audit build (BOOT-01 dead engine + third-party analytics were re-confirmed there during Phase 1). The fix exists on local branch `fix/emc-audit` (commits `3dab934..HEAD`); merging and deploying requires credentials this environment does not have. Per the operating rules this report therefore states: **the fix is not live and not verified live.**
+
+## 9D. Phase-9 addendum (full-video review, 2026-10-24)
+
+Complete-video re-review per the addendum brief: source re-measured (70.47 s,
+4225 frames, 1080p60 h264 + AAC + cover PNG); entire footage converted to four
+consecutive verified GIF segments + a 30 fps flash montage
+(`evidence/video-analysis/`); independent 4 fps sequential viewing pass over all
+282 frame slots (sheets W01–W12) plus consecutive-frame slow-motion re-reads of
+every fast transition; one prior claim corrected (no black tail — the last ten
+decoded frames are the end card). Five additional reference patterns
+(full-video-only: staged line reveal, corner slam cluster, strikethrough draw,
+starburst badge pop, locked caption) implemented site-wide on real state
+changes; reduced-motion and flat-art rules honoured. Cleanup removed the
+byte-identical scratch MP4 duplicate, the superseded intro-only GIF, the
+replaced 2 fps sheet batch and ref-analysis intermediates; originals, strips
+and docs preserved. Full battery re-run: every gate passes (see PROGRESS.md
+phase 9); two tool walk-lists gained evidence/Video exclusions (written
+rationale in-tool: RAM preload OOM-killed the renderer; assertions untouched,
+misses[] now also proves no page requests those paths).

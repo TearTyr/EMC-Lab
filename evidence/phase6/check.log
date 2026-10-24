@@ -6,7 +6,7 @@
 EMC Lab — static project validation
 ────────────────────────────────────────────────────────────────
 HTML pages ......... 17
-JS files ........... 46
+JS files ........... 47
 Tailwind utilities . 20 used, 20 present in css/site.css
 
 ✅ No errors: all links, scripts, ids and data hooks resolve.

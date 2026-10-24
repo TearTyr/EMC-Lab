@@ -1,0 +1,6 @@
+== check 2026-10-23T17:13:21Z
+ok   topics/coulomb.html: 0 detail pairs balanced
+ok   topics/field.html: 0 detail pairs balanced
+DETAIL PARITY PASS
+SCOPE + NETWORK PURITY PASS
+check exit: 0

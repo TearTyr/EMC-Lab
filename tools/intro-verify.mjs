@@ -2,7 +2,7 @@
 /* ==========================================================================
    EMC Lab — intro contract verification (brief PART 6.4).
    Run: node tools/intro-verify.mjs
-     1 fresh session: plays after boot, auto-ends <= ~5.2 s, removes itself,
+     1 fresh session: plays after boot, auto-ends <= ~12.5 s, removes itself,
        sets its own session key (never a progress key), leaves 0 timers /
        0 listeners / 0 rAF chains (CSS-only motion);
      2 any keydown (Escape) dismisses mid-play;
@@ -12,7 +12,9 @@
      6 page controls remain clickable DURING playback (pointer-events none)
        and clicking one dismisses the intro;
      7 a blocked-storage session still boots, plays once and dismisses;
-     8 zero console/page errors throughout.
+     8 zero console/page errors throughout;
+     9 re-fired loader-done after completion never re-creates the overlay;
+    10 repeated init during playback keeps one overlay + one listener set.
    Exits 1 on any failure.
    ========================================================================== */
 import http from 'node:http';
@@ -67,9 +69,15 @@ async function ctxPage(opts = {}) {
   const playingAt = Date.now() - t0;
   const rafs = await pg.evaluate(() => window.EMC.stats().rafs);
   ok('1 intro plays shortly after boot with zero rAF chains (CSS-only)', rafs === 0, `rafs=${rafs}, play at ~${playingAt} ms`);
-  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 8000 });
+  /* CONTRACT CHANGE (2026-10-23, user request "near 1:1 with the reference
+     video"): the composition is now the uniform 1:6 time-compression of the
+     full 70.416 s reference (11.736 s + 0.45 s wipe + 0.18 s exit), so the
+     auto-end window moved from 3-6 s to 11.5-14.5 s after 'load'. Skip is
+     still instant on any key/pointer, still once-per-session. Justification
+     logged in BUG_AUDIT.md (test-change log) and PROGRESS.md phase 9c. */
+  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 18000 });
   const endedAt = Date.now() - t0;
-  ok('1 intro auto-ends within the 3-6 s window', endedAt > 2500 && endedAt < 6500, `${endedAt} ms`);
+  ok('1 intro auto-ends within the 1:6-cut window (11.5-14.5 s incl. boot)', endedAt > 11500 && endedAt < 14500, `${endedAt} ms`);
   const st = await pg.evaluate(() => ({
     intro: window.EMC_INTRO.state(),
     flag: sessionStorage.getItem('emc.intro.v1'),
@@ -151,8 +159,35 @@ async function ctxPage(opts = {}) {
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(1000);
   const s1 = await pg.evaluate(() => ({ emc: typeof window.EMC !== 'undefined', intro: !!document.getElementById('introOverlay') }));
-  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 8000 });
+  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 18000 });
   ok('7 blocked storage: page boots, intro plays once and still clears', s1.emc === true, JSON.stringify(s1));
+  await ctx.close();
+}
+
+/* 9: a synthetic loader-done replay after completion creates nothing */
+{
+  const { ctx, pg } = await ctxPage();
+  await pg.goto(B + '/index.html', { waitUntil: 'load' });
+  await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 18000 });
+  await pg.evaluate(() => document.dispatchEvent(new Event('emc:loader-done')));
+  await pg.waitForTimeout(600);
+  const after = await pg.evaluate(() => ({ st: window.EMC_INTRO.state(), nodes: document.querySelectorAll('#introOverlay').length }));
+  ok('9 re-fired loader-done after completion never re-creates the overlay',
+    after.nodes === 0 && after.st.listeners === 0 && after.st.timers === 0, JSON.stringify(after));
+  await ctx.close();
+}
+
+/* 10: repeated init during playback keeps a single overlay + listener set */
+{
+  const { ctx, pg } = await ctxPage();
+  await pg.goto(B + '/index.html', { waitUntil: 'load' });
+  await pg.waitForFunction(() => { const o = document.getElementById('introOverlay'); return o && o.classList.contains('play'); }, null, { timeout: 5000 });
+  const s1 = await pg.evaluate(() => ({ st: window.EMC_INTRO.state(), nodes: document.querySelectorAll('#introOverlay').length }));
+  await pg.evaluate(() => { document.dispatchEvent(new Event('emc:loader-done')); document.dispatchEvent(new Event('emc:loader-done')); });
+  await pg.waitForTimeout(300);
+  const s2 = await pg.evaluate(() => ({ st: window.EMC_INTRO.state(), nodes: document.querySelectorAll('#introOverlay').length }));
+  ok('10 repeated init during playback keeps one overlay and one listener set',
+    s1.nodes === 1 && s2.nodes === 1 && s2.st.listeners === s1.st.listeners && s2.st.playing, JSON.stringify({ s1, s2 }));
   await ctx.close();
 }
 

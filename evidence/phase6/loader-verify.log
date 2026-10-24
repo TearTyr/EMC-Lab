@@ -1,9 +1,9 @@
-ok   1 fast load: overlay painted only if boot really exceeded the 150 ms gate {"seen":false,"showAtMs":0,"finishAtMs":137.69999999925494}
+ok   1 fast load: overlay painted only if boot really exceeded the 150 ms gate {"seen":false,"showAtMs":0,"finishAtMs":115.90000000223517}
 ok   1 fast load: content + engine live 
 ok   2 throttled: overlay dismissed 
 ok   2 throttled: overlay appeared when startup was slow 
 ok   2 throttled: segmented bar advanced on real stages segs=3 done=3
-ok   2 throttled: gone well under the 1.5 s watchdog + exit 1062 ms total (260 ms/js artificial delay)
+ok   2 throttled: gone well under the 1.5 s watchdog + exit 1009 ms total (260 ms/js artificial delay)
 ok   3 blocked storage: Detail Mode defaults ON on
 ok   3 blocked storage: loader finishes, no fatal {"detail":"on","overlay":false,"fatal":false,"emc":true}
 ok   3 blocked storage: Detail toggle still flips + label agrees {"attr":"off","pressed":"false","label":"OFF"}
