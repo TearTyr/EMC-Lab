@@ -106,7 +106,19 @@ pattern to its final state instantly — content is never hidden behind an anima
 | 19 | end card | single small bordered still, static ~1.9 s | session-complete card; intro S9 | existing |
 | 20 | beat grid | pulse 1.15–1.20 s, fills 0.30 s, sub 0.55–0.60 s | UI fractions 120–300 ms | CSS vars |
 
-## 4. Site intro — v6 chorus compression + mascot finale (current)
+## 4. Site intro — v7 mascot explainer (current)
+
+User storyboard 2026-10-25 (with three new mascot faces): drop-in → settle →
+hop → formula cards slide in left/right → zoom-explain each (held, other
+dimmed) with a 2 s checkmark per step → values converge to 1:1 → star-sparkle
+wink + head tilt → 0.45 s fade. 11.5 s total (INTRO_MS 11500, unchanged from
+v6, so no gate window moved). The v6 chorus-collage beats and the blur-whip
+grammar are retired; spacing comes from one `--in-gap` token on the stage and
+the card row; faces swap on steps() cuts (focus/happy/sparkle per step).
+Footage-derived timing knowledge below remains the source for the beat map
+and the song edit (`intro-v6-12s-plan.md`).
+
+### 4.00 Retired: v6 chorus compression + mascot finale
 
 User directive 2026-10-25: “keep it simple … close to the animation”. The 49 s
 of footage from 21 s (S5→S8) is compressed ~4.3:1 into **11.5 s** by keeping

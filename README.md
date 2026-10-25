@@ -110,26 +110,21 @@ Video/                the original reference MP4 (analysis source; never shipped
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro (v6 "chorus compression").** The homepage opens with an
-  ~11.5 s original composition rebuilt off the *whole chorus* of the inspected
-  reference footage (`Video/シェリーライド.mp4`, dev-only, never shipped): it starts
-  where the footage's main motion starts — the ramped flash at footage 21.4 s —
-  and compresses the 49 s from there ~4.3:1 by keeping ten native-speed beat
-  phrases cut on the footage's own beats, running that grid with the site's own
-  content in action: outlined topic slams (CHARGE → FIELD → CURRENT → FLUX →
-  INDUCTION) whip-swap with KaTeX equation chips (Coulomb, E = F/q, V = IR, Φ = BA,
-  ε = −dΦ/dt) through ~120 ms motion-blur whips, joined by equation bubble columns,
-  a corner cluster and an arc sweep. v6 (2026-10-25) compresses the footage's whole
-  21 s→end chorus ~4.3:1 into **11.5 s** by keeping ten native-speed beat phrases
-  and cutting on the footage's own beats, and closes on a mascot finale: one full
-  spin, a settled head tilt, a star-sparkle wink, then a fade-out to the homepage. Skippable, once per session
-  (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to a
-  static poster under `prefers-reduced-motion` — or to a blur-free `.lite` cut
-  (identical beat grid, transform-only smears) on low-tier devices, whose GPUs
-  drop frames on the animated Gaussian whips. The CSS timeline is pinned to the
-  JS master clock (`#introOverlay:not(.play)` holds every animation at t=0), so
-  a slow boot can never swallow the opening beats. `npm run intro-verify` proves
-  the whole contract; the timing map lives in `docs/reference/animation-reference.md`.
+- **Once-per-session intro (v7 explainer, ~11.5 s).** The homepage opens with a
+  mascot-forward explainer staged off the reference footage's chorus (dev-only
+  footage, never shipped): Denki-chan drops in from above, settles to centre,
+  hops once, then two formula cards slide in from left and right; each is
+  zoom-explained (held long enough to read, the other dimmed) and closed with a
+  2-second checkmark while the shared-charge story runs — +6 µC and −2 µC
+  contact-share to +2 µC each and the ratio badge pops **1 : 1**. The mascot's
+  three delivered faces swap per step (focus on the drop and zooms, happy squint
+  on the hop, sparkle on the checks), and the closer is a star-sparkle wink with
+  a held head tilt before a 0.45 s fade to the homepage. One gap token sets all
+  spacing; every move is eased; reduced motion gets a static poster; low-tier
+  devices need no special cut any more (v7 carries no blur at all). Skippable,
+  once per session (`emc.intro.v1`), never on chapter routes.
+  `npm run intro-verify` proves the contract; the beat map and the song edit
+  live in `docs/reference/intro-v6-12s-plan.md`.
   The client's drawn mascot artwork anchors every brand surface
   (hero, header/footer marks, favicon set, social card) — no SVG-generated
   mascot art remains; the hero mascot is capped (capped layout

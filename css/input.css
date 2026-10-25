@@ -1236,41 +1236,14 @@
   animation: in-vis 0s steps(1, end) 10.5s forwards,
              in-startin .18s cubic-bezier(.2,.8,.3,1) 10.5s both; }
 
-/* ---- whip grammar: the footage's motion-blur whips (1–2 frame smears) ----
-   Every moving part enters and leaves through a blur whip: a ~120 ms
-   scaleX smear with a decaying filter:blur(), the flat-art stand-in for the
-   footage's 1–2 frame horizontal smears, upgraded to a real blur at the
-   user's request. --r is the element's held rotation. -------------------- */
-@keyframes in-whipin {
-  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.55, .9); filter: blur(14px); }
-  55%  { opacity: 1; filter: blur(6px); }
-  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); filter: blur(0); }
-}
-@keyframes in-whipout {
-  0%   { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); filter: blur(0); }
-  100% { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.5, .92); filter: blur(12px); }
-}
-@keyframes in-pop {
-  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.5); filter: blur(6px); }
-  70%  { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1.12); filter: blur(0); }
-  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
-}
+/* ---- v7: the blur-whip grammar is retired with the v6 chorus cut — every
+   entrance is an eased transform now (user directive: keep it simple, ease
+   all movement). The discrete helpers below still serve the face/value
+   swaps and the CTA visibility flip. ------------------------------------ */
 @keyframes in-vis { to { visibility: visible; } }
 @keyframes in-hid { to { visibility: hidden; } }
 @keyframes in-on  { to { opacity: 1; } }
 @keyframes in-off { to { opacity: 0; } }
-
-/* ---- ramped flash #3 (f1284–1287): 4-step luminance ramp + ~320 ms decay -- */
-#introOverlay .in-dip { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 8;
-  animation: in-ramp .42s linear 0s both; }
-@keyframes in-ramp {
-  0%     { opacity: .25; animation-timing-function: steps(1, end); }
-  16.6%  { opacity: .40; animation-timing-function: steps(1, end); }
-  33.3%  { opacity: .58; animation-timing-function: steps(1, end); }
-  50%    { opacity: .80; animation-timing-function: steps(1, end); }
-  66.6%  { opacity: 1;  animation-timing-function: cubic-bezier(.16, .84, .44, 1); }
-  100%   { opacity: 0; }
-}
 
 /* ---- collage bed: present from frame zero, like the footage's S5 bed ----- */
 #introOverlay .in-field { position: absolute; inset: 0; background: #0e1a2e; }
@@ -1299,174 +1272,120 @@
 #introOverlay .in-chip-od { bottom: 7%; right: 3%; font-size: .68rem; letter-spacing: .12em;
   padding: .25em .7em; rotate: 1deg; }   /* clears the skip button on phones */
 
-/* ---- centre mascot pair: pose swaps on the beat grid, blur-whipped ------- */
-#introOverlay .in-mascot-wrap { position: absolute; left: 50%; top: 50%; z-index: 3;
-  width: clamp(190px, 34vmin, 360px); transform: translate(-50%, -52%);
-  animation:
-    in-pose .12s cubic-bezier(.3, .8, .4, 1) 1.3s,
-    in-pose .12s cubic-bezier(.3, .8, .4, 1) 3.85s,
-    in-pose .12s cubic-bezier(.3, .8, .4, 1) 6.4s,
-    in-pose .12s cubic-bezier(.3, .8, .4, 1) 8.1s,
-    in-spin .55s cubic-bezier(.45, .05, .35, 1) 9.8s both,
-    in-tilt .3s cubic-bezier(.3, 1.3, .4, 1) 10.35s both; }
-/* finale: one full spin, then a settled head tilt held into the wink */
-@keyframes in-spin {
-  0%   { transform: translate(-50%, -52%) perspective(700px) rotateY(0); }
-  100% { transform: translate(-50%, -52%) perspective(700px) rotateY(360deg); }
-}
-@keyframes in-tilt {
-  0%   { transform: translate(-50%, -52%) rotate(0); }
-  100% { transform: translate(-50%, -52%) rotate(-9deg); }
-}
-/* the wink star: flat-art sparkle pop beside the tilted head */
-#introOverlay .in-star { position: absolute; right: 2%; top: 4%; width: clamp(26px, 6vmin, 54px);
+/* ---- v7 explainer stage (user storyboard 2026-10-25) -----------------------
+   One flex column, one gap token: spacing between mascot, formula cards and
+   ratio badge is consistent by construction, at every viewport. Every move
+   is eased (cubic-bezier); the only steps() swaps are the discrete face
+   changes and value readouts, which are cuts by nature, not motion.
+   Timeline (s from .play):
+     0.00 mascot drops in from above (focus face)      0.60 land + settle to centre
+     1.00 one hop (squash & stretch, happy face)
+     1.45 formula cards slide in left + right (0.1 stagger)
+     2.05 zoom LEFT card, hold to read, zoom out (right card dims)
+     3.75 CHECK left: 2 s checkmark, then continue      (sparkle face)
+     5.75 zoom RIGHT card, hold, zoom out (left dims)    (focus face)
+     7.45 CHECK right: 2 s; on its end the contact happens: values swap to +2/+2
+     9.55 ratio badge pops 1:1 · 9.80 star · 9.90 head tilt (sparkle wink)
+    10.50 Start CTA · 11.05 fade-out (0.45 s)            INTRO_MS 11500            */
+#introOverlay .in-stage { position: absolute; inset: 0; z-index: 5;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--in-gap, clamp(14px, 4.2vmin, 38px)); padding: 4vh 4vw 9vh; }
+#introOverlay .in-mbox { position: relative; width: clamp(140px, 28vmin, 280px);
+  aspect-ratio: 409 / 415;
+  animation: in-drop .6s cubic-bezier(.45, .02, .55, 1) 0s both,      /* fall: ease-in */
+             in-settle .4s cubic-bezier(.2, .9, .3, 1.25) .6s both,   /* ease to centre */
+             in-hop .45s cubic-bezier(.3, .7, .4, 1) 1s both,         /* one hop */
+             in-tilt-end .3s cubic-bezier(.3, 1.3, .4, 1) 9.9s both; }/* wink tilt */
+@keyframes in-drop { 0% { transform: translateY(-115vh); } 100% { transform: translateY(0); } }
+@keyframes in-settle { 0% { transform: translateY(0) scale(1.06, .94); }
+  60% { transform: translateY(0) scale(.98, 1.02); } 100% { transform: translateY(0) scale(1); } }
+@keyframes in-hop { 0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(0) scale(1.1, .88); }
+  62% { transform: translateY(-11%) scale(.94, 1.06); }
+  100% { transform: translateY(0) scale(1); } }
+#introOverlay .in-face { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+/* expression swaps: drop/settle = focus, hop = happy, checks = sparkle, zooms = focus */
+#introOverlay .in-face-focus { animation:
+  in-on 0s steps(1, end) 0s forwards,     in-off 0s steps(1, end) 1s forwards,
+  in-on 0s steps(1, end) 1.45s forwards,  in-off 0s steps(1, end) 3.75s forwards,
+  in-on 0s steps(1, end) 5.75s forwards,  in-off 0s steps(1, end) 7.45s forwards; }
+#introOverlay .in-face-happy { animation:
+  in-on 0s steps(1, end) 1s forwards,     in-off 0s steps(1, end) 1.45s forwards; }
+#introOverlay .in-face-sparkle { animation:
+  in-on 0s steps(1, end) 3.75s forwards,  in-off 0s steps(1, end) 5.75s forwards,
+  in-on 0s steps(1, end) 7.45s forwards; }
+#introOverlay .in-star { position: absolute; right: -4%; top: 2%; width: clamp(24px, 5.5vmin, 50px);
   aspect-ratio: 1; opacity: 0; background: #e9ff47;
   clip-path: polygon(50% 0%, 62% 34%, 98% 36%, 70% 58%, 80% 94%, 50% 72%, 20% 94%, 30% 58%, 2% 36%, 38% 34%);
-  animation: in-star .35s cubic-bezier(.2, 1.4, .4, 1) 10.45s both; }
+  animation: in-star .35s cubic-bezier(.2, 1.4, .4, 1) 9.8s both; }
 @keyframes in-star {
   0%   { opacity: 0; transform: scale(.2) rotate(-40deg); }
   60%  { opacity: 1; transform: scale(1.3) rotate(10deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); }
-}
-#introOverlay .in-mascot { display: block; width: 100%; height: auto; }
-#introOverlay .in-mascot-sparkle { position: absolute; inset: 0; opacity: 0;
-  animation: in-on 0s steps(1, end) 10.45s forwards; }   /* the wink: swaps once, stays */
-@keyframes in-pose {
-  0%   { transform: translate(-50%, -52%) scale(1); filter: blur(0); }
-  45%  { transform: translate(-50%, -52%) scale(.88, 1.07); filter: blur(7px); }
-  100% { transform: translate(-50%, -52%) scale(1); filter: blur(0); }
-}
+  100% { opacity: 1; transform: scale(1) rotate(0); } }
+/* formula cards: slide in from each side, same gap token as the column */
+#introOverlay .in-row { display: flex; align-items: stretch;
+  gap: var(--in-gap, clamp(14px, 4.2vmin, 38px)); }
+#introOverlay .in-card2 { position: relative; display: grid; justify-items: center;
+  gap: .3em; background: #fdf3f6; color: #10131a; border: 3px solid #0b0c0e;
+  border-radius: 14px; padding: .55em .8em .65em; min-width: clamp(150px, 26vmin, 250px);
+  box-shadow: 5px 6px 0 rgba(11, 12, 14, .45); }
+#introOverlay .in-left  { animation: in-slideL .6s cubic-bezier(.2, .8, .3, 1) 1.45s both,
+  in-zoom 1.7s cubic-bezier(.3, .7, .3, 1) 2.05s both, in-dim 1.7s cubic-bezier(.3, .7, .3, 1) 5.75s both; }
+#introOverlay .in-right { animation: in-slideR .6s cubic-bezier(.2, .8, .3, 1) 1.55s both,
+  in-zoom 1.7s cubic-bezier(.3, .7, .3, 1) 5.75s both, in-dim 1.7s cubic-bezier(.3, .7, .3, 1) 2.05s both; }
+@keyframes in-slideL { 0% { opacity: 0; transform: translateX(-72px) rotate(-2deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0); } }
+@keyframes in-slideR { 0% { opacity: 0; transform: translateX(72px) rotate(2deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0); } }
+/* zoom in, HOLD long enough to read (~0.7 s at full scale), zoom back out */
+@keyframes in-zoom { 0% { transform: scale(1); } 28% { transform: scale(1.3); }
+  72% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes in-dim { 0%, 100% { opacity: 1; } 28%, 72% { opacity: .45; } }
+#introOverlay .in-card2 b { font: 800 .72rem/1 theme('fontFamily.ui'); letter-spacing: .08em;
+  background: #101d33; color: #fff; border-radius: 999px; padding: .22em .8em; }
+#introOverlay .in-eq { font-size: clamp(.95rem, 2.6vmin, 1.35rem); color: #14161d; }
+#introOverlay .in-val { font-style: normal; font-weight: 800;
+  font-size: clamp(1rem, 3vmin, 1.5rem); color: #10131a; }
+#introOverlay .in-val-l2, #introOverlay .in-val-r2 { position: absolute; left: 0; right: 0;
+  bottom: .65em; text-align: center; opacity: 0; }
+#introOverlay .in-val-l1 { animation: in-off 0s steps(1, end) 9.45s forwards; }
+#introOverlay .in-val-r1 { animation: in-off 0s steps(1, end) 9.45s forwards; }
+#introOverlay .in-val-l2 { animation: in-on 0s steps(1, end) 9.45s forwards; }
+#introOverlay .in-val-r2 { animation: in-on 0s steps(1, end) 9.45s forwards; }
+/* 2-second checkmark per step: draw, hold, then the next step continues */
+#introOverlay .in-check { position: absolute; right: -12px; top: -14px; width: 40px; height: 40px;
+  color: #b5d777; background: #101d33; border: 2.5px solid #0b0c0e; border-radius: 50%;
+  padding: 6px; opacity: 0; }
+#introOverlay .in-left .in-check { animation: in-on .2s ease 3.75s both,
+  in-off .2s ease 5.75s forwards; }
+#introOverlay .in-right .in-check { animation: in-on .2s ease 7.45s both,
+  in-off .2s ease 9.45s forwards; }
+#introOverlay .in-check path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+#introOverlay .in-left .in-check path { animation: in-draw .45s cubic-bezier(.3, .7, .4, 1) 3.8s both; }
+#introOverlay .in-right .in-check path { animation: in-draw .45s cubic-bezier(.3, .7, .4, 1) 7.5s both; }
+@keyframes in-draw { to { stroke-dashoffset: 0; } }
+/* convergence: the shared-charge values meet at 1:1 */
+#introOverlay .in-ratio { align-self: center; font-family: theme('fontFamily.title');
+  font-weight: 800; font-size: clamp(1.5rem, 5vmin, 2.6rem); color: #e9ff47;
+  -webkit-text-stroke: 1.2px #10131a; text-shadow: .06em .07em 0 #1b2a44;
+  opacity: 0; animation: in-ratio .45s cubic-bezier(.2, 1.4, .4, 1) 9.55s both; }
+@keyframes in-ratio { 0% { opacity: 0; transform: scale(.4) rotate(-6deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); } }
+/* (head tilt lives in the .in-mbox animation list above; star + sparkle face
+   carry the wink) */
+@keyframes in-tilt-end { 0% { transform: rotate(0); } 100% { transform: rotate(-9deg); } }
 
-/* ---- topic slams: outlined white type, one per beat ---------------------- */
-#introOverlay .in-slam { position: absolute; z-index: 5; opacity: 0;
-  font-family: theme('fontFamily.title'); font-weight: 800;
-  font-size: clamp(2.2rem, 7.4vw, 5rem); line-height: .95; color: #fff;
-  -webkit-text-stroke: 3px #10131a; text-shadow: .06em .07em 0 #1b2a44;
-  animation: in-whipin .14s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
-             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
-#introOverlay .in-s1 { --ti: .45s;  --to: 1.3s;   --r: -8deg; top: 10%; left: 5%; }
-#introOverlay .in-s2 { --ti: 2.15s; --to: 3s;     --r: 6deg;  bottom: 24%; left: 8%; }
-#introOverlay .in-s3 { --ti: 3.85s; --to: 4.7s;   --r: -6deg; top: 8%; left: 16%; }
-#introOverlay .in-s4 { --ti: 5.55s; --to: 6.4s;   --r: 7deg;  top: 30%; left: 4%; }
-#introOverlay .in-s5 { --ti: 7.25s; --to: 8.1s;   --r: -7deg; bottom: 30%; left: 12%; }
-
-/* ---- equation chips: KaTeX on navy plates, whipped in and out ------------ */
-#introOverlay .in-eqchip { position: absolute; z-index: 5; opacity: 0;
-  background: #101d33; color: #fff; border: 3px solid #0b0c0e; border-radius: 12px;
-  padding: .3em .65em; font-size: clamp(1.05rem, 3.4vw, 1.9rem);
-  box-shadow: 5px 6px 0 rgba(11, 12, 14, .45);
-  animation: in-whipin .14s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
-             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
-#introOverlay .in-f1 { --ti: 1.3s;  --to: 2.15s;  --r: 5deg;  top: 18%; right: 6%; }
-#introOverlay .in-f2 { --ti: 3s;    --to: 3.85s;  --r: -5deg; top: 9%; right: 20%; }
-#introOverlay .in-f3 { --ti: 4.7s;  --to: 5.55s;  --r: 7deg;  bottom: 16%; right: 9%; }
-#introOverlay .in-f4 { --ti: 6.4s;  --to: 7.25s;  --r: -6deg; top: 32%; right: 5%; }
-#introOverlay .in-f5 { --ti: 8.1s;  --to: 8.95s;  --r: 4deg;  bottom: 11%; right: 14%; }
-
-/* ---- vertical equation bubble columns, word-by-word ---------------------- */
-#introOverlay .in-vcol { position: absolute; z-index: 5; display: flex; flex-direction: column;
-  gap: 6px; align-items: center;
-  animation: in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
-#introOverlay .in-vcol > span { opacity: 0; background: #fdf3f6; color: #10131a;
-  border: 2.5px solid #10131a; border-radius: 10px; padding: .12em .5em;
-  font-weight: 800; font-size: clamp(1rem, 2.6vw, 1.5rem);
-  animation: in-pop .12s cubic-bezier(.2, .8, .3, 1) var(--d) both; }
-#introOverlay .in-vcol > span:nth-child(2) { --d: calc(var(--t0) + .18s); }
-#introOverlay .in-vcol > span:nth-child(3) { --d: calc(var(--t0) + .36s); }
-#introOverlay .in-vcol > span:nth-child(1) { --d: var(--t0); }
-#introOverlay .in-vcol1 { --t0: 2.6s; --to: 3.8s; top: 34%; left: 24%; rotate: -4deg; }
-#introOverlay .in-vcol2 { --t0: 5.1s; --to: 6.3s; top: 40%; right: 24%; rotate: 4deg; }
-
-/* ---- corner cluster: four rotated boxes, one beat ------------------------ */
-#introOverlay .in-cx { position: absolute; z-index: 5; opacity: 0;
-  background: #fdf3f6; color: #10131a; border: 3px solid #10131a; border-radius: 9px;
-  padding: .18em .5em; font-weight: 800; font-size: clamp(1rem, 2.8vw, 1.7rem);
-  animation: in-cxslam .13s cubic-bezier(.2, .8, .3, 1) var(--ti) both,
-             in-whipout .12s cubic-bezier(.55, 0, .8, .4) var(--to) forwards; }
-#introOverlay .in-cx1 { --ti: 8.95s; --to: 9.75s; --r: -10deg; top: 7%; left: 6%; }
-#introOverlay .in-cx2 { --ti: 9.01s; --to: 9.75s; --r: 9deg;   top: 6%; right: 7%; }
-#introOverlay .in-cx3 { --ti: 9.07s; --to: 9.75s; --r: 8deg;   bottom: 9%; left: 8%; }
-#introOverlay .in-cx4 { --ti: 9.13s; --to: 9.75s; --r: -9deg;  bottom: 8%; right: 6%; }
-@keyframes in-cxslam {
-  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.7); filter: blur(9px); }
-  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); filter: blur(0); }
-}
-
-/* ---- arc sweep: curved outlined letters across the top ------------------- */
-#introOverlay .in-arc { position: absolute; left: 50%; top: 47%; z-index: 4;
-  animation: in-whipout .12s cubic-bezier(.55, 0, .8, .4) 9.75s forwards; }
-#introOverlay .in-arc b { position: absolute; left: 0; top: 0; font-weight: 800; opacity: 0;
-  font-size: clamp(.95rem, 2.6vw, 1.6rem); color: #fff; -webkit-text-stroke: 2px #10131a;
-  transform: rotate(var(--a)) translateY(var(--rad, -40vmin));
-  animation: in-arcpop .16s cubic-bezier(.2, .8, .3, 1) var(--d) both; }
-@keyframes in-arcpop {
-  0%   { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--rad, -40vmin) + 34px)); filter: blur(7px); }
-  100% { opacity: 1; transform: rotate(var(--a)) translateY(var(--rad, -40vmin)); filter: blur(0); }
-}
-
-/* ---- reduced motion: static poster of the collage, cleared by intro.js --- */
+/* ---- reduced motion: static poster — settled mascot, both cards, final
+       values, checks drawn, ratio shown; cleared by intro.js in ~1.2 s ---- */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
-#introOverlay.rm .in-dip, #introOverlay.rm .in-arc, #introOverlay.rm .in-vcol,
-#introOverlay.rm .in-cx, #introOverlay.rm .in-mascot-sparkle, #introOverlay.rm .in-star { display: none; }
-#introOverlay.rm .in-s1, #introOverlay.rm .in-f1, #introOverlay.rm .in-s3,
-#introOverlay.rm .in-f3 { opacity: 1; }
-#introOverlay.rm .in-start { opacity: 1; visibility: visible; }
-
-/* ---- low-tier cut: identical beat grid, transform-only smears -------------
-   Animating filter: blur() re-rasterises every moving layer on every frame —
-   the one effect in this composition that reliably drops frames on weak GPUs
-   (measured: a mid-tier phone profile loses ~150 frames across the 14 s).
-   On EMC.lowTier devices (small high-DPR screens, or coarse pointer with
-   ≤4 cores — the same tier that already caps Stage at 30 fps) intro.js adds
-   .lite, which swaps each whip's keyframes for blur-free variants: same
-   timings, same scale/rotate/opacity smear shapes, wider scale excursions to
-   carry the motion the blur used to sell. Full-fidelity machines keep the
-   Gaussian whips exactly as composed. */
-@keyframes in-whipin-lite {
-  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.66, .84); }
-  55%  { opacity: 1; }
-  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
-}
-@keyframes in-whipout-lite {
-  0%   { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
-  100% { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.6, .86); }
-}
-@keyframes in-pop-lite {
-  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.46); }
-  70%  { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1.14); }
-  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
-}
-@keyframes in-pose-lite {
-  0%   { transform: translate(-50%, -52%) scale(1); }
-  45%  { transform: translate(-50%, -52%) scale(.85, 1.1); }
-  100% { transform: translate(-50%, -52%) scale(1); }
-}
-@keyframes in-cxslam-lite {
-  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.85, .8); }
-  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
-}
-@keyframes in-arcpop-lite {
-  0%   { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--rad, -40vmin) + 38px)) scale(1.35, .78); }
-  100% { opacity: 1; transform: rotate(var(--a)) translateY(var(--rad, -40vmin)) scale(1); }
-}
-@keyframes in-startin-lite {
-  0%   { opacity: 0; transform: translateX(-50%) scale(.66); }
-  70%  { opacity: 1; transform: translateX(-50%) scale(1.08); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1); }
-}
-/* name swaps only: every delay, duration and easing longhand set by the base
-   rules is inherited untouched, so the beat grid is bit-identical to the
-   full-fidelity cut (.lite outranks the base selectors by one class). */
-#introOverlay.lite .in-slam,
-#introOverlay.lite .in-eqchip { animation-name: in-whipin-lite, in-whipout-lite; }
-#introOverlay.lite .in-vcol { animation-name: in-whipout-lite; }
-#introOverlay.lite .in-vcol > span { animation-name: in-pop-lite; }
-#introOverlay.lite .in-cx { animation-name: in-cxslam-lite, in-whipout-lite; }
-#introOverlay.lite .in-arc { animation-name: in-whipout-lite; }
-#introOverlay.lite .in-arc b { animation-name: in-arcpop-lite; }
-#introOverlay.lite .in-mascot-wrap { animation-name: in-pose-lite, in-pose-lite, in-pose-lite,
-  in-pose-lite, in-pose-lite, in-pose-lite; }
-#introOverlay.lite .in-start { animation-name: in-vis, in-startin-lite; }
+#introOverlay.rm .in-face-focus, #introOverlay.rm .in-face-happy,
+#introOverlay.rm .in-val-l1, #introOverlay.rm .in-val-r1 { display: none; }
+#introOverlay.rm .in-face-sparkle, #introOverlay.rm .in-star { opacity: 1; }
+#introOverlay.rm .in-val-l2, #introOverlay.rm .in-val-r2 { opacity: 1; }
+#introOverlay.rm .in-check { opacity: 1; }
+#introOverlay.rm .in-check path { stroke-dashoffset: 0; }
+#introOverlay.rm .in-ratio { opacity: 1; }
+#introOverlay.rm .in-mbox { transform: rotate(-9deg); }
 
 /* ==========================================================================
    Site-wide motion system (js/motion.js + [data-mx] markup).

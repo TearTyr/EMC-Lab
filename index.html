@@ -131,31 +131,37 @@
       <img class="in-mascot in-mascot-sparkle" src="img/mascot-sparkle.png" width="355" height="360" alt="">
       <i class="in-star"></i>
     </span>
-    <!-- topic slams: outlined white type, one per beat, blur-whip in and out -->
-    <span class="in-slam in-s1" aria-hidden="true">CHARGE</span>
-    <span class="in-slam in-s2" aria-hidden="true">FIELD</span>
-    <span class="in-slam in-s3" aria-hidden="true">CURRENT</span>
-    <span class="in-slam in-s4" aria-hidden="true">FLUX</span>
-    <span class="in-slam in-s5" aria-hidden="true">INDUCTION</span>
-    <!-- equation chips: typeset by the site-wide [data-tex] KaTeX pipeline -->
-    <span class="in-eqchip in-f1" aria-hidden="true"><span data-tex="F = k\dfrac{q_1 q_2}{r^2}">F = k·q₁q₂/r²</span></span>
-    <span class="in-eqchip in-f2" aria-hidden="true"><span data-tex="E = \dfrac{F}{q}">E = F/q</span></span>
-    <span class="in-eqchip in-f3" aria-hidden="true"><span data-tex="V = I R">V = I·R</span></span>
-    <span class="in-eqchip in-f4" aria-hidden="true"><span data-tex="\Phi = B A">Φ = B·A</span></span>
-    <span class="in-eqchip in-f5" aria-hidden="true"><span data-tex="\varepsilon = -\dfrac{d\Phi}{dt}">ε = −dΦ/dt</span></span>
-    <!-- vertical equation bubble columns, popped word-by-word -->
-    <span class="in-vcol in-vcol1" aria-hidden="true"><span>E</span><span>=</span><span>F/q</span></span>
-    <span class="in-vcol in-vcol2" aria-hidden="true"><span>V</span><span>=</span><span>I·R</span></span>
-    <!-- corner cluster: four rotated boxes slam on one beat -->
-    <span class="in-cx in-cx1" aria-hidden="true">CH·1</span>
-    <span class="in-cx in-cx2" aria-hidden="true">CH·2</span>
-    <span class="in-cx in-cx3" aria-hidden="true">CH·3</span>
-    <span class="in-cx in-cx4" aria-hidden="true">QUIZ</span>
-    <!-- arc sweep: curved outlined text (letter spans built by js/intro.js) -->
-    <span class="in-arc" data-arc="ELECTROMAGNETICS IN MOTION" aria-hidden="true"></span>
-    <!-- finale: mascot spin → head tilt → star-sparkle wink → fade out -->
+    <!-- v7 explainer stage: mascot drops in, hops, then two formula cards
+         slide in from left/right; each is zoom-explained and checked, the
+         shared-charge values converge to 1:1, then the wink finale.
+         Flex column + one gap token = consistent spacing by construction. -->
+    <div class="in-stage" aria-hidden="true">
+      <span class="in-mbox">
+        <img class="in-face in-face-focus" src="img/mascot-face-focus.png" width="409" height="415" alt="">
+        <img class="in-face in-face-happy" src="img/mascot-face-happy.png" width="409" height="415" alt="">
+        <img class="in-face in-face-sparkle" src="img/mascot-face-sparkle.png" width="409" height="415" alt="">
+        <i class="in-star"></i>
+      </span>
+      <span class="in-row">
+        <span class="in-card2 in-left">
+          <b>conductor 1</b>
+          <span class="in-eq" data-tex="q' = \dfrac{q_1 + q_2}{2}">q' = (q₁+q₂)/2</span>
+          <i class="in-val in-val-l1">q₁ = +6 µC</i>
+          <i class="in-val in-val-l2">q₁ = +2 µC</i>
+          <svg class="in-check" viewBox="0 0 48 48"><path pathLength="1" d="M10 26 l10 10 l18 -24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="in-ratio">1 : 1</span>
+        <span class="in-card2 in-right">
+          <b>conductor 2</b>
+          <span class="in-eq" data-tex="q' = \dfrac{q_1 + q_2}{2}">q' = (q₁+q₂)/2</span>
+          <i class="in-val in-val-r1">q₂ = −2 µC</i>
+          <i class="in-val in-val-r2">q₂ = +2 µC</i>
+          <svg class="in-check" viewBox="0 0 48 48"><path pathLength="1" d="M10 26 l10 10 l18 -24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </span>
+    </div>
+    <!-- finale: ratio badge → star-sparkle wink + head tilt → fade out -->
     <a class="btn btn-primary in-start" href="topics/current.html">Start Learning</a>
-    <i class="in-dip" aria-hidden="true"></i>
     <button class="intro-skip" id="introSkip" type="button">Skip intro &rarr;</button>
   </div>
   <a class="skip-link" href="#main">Skip to main content</a>

@@ -1625,42 +1625,42 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \{[^}]*pointer-events: none/.test(css) &&
     /\.intro-skip \{[^}]*pointer-events: auto/.test(css) &&
     /\.in-start \{[^}]*pointer-events: auto/.test(css));
-  /* CONTRACT CHANGE (2026-10-24, user directive "redo the intro … with blur
-     and stuff"): the chorus-cut intro (v6 grid) whips every entrance/exit through a
-     ~120 ms filter:blur smear (the footage's 1-2 frame motion-blur whips,
-     f1410-1440). The blur ban now holds site-wide EXCEPT the intro overlay,
-     which is the one place the footage's smear grammar is quoted verbatim;
-     motion stays CSS-keyframes-only (no rAF, no audio) either way. */
-  ok('intro motion is CSS keyframes only; blur whips live in the intro overlay alone',
-    /@keyframes in-whipin \{[\s\S]{0,240}?blur\(14px\)/.test(css) &&
-    /@keyframes in-whipout \{[\s\S]{0,240}?blur\(12px\)/.test(css) &&
-    !/blur\(/.test(
-      css.slice(css.indexOf('Site-wide motion system')).replace(/\/\*[\s\S]*?\*\//g, '')));
+  /* CONTRACT CHANGE (2026-10-25, intro v7 explainer re-stage, user directive
+     "keep it simple … new mascot faces … ease all movement"): the v6 blur
+     whips are GONE — every entrance is an eased transform now, so the blur ban
+     is strengthened back to site-wide (comment-stripped source scan). */
+  ok('intro motion is CSS keyframes only; no blur anywhere in the stylesheet',
+    !/blur\(/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')));
   const idx = readFileSync(join(ROOT, 'index.html'), 'utf8');
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
     /class="btn btn-primary in-start" href="topics\/current\.html"/.test(idx));
-  ok('hero + intro use the supplied mascot art with explicit dimensions (no CLS)',
+  ok('hero keeps the supplied mascot art; intro ships the three new faces with explicit dimensions (no CLS)',
     /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
-    /<img class="in-mascot" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
-    /<img class="in-mascot in-mascot-sparkle" src="img\/mascot-sparkle\.png"/.test(idx));
-  ok('chorus cut: topic slams + equation chips whip-swap on the beat grid (footage S5 grammar)',
-    /#introOverlay \.in-slam \{[^}]*-webkit-text-stroke: 3px #10131a/.test(css) &&
-    /#introOverlay \.in-eqchip \{[^}]*background: #101d33/.test(css) &&
-    /@keyframes in-whipin \{/.test(css) && /@keyframes in-whipout \{/.test(css) &&
-    /@keyframes in-ramp \{[^}]*steps\(1, end\)/.test(css) &&
-    /#introOverlay \.in-s1 \{ --ti: \.45s/.test(css) &&
-    /#introOverlay \.in-f5 \{ --ti: 8\.1s/.test(css) &&
+    /<img class="in-face in-face-focus" src="img\/mascot-face-focus\.png" width="409" height="415"/.test(idx) &&
+    /<img class="in-face in-face-happy" src="img\/mascot-face-happy\.png" width="409" height="415"/.test(idx) &&
+    /<img class="in-face in-face-sparkle" src="img\/mascot-face-sparkle\.png" width="409" height="415"/.test(idx));
+  /* v7 storyboard (user 2026-10-25): drop → settle → hop → formulas slide in
+     left+right → zoom-explain each (held) → 2 s checkmark per step → values
+     converge to 1:1 → star-sparkle wink + tilt → fade. */
+  ok('v7 grammar: drop, settle, hop, eased slides, held zooms, ratio pop',
+    /@keyframes in-drop \{/.test(css) && /@keyframes in-settle \{/.test(css) &&
+    /@keyframes in-hop \{/.test(css) && /@keyframes in-slideL \{/.test(css) &&
+    /@keyframes in-slideR \{/.test(css) &&
+    /@keyframes in-zoom \{[\s\S]{0,120}?28% \{ transform: scale\(1\.3\)/.test(css) &&
+    /@keyframes in-ratio \{/.test(css) &&
     /* the v4 1:6 whole-video cut is gone for good */
     !/in-cola|in-skit|in-insert|in-insetspin|in-endcard/.test(css));
-  ok('chorus cut: vcols, speech panels, corner cluster, arc sweep, navy chips, wipe',
-    /#introOverlay \.in-vcol > span \{[^}]*background: #fdf3f6/.test(css) &&
-    /@keyframes in-cxslam \{/.test(css) && /@keyframes in-arcpop \{/.test(css) &&
-    /* v6 finale grammar (2026-10-25): spin → head tilt → star-sparkle wink →
-       fade-out replaced the speech panels / navy chips / callback / letterbox
-       wipe of the v5 cut (user directive: keep it simple, end on the wink). */
-    /@keyframes in-spin \{/.test(css) && /@keyframes in-tilt \{/.test(css) &&
-    /@keyframes in-star \{/.test(css) && /@keyframes in-fadeout \{/.test(css));
+  ok('v7 steps: two 2-second checkmarks, value swap to 1:1, wink tilt + star + fade',
+    /#introOverlay \.in-left \.in-check \{ animation: in-on \.2s ease 3\.75s both,\n  in-off \.2s ease 5\.75s forwards; \}/.test(css) &&
+    /#introOverlay \.in-right \.in-check \{ animation: in-on \.2s ease 7\.45s both,\n  in-off \.2s ease 9\.45s forwards; \}/.test(css) &&
+    /@keyframes in-draw \{/.test(css) &&
+    /#introOverlay \.in-val-l2 \{ animation: in-on 0s steps\(1, end\) 9\.45s forwards; \}/.test(css) &&
+    /@keyframes in-tilt-end \{/.test(css) && /@keyframes in-star \{/.test(css) &&
+    /@keyframes in-fadeout \{/.test(css));
+  ok('v7 spacing is one gap token on the stage and the card row (consistent by construction)',
+    /#introOverlay \.in-stage \{[^}]*gap: var\(--in-gap/.test(css) &&
+    /#introOverlay \.in-row \{[^}]*gap: var\(--in-gap/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 20000);
@@ -1668,11 +1668,11 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \.in-card \{[^}]*background: #9fd0f7/.test(css) &&
     /#introOverlay \.in-wedge \{[^}]*clip-path: polygon/.test(css) &&
     /#introOverlay \.in-chip-name \{[^}]*rotate: -1deg/.test(css) &&
-    /#introOverlay \.in-mascot-wrap \{[^}]*in-pose \.12s/.test(css));
+    /#introOverlay \.in-mbox \{[^}]*in-drop \.6s/.test(css));
   const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
   ok('built stylesheet carries the phase-8 motion system + intro whip (minified)',
     /@keyframes mx-flash\{/.test(siteCss) && /@keyframes mx-rise\{/.test(siteCss) &&
-    /@keyframes mx-slam\{/.test(siteCss) && /@keyframes in-whipin\{/.test(siteCss) &&
+    /@keyframes mx-slam\{/.test(siteCss) && /@keyframes in-drop\{/.test(siteCss) &&
     /\.mx-paused \*/.test(siteCss) && /--mx-flash:\.26s|--mx-flash:0\.26s|--mx-flash: \.26s/.test(siteCss) === false ? /@keyframes mx-whip\{/.test(siteCss) : true);
   ok('no other page ships the intro markup',
     ['quiz.html', 'topics/fields.html', 'topics/current.html', 'topics/magind.html']
