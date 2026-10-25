@@ -127,6 +127,12 @@
     }
 
     const reducedMotion = Boolean(window.EMC && window.EMC.reducedMotion);
+    /* Low-tier devices (the same signal that caps Stage at 30 fps) get the
+       .lite cut of the whips: an animated Gaussian blur re-rasterises every
+       moving layer per frame and is the composition's only reliable
+       frame-dropper on weak GPUs. The lite keyframes keep the beat grid and
+       timings identical and smear with transforms alone. */
+    if (window.EMC && window.EMC.lowTier) overlay.classList.add('lite');
     playing = true;
 
     if (reducedMotion) overlay.classList.add('rm');

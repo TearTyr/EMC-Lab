@@ -3,6 +3,19 @@
 
 window.EMC = (function () {
 
+  /* RE-EXECUTION GUARD — this module boots the whole page (loader lifecycle,
+     nav, Detail toggle, page transitions, prefetch). It must run exactly ONCE
+     per document: a second execution re-runs boot() and DOUBLE-BINDS every
+     page-level handler, so one click flips state twice — the Detail toggle
+     nets to zero (dead), the topics dropdown and mobile menu open-then-close
+     (dead), and the loader re-arms. That is precisely what the shell's
+     per-mount script replay did to the hashed production build before its
+     skip-list became basename/hash-aware; this guard makes the failure
+     structurally impossible no matter who injects the file again. A live
+     engine is returned untouched — sims re-executed per mount must keep
+     binding through the SAME EMC (stages, storage, loader, tracked counts). */
+  if (window.EMC && window.EMC.loader && window.EMC.Progress) return window.EMC;
+
   /* ------------------------------------------------------------------------ 1. Physical constants (SI units) ------------------------------------------------------------------------ */
   const CONST = {
     /* Coulomb constant k = 1/(4*pi*eps0) [N m^2 C^-2]. The lecture (and the

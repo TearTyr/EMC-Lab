@@ -22,7 +22,8 @@
     "intro-verify": "node tools/intro-verify.mjs",
     "motion-verify": "node tools/motion-verify.mjs",
     "asset-verify": "node tools/asset-verify.mjs",
-    "stability-stress": "node tools/stability-stress.mjs"
+    "stability-stress": "node tools/stability-stress.mjs",
+    "verify:prod": "node tools/prod-verify.mjs"
   },
   "devDependencies": {
     "jsdom": "^27.4.0",

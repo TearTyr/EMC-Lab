@@ -55,6 +55,13 @@ the 2026-10-24 consolidation.
 | PHASE-9 | — | Intro v4: 1:6 reference cut (9c) + S4 at footage tempo (9d) | Superseded by PHASE-10 |
 | PHASE-10 | — | Intro v5 "chorus cut" rebuilt off footage 21 s (main motion), topics + formulas with blur whips | Current — `docs/reference/animation-reference.md` §4 |
 | CLEANUP-26-10-24 | — | Purpose-based repo restructure (evidence piles, archive, one-off tools removed) | Done — this register is its survivor |
+| INTRO-03 | High | Intro CSS timeline ran from page-parse, JS master clock from `.play`: slow boots played the opening beats invisibly, joined mid-composition and froze on the closed letterbox tail (measured 767 ms drift with an 800 ms-delayed dependency; up to ~1.5 s at the watchdog ceiling) | Fixed — `#introOverlay:not(.play)` pauses the subtree at t=0; `currentTime = 0` at `.play` verified under delayed boot |
+| INTRO-04 | Med | Animated blur whips re-rasterise per frame: ~150 dropped frames + 1.0 s worst frame on a mid-tier phone profile across the 14 s composition | Fixed — `.lite` cut on `EMC.lowTier` (blur-free keyframe swaps, identical beat grid); worst frame −44 %; full fidelity elsewhere |
+| SHELL-01 | Med | A transient sim-script fetch failure cached `''` for the whole session — that chapter's sims stayed silently dead across every later mount until a full reload | Fixed — failures are never cached; the next mount retries |
+| DEPLOY-02 | Low | `/img/` + `/favicon.ico` served `max-age=0, must-revalidate`: a revalidation round trip per image per pageview | Fixed — 24 h cache headers in `vercel.json`; og-card cache-buster bumped ?v=4→?v=5 on all five pages |
+| ASSET-01 | Low | Repo/deploy hygiene: 56 KB of unreferenced woff2 (lilita-one, m-plus-rounded-1c ×2) shipped to production; og-card.png 877 KB; dead `window.tailwind` inline script on all five pages (CDN-era leftover) | Fixed — fonts removed, og-card losslessly recompressed to 601 KB (pixels verified identical, IHDR gate intact), dead script removed |
+| GATE-01 | Med | smoke-test's two blur/gradient ban scans keyed a marker string (`PHASE 8 — site-wide motion system`) that no longer exists in input.css → `indexOf` = −1 → both scans silently degenerated to a one-character slice (vacuous since the phase-8 comment was retitled) | Fixed — re-pointed to the real header `Site-wide motion system`; strictness increase, logged in §2 |
+| SHELL-02 | Crit | **Production-only:** the shell's hard-coded skip list (`'registry.js','common.js','motion.js'` substring match) missed content-hashed production names (`common.58f7f516.js` ∌ `common.js`) → **common.js re-executed on every shell chapter mount**, re-running boot(): Detail toggle dead after the first chapter visit (double-bound handler flips twice = net zero), Topics dropdown and mobile nav menu dead (open-then-cancel), boot loader re-armed (overlay flash), scroll/prefetch/transition listeners accumulating. Every behavioural gate serves the UNHASHED source layout, where the filter works — so the whole suite stayed green while the deployed site rotted per chapter switch. Repro: visit any chapter from the homepage, then flip Details / open the dropdown | Fixed — shell skip-set is now basename-matched against the scripts index actually loaded (hash-proof, `js/shell.js` LOADED) + common.js carries a re-execution guard (a live engine is returned, never re-booted); new production-layout gate `tools/prod-verify.mjs` (`npm run verify:prod`, 14 checks) proven to FAIL 7 checks on the pre-fix build |
 
 ## 2. Binding contract changes (test-change justification log)
 
@@ -105,6 +112,34 @@ the gates today:
 - **Start-CTA focus gate (PHASE-10 follow-up):** the intro CTA is
   `visibility: hidden` until it pops so `introSkip` stays the first tab stop
   (`a11y-verify` gate A0).
+- **Motion-marker re-point (GATE-01, 2026-10-25):** smoke-test's two
+  blur/gradient ban scans (`cssNoIntro` and the "blur whips live in the intro
+  overlay alone" tail scan) keyed the marker `PHASE 8 — site-wide motion
+  system`, which has not existed in input.css since the section was retitled
+  `Site-wide motion system`: `indexOf` returned −1, `slice(−1)` yielded a
+  one-character slice and both bans silently scanned nothing. Re-pointed at
+  the real header — a strictness INCREASE (the motion-system and ch-art CSS
+  are now genuinely scanned and pass; the post-marker region was verified
+  free of gradient/backdrop-filter/blur tokens before the change). Assertion
+  logic is otherwise byte-identical.
+- **Intro clock sync + low-tier cut (INTRO-03/INTRO-04, 2026-10-25):** no
+  gate window or assertion changed. The `#introOverlay:not(.play)` pause rule
+  pins the CSS beat grid to the JS master clock (all 12 intro-verify checks
+  green; measured auto-end ≈14.5 s, unchanged) and the `.lite` keyframe swaps
+  are name-only overrides that inherit every delay/duration/easing, so the
+  v5 grammar assertions (stroke, whip keyframes, ramp steps, collage bed)
+  hold on both cuts — smoke asserts the blur whips exist in source, which
+  they still do, unchanged, for full-fidelity machines.
+- **Production-layout gate (SHELL-02, 2026-10-25):** NEW gate
+  `tools/prod-verify.mjs` (`npm run verify:prod`) — an addition, no existing
+  assertion re-pointed. It runs the shell-mount-affected contracts (engine
+  identity across mounts, Detail-toggle flips after one AND two mounts,
+  dropdown, 360 px nav menu, zero re-created boot overlays, lazy sim init,
+  zero errors) against the HASHED `public/` build, because every pre-existing
+  behavioural gate serves the source layout and a source-layout-only suite
+  passed while production was broken. Proven to catch the original bug:
+  7 FAILs on the pre-fix build, PASS after. `build:public` auto-runs when
+  `public/` is missing.
 
 ## 3. Pointers
 

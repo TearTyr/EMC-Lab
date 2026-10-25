@@ -121,8 +121,12 @@ Video/                the original reference MP4 (analysis source; never shipped
   speech panels, a corner cluster, an arc sweep and navy feature chips, then a
   letterbox wipe hands over to the homepage. Skippable, once per session
   (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to a
-  static poster under `prefers-reduced-motion`. `npm run intro-verify` proves the
-  whole contract; the timing map lives in `docs/reference/animation-reference.md`.
+  static poster under `prefers-reduced-motion` — or to a blur-free `.lite` cut
+  (identical beat grid, transform-only smears) on low-tier devices, whose GPUs
+  drop frames on the animated Gaussian whips. The CSS timeline is pinned to the
+  JS master clock (`#introOverlay:not(.play)` holds every animation at t=0), so
+  a slow boot can never swallow the opening beats. `npm run intro-verify` proves
+  the whole contract; the timing map lives in `docs/reference/animation-reference.md`.
   The client's drawn mascot artwork anchors every brand surface
   (hero, header/footer marks, favicon set, social card) — no SVG-generated
   mascot art remains; the hero mascot is capped (capped layout
@@ -214,6 +218,9 @@ npm run asset-verify   # image/asset contract: decode, dims, alt, lazy, stretch,
 npm run stability-stress # the reported-bug reproduction matrix (nav/Details/typography), 35 checks
 npm run perf           # transfer/DOM/font budgets per page
 npm run perf:guard     # animation-chain budgets, CLS, anchor clearance
+npm run verify:prod    # production-layout gate: shell-mount contracts against the
+                       # HASHED public/ build (auto-builds when missing) — run after
+                       # every build:public, before every deploy
 npm run shots          # screenshots of every page + sim panel
 npm run build          # build:css + build:public
 ```
@@ -227,7 +234,7 @@ loop → `/tmp/introcap`), `capture-intro-video [outDir]` (intro as WebM) and
 
 All test tooling is dev-only; the shipped site has zero runtime dependencies.
 Playwright browsers: `npx playwright install chromium firefox` (+ `msedge` channel for
-the Edge run). Puppeteer powers the perf tools.
+the Edge run).
 
 **Harness notes (sandbox/low-RAM environments).**
 - Run the browser gates **one at a time**; `pkill -9 -f "chrome|chromium"` between runs —

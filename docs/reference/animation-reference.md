@@ -127,6 +127,26 @@ the once-per-session contract (§6) is unchanged. Collage bed (navy field,
 bordered panel cards, waveform strips, zigzag wedges, name plate + OVERDRIVE
 chips) is present from frame zero, like the footage’s S5 bed at flash decay.
 
+**Clock sync (2026-10-25).** The CSS timeline is pinned to the JS master clock:
+`#introOverlay:not(.play) *` holds every child animation at
+`animation-play-state: paused` until intro.js adds `.play` (after the loader’s
+single completion event). Without it the beat grid ran from page-parse time —
+on a slow boot (up to the 1500 ms loader watchdog) the ramp flash and first
+slams played invisibly, the viewer joined mid-composition, and the tail froze
+on the closed letterbox until the JS dismiss fired. Verified: with an
+artificially delayed boot every overlay animation reads `currentTime = 0` at
+the `.play` instant.
+
+**Low-tier `.lite` cut (2026-10-25).** On `EMC.lowTier` devices (small
+high-DPR screens, or coarse pointer with ≤4 cores — the same tier that caps
+Stage at 30 fps) intro.js adds `.lite`, swapping each whip’s keyframes for
+blur-free `-lite` variants (name-swap only: every delay/duration/easing is
+inherited, so the beat grid is bit-identical). An animated Gaussian blur
+re-rasterises every moving layer per frame; it was the composition’s only
+reliable frame-dropper on weak GPUs (~150 lost frames and a 1.0 s worst frame
+on a mid-tier phone profile → ~44 % lower worst frame with `.lite`).
+Full-fidelity machines keep the blur whips exactly as composed.
+
 | t (s) | event |
 |---|---|
 | 0.000 | ramped flash #3 grammar: 4-step 25→40→58→80→100 % white (66 ms) + ~320 ms decay |

@@ -1588,7 +1588,7 @@ console.log('\u2500'.repeat(66));
      collage bed's flat stripe fills are quoted (blur whips + repeating
      stripe gradients). Everywhere else the flat-art ban still holds. */
   const cssNoIntro = cssSrc.slice(0, cssSrc.indexOf('#introOverlay {')) +
-    cssSrc.slice(cssSrc.indexOf('PHASE 8 — site-wide motion system'));
+    cssSrc.slice(cssSrc.indexOf('Site-wide motion system'));
   ok('stylesheet contains no gradient/blur/glass effects outside the intro overlay',
     !/gradient|backdrop-filter|blur\(/.test(cssNoIntro));
   // flex or grid on a bullet li fragments <sub>/<sup> into separate items
@@ -1635,7 +1635,7 @@ console.log('\u2500'.repeat(66));
     /@keyframes in-whipin \{[\s\S]{0,240}?blur\(14px\)/.test(css) &&
     /@keyframes in-whipout \{[\s\S]{0,240}?blur\(12px\)/.test(css) &&
     !/blur\(/.test(
-      css.slice(css.indexOf('PHASE 8 — site-wide motion system')).replace(/\/\*[\s\S]*?\*\//g, '')));
+      css.slice(css.indexOf('Site-wide motion system')).replace(/\/\*[\s\S]*?\*\//g, '')));
   const idx = readFileSync(join(ROOT, 'index.html'), 'utf8');
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&

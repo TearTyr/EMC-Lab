@@ -23,6 +23,21 @@
   const HOME_TITLE = document.title;
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
+  /* Scripts index.html ALREADY runs, matched by BASENAME so the production
+     content-hashed names (js/common.58f7f516.js) are recognised exactly like
+     the source names (js/common.js). The previous hard-coded list
+     ('registry.js', 'common.js', 'motion.js') substring-matched, so it
+     silently failed against the hashed production build — common.js
+     re-executed on EVERY chapter mount, re-running boot() and double-binding
+     every page-level handler: the Detail toggle flipped twice per click (net
+     zero = dead), the topics dropdown and mobile menu toggled open-then-closed
+     (dead after the first chapter visit), the loader re-armed, and prefetch/
+     scroll/transition listeners accumulated. Re-executing index's own scripts
+     per mount is never correct on any layout; this set is the truth. */
+  const LOADED = new Set(
+    [...document.scripts].map(s => (s.getAttribute('src') || '').split('/').pop()).filter(Boolean)
+  );
+
   const mainCache = new Map();     // chapter id -> <main> innerHTML
   const srcCache = new Map();      // chapter id -> sim id -> script src (as shipped)
   const scriptCache = new Map();   // sim url -> source text (network: once)
@@ -92,14 +107,14 @@
     /* The production build ships hashed asset names (js/sim-ohm.<hash>.js), so
        never guess a script URL: read ALL of the topic's own <script> tags in
        document order — that keeps shared engines (js/sandbox-core.js) ahead of
-       the sims that need them. Scripts index.html already runs, and vendored
-       libraries, are skipped. */
-    const HAVE = ['registry.js', 'common.js', 'motion.js'];
+       the sims that need them. Scripts index.html already runs (LOADED,
+       basename-matched so hashed production names are covered) and vendored
+       libraries are skipped. */
     const srcs = [];
     doc.querySelectorAll('script[src]').forEach(tag => {
       let src = tag.getAttribute('src') || '';
       if (src.indexOf('/js/') === -1) return;            // vendor/katex etc.
-      if (HAVE.some(h => src.indexOf(h) >= 0)) return;   // already on index
+      if (LOADED.has(src.split('/').pop())) return;      // already executed by index
       src = src.replace(/^\.\.\//, '').replace(/^\.\//, '');
       if (src) srcs.push(src);
     });
@@ -118,8 +133,13 @@
       if (txt === undefined) {
         try {
           const r = await fetch(url, { credentials: 'omit' });
-          txt = r.ok ? await r.text() : '';
-        } catch (err) { txt = ''; }
+          txt = r.ok ? await r.text() : null;
+        } catch (err) { txt = null; }
+        /* A FAILED fetch is never cached: a transient hiccup (flaky wi-fi, an
+           offline blip, a 500 during a deploy) used to pin txt = '' for the
+           whole session, silently killing that chapter's sims on every later
+           mount. Skip it now; the next mount retries. */
+        if (txt === null) continue;
         scriptCache.set(url, txt);
       }
       if (token !== loadToken) return false;

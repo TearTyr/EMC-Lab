@@ -1206,6 +1206,18 @@
   overflow: hidden; background: #0e1a2e;
 }
 #introOverlay.play { visibility: visible; }
+/* CLOCK SYNC — every child animation is declared with beat delays, but the
+   overlay only becomes visible when js/intro.js adds .play AFTER the loader
+   completes. Without this rule the CSS timeline starts at page-parse time,
+   while the JS master clock (TOTAL_MS from .play) starts later — on a slow
+   boot (up to the 1500 ms loader watchdog) the opening beats (ramp flash,
+   CHARGE slam, Coulomb chip) play out invisibly, the composition is seen
+   mid-stream, and the tail ends on a frozen black letterbox until the JS
+   dismiss fires. Pausing the subtree until .play pins both clocks to the
+   same instant: the first visible frame is beat 0.000. */
+#introOverlay:not(.play), #introOverlay:not(.play) * {
+  animation-play-state: paused !important;
+}
 #introOverlay.out { opacity: 0; transition: opacity .18s ease; }
 #introOverlay .intro-skip { pointer-events: auto; position: absolute; right: .8rem; bottom: .8rem;
   z-index: 10; font-family: theme('fontFamily.ui'); font-weight: 700; font-size: .8rem;
@@ -1447,6 +1459,74 @@
 #introOverlay.rm .in-s1, #introOverlay.rm .in-f1, #introOverlay.rm .in-s3,
 #introOverlay.rm .in-f3 { opacity: 1; }
 #introOverlay.rm .in-start { opacity: 1; visibility: visible; }
+
+/* ---- low-tier cut: identical beat grid, transform-only smears -------------
+   Animating filter: blur() re-rasterises every moving layer on every frame —
+   the one effect in this composition that reliably drops frames on weak GPUs
+   (measured: a mid-tier phone profile loses ~150 frames across the 14 s).
+   On EMC.lowTier devices (small high-DPR screens, or coarse pointer with
+   ≤4 cores — the same tier that already caps Stage at 30 fps) intro.js adds
+   .lite, which swaps each whip's keyframes for blur-free variants: same
+   timings, same scale/rotate/opacity smear shapes, wider scale excursions to
+   carry the motion the blur used to sell. Full-fidelity machines keep the
+   Gaussian whips exactly as composed. */
+@keyframes in-whipin-lite {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.66, .84); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
+}
+@keyframes in-whipout-lite {
+  0%   { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.6, .86); }
+}
+@keyframes in-pop-lite {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.46); }
+  70%  { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1.14); }
+  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
+}
+@keyframes in-pose-lite {
+  0%   { transform: translate(-50%, -52%) scale(1); }
+  45%  { transform: translate(-50%, -52%) scale(.85, 1.1); }
+  100% { transform: translate(-50%, -52%) scale(1); }
+}
+@keyframes in-slide-lite {
+  0%   { opacity: 0; transform: translate(-52px, -70px) rotate(var(--r, 0deg)) scale(1.08, .92); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(var(--r, 0deg)) scale(1); }
+}
+@keyframes in-cxslam-lite {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scale(1.85, .8); }
+  100% { opacity: 1; transform: rotate(var(--r, 0deg)) scale(1); }
+}
+@keyframes in-arcpop-lite {
+  0%   { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--rad, -40vmin) + 38px)) scale(1.35, .78); }
+  100% { opacity: 1; transform: rotate(var(--a)) translateY(var(--rad, -40vmin)) scale(1); }
+}
+@keyframes in-ncout-lite { to { opacity: 0; transform: translateX(52px) scale(1.14, .88); } }
+@keyframes in-cbin-lite {
+  0%   { opacity: 0; transform: translateX(-50%) scale(.78); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes in-startin-lite {
+  0%   { opacity: 0; transform: translateX(-50%) scale(.66); }
+  70%  { opacity: 1; transform: translateX(-50%) scale(1.08); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+/* name swaps only: every delay, duration and easing longhand set by the base
+   rules is inherited untouched, so the beat grid is bit-identical to the
+   full-fidelity cut (.lite outranks the base selectors by one class). */
+#introOverlay.lite .in-slam,
+#introOverlay.lite .in-eqchip { animation-name: in-whipin-lite, in-whipout-lite; }
+#introOverlay.lite .in-vcol { animation-name: in-whipout-lite; }
+#introOverlay.lite .in-vcol > span { animation-name: in-pop-lite; }
+#introOverlay.lite .in-speech { animation-name: in-slide-lite, in-whipout-lite; }
+#introOverlay.lite .in-cx { animation-name: in-cxslam-lite, in-whipout-lite; }
+#introOverlay.lite .in-arc { animation-name: in-whipout-lite; }
+#introOverlay.lite .in-arc b { animation-name: in-arcpop-lite; }
+#introOverlay.lite .in-mascot-wrap { animation-name: in-pose-lite, in-pose-lite, in-pose-lite,
+  in-pose-lite, in-pose-lite, in-pose-lite; }
+#introOverlay.lite .in-ncplace { animation-name: in-ncout-lite; }
+#introOverlay.lite .in-callback { animation-name: in-cbin-lite; }
+#introOverlay.lite .in-start { animation-name: in-vis, in-startin-lite; }
 
 /* ==========================================================================
    Site-wide motion system (js/motion.js + [data-mx] markup).
