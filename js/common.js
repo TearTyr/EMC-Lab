@@ -37,9 +37,6 @@ window.EMC = (function () {
   const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
   const lerp = (a, b, t) => a + (b - a) * t;
   const dist = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
-  const roundTo = (v, dp) => { const p = Math.pow(10, dp); return Math.round(v * p) / p; };
-  /* Map a value from one range to another (used for canvas scaling). */
-  const mapRange = (v, a1, a2, b1, b2) => b1 + ((v - a1) / (a2 - a1)) * (b2 - b1);
   /* Smooth exponential approach — frame-rate independent damping. */
   const damp = (current, target, lambda, dt) => lerp(current, target, 1 - Math.exp(-lambda * dt));
 
@@ -811,11 +808,6 @@ window.EMC = (function () {
     };
   })();
 
-  /* Legacy alias kept for callers that signalled the old boot stages. */
-  function bootStage(name) {
-    if (name === 'equations' || name === 'fonts' || name === 'ui') LOADER.signal(name);
-  }
-
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
   /* Progress tracks exactly the three principal chapters from the registry —
      no more, no less. The ids are derived, never hand-typed here. */
@@ -1543,7 +1535,7 @@ window.EMC = (function () {
   /* ------------------------------------------------------------------------ 10. Public API ------------------------------------------------------------------------ */
   const api = {
     CONST, TOPICS, PROGRESS_KEY,
-    clamp, lerp, dist, roundTo, mapRange, damp,
+    clamp, lerp, dist, damp,
     eng, unit, fixed, setText, throttle,
     Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
     typeScale: () => canvasTypeScale,
@@ -1582,7 +1574,7 @@ window.EMC = (function () {
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
     get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,
-    bindRange, bindSegment, bindToggles, bootStage,
+    bindRange, bindSegment, bindToggles,
     loader: LOADER,
     UI, toast: UI.toast
   };

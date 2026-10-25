@@ -73,7 +73,7 @@ await pg.waitForFunction(() => {
   return o && o.classList.contains('play');
 }, null, { timeout: 8000 });
 await pg.click('#introSkip');
-await pg.waitForTimeout(400);
+await pg.waitForTimeout(1000);   /* v8: node leaves after the .5 s .done fade */
 ok('0 intro skipped; homepage interactive', await pg.evaluate(() => !document.getElementById('introOverlay')));
 
 /* mark the engine + watch for loader overlays re-appearing during mounts */

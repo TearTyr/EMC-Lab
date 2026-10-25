@@ -342,8 +342,9 @@ async function guard(browser) {
     console.log(`${ok ? '  \u2713' : '  \u2717'} ${name}: ${actual} (expected ${expected})`);
     if (!ok) fails.push(name);
   };
-  const openPage = async url => {
+  const openPage = async (url, opts) => {
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    await page.addInitScript(skip => { if (skip) { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} } }, !!(opts && opts.skipIntro));
     await page.addInitScript(() => {
       const pend = new Set();
       window.__perf = { rafPending: () => pend.size };
@@ -373,16 +374,27 @@ async function guard(browser) {
   };
   console.log('\n[animation-loop guard]');
   {
-    const page = await openPage('index.html');
+    const page = await openPage('index.html', { skipIntro: true });
     /* Home ships NO animated canvas (the redesign replaced the hero dipole
        with a static equation strip) and the design rules forbid permanent
        background loops, so the honest budget is zero visible chains —
-       tightened from the stale pre-redesign expectation of 1. Essential
-       motion stays policed by the magind lorentz check below. */
+       tightened from the stale pre-redesign expectation of 1. The intro's
+       finite timeline rAF is policed by its own check below; the settled-home
+       budgets preset the session key like every other harness does. */
     check('home boot-visible chains = 0 (no permanent loops)', await sampleRaf(page, 1500), 0);
     check('home hidden chains = 0', await hiddenProbe(page), 0);
     const heap = await page.evaluate(() => performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(2) : null);
     console.log(`  \u2139 home heap (informational): ${heap} MB`);
+    await page.close();
+  }
+  {
+    /* CONTRACT CHANGE (2026-10-25, intro v8): the intro owns ONE finite rAF
+       timeline; the guard now proves it is finite — after the overlay leaves,
+       a fresh-session home must settle back to zero chains. */
+    const page = await openPage('index.html');
+    await page.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
+    await sleep(600);
+    check('intro timeline rAF is finite: home settles to 0 chains after it ends', await sampleRaf(page, 1500), 0);
     await page.close();
   }
   {

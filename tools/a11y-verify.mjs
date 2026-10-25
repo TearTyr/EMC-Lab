@@ -75,7 +75,9 @@ const focusVisible = pg => pg.evaluate(() => {
     const pe = await pg.evaluate(() => getComputedStyle(document.getElementById('introOverlay')).pointerEvents);
     ok('A0 the playing intro never locks page controls (pointer-events none)', pe === 'none', pe);
     await pg.keyboard.press('Enter');
-    await pg.waitForTimeout(400);
+    /* CONTRACT CHANGE (2026-10-25, v8): the exit is a .5 s .done fade, so the
+       overlay node leaves at ~700 ms, not ~180 ms as in the CSS-exit cuts. */
+    await pg.waitForTimeout(1000);
     ok('A0 Enter on skip dismisses the intro', (await pg.evaluate(() => !!document.getElementById('introOverlay'))) === false);
     await pg.keyboard.press('Tab');
     const after = await pg.evaluate(() => document.activeElement.className.toString().slice(0, 20));

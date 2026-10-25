@@ -68,14 +68,13 @@ async function ctxPage(opts = {}) {
   }, null, { timeout: 5000 });
   const playingAt = Date.now() - t0;
   const rafs = await pg.evaluate(() => window.EMC.stats().rafs);
-  ok('1 intro plays shortly after boot with zero rAF chains (CSS-only)', rafs === 0, `rafs=${rafs}, play at ~${playingAt} ms`);
-  /* The v6 chorus compression is 11.5 seconds long (11.05 s picture + 0.45 s
-     fade). CONTRACT CHANGE (2026-10-25, user directive "keep it simple … close
-     to the animation"): window re-pointed from 13.6-16.6 s; margin for boot and
-     removal unchanged in spirit. Fail if it ends too early or hangs. */
+  ok('1 intro plays shortly after boot with zero Stage rAF chains (the engine owns one timeline rAF)', rafs === 0, `rafs=${rafs}, play at ~${playingAt} ms`);
+  /* The v8 drop-in cut runs 12 s + a .5 s fade. Allow a small margin for
+     page boot and the exit fade, but fail if it ends too early or hangs.
+     CONTRACT CHANGE (2026-10-25, v8): window re-pointed from 11.2-14.2 s. */
   await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
   const endedAt = Date.now() - t0;
-  ok('1 intro auto-ends within the 11.2-14.2 s window, including boot', endedAt > 11200 && endedAt < 14200, `${endedAt} ms`);
+  ok('1 intro auto-ends within the 12.0-15.0 s window, including boot', endedAt > 12000 && endedAt < 15000, `${endedAt} ms`);
   const st = await pg.evaluate(() => ({
     intro: window.EMC_INTRO.state(),
     flag: sessionStorage.getItem('emc.intro.v1'),
@@ -98,7 +97,7 @@ async function ctxPage(opts = {}) {
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForFunction(() => { const o = document.getElementById('introOverlay'); return o && o.classList.contains('play'); }, null, { timeout: 5000 });
   await pg.keyboard.press('Escape');
-  await pg.waitForTimeout(400);
+  await pg.waitForTimeout(1000);   /* v8: node leaves after the .5 s .done fade */
   ok('2 any key (Escape) dismisses mid-play', (await pg.evaluate(() => !!document.getElementById('introOverlay'))) === false);
   await ctx.close();
 }

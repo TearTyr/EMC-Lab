@@ -60,6 +60,9 @@ the 2026-10-24 consolidation.
 | SHELL-01 | Med | A transient sim-script fetch failure cached `''` for the whole session — that chapter's sims stayed silently dead across every later mount until a full reload | Fixed — failures are never cached; the next mount retries |
 | DEPLOY-02 | Low | `/img/` + `/favicon.ico` served `max-age=0, must-revalidate`: a revalidation round trip per image per pageview | Fixed — 24 h cache headers in `vercel.json`; og-card cache-buster bumped ?v=4→?v=5 on all five pages |
 | ASSET-01 | Low | Repo/deploy hygiene: 56 KB of unreferenced woff2 (lilita-one, m-plus-rounded-1c ×2) shipped to production; og-card.png 877 KB; dead `window.tailwind` inline script on all five pages (CDN-era leftover) | Fixed — fonts removed, og-card losslessly recompressed to 601 KB (pixels verified identical, IHDR gate intact), dead script removed |
+| CLEAN-26-10-25b | Low | Site-wide load cleanup: the three intro face PNGs (~56 K) were fetched on every homepage load even when the intro never plays (replayed sessions, and the bytes sat in the critical path); mascot-sparkle shipped 355×360 / 43 K for a use that renders at 34 px; dead code carried (buildArcLetters + arc markup, `in-hid` keyframe, roundTo/mapRange/bootStage) | Done — faces ship as `data-src` and get their `src` in beginIntro (zero bytes when the intro doesn't play); sparkle downsized to 128 px / 15 K; dead code removed; index transfer 385 K → 357 K, all budgets green |
+| INTRO-08 | Feat | Friend's drop-in revision 2 (2026-10-25): mascot 40→34 cqw (portrait 46→38), triangle ears → inset-box-shadow crescents, shape-face positions nudged (t1 29/47, t2 71/47, ears top 32), electron orbit radii derived from `--mk` instead of fixed 27/7.5, and the three face PNGs replaced by the revision's embedded art (identical RGB, smoother alpha rim) | Done — re-integrated over the v8 integration; `--mk` read cached per run/resize instead of per frame; smoke crescent/size tokens re-pointed (§2) |
+| INTRO-07 | Feat | Intro v8 "drop-in cut": the friend's frame-accurate recreation replaces the v7 explainer outright (user directive: "remove our old intro and integrate this") — shape-face countdown → flash cut at 3.0 s → title card with per-act mascot face swaps, ghost mascots, orbiting electrons, drifting charges, beat pulse → Start at 9.8 s → flash out 11.2 s → 12 s finish; rAF timeline in `js/intro.js`, container-query stage in CSS | Done — repo contracts preserved (session key, loader-done wait, skip/CTA clickability, rm static end frame, deferred face fetch); two integration bugs fixed: friend's top-right skip covered the nav quiz CTA (moved bottom-right), and v6/v7 vestige rules (`in-fadeout`, `in-vis`) leaked delay-phase animations into reduced-motion counts |
 | INTRO-06 | Feat | Intro v7 explainer re-stage (user storyboard 2026-10-25 + three new mascot faces): mascot drops in → settles → hops → formula cards slide in left/right → each zoom-explained (held) with a 2 s checkmark → shared-charge values converge to 1:1 → star-sparkle wink + tilt → fade. Faces swap per step (focus/happy/sparkle); spacing from one gap token; all motion eased; blur whips retired entirely | Done — `img/mascot-face-{focus,happy,sparkle}.png` (bg-cut cutouts), stage markup in index.html, v7 keyframes in input.css; smoke re-pointed (§2) |
 | INTRO-05 | Feat | Intro v6 (user directive 2026-10-25: "keep it simple … close to the animation"): the 49 s of footage from 21 s compressed ~4.3:1 into 11.5 s by keeping ten whole beat phrases at native speed and cutting on the footage's own beats; speech panels / navy chips / callback / letterbox wipe retired; new finale — mascot spin → head tilt → star-sparkle wink → fade-out | Done — beat grid + finale in `css/input.css`, `INTRO_MS = 11500`; gates re-pointed (§2); trace harness in `.scratch/trace/` |
 | GATE-01 | Med | smoke-test's two blur/gradient ban scans keyed a marker string (`PHASE 8 — site-wide motion system`) that no longer exists in input.css → `indexOf` = −1 → both scans silently degenerated to a one-character slice (vacuous since the phase-8 comment was retitled) | Fixed — re-pointed to the real header `Site-wide motion system`; strictness increase, logged in §2 |
@@ -132,6 +135,33 @@ the gates today:
   v5 grammar assertions (stroke, whip keyframes, ramp steps, collage bed)
   hold on both cuts — smoke asserts the blur whips exist in source, which
   they still do, unchanged, for full-fidelity machines.
+- **Intro v8 revision-2 re-points (INTRO-08, 2026-10-25):** two smoke tokens
+  moved with the art: the shape-face assertion now matches the crescent
+  grammar (`box-shadow: inset 2cqw` + the mirrored `#t2`) instead of the
+  retired triangle `clip-path`, and the stage-size assertion matches
+  `--mk: 34cqw`. No window or behaviour assertion changed (a sizing/art
+  revision leaves timeline and contracts untouched).
+- **Intro v8 re-points (INTRO-07, 2026-10-25):** the intro is no longer CSS
+  keyframes — the friend's engine owns ONE finite rAF timeline, so the
+  "CSS-keyframes-only" source token was re-pointed to engine-grammar tokens
+  (BEAT clock, face-swap line, flash line, Start-visibility line, rm static
+  frame) and `perf-measure`'s home budgets now preset the session key like
+  every other harness, with a NEW check proving the timeline rAF is finite
+  (home settles to 0 chains after the overlay leaves). Auto-end windows moved
+  11.2-14.2 → **12.0-15.0 s** (intro-verify) and [11400,13800] →
+  **[12000,15000]** (smoke); the skip/CTA dismiss waits in a11y-verify and
+  verify:prod moved 400 → 1000 ms because the exit is now a .5 s `.done` fade;
+  the CTA pointer-events token moved to `.in-start.on` (base CTA is inert until
+  it pops, keeping introSkip the first tab stop). Blur ban unchanged and still
+  green (v8 uses none). All re-points are window/token moves for the new
+  engine — no assertion deleted or weakened.
+- **Cleanup re-points (CLEAN-26-10-25b, 2026-10-25):** three smoke tokens
+  moved, none deleted: the intro face-img assertions now match `data-src=`
+  (the deferred-fetch form), the mascot-sparkle size floor dropped 20 K → 4 K
+  (the art now ships at 128 px for its only 34 px use; the hero mark keeps its
+  20 K floor), and the loader-storage scan's end marker moved from the deleted
+  'Legacy alias' comment to the §7 section header (the −1 indexOf had made the
+  scan whole-file and thus failing). Intent of every assertion unchanged.
 - **Intro v7 re-points (INTRO-06, 2026-10-25):** master clock unchanged
   (INTRO_MS 11500), so no timing window moved. Smoke's intro grammar assertions
   were re-pointed from the retired chorus-cut tokens (slam stroke, eq-chip bg,

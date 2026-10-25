@@ -110,21 +110,18 @@ Video/                the original reference MP4 (analysis source; never shipped
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro (v7 explainer, ~11.5 s).** The homepage opens with a
-  mascot-forward explainer staged off the reference footage's chorus (dev-only
-  footage, never shipped): Denki-chan drops in from above, settles to centre,
-  hops once, then two formula cards slide in from left and right; each is
-  zoom-explained (held long enough to read, the other dimmed) and closed with a
-  2-second checkmark while the shared-charge story runs — +6 µC and −2 µC
-  contact-share to +2 µC each and the ratio badge pops **1 : 1**. The mascot's
-  three delivered faces swap per step (focus on the drop and zooms, happy squint
-  on the hop, sparkle on the checks), and the closer is a star-sparkle wink with
-  a held head tilt before a 0.45 s fade to the homepage. One gap token sets all
-  spacing; every move is eased; reduced motion gets a static poster; low-tier
-  devices need no special cut any more (v7 carries no blur at all). Skippable,
-  once per session (`emc.intro.v1`), never on chapter routes.
-  `npm run intro-verify` proves the contract; the beat map and the song edit
-  live in `docs/reference/intro-v6-12s-plan.md`.
+- **Once-per-session intro (v8 "drop-in cut", ~12 s).** The homepage opens with
+  the frame-accurate recreation of the reference edit: a shape-face countdown
+  (ears/eyes pop, 3-2-1, G/O) flash-cuts at 3.0 s into the title card — the
+  mascot with per-act face swaps (sparkle → focus → happy), ghost mascots,
+  letter-popped "EMC Lab" title, sub chip and feature chips, drifting +/−
+  charges, orbiting electrons and a burst ring on the ~68 BPM beat — Start at
+  9.8 s, flash out at 11.2 s, done at 12 s. One rAF timeline in `js/intro.js`
+  (BEAT0 3.0 / BEAT 0.88), container-query sizing so the composition scales as
+  one unit, `?t=<s>` freezes any frame for tuning. Repo contracts kept: once
+  per session, chapter routes skip it, skip/Start clickable through playback,
+  reduced motion draws the static end frame, face art fetches only when the
+  intro actually plays. `npm run intro-verify` proves the whole contract.
   The client's drawn mascot artwork anchors every brand surface
   (hero, header/footer marks, favicon set, social card) — no SVG-generated
   mascot art remains; the hero mascot is capped (capped layout

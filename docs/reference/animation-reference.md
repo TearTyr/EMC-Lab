@@ -106,7 +106,18 @@ pattern to its final state instantly — content is never hidden behind an anima
 | 19 | end card | single small bordered still, static ~1.9 s | session-complete card; intro S9 | existing |
 | 20 | beat grid | pulse 1.15–1.20 s, fills 0.30 s, sub 0.55–0.60 s | UI fractions 120–300 ms | CSS vars |
 
-## 4. Site intro — v7 mascot explainer (current)
+## 4. Site intro — v8 "drop-in cut" (current)
+
+The friend's frame-accurate recreation, integrated 2026-10-25 ("remove our old
+intro and integrate this"): rAF timeline, BEAT0 3.0 s flash cut, BEAT 0.88 s
+(~68 BPM) pulse, 12 s total. Scene A shape-face countdown → scene B title card
+(mascot face swaps sp<4 s<fo<8.3 s<hp, ghost mascots, letter-popped title,
+chips, drifting charges, orbiting electrons, burst ring) → Start 9.8 s →
+flash out 11.2 s. Sizing via container queries (cqw). The v6/v7 CSS-keyframe
+cuts are retired; the footage beat map and song edit below remain the reference
+for any future re-cut.
+
+### 4.000 Retired: v7 mascot explainer
 
 User storyboard 2026-10-25 (with three new mascot faces): drop-in → settle →
 hop → formula cards slide in left/right → zoom-explain each (held, other

@@ -1208,9 +1208,7 @@
   pointer-events: none;                 /* never locks the page underneath */
   overflow: hidden; background: #0e1a2e;
 }
-#introOverlay.play { visibility: visible;
-  animation: in-fadeout .45s ease 11.05s forwards; }   /* finale handover: fade, not wipe */
-@keyframes in-fadeout { to { opacity: 0; } }
+#introOverlay.play { visibility: visible; }
 /* CLOCK SYNC — every child animation is declared with beat delays, but the
    overlay only becomes visible when js/intro.js adds .play AFTER the loader
    completes. Without this rule the CSS timeline starts at page-parse time,
@@ -1223,27 +1221,6 @@
 #introOverlay:not(.play), #introOverlay:not(.play) * {
   animation-play-state: paused !important;
 }
-#introOverlay.out { opacity: 0; transition: opacity .18s ease; }
-#introOverlay .intro-skip { pointer-events: auto; position: absolute; right: .8rem; bottom: .8rem;
-  z-index: 10; font-family: theme('fontFamily.ui'); font-weight: 700; font-size: .8rem;
-  color: #10131a; background: #fdf3f6; border: 2px solid #10131a; border-radius: 999px;
-  padding: .42em 1em; cursor: pointer; }
-#introOverlay .intro-skip:hover { background: #cfe8ff; }
-#introOverlay .intro-skip:focus-visible { outline: 3px solid #d92b4b; outline-offset: 2px; }
-#introOverlay .in-start { pointer-events: auto; position: absolute; left: 50%; bottom: 9%;
-  z-index: 6; opacity: 0; visibility: hidden;   /* hidden = unfocusable until it pops */
-  transform: translateX(-50%);
-  animation: in-vis 0s steps(1, end) 10.5s forwards,
-             in-startin .18s cubic-bezier(.2,.8,.3,1) 10.5s both; }
-
-/* ---- v7: the blur-whip grammar is retired with the v6 chorus cut — every
-   entrance is an eased transform now (user directive: keep it simple, ease
-   all movement). The discrete helpers below still serve the face/value
-   swaps and the CTA visibility flip. ------------------------------------ */
-@keyframes in-vis { to { visibility: visible; } }
-@keyframes in-hid { to { visibility: hidden; } }
-@keyframes in-on  { to { opacity: 1; } }
-@keyframes in-off { to { opacity: 0; } }
 
 /* ---- collage bed: present from frame zero, like the footage's S5 bed ----- */
 #introOverlay .in-field { position: absolute; inset: 0; background: #0e1a2e; }
@@ -1272,120 +1249,84 @@
 #introOverlay .in-chip-od { bottom: 7%; right: 3%; font-size: .68rem; letter-spacing: .12em;
   padding: .25em .7em; rotate: 1deg; }   /* clears the skip button on phones */
 
-/* ---- v7 explainer stage (user storyboard 2026-10-25) -----------------------
-   One flex column, one gap token: spacing between mascot, formula cards and
-   ratio badge is consistent by construction, at every viewport. Every move
-   is eased (cubic-bezier); the only steps() swaps are the discrete face
-   changes and value readouts, which are cuts by nature, not motion.
-   Timeline (s from .play):
-     0.00 mascot drops in from above (focus face)      0.60 land + settle to centre
-     1.00 one hop (squash & stretch, happy face)
-     1.45 formula cards slide in left + right (0.1 stagger)
-     2.05 zoom LEFT card, hold to read, zoom out (right card dims)
-     3.75 CHECK left: 2 s checkmark, then continue      (sparkle face)
-     5.75 zoom RIGHT card, hold, zoom out (left dims)    (focus face)
-     7.45 CHECK right: 2 s; on its end the contact happens: values swap to +2/+2
-     9.55 ratio badge pops 1:1 · 9.80 star · 9.90 head tilt (sparkle wink)
-    10.50 Start CTA · 11.05 fade-out (0.45 s)            INTRO_MS 11500            */
-#introOverlay .in-stage { position: absolute; inset: 0; z-index: 5;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: var(--in-gap, clamp(14px, 4.2vmin, 38px)); padding: 4vh 4vw 9vh; }
-#introOverlay .in-mbox { position: relative; width: clamp(140px, 28vmin, 280px);
-  aspect-ratio: 409 / 415;
-  animation: in-drop .6s cubic-bezier(.45, .02, .55, 1) 0s both,      /* fall: ease-in */
-             in-settle .4s cubic-bezier(.2, .9, .3, 1.25) .6s both,   /* ease to centre */
-             in-hop .45s cubic-bezier(.3, .7, .4, 1) 1s both,         /* one hop */
-             in-tilt-end .3s cubic-bezier(.3, 1.3, .4, 1) 9.9s both; }/* wink tilt */
-@keyframes in-drop { 0% { transform: translateY(-115vh); } 100% { transform: translateY(0); } }
-@keyframes in-settle { 0% { transform: translateY(0) scale(1.06, .94); }
-  60% { transform: translateY(0) scale(.98, 1.02); } 100% { transform: translateY(0) scale(1); } }
-@keyframes in-hop { 0% { transform: translateY(0) scale(1); }
-  30% { transform: translateY(0) scale(1.1, .88); }
-  62% { transform: translateY(-11%) scale(.94, 1.06); }
-  100% { transform: translateY(0) scale(1); } }
-#introOverlay .in-face { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
-/* expression swaps: drop/settle = focus, hop = happy, checks = sparkle, zooms = focus */
-#introOverlay .in-face-focus { animation:
-  in-on 0s steps(1, end) 0s forwards,     in-off 0s steps(1, end) 1s forwards,
-  in-on 0s steps(1, end) 1.45s forwards,  in-off 0s steps(1, end) 3.75s forwards,
-  in-on 0s steps(1, end) 5.75s forwards,  in-off 0s steps(1, end) 7.45s forwards; }
-#introOverlay .in-face-happy { animation:
-  in-on 0s steps(1, end) 1s forwards,     in-off 0s steps(1, end) 1.45s forwards; }
-#introOverlay .in-face-sparkle { animation:
-  in-on 0s steps(1, end) 3.75s forwards,  in-off 0s steps(1, end) 5.75s forwards,
-  in-on 0s steps(1, end) 7.45s forwards; }
-#introOverlay .in-star { position: absolute; right: -4%; top: 2%; width: clamp(24px, 5.5vmin, 50px);
-  aspect-ratio: 1; opacity: 0; background: #e9ff47;
-  clip-path: polygon(50% 0%, 62% 34%, 98% 36%, 70% 58%, 80% 94%, 50% 72%, 20% 94%, 30% 58%, 2% 36%, 38% 34%);
-  animation: in-star .35s cubic-bezier(.2, 1.4, .4, 1) 9.8s both; }
-@keyframes in-star {
-  0%   { opacity: 0; transform: scale(.2) rotate(-40deg); }
-  60%  { opacity: 1; transform: scale(1.3) rotate(10deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); } }
-/* formula cards: slide in from each side, same gap token as the column */
-#introOverlay .in-row { display: flex; align-items: stretch;
-  gap: var(--in-gap, clamp(14px, 4.2vmin, 38px)); }
-#introOverlay .in-card2 { position: relative; display: grid; justify-items: center;
-  gap: .3em; background: #fdf3f6; color: #10131a; border: 3px solid #0b0c0e;
-  border-radius: 14px; padding: .55em .8em .65em; min-width: clamp(150px, 26vmin, 250px);
-  box-shadow: 5px 6px 0 rgba(11, 12, 14, .45); }
-#introOverlay .in-left  { animation: in-slideL .6s cubic-bezier(.2, .8, .3, 1) 1.45s both,
-  in-zoom 1.7s cubic-bezier(.3, .7, .3, 1) 2.05s both, in-dim 1.7s cubic-bezier(.3, .7, .3, 1) 5.75s both; }
-#introOverlay .in-right { animation: in-slideR .6s cubic-bezier(.2, .8, .3, 1) 1.55s both,
-  in-zoom 1.7s cubic-bezier(.3, .7, .3, 1) 5.75s both, in-dim 1.7s cubic-bezier(.3, .7, .3, 1) 2.05s both; }
-@keyframes in-slideL { 0% { opacity: 0; transform: translateX(-72px) rotate(-2deg); }
-  100% { opacity: 1; transform: translateX(0) rotate(0); } }
-@keyframes in-slideR { 0% { opacity: 0; transform: translateX(72px) rotate(2deg); }
-  100% { opacity: 1; transform: translateX(0) rotate(0); } }
-/* zoom in, HOLD long enough to read (~0.7 s at full scale), zoom back out */
-@keyframes in-zoom { 0% { transform: scale(1); } 28% { transform: scale(1.3); }
-  72% { transform: scale(1.3); } 100% { transform: scale(1); } }
-@keyframes in-dim { 0%, 100% { opacity: 1; } 28%, 72% { opacity: .45; } }
-#introOverlay .in-card2 b { font: 800 .72rem/1 theme('fontFamily.ui'); letter-spacing: .08em;
-  background: #101d33; color: #fff; border-radius: 999px; padding: .22em .8em; }
-#introOverlay .in-eq { font-size: clamp(.95rem, 2.6vmin, 1.35rem); color: #14161d; }
-#introOverlay .in-val { font-style: normal; font-weight: 800;
-  font-size: clamp(1rem, 3vmin, 1.5rem); color: #10131a; }
-#introOverlay .in-val-l2, #introOverlay .in-val-r2 { position: absolute; left: 0; right: 0;
-  bottom: .65em; text-align: center; opacity: 0; }
-#introOverlay .in-val-l1 { animation: in-off 0s steps(1, end) 9.45s forwards; }
-#introOverlay .in-val-r1 { animation: in-off 0s steps(1, end) 9.45s forwards; }
-#introOverlay .in-val-l2 { animation: in-on 0s steps(1, end) 9.45s forwards; }
-#introOverlay .in-val-r2 { animation: in-on 0s steps(1, end) 9.45s forwards; }
-/* 2-second checkmark per step: draw, hold, then the next step continues */
-#introOverlay .in-check { position: absolute; right: -12px; top: -14px; width: 40px; height: 40px;
-  color: #b5d777; background: #101d33; border: 2.5px solid #0b0c0e; border-radius: 50%;
-  padding: 6px; opacity: 0; }
-#introOverlay .in-left .in-check { animation: in-on .2s ease 3.75s both,
-  in-off .2s ease 5.75s forwards; }
-#introOverlay .in-right .in-check { animation: in-on .2s ease 7.45s both,
-  in-off .2s ease 9.45s forwards; }
-#introOverlay .in-check path { stroke-dasharray: 1; stroke-dashoffset: 1; }
-#introOverlay .in-left .in-check path { animation: in-draw .45s cubic-bezier(.3, .7, .4, 1) 3.8s both; }
-#introOverlay .in-right .in-check path { animation: in-draw .45s cubic-bezier(.3, .7, .4, 1) 7.5s both; }
-@keyframes in-draw { to { stroke-dashoffset: 0; } }
-/* convergence: the shared-charge values meet at 1:1 */
-#introOverlay .in-ratio { align-self: center; font-family: theme('fontFamily.title');
-  font-weight: 800; font-size: clamp(1.5rem, 5vmin, 2.6rem); color: #e9ff47;
-  -webkit-text-stroke: 1.2px #10131a; text-shadow: .06em .07em 0 #1b2a44;
-  opacity: 0; animation: in-ratio .45s cubic-bezier(.2, 1.4, .4, 1) 9.55s both; }
-@keyframes in-ratio { 0% { opacity: 0; transform: scale(.4) rotate(-6deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); } }
-/* (head tilt lives in the .in-mbox animation list above; star + sparkle face
-   carry the wink) */
-@keyframes in-tilt-end { 0% { transform: rotate(0); } 100% { transform: rotate(-9deg); } }
-
-/* ---- reduced motion: static poster — settled mascot, both cards, final
-       values, checks drawn, ratio shown; cleared by intro.js in ~1.2 s ---- */
+/* ---- intro v8 "drop-in cut" (friend's recreation, integrated 2026-10-25) --
+   Replaces the v7 explainer outright (user directive: "remove our old intro
+   and integrate this"). rAF timeline (~12 s, BEAT0 3.0 / BEAT 0.88 ≈68 BPM):
+   scene A shape-face countdown (ears/eyes pop, 3-2-1, G/O), white flash cut at
+   3.0 into scene B title card — mascot with per-act face swaps (sparkle →
+   focus → happy), ghost mascots, letter-popped "EMC Lab" title, sub chip,
+   feature chips, drifting +/− charges, orbiting electrons, burst ring on the
+   beat — flash out at 11.2, Start at 9.8. Sizing is container-query based
+   (cqw on #st), so the composition scales as one unit on any viewport.
+   Repo contracts kept: visibility hidden until .play (loader owns boot),
+   overlay pointer-events none with auto on skip/start, .done fade on finish,
+   reduced motion = static end frame, faces fetch only when playback starts. */
+#introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden;
+  transition: opacity .5s; z-index: 90; visibility: hidden; pointer-events: none; }
+#introOverlay.play { visibility: visible; }
+#introOverlay.done { opacity: 0; pointer-events: none; }
+#introOverlay #st { position: absolute; left: 50%; top: 50%;
+  width: min(100vw, 100vh); height: min(100vw, 100vh);
+  transform: translate(-50%, -50%); container-type: size;
+  --mk: 34cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
+@media (max-aspect-ratio: 4/5) {
+  #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
+    --mk: 38cqw; --tt: 20cqw; --sb: 4cqw; --cf: 3.6cqw; }
+  #introOverlay .chip em { display: none; }
+}
+#introOverlay #row { position: absolute; left: 50%; top: 86%;
+  transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
+#introOverlay .chip { opacity: 0; }
+#introOverlay #ghosts, #introOverlay #px { position: absolute; inset: 0;
+  overflow: hidden; pointer-events: none; }
+#introOverlay .pt { font-weight: 800; font-family: theme('fontFamily.sans'); }
+#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%;
+  border: .7cqw solid #f6d36b; }
+#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
+  border: .45cqw solid #17181c; }
+#introOverlay .a { position: absolute; transform: translate(-50%, -50%); opacity: 0; }
+#introOverlay .tri { width: 7cqw; height: 15cqw; border-radius: 50%;
+  box-shadow: inset 2cqw 0 0 0 #a8d3e0; }          /* crescent, not triangle */
+#introOverlay #t2 { box-shadow: inset -2cqw 0 0 0 #a8d3e0; }
+#introOverlay .dot { width: 5cqw; height: 5cqw; border-radius: 50%;
+  background: #a8d3e0; display: grid; place-items: center;
+  font: 800 7cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
+#introOverlay .dot.go { background: none; }
+#introOverlay .ear { width: 6.5cqw; height: 8cqw; background: #a8d3e0;
+  border-radius: 55% 55% 12% 12%/85% 85% 12% 12%; transform-origin: 50% 90%; }
+#introOverlay .dig { font: 800 9cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
+#introOverlay #mk { width: var(--mk); height: var(--mk); z-index: 2; }
+#introOverlay #ttl { font: 800 var(--tt)/1 theme('fontFamily.sans'); color: #f4eefc;
+  -webkit-text-stroke: 2.2cqw #17181c; paint-order: stroke fill; white-space: nowrap; }
+#introOverlay #ttl span { display: inline-block; }
+#introOverlay #sub { font: 700 var(--sb) theme('fontFamily.sans'); background: #fff;
+  color: #17181c; border: .5cqw solid #17181c; border-radius: 99cqw;
+  padding: .9cqw 3cqw; white-space: nowrap; }
+#introOverlay .chip { font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
+  border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
+#introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; }
+#introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; }
+#introOverlay #fl { position: absolute; inset: 0; background: #fff; opacity: 0;
+  pointer-events: none; }
+/* skip + start keep the repo's classes/ids so the a11y and smoke contracts
+   (first tab stop, visible skip, real CTA link) keep holding */
+/* bottom-right, not the friend's top-right: the top-right corner owns the
+   nav's quiz CTA, which must stay clickable through playback (contract) */
+#introOverlay .intro-skip { pointer-events: auto; position: absolute; right: 14px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); font: 700 15px theme('fontFamily.sans');
+  border: 3px solid #17181c; border-radius: 99px; color: #17181c; cursor: pointer;
+  background: rgba(255, 255, 255, .7); padding: 6px 14px; }
+#introOverlay .intro-skip:focus-visible { outline: 3px solid #d92b4b; outline-offset: 2px; }
+#introOverlay .in-start { position: absolute; left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 3%);
+  font: 700 15px theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
+  color: #17181c; cursor: pointer; background: #f6d36b; padding: 10px 26px;
+  opacity: 0; pointer-events: none; visibility: hidden; }   /* unfocusable till it pops */
+#introOverlay .in-start.on { pointer-events: auto; }
+/* reduced motion: the engine draws one static end frame (frame(11)); make
+   sure nothing on the overlay can animate or transition at all */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
-#introOverlay.rm .in-face-focus, #introOverlay.rm .in-face-happy,
-#introOverlay.rm .in-val-l1, #introOverlay.rm .in-val-r1 { display: none; }
-#introOverlay.rm .in-face-sparkle, #introOverlay.rm .in-star { opacity: 1; }
-#introOverlay.rm .in-val-l2, #introOverlay.rm .in-val-r2 { opacity: 1; }
-#introOverlay.rm .in-check { opacity: 1; }
-#introOverlay.rm .in-check path { stroke-dashoffset: 0; }
-#introOverlay.rm .in-ratio { opacity: 1; }
-#introOverlay.rm .in-mbox { transform: rotate(-9deg); }
 
 /* ==========================================================================
    Site-wide motion system (js/motion.js + [data-mx] markup).

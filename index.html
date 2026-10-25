@@ -116,53 +116,42 @@
        pointer-events:none except skip/start, so nothing is ever locked;
        js/intro.js owns the lifecycle (once per session, skipped on chapter
        routes, static under reduced motion, fully removed after). -->
+  <!-- Opening composition v8 "drop-in cut": the friend's frame-accurate
+       recreation of the reference edit (shape-face countdown → flash cut →
+       title card with mascot face swaps, ghost mascots, orbiting electrons,
+       drifting charges, beat pulse → Start), integrated 2026-10-25. The rAF
+       timeline lives in js/intro.js (BEAT0 3.0 / BEAT 0.88); sizing is
+       container-query based so the whole composition scales as one unit.
+       Repo contracts kept: hidden until .play, overlay pointer-events none
+       with auto on skip/start, once per session, chapter routes skip it,
+       reduced motion gets the static end frame, faces fetch only on play.
+       Dev tuning: index.html?t=5.5 freezes any frame. -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
-    <i class="in-field" aria-hidden="true"></i>
-    <div class="in-bed" aria-hidden="true">
-      <i class="in-card in-cd1"></i><i class="in-card in-cd2"></i>
-      <i class="in-card in-cd3"></i><i class="in-card in-cd4"></i>
-      <i class="in-wave in-wv1"></i><i class="in-wave in-wv2"></i>
-      <i class="in-wedge in-wedge1"></i><i class="in-wedge in-wedge2"></i>
+    <div id="ghosts"></div>
+    <div id="px"></div>
+    <div id="st">
+      <div id="A">
+        <i class="a tri" id="t1" style="left:29%;top:47%"></i>
+        <i class="a tri" id="t2" style="left:71%;top:47%"></i>
+        <b class="a dot" id="d1" style="left:40%;top:47%"></b>
+        <b class="a dot" id="d2" style="left:60%;top:47%"></b>
+        <i class="a ear" id="e1" style="left:36%;top:32%"></i><i class="a ear" id="e2" style="left:64%;top:32%"></i>
+        <b class="a dig" id="dg" style="left:50%;top:56%"></b>
+      </div>
+      <div id="B">
+        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:30%"><img id="sp" width="409" height="415" alt=""><img id="fo" width="409" height="415" alt=""><img id="hp" width="409" height="415" alt=""></div>
+        <i class="a" id="rg" style="left:50%;top:30%"></i>
+        <b class="a el" style="left:50%;top:30%;background:#a8d3e0"></b><b class="a el" style="left:50%;top:30%;background:#f8aebe"></b><b class="a el" style="left:50%;top:30%;background:#b5d777"></b>
+        <div class="a" id="ttl" style="left:50%;top:57%"></div>
+        <div class="a" id="sub" style="left:50%;top:72%">Interactive Electricity Tutorial</div>
+        <div id="row"><div class="chip" style="background:#a8d3e0">Circuit Builder</div>
+          <div class="chip" style="background:#f8aebe">Ohm’s Law</div>
+        </div>
+      </div>
     </div>
-    <span class="in-chip in-chip-name" aria-hidden="true">EMC LAB</span>
-    <span class="in-chip in-chip-od" aria-hidden="true">SIM OVERDRIVE</span>
-    <span class="in-mascot-wrap" aria-hidden="true">
-      <img class="in-mascot" src="img/mascot.png" width="355" height="360" alt="">
-      <img class="in-mascot in-mascot-sparkle" src="img/mascot-sparkle.png" width="355" height="360" alt="">
-      <i class="in-star"></i>
-    </span>
-    <!-- v7 explainer stage: mascot drops in, hops, then two formula cards
-         slide in from left/right; each is zoom-explained and checked, the
-         shared-charge values converge to 1:1, then the wink finale.
-         Flex column + one gap token = consistent spacing by construction. -->
-    <div class="in-stage" aria-hidden="true">
-      <span class="in-mbox">
-        <img class="in-face in-face-focus" src="img/mascot-face-focus.png" width="409" height="415" alt="">
-        <img class="in-face in-face-happy" src="img/mascot-face-happy.png" width="409" height="415" alt="">
-        <img class="in-face in-face-sparkle" src="img/mascot-face-sparkle.png" width="409" height="415" alt="">
-        <i class="in-star"></i>
-      </span>
-      <span class="in-row">
-        <span class="in-card2 in-left">
-          <b>conductor 1</b>
-          <span class="in-eq" data-tex="q' = \dfrac{q_1 + q_2}{2}">q' = (q₁+q₂)/2</span>
-          <i class="in-val in-val-l1">q₁ = +6 µC</i>
-          <i class="in-val in-val-l2">q₁ = +2 µC</i>
-          <svg class="in-check" viewBox="0 0 48 48"><path pathLength="1" d="M10 26 l10 10 l18 -24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-        <span class="in-ratio">1 : 1</span>
-        <span class="in-card2 in-right">
-          <b>conductor 2</b>
-          <span class="in-eq" data-tex="q' = \dfrac{q_1 + q_2}{2}">q' = (q₁+q₂)/2</span>
-          <i class="in-val in-val-r1">q₂ = −2 µC</i>
-          <i class="in-val in-val-r2">q₂ = +2 µC</i>
-          <svg class="in-check" viewBox="0 0 48 48"><path pathLength="1" d="M10 26 l10 10 l18 -24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </span>
-    </div>
-    <!-- finale: ratio badge → star-sparkle wink + head tilt → fade out -->
-    <a class="btn btn-primary in-start" href="topics/current.html">Start Learning</a>
+    <div id="fl"></div>
     <button class="intro-skip" id="introSkip" type="button">Skip intro &rarr;</button>
+    <a class="btn btn-primary in-start" id="go" href="topics/current.html">Start Learning</a>
   </div>
   <a class="skip-link" href="#main">Skip to main content</a>
   <noscript>
