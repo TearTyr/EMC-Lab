@@ -1583,10 +1583,13 @@ console.log('\u2500'.repeat(66));
         /^["']/.test(fam) || !/(^|\s)-?\d/.test(fam))));
   ok('mobile pass present (coarse-pointer targets, no sideways scroll)',
     /pointer: coarse/.test(cssSrc) && /overflow-x: clip/.test(cssSrc));
-  /* CONTRACT CHANGE (2026-10-24, v5 chorus-cut intro): the intro overlay is
-     the single place where the footage's motion-blur smear grammar and the
-     collage bed's flat stripe fills are quoted (blur whips + repeating
-     stripe gradients). Everywhere else the flat-art ban still holds. */
+  /* CONTRACT CHANGE (2026-10-24, v5 chorus-cut intro): the intro overlay was
+     the single place allowed to quote the footage's blur/stripe grammar.
+     UPDATE (2026-10-25, v8 fidelity restore): the v8 engine quotes none of it
+     (flat sticker art only) and the dead v6 gradient rules were deleted, so
+     the flat-art ban now holds site-wide in fact; the intro slice is kept as a
+     standing exception window so a future intro art pass can't trip the scan
+     while everything outside stays banned. */
   const cssNoIntro = cssSrc.slice(0, cssSrc.indexOf('#introOverlay {')) +
     cssSrc.slice(cssSrc.indexOf('Site-wide motion system'));
   ok('stylesheet contains no gradient/blur/glass effects outside the intro overlay',
@@ -1646,9 +1649,16 @@ console.log('\u2500'.repeat(66));
      "remove our old intro and integrate this" — the friend's frame-accurate
      recreation replaces the v7 explainer outright. Assertions re-pointed from
      the v7 CSS grammar to the v8 engine grammar (rAF timeline in js/intro.js,
-     container-query stage in CSS); the v4 whole-video cut stays gone. */
+     container-query stage in CSS); the v4 whole-video cut stays gone.
+     CONTRACT CHANGE (2026-10-25, v8 fidelity restore): the first integration
+     silently re-timed the friend's cut −0.5 s (BEAT0 3.0, faces 4/8.3, Start
+     9.8) and dropped the ghosts' src; his authoritative timing map is restored
+     verbatim (BEAT0 3.5, faces 4.5/8.8, Start 10.3 — total 12 s unchanged) and
+     two fixes are now pinned: the ghost column loads the focus face, and
+     .in-start kills the inherited .btn transform transition. Tokens below
+     re-pointed accordingly; no assertion deleted or weakened. */
   ok('v8 grammar: beat clock, container-query stage, shape-face cast in the engine',
-    /const BEAT0 = 3\.0, BEAT = 0\.88/.test(src) &&
+    /const BEAT0 = 3\.5, BEAT = 0\.88/.test(src) &&
     /#introOverlay #st \{[^}]*container-type: size/.test(css) &&
     /#introOverlay #mk \{ width: var\(--mk\)/.test(css) &&
     /#introOverlay \.tri \{[^}]*box-shadow: inset 2cqw/.test(css) &&
@@ -1656,12 +1666,15 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \.ear \{/.test(css) &&
     /* the v4 1:6 whole-video cut is gone for good */
     !/in-cola|in-skit|in-insert|in-insetspin|in-endcard/.test(css));
-  ok('v8 story beats: countdown, flash cut at BEAT0, face swaps, Start at 9.8, flash out 11.2',
-    /const face = t < 4 \? 'sp' : t < 8\.3 \? 'fo' : 'hp';/.test(src) &&
+  ok('v8 story beats: countdown, flash cut at BEAT0, face swaps, Start at 10.3, flash out 11.2',
+    /const face = t < 4\.5 \? 'sp' : t < 8\.8 \? 'fo' : 'hp';/.test(src) &&
     /fl\.style\.opacity = Math\.max\(f1, f2\)/.test(src) &&
-    /go\.style\.visibility = t >= 9\.8/.test(src) &&
+    /go\.style\.visibility = t >= 10\.3/.test(src) &&
     /f2 = seg\(t, 11\.2, \.8\)/.test(src) &&
     /reducedMotion\) \{ frame\(11\); return; \}/.test(src));
+  ok('v8 fidelity fixes pinned: ghost column fetches the focus face; CTA pops without the .btn transition',
+    /for \(const g of ghosts\) g\.s\.src = IMG\.fo;/.test(src) &&
+    /#introOverlay \.in-start \{[^}]*transition: none/.test(css));
   ok('v8 spacing is container-relative (cqw gap on the chip row, cqw stage units)',
     /#introOverlay #row \{[^}]*gap: 2cqw/.test(css) &&
     /--mk: 34cqw; --tt: 18cqw/.test(css));
@@ -1672,7 +1685,7 @@ console.log('\u2500'.repeat(66));
        "real artwork, not a placeholder" intent keeps a >20 K floor on the hero
        mark and a >4 K floor on the cheer icon. */
     statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 4000);
-  ok('chorus collage bed ships panel cards, waveform strips, zigzag wedges + chips',
+  ok('v8 title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips, ghosts)',
     /#introOverlay \{[^}]*background: #fcefaa/.test(css) &&
     /#introOverlay \.dot \{[^}]*background: #a8d3e0/.test(css) &&
     /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css) &&

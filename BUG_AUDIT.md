@@ -63,6 +63,7 @@ the 2026-10-24 consolidation.
 | CLEAN-26-10-25b | Low | Site-wide load cleanup: the three intro face PNGs (~56 K) were fetched on every homepage load even when the intro never plays (replayed sessions, and the bytes sat in the critical path); mascot-sparkle shipped 355×360 / 43 K for a use that renders at 34 px; dead code carried (buildArcLetters + arc markup, `in-hid` keyframe, roundTo/mapRange/bootStage) | Done — faces ship as `data-src` and get their `src` in beginIntro (zero bytes when the intro doesn't play); sparkle downsized to 128 px / 15 K; dead code removed; index transfer 385 K → 357 K, all budgets green |
 | INTRO-08 | Feat | Friend's drop-in revision 2 (2026-10-25): mascot 40→34 cqw (portrait 46→38), triangle ears → inset-box-shadow crescents, shape-face positions nudged (t1 29/47, t2 71/47, ears top 32), electron orbit radii derived from `--mk` instead of fixed 27/7.5, and the three face PNGs replaced by the revision's embedded art (identical RGB, smoother alpha rim) | Done — re-integrated over the v8 integration; `--mk` read cached per run/resize instead of per frame; smoke crescent/size tokens re-pointed (§2) |
 | INTRO-07 | Feat | Intro v8 "drop-in cut": the friend's frame-accurate recreation replaces the v7 explainer outright (user directive: "remove our old intro and integrate this") — shape-face countdown → flash cut at 3.0 s → title card with per-act mascot face swaps, ghost mascots, orbiting electrons, drifting charges, beat pulse → Start at 9.8 s → flash out 11.2 s → 12 s finish; rAF timeline in `js/intro.js`, container-query stage in CSS | Done — repo contracts preserved (session key, loader-done wait, skip/CTA clickability, rm static end frame, deferred face fetch); two integration bugs fixed: friend's top-right skip covered the nav quiz CTA (moved bottom-right), and v6/v7 vestige rules (`in-fadeout`, `in-vis`) leaked delay-phase animations into reduced-motion counts |
+| INTRO-08 | High | The first v8 integration diverged from the friend's cut (his timeline silently re-timed -0.5 s: BEAT0 3.0, faces 4/8.3, Start 9.8) and shipped two bugs: the ghost column rendered six empty `<img>` tags (their `src` was never set) and the Start CTA inherited `.btn`'s transform transition, which fought the engine's per-frame scale writes and smeared the pop | Fixed - the friend's authoritative timing map restored verbatim (BEAT0 3.5, countdown .36 s steps to 3.13, faces 4.5/8.8, letters 3.7, sub 4.5, charges 4.3, electrons 5.1, ring 8.8, Start 10.3; 12 s total unchanged); ghosts fetch the shared focus face on play; `.in-start { transition: none }`; dead v6 CSS block + stale v6 HTML comment removed; smoke tokens re-pointed and both fixes pinned as assertions |
 | INTRO-06 | Feat | Intro v7 explainer re-stage (user storyboard 2026-10-25 + three new mascot faces): mascot drops in → settles → hops → formula cards slide in left/right → each zoom-explained (held) with a 2 s checkmark → shared-charge values converge to 1:1 → star-sparkle wink + tilt → fade. Faces swap per step (focus/happy/sparkle); spacing from one gap token; all motion eased; blur whips retired entirely | Done — `img/mascot-face-{focus,happy,sparkle}.png` (bg-cut cutouts), stage markup in index.html, v7 keyframes in input.css; smoke re-pointed (§2) |
 | INTRO-05 | Feat | Intro v6 (user directive 2026-10-25: "keep it simple … close to the animation"): the 49 s of footage from 21 s compressed ~4.3:1 into 11.5 s by keeping ten whole beat phrases at native speed and cutting on the footage's own beats; speech panels / navy chips / callback / letterbox wipe retired; new finale — mascot spin → head tilt → star-sparkle wink → fade-out | Done — beat grid + finale in `css/input.css`, `INTRO_MS = 11500`; gates re-pointed (§2); trace harness in `.scratch/trace/` |
 | GATE-01 | Med | smoke-test's two blur/gradient ban scans keyed a marker string (`PHASE 8 — site-wide motion system`) that no longer exists in input.css → `indexOf` = −1 → both scans silently degenerated to a one-character slice (vacuous since the phase-8 comment was retitled) | Fixed — re-pointed to the real header `Site-wide motion system`; strictness increase, logged in §2 |
@@ -73,6 +74,26 @@ the 2026-10-24 consolidation.
 Integrity rule: gate windows and assertions are only ever **re-pointed with a
 written justification, never deleted or weakened**. The changes that still shape
 the gates today:
+
+- **Intro v8 fidelity-restore re-points (INTRO-08, 2026-10-25):** the first v8
+  integration had silently re-timed the friend's cut −0.5 s and never set the
+  ghosts' `src`; his authoritative timing map (the attached
+  `EMC Lab · 12s intro(1).html`) is restored verbatim — BEAT0 3.0→**3.5**,
+  countdown .24/.2/2.77→**.36/.25/3.13**, faces 4/8.3→**4.5/8.8**, letters
+  3.2/4.6→**3.7/5.1**, sub 4→**4.5**, charges 3.8→**4.3**, electrons
+  4.6→**5.1**, ring 8.3→**8.8**, Start 9.8→**10.3**. The 12 s total is
+  unchanged, so no auto-end window moves (intro-verify 12.0–15.0 s, smoke
+  [12000,15000] ms); the skip/CTA a11y waits are untouched. Smoke tokens
+  re-pointed: `BEAT0 = 3.5`, the face-swap line, the Start-visibility line.
+  Two NEW pinned assertions (fix guards): the ghost column fetches the focus
+  face in `loadFaces()`, and `#introOverlay .in-start` carries
+  `transition: none` (it wears `.btn`, whose transform transition would lag
+  every per-frame CTA scale write). One stale label renamed to what it now
+  asserts (v8 art tokens, not the retired v6 collage bed) and the cssNoIntro
+  comment refreshed (v8 quotes no gradients — the dead v6 stripe/blur CSS and
+  the stale v6 HTML comment were deleted). Skip stays bottom-right (INTRO-07
+  rationale). No assertion deleted or weakened; a local freeze-frame probe
+  (`.scratch/visual-check.mjs`, gitignored) re-verified every beat visually.
 
 - **Loader numerics (BOOT-02):** `loader-verify` asserts stage order, ~240 ms exit,
   1500 ms watchdog, fatal-card behaviour.

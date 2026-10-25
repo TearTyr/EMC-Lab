@@ -112,12 +112,12 @@ Video/                the original reference MP4 (analysis source; never shipped
   survive the flip untouched.
 - **Once-per-session intro (v8 "drop-in cut", ~12 s).** The homepage opens with
   the frame-accurate recreation of the reference edit: a shape-face countdown
-  (ears/eyes pop, 3-2-1, G/O) flash-cuts at 3.0 s into the title card — the
+  (ears/eyes pop, 3-2-1, G/O) flash-cuts at 3.5 s into the title card — the
   mascot with per-act face swaps (sparkle → focus → happy), ghost mascots,
   letter-popped "EMC Lab" title, sub chip and feature chips, drifting +/−
   charges, orbiting electrons and a burst ring on the ~68 BPM beat — Start at
-  9.8 s, flash out at 11.2 s, done at 12 s. One rAF timeline in `js/intro.js`
-  (BEAT0 3.0 / BEAT 0.88), container-query sizing so the composition scales as
+  10.3 s, flash out at 11.2 s, done at 12 s. One rAF timeline in `js/intro.js`
+  (BEAT0 3.5 / BEAT 0.88), container-query sizing so the composition scales as
   one unit, `?t=<s>` freezes any frame for tuning. Repo contracts kept: once
   per session, chapter routes skip it, skip/Start clickable through playback,
   reduced motion draws the static end frame, face art fetches only when the
@@ -268,6 +268,10 @@ notices) and without localStorage (progress disabled, everything else intact).
 - Physics content follows standard calculus-based texts (Halliday/Resnick/Walker,
   Serway, Young & Freedman) and the course lecture; constants: k = 8.99×10⁹ N·m²/C²
   (lecture value, used everywhere), e = 1.602×10⁻¹⁹ C, μ₀ = 4π×10⁻⁷ T·m/A.
-- The social card (`img/og-card.png`) is AI-generated artwork matching the
-  lavender kawaii redesign — it is plain committed artwork, not rendered from
-  HTML/CSS: edit it by regenerating an image, never by hand-painting pixels.
+- The social card (`img/og-card.png`, 1200×630) is committed raster artwork
+  composed from the site's own design tokens — charcoal `--bg` surface, pink
+  brand accent, electric-yellow tagline, the pastel law chips, outline pills
+  and the client's mascot art in its canonical cream art frame with ghost
+  mascots — rasterised by `tools/make-og-card.mjs` (headless render of the
+  token sheet, then committed as a plain PNG; meta tags cache-bust `?v=`).
+  Regenerate with that script, never by hand-painting pixels.

@@ -109,13 +109,15 @@ pattern to its final state instantly — content is never hidden behind an anima
 ## 4. Site intro — v8 "drop-in cut" (current)
 
 The friend's frame-accurate recreation, integrated 2026-10-25 ("remove our old
-intro and integrate this"): rAF timeline, BEAT0 3.0 s flash cut, BEAT 0.88 s
-(~68 BPM) pulse, 12 s total. Scene A shape-face countdown → scene B title card
-(mascot face swaps sp<4 s<fo<8.3 s<hp, ghost mascots, letter-popped title,
-chips, drifting charges, orbiting electrons, burst ring) → Start 9.8 s →
-flash out 11.2 s. Sizing via container queries (cqw). The v6/v7 CSS-keyframe
-cuts are retired; the footage beat map and song edit below remain the reference
-for any future re-cut.
+intro and integrate this"; his authoritative timing map restored verbatim the
+same day after a first pass had re-timed it −0.5 s): rAF timeline, BEAT0 3.5 s
+flash cut, BEAT 0.88 s (~68 BPM) pulse, 12 s total. Scene A shape-face
+countdown (3-2-1 at 2.05–3.13, G/O) → scene B title card (mascot face swaps
+sp<4.5 s<fo<8.8 s<hp, ghost mascots, letter-popped title at 3.7 s, sub chip
+4.5 s, chips on beats 3–4, drifting charges 4.3 s, orbiting electrons 5.1 s,
+burst ring) → Start 10.3 s → flash out 11.2 s. Sizing via container queries
+(cqw). The v6/v7 CSS-keyframe cuts are retired; the footage beat map and song
+edit below remain the reference for any future re-cut.
 
 ### 4.000 Retired: v7 mascot explainer
 

@@ -1150,114 +1150,17 @@
 @keyframes cheer-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .mascot-cheer { animation: none; } }
 
-/* ==========================================================================
-   INTRO OVERLAY — the opening composition (index.html only).
-   v5 "CHORUS CUT" (user directive 2026-10-24: "redo the intro … reference the
-   video but skip to 21 seconds due to the main motion is there … show the
-   Topics and formulas in action with blur and stuff … redo everything from
-   the ground up"): the previous v4 1:6 whole-video cut was removed entirely
-   and rebuilt off the footage's main-motion passage — Video/シェリーライド.mp4
-   from 21.0 s, i.e. the RAMPED FLASH #3 (f1284–1287) into chorus-collage A
-   (docs/reference/animation-reference.md §2 S5). The composition keeps the
-   footage's S5 grammar at its own beat grid (phrase pulse ≈1.15 s, fills
-   0.30 s) and replaces the lyric layer with the site's content in action:
-     · outlined TOPIC slams (CHARGE → FIELD → CURRENT → FLUX → INDUCTION) and
-       KaTeX EQUATION chips (Coulomb, E=F/q, V=IR, Φ=BA, ε=−dΦ/dt) whip-swap
-       around the centre mascot, one per beat, each entering and leaving on a
-       1–2-frame-style MOTION-BLUR WHIP (user request "with blur and stuff":
-       the flat-art blur ban is lifted for the intro overlay only);
-     · vertical equation bubble columns popped word-by-word;
-     · two speech panels sliding+rotating in with staged lines (chip first,
-       then lines 0.3 s apart), held ~3 s, whipped out;
-     · a four-box corner cluster (CH·1/CH·2/CH·3/QUIZ) slammed on one beat;
-     · an arc sweep of curved outlined letters across the top;
-     · navy feature chips sliding in staggered and exiting on a blur whip;
-     · the callback lock-up + arrow-slash draw + Start CTA, then the site-only
-       letterbox wipe hands over to the homepage.
-   The collage bed (navy field, bordered blue panel cards, waveform strips,
-   yellow zigzag wedges, name plate + OVERDRIVE chips) is present from frame
-   zero, exactly like the footage's S5 bed at the flash decay.
-   Contract (brief PART 6, unchanged): v6 = 11.05 s picture + 0.45 s fade-out
-   auto-play once per session (sessionStorage `emc.intro.v1`), never on
-   chapter routes, skip always visible + keyboard reachable, ANY pointerdown/
-   keydown dismisses, overlay pointer-events:none, waits for the loader's
-   single completion event, CSS keyframes only (no rAF, no audio), reduced
-   motion gets a static poster that clears in ~1.2 s, everything removed from
-   the DOM afterwards. Master clock: js/intro.js INTRO_MS = 11500.
-   v6 (user directive 2026-10-25: "keep it simple … close to the animation"):
-   the 49 s of footage from 21 s compressed ~4.3:1 by KEEPING ten whole beat
-   phrases at native speed and cutting on the footage's own beats — never
-   time-stretched. Speech panels, navy chips, callback lock-up and the
-   letterbox wipe retired; the closer is now the mascot finale.
-   Timeline (s from `.play`; --ti/--to = whip-in / whip-out onsets):
-     0.000 ramped flash (4-step 25→40→58→80→100 % white over 66 ms) + 320 ms decay
-     0.450/1.300 CHARGE   1.300/2.150 eq Coulomb   (0.85 s pulse)
-     2.150/3.000 FIELD    3.000/3.850 eq E=F/q
-     2.600 vcol1 pops     5.100 vcol2 pops
-     3.850/4.700 CURRENT  4.700/5.550 eq V=IR
-     5.550/6.400 FLUX     6.400/7.250 eq Φ=BA
-     7.250/8.100 INDUCTION 8.100/8.950 eq ε=−dΦ/dt
-     8.950 corner cluster (0.06 stag) + arc sweep letters (0.03 stag), out 9.750
-     9.800 mascot SPIN (0.55 s, one full rotateY)
-    10.350 head TILT settles (−9°, held) · 10.450 star-sparkle pop + wink swap
-    10.500 Start CTA pops
-    11.050 overlay fade-out (0.45 s) → `.out` → removed
-   ========================================================================== */
-#introOverlay {
-  position: fixed; inset: 0; z-index: 90; visibility: hidden;
-  pointer-events: none;                 /* never locks the page underneath */
-  overflow: hidden; background: #0e1a2e;
-}
-#introOverlay.play { visibility: visible; }
-/* CLOCK SYNC — every child animation is declared with beat delays, but the
-   overlay only becomes visible when js/intro.js adds .play AFTER the loader
-   completes. Without this rule the CSS timeline starts at page-parse time,
-   while the JS master clock (TOTAL_MS from .play) starts later — on a slow
-   boot (up to the 1500 ms loader watchdog) the opening beats (ramp flash,
-   CHARGE slam, Coulomb chip) play out invisibly, the composition is seen
-   mid-stream, and the tail ends on a frozen black letterbox until the JS
-   dismiss fires. Pausing the subtree until .play pins both clocks to the
-   same instant: the first visible frame is beat 0.000. */
-#introOverlay:not(.play), #introOverlay:not(.play) * {
-  animation-play-state: paused !important;
-}
-
-/* ---- collage bed: present from frame zero, like the footage's S5 bed ----- */
-#introOverlay .in-field { position: absolute; inset: 0; background: #0e1a2e; }
-#introOverlay .in-bed { position: absolute; inset: 0; }
-#introOverlay .in-card { position: absolute; background: #9fd0f7; border: 3px solid #0b0c0e; border-radius: 14px; }
-#introOverlay .in-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 17%;
-  background: #5aa9e6; border-bottom: 3px solid #0b0c0e; border-radius: 11px 11px 0 0; }
-#introOverlay .in-card::after { content: ""; position: absolute; inset: 28% 9% 11% 9%;
-  background: repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 11px, #7db8e8 11px 15px); }
-#introOverlay .in-cd1 { left: 5%;  top: 13%;    width: 27%; height: 31%; rotate: -2deg; }
-#introOverlay .in-cd2 { right: 4%; top: 9%;     width: 25%; height: 35%; rotate: 2deg; }
-#introOverlay .in-cd3 { left: 11%; bottom: 11%; width: 23%; height: 27%; rotate: 1.5deg; }
-#introOverlay .in-cd4 { right: 11%; bottom: 15%; width: 27%; height: 25%; rotate: -1.5deg; }
-#introOverlay .in-wave { position: absolute; left: 29%; right: 29%; height: 5%; opacity: .8;
-  background: repeating-linear-gradient(90deg, #4d9be0 0 7px, rgba(0,0,0,0) 7px 14px); }
-#introOverlay .in-wv1 { top: 5%; }
-#introOverlay .in-wv2 { bottom: 5%; }
-#introOverlay .in-wedge { position: absolute; width: 30%; height: 15%; background: #e9ff47;
-  clip-path: polygon(0 100%, 8% 30%, 16% 100%, 24% 30%, 32% 100%, 40% 30%, 48% 100%, 56% 30%, 64% 100%, 72% 30%, 80% 100%, 88% 30%, 96% 100%, 100% 60%, 100% 100%); }
-#introOverlay .in-wedge1 { right: -2%; top: 22%; rotate: -8deg; }
-#introOverlay .in-wedge2 { left: -2%; bottom: 24%; rotate: 100deg; }
-#introOverlay .in-chip { position: absolute; z-index: 4; background: #fdf3f6; color: #10131a;
-  border: 2.5px solid #0b0c0e; border-radius: 999px; font-weight: 800; }
-#introOverlay .in-chip-name { top: 3%; left: 3%; font-size: .72rem; letter-spacing: .06em;
-  padding: .25em .8em; rotate: -1deg; }
-#introOverlay .in-chip-od { bottom: 7%; right: 3%; font-size: .68rem; letter-spacing: .12em;
-  padding: .25em .7em; rotate: 1deg; }   /* clears the skip button on phones */
-
 /* ---- intro v8 "drop-in cut" (friend's recreation, integrated 2026-10-25) --
    Replaces the v7 explainer outright (user directive: "remove our old intro
-   and integrate this"). rAF timeline (~12 s, BEAT0 3.0 / BEAT 0.88 ≈68 BPM):
-   scene A shape-face countdown (ears/eyes pop, 3-2-1, G/O), white flash cut at
-   3.0 into scene B title card — mascot with per-act face swaps (sparkle →
-   focus → happy), ghost mascots, letter-popped "EMC Lab" title, sub chip,
-   feature chips, drifting +/− charges, orbiting electrons, burst ring on the
-   beat — flash out at 11.2, Start at 9.8. Sizing is container-query based
-   (cqw on #st), so the composition scales as one unit on any viewport.
+   and integrate this"). rAF timeline (~12 s, BEAT0 3.5 / BEAT 0.88 ≈68 BPM —
+   the friend's own timing map, restored verbatim 2026-10-25): scene A
+   shape-face countdown (ears/eyes pop, 3-2-1 at 2.05–3.13, G/O), white flash
+   cut at 3.5 into scene B title card — mascot with per-act face swaps
+   (sparkle <4.5 → focus <8.8 → happy), ghost mascots, letter-popped "EMC Lab"
+   title at 3.7, sub chip at 4.5, feature chips on beats 3–4, drifting +/−
+   charges from 4.3, orbiting electrons from 5.1, burst ring on the beat —
+   Start at 10.3, flash out at 11.2. Sizing is container-query based (cqw on
+   #st), so the composition scales as one unit on any viewport.
    Repo contracts kept: visibility hidden until .play (loader owns boot),
    overlay pointer-events none with auto on skip/start, .done fade on finish,
    reduced motion = static end frame, faces fetch only when playback starts. */
@@ -1322,7 +1225,10 @@
   bottom: calc(env(safe-area-inset-bottom, 0px) + 3%);
   font: 700 15px theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
   color: #17181c; cursor: pointer; background: #f6d36b; padding: 10px 26px;
-  opacity: 0; pointer-events: none; visibility: hidden; }   /* unfocusable till it pops */
+  opacity: 0; pointer-events: none; visibility: hidden;   /* unfocusable till it pops */
+  transition: none; }   /* the CTA wears .btn, whose transform transition would
+  fight the engine's per-frame scale writes and smear the pop — the friend's
+  button has no transition, so neither does this one */
 #introOverlay .in-start.on { pointer-events: auto; }
 /* reduced motion: the engine draws one static end frame (frame(11)); make
    sure nothing on the overlay can animate or transition at all */

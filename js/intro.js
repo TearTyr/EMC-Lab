@@ -5,10 +5,10 @@
    pointerdown/keydown dismisses, skip + Start stay clickable through it, and
    the overlay is fully removed afterwards with zero timers/listeners left.
    The engine half is the friend's frame-accurate recreation of the reference
-   edit (integrated 2026-10-25): one rAF timeline, BEAT0 3.0 s flash cut into
+   edit (integrated 2026-10-25): one rAF timeline, BEAT0 3.5 s flash cut into
    the title card, BEAT 0.88 s (~68 BPM) pulse, mascot face swaps, ghost
    mascots, orbiting electrons, drifting charges, burst ring, flash out at
-   11.2 s, Start at 9.8 s, finish at 12 s. Reduced motion draws the static end
+   11.2 s, Start at 10.3 s, finish at 12 s. Reduced motion draws the static end
    frame; faces are fetched only when playback actually starts; ?t=<s> freezes
    a frame for tuning (dev). */
 (function () {
@@ -51,7 +51,7 @@
   }
 
   /* ---------------------------------------------------------------- engine */
-  const BEAT0 = 3.0, BEAT = 0.88;   /* ~68 BPM estimated from the reference audio */
+  const BEAT0 = 3.5, BEAT = 0.88;   /* ~68 BPM estimated from the reference audio */
   const IMG = {
     sp: 'img/mascot-face-sparkle.png',
     fo: 'img/mascot-face-focus.png',
@@ -94,8 +94,13 @@
   });
 
   /* faces cost zero bytes until playback is certain (replayed sessions and
-     chapter routes never fetch them) */
-  function loadFaces() { for (const id of ['sp', 'fo', 'hp']) faces[id].src = IMG[id]; }
+     chapter routes never fetch them). The ghost column shares the focus face,
+     so it rides the same single fetch (BUG: the first integration never set
+     the ghosts' src at all — six empty <img> tags; fixed 2026-10-25). */
+  function loadFaces() {
+    for (const id of ['sp', 'fo', 'hp']) faces[id].src = IMG[id];
+    for (const g of ghosts) g.s.src = IMG.fo;
+  }
 
   function frame(t) {
     /* scene A: shape-face countdown */
@@ -108,10 +113,10 @@
     const eo = t >= 1.1 ? 1 : 0;
     put(q('#e1'), 1, 0, (1 - ep) * -18, -14 + ew, eo);
     put(q('#e2'), 1, 0, (1 - ep) * -18, 14 - ew, eo);
-    const k = clamp(Math.floor((t - 2.05) / .24), 0, 2), dg = q('#dg'), off = t < 2.05 || t >= 2.77;
+    const k = clamp(Math.floor((t - 2.05) / .36), 0, 2), dg = q('#dg'), off = t < 2.05 || t >= 3.13;
     dg.textContent = off ? '' : String(3 - k);
-    put(dg, off ? 0 : pop(t, 2.05 + k * .24, .2));
-    const g = t >= 2.77;
+    put(dg, off ? 0 : pop(t, 2.05 + k * .36, .25));
+    const g = t >= 3.13;
     q('#d1').className = 'a dot' + (g ? ' go' : '');
     q('#d2').className = 'a dot' + (g ? ' go' : '');
     q('#d1').textContent = g ? 'G' : '';
@@ -119,18 +124,18 @@
 
     /* scene B: title card */
     const bt = Math.max(0, t - BEAT0), bp = t >= BEAT0 ? Math.exp(-7 * ((bt % BEAT) / BEAT)) : 0;
-    const face = t < 4 ? 'sp' : t < 8.3 ? 'fo' : 'hp';
+    const face = t < 4.5 ? 'sp' : t < 8.8 ? 'fo' : 'hp';
     for (const id of ['sp', 'fo', 'hp']) faces[id].style.display = id === face ? '' : 'none';
-    const wave = t >= 8.3 ? Math.sin((t - 8.3) * 14) * 7 * Math.exp(-(t - 8.3) * 1.2) : 0;
+    const wave = t >= 8.8 ? Math.sin((t - 8.8) * 14) * 7 * Math.exp(-(t - 8.8) * 1.2) : 0;
     put(mk, pop(t, BEAT0, .5) * (1 + .035 * bp), 0, Math.sin(t * 2.2) * .8, wave);
     ghosts.forEach(({ s, r, i }) => put(s, 1, Math.sin(t * .6 + i) * 1.2, Math.cos(t * .5 + i * 2) * 1.5, r, .16 * seg(t, BEAT0, .8)));
     letters.forEach((e, i) => {
-      const p = pop(t, 3.2 + i * .07, .4), w = Math.sin(t * 3 + i * .7) * .7 * seg(t, 4.6, .6);
+      const p = pop(t, 3.7 + i * .07, .4), w = Math.sin(t * 3 + i * .7) * .7 * seg(t, 5.1, .6);
       e.style.transform = `translateY(${(1 - p) * -6 + w}cqw) scale(${p})`;
       e.style.opacity = p > .01 ? 1 : 0;
     });
-    put(ttl, 1, 0, 0, 0, t >= 3.2 ? 1 : 0);
-    put(q('#sub'), pop(t, 4, .4));
+    put(ttl, 1, 0, 0, 0, t >= 3.7 ? 1 : 0);
+    put(q('#sub'), pop(t, 4.5, .4));
     chips.forEach((c, i) => {
       const cp = pop(t, BEAT0 + BEAT * (3 + i), .35), on = cp > .9 ? 1 : 0;
       c.style.transform = `translateY(${Math.sin(t * 2 + i * 1.3) * .4 * on}cqw) rotate(${[-3, 2, -2][i] + Math.sin(t * 1.6 + i) * on}deg) scale(${cp})`;
@@ -138,31 +143,31 @@
     });
 
     /* extra motion: drifting charges, orbiting electrons, burst rings */
-    const H = innerHeight, dt = Math.max(0, t - 3.8);
+    const H = innerHeight, dt = Math.max(0, t - 4.3);
     pts.forEach(({ e, p, v, w }) => {
       const yy = 1.06 - ((p + v * dt) % 1.12);
       e.style.transform = `translate(-50%,-50%) translate(${Math.sin(t * .8 + w) * 2}vw,${yy * H}px) rotate(${t * 20 + w * 30}deg)`;
-      e.style.opacity = t < 3.8 ? 0 : .5 * seg(t, 3.8, .8) * clamp(Math.min(yy * 8, (1.06 - yy) * 8));
+      e.style.opacity = t < 4.3 ? 0 : .5 * seg(t, 4.3, .8) * clamp(Math.min(yy * 8, (1.06 - yy) * 8));
     });
     /* orbit radii scale with the mascot size token (friend's revision 2) */
     els.forEach((e, i) => {
-      const a = t * 1.7 + i * 2.094, z = Math.sin(a), pp = pop(t, 4.6 + i * .15, .4);
+      const a = t * 1.7 + i * 2.094, z = Math.sin(a), pp = pop(t, 5.1 + i * .15, .4);
       e.style.zIndex = z > 0 ? 3 : 1;
       put(e, pp * (.85 + .3 * z), Math.cos(a) * mkw * .66, z * mkw * .19, 0, pp > .01 ? .55 + .45 * (z * .5 + .5) : 0);
     });
-    const rs = t >= 8.3 ? 8.3 : t >= BEAT0 ? BEAT0 : 99, rq = seg(t, rs, .7);
+    const rs = t >= 8.8 ? 8.8 : t >= BEAT0 ? BEAT0 : 99, rq = seg(t, rs, .7);
     put(q('#rg'), .4 + rq * 1.8, 0, 0, 0, t >= rs && rq < 1 ? (1 - rq) * .8 : 0);
 
     /* flashes + buttons */
     const f1 = clamp(1 - Math.abs(t - (BEAT0 + .02)) / .18), f2 = seg(t, 11.2, .8);
     fl.style.opacity = Math.max(f1, f2);
-    const gp = pop(t, 9.8, .4);
+    const gp = pop(t, 10.3, .4);
     go.style.opacity = gp > .01 ? 1 : 0;
     go.style.transform = `translateX(-50%) scale(${gp})`;
     /* visibility (not just pointer-events) so the CTA is unfocusable until it
        pops — keeps introSkip the first tab stop (a11y gate A0) */
-    go.style.visibility = t >= 9.8 ? 'visible' : 'hidden';
-    go.classList.toggle('on', t >= 9.8);
+    go.style.visibility = t >= 10.3 ? 'visible' : 'hidden';
+    go.classList.toggle('on', t >= 10.3);
   }
 
   function finish() {
