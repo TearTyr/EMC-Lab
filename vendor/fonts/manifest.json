@@ -1,4 +1,0 @@
-{
-  "_readme": "Optional slot for PRIVATELY licensed faces that must not be committed (see vendor/fonts/README.md). The site's own font - G8321 in weights 100/400/700 - is a committed OFL woff2 set declared in css/fonts.css and needs no entry here.",
-  "licensed": []
-}

@@ -104,20 +104,18 @@
 </head>
 
 <body class="emc">
-  <!-- Opening composition v5 "chorus cut": rebuilt from the ground up off the
-       MAIN-MOTION passage of the reference footage (Video/シェリーライド.mp4
-       from 21.0 s — the ramped flash into chorus-collage A, see docs/reference/
-       animation-reference.md §2 S5). The footage's lyric layer is replaced by
-       the site's own content in action: outlined TOPIC slams and KaTeX
-       EQUATION chips whip-swap on the beat grid with motion-blur whips,
-       vertical equation bubble columns pop word-by-word, speech panels
-       slide+rotate in with staged lines, a four-box corner cluster slams on
-       one beat, an arc sweep crosses the top, navy feature chips slide in and
-       exit on a whip, then the callback lock-up + Start CTA and the letterbox
-       wipe hand over to the homepage. CSS keyframes only; pointer-events:none
-       except skip/start, so nothing is ever locked; js/intro.js owns the
-       lifecycle (once per session, skipped on chapter routes, static under
-       reduced motion, fully removed after). -->
+  <!-- Opening composition v6 "chorus compression": the reference footage's
+       21 s→end chorus (Video/シェリーライド.mp4, dev-only, never shipped)
+       compressed ~4.3:1 into 11.5 s by keeping ten whole native-speed beat
+       phrases and cutting on the footage's own beats (docs/reference/
+       intro-v6-12s-plan.md). The lyric layer is the site's content in action:
+       outlined TOPIC slams and KaTeX EQUATION chips whip-swap on a 0.85 s
+       pulse, bubble columns pop, a corner cluster and arc sweep slam at 8.95 s,
+       then the mascot finale — one full spin, a settled head tilt, a
+       star-sparkle wink — fades out to the homepage. CSS keyframes only;
+       pointer-events:none except skip/start, so nothing is ever locked;
+       js/intro.js owns the lifecycle (once per session, skipped on chapter
+       routes, static under reduced motion, fully removed after). -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
     <i class="in-field" aria-hidden="true"></i>
     <div class="in-bed" aria-hidden="true">
@@ -131,6 +129,7 @@
     <span class="in-mascot-wrap" aria-hidden="true">
       <img class="in-mascot" src="img/mascot.png" width="355" height="360" alt="">
       <img class="in-mascot in-mascot-sparkle" src="img/mascot-sparkle.png" width="355" height="360" alt="">
+      <i class="in-star"></i>
     </span>
     <!-- topic slams: outlined white type, one per beat, blur-whip in and out -->
     <span class="in-slam in-s1" aria-hidden="true">CHARGE</span>
@@ -147,9 +146,6 @@
     <!-- vertical equation bubble columns, popped word-by-word -->
     <span class="in-vcol in-vcol1" aria-hidden="true"><span>E</span><span>=</span><span>F/q</span></span>
     <span class="in-vcol in-vcol2" aria-hidden="true"><span>V</span><span>=</span><span>I·R</span></span>
-    <!-- speech panels: chip first, then the lines 0.3 s apart -->
-    <div class="in-speech in-speech1" aria-hidden="true"><b>coulomb's law</b><i>like charges repel</i><i>force falls off as r²</i></div>
-    <div class="in-speech in-speech2" aria-hidden="true"><b>ohm's law</b><i>voltage pushes</i><i>current follows</i></div>
     <!-- corner cluster: four rotated boxes slam on one beat -->
     <span class="in-cx in-cx1" aria-hidden="true">CH·1</span>
     <span class="in-cx in-cx2" aria-hidden="true">CH·2</span>
@@ -157,17 +153,8 @@
     <span class="in-cx in-cx4" aria-hidden="true">QUIZ</span>
     <!-- arc sweep: curved outlined text (letter spans built by js/intro.js) -->
     <span class="in-arc" data-arc="ELECTROMAGNETICS IN MOTION" aria-hidden="true"></span>
-    <!-- navy feature chips slide in, exit on a blur whip -->
-    <div class="in-ncplace" aria-hidden="true"><div class="in-ncrow">
-      <span class="in-nc in-nc1">live sims</span><span class="in-nc in-nc2">24 questions</span><span class="in-nc in-nc3">zero rote</span>
-    </div></div>
-    <!-- callback lock-up + arrow slash, then the Start CTA before the wipe -->
-    <div class="in-callback" aria-hidden="true">
-      <span class="in-cb-title">EMC LAB</span>
-      <svg class="in-arrow" viewBox="0 0 220 90" aria-hidden="true"><path pathLength="1" d="M6 78 C 70 66, 140 40, 202 14 M186 12 l18 1 -7 17" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
+    <!-- finale: mascot spin → head tilt → star-sparkle wink → fade out -->
     <a class="btn btn-primary in-start" href="topics/current.html">Start Learning</a>
-    <div class="in-bars" aria-hidden="true"><i class="in-bar in-bar-t"></i><i class="in-bar in-bar-b"></i></div>
     <i class="in-dip" aria-hidden="true"></i>
     <button class="intro-skip" id="introSkip" type="button">Skip intro &rarr;</button>
   </div>

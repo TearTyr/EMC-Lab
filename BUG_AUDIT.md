@@ -40,7 +40,7 @@ the 2026-10-24 consolidation.
 | NAV-03 | Med | Reported chapter-navigation flakiness | Not reproducible |
 | DET-03 | Med | Reported Details-switch inconsistency / typography jump | Not reproducible |
 | LINK-01 | Med | Reported broken links | Not reproducible |
-| INTRO-01 | Feat | Once-per-session opening (brief PART 6) | Working — now the v5 chorus cut (`js/intro.js`) |
+| INTRO-01 | Feat | Once-per-session opening (brief PART 6) | Working — now the v6 chorus compression + mascot wink finale (`js/intro.js`, INTRO-05) |
 | INTRO-02 | Med | Intro beats hid their own content (colour + back-fill) | Fixed — opacity/fill discipline in the intro CSS |
 | MASCOT-01 | Info | Mascot restored as identity anchor (PART 7.4) | Deliberate |
 | MASCOT-02 | Info | Client's drawn mascot art integrated | Working — hero/header/favicon/social card |
@@ -60,6 +60,7 @@ the 2026-10-24 consolidation.
 | SHELL-01 | Med | A transient sim-script fetch failure cached `''` for the whole session — that chapter's sims stayed silently dead across every later mount until a full reload | Fixed — failures are never cached; the next mount retries |
 | DEPLOY-02 | Low | `/img/` + `/favicon.ico` served `max-age=0, must-revalidate`: a revalidation round trip per image per pageview | Fixed — 24 h cache headers in `vercel.json`; og-card cache-buster bumped ?v=4→?v=5 on all five pages |
 | ASSET-01 | Low | Repo/deploy hygiene: 56 KB of unreferenced woff2 (lilita-one, m-plus-rounded-1c ×2) shipped to production; og-card.png 877 KB; dead `window.tailwind` inline script on all five pages (CDN-era leftover) | Fixed — fonts removed, og-card losslessly recompressed to 601 KB (pixels verified identical, IHDR gate intact), dead script removed |
+| INTRO-05 | Feat | Intro v6 (user directive 2026-10-25: "keep it simple … close to the animation"): the 49 s of footage from 21 s compressed ~4.3:1 into 11.5 s by keeping ten whole beat phrases at native speed and cutting on the footage's own beats; speech panels / navy chips / callback / letterbox wipe retired; new finale — mascot spin → head tilt → star-sparkle wink → fade-out | Done — beat grid + finale in `css/input.css`, `INTRO_MS = 11500`; gates re-pointed (§2); trace harness in `.scratch/trace/` |
 | GATE-01 | Med | smoke-test's two blur/gradient ban scans keyed a marker string (`PHASE 8 — site-wide motion system`) that no longer exists in input.css → `indexOf` = −1 → both scans silently degenerated to a one-character slice (vacuous since the phase-8 comment was retitled) | Fixed — re-pointed to the real header `Site-wide motion system`; strictness increase, logged in §2 |
 | SHELL-02 | Crit | **Production-only:** the shell's hard-coded skip list (`'registry.js','common.js','motion.js'` substring match) missed content-hashed production names (`common.58f7f516.js` ∌ `common.js`) → **common.js re-executed on every shell chapter mount**, re-running boot(): Detail toggle dead after the first chapter visit (double-bound handler flips twice = net zero), Topics dropdown and mobile nav menu dead (open-then-cancel), boot loader re-armed (overlay flash), scroll/prefetch/transition listeners accumulating. Every behavioural gate serves the UNHASHED source layout, where the filter works — so the whole suite stayed green while the deployed site rotted per chapter switch. Repro: visit any chapter from the homepage, then flip Details / open the dropdown | Fixed — shell skip-set is now basename-matched against the scripts index actually loaded (hash-proof, `js/shell.js` LOADED) + common.js carries a re-execution guard (a live engine is returned, never re-booted); new production-layout gate `tools/prod-verify.mjs` (`npm run verify:prod`, 14 checks) proven to FAIL 7 checks on the pre-fix build |
 
@@ -130,6 +131,14 @@ the gates today:
   v5 grammar assertions (stroke, whip keyframes, ramp steps, collage bed)
   hold on both cuts — smoke asserts the blur whips exist in source, which
   they still do, unchanged, for full-fidelity machines.
+- **Intro v6 re-points (INTRO-05, 2026-10-25):** master clock 14000 → 11500
+  (11.05 s picture + 0.45 s fade). `intro-verify` auto-end window 13.6–16.6 s →
+  **11.2–14.2 s**; `smoke-test` auto-end [13900,16300] → **[11400,13800]** and its
+  v5-grammar token list drops the retired pieces (speech panels, navy chips,
+  wipe, arrow draw; `in-f5 --ti` 10.9s → 8.1s) in favour of the finale grammar
+  (`in-spin`/`in-tilt`/`in-star`/`in-fadeout`); capture-tool caps 16 s → 13 s and
+  25 s → 20 s. All re-points are window/token moves for the shorter cut — no
+  assertion was deleted or weakened; measured auto-end ≈12.05 s after load.
 - **Production-layout gate (SHELL-02, 2026-10-25):** NEW gate
   `tools/prod-verify.mjs` (`npm run verify:prod`) — an addition, no existing
   assertion re-pointed. It runs the shell-mount-affected contracts (engine

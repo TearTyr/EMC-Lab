@@ -110,16 +110,19 @@ Video/                the original reference MP4 (analysis source; never shipped
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
   pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
   survive the flip untouched.
-- **Once-per-session intro (v5 "chorus cut").** The homepage opens with a ~14 s
-  original composition rebuilt off the *main-motion passage* of the inspected
+- **Once-per-session intro (v6 "chorus compression").** The homepage opens with an
+  ~11.5 s original composition rebuilt off the *whole chorus* of the inspected
   reference footage (`Video/シェリーライド.mp4`, dev-only, never shipped): it starts
-  where the footage's main motion starts — the ramped flash at footage 21.4 s into
-  the chorus collage — and runs that section's beat grid with the site's own
+  where the footage's main motion starts — the ramped flash at footage 21.4 s —
+  and compresses the 49 s from there ~4.3:1 by keeping ten native-speed beat
+  phrases cut on the footage's own beats, running that grid with the site's own
   content in action: outlined topic slams (CHARGE → FIELD → CURRENT → FLUX →
   INDUCTION) whip-swap with KaTeX equation chips (Coulomb, E = F/q, V = IR, Φ = BA,
   ε = −dΦ/dt) through ~120 ms motion-blur whips, joined by equation bubble columns,
-  speech panels, a corner cluster, an arc sweep and navy feature chips, then a
-  letterbox wipe hands over to the homepage. Skippable, once per session
+  a corner cluster and an arc sweep. v6 (2026-10-25) compresses the footage's whole
+  21 s→end chorus ~4.3:1 into **11.5 s** by keeping ten native-speed beat phrases
+  and cutting on the footage's own beats, and closes on a mascot finale: one full
+  spin, a settled head tilt, a star-sparkle wink, then a fade-out to the homepage. Skippable, once per session
   (`emc.intro.v1`), never on chapter routes, no replay loop, and it degrades to a
   static poster under `prefers-reduced-motion` — or to a blur-free `.lite` cut
   (identical beat grid, transform-only smears) on low-tier devices, whose GPUs
@@ -241,8 +244,12 @@ the Edge run).
   zombie browsers from a crashed run cause `Target crashed` on the next harness's first page.
 - Every browser harness — gates, screenshots and the perf tools alike — runs on
   Playwright's chromium (`npx playwright install chromium` once).
-- The intro runs ~13.9 s (13.45 s picture + 0.45 s wipe): `intro-verify` waits up to
-  20 s for overlay removal, `capture-intro-video` up to 25 s.
+- The intro runs ~11.5 s (11.05 s picture + 0.45 s fade): `intro-verify` waits up to
+  20 s for overlay removal, `capture-intro-video` up to 20 s.
+- Dev-only footage tooling (never shipped, gitignored): `.scratch/footage/` holds the
+  sha-verified MP4, every frame from 21.0 s, contact sheets and the 11.5 s song-edit
+  proof cut; `.scratch/trace/trace.html` is the frame-by-frame trace harness
+  (footage × real intro CSS, beat-map synced) — serve the repo root and open it.
 - Verifier file-servers preload the repo into RAM and exclude `docs/`, `.scratch/`,
   `shots/` and `Video/` (never requested by any page; a page that did request them
   would 404 into the `misses[]` assertion).
