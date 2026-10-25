@@ -52,8 +52,8 @@
   "installCommand": "bun install",
   "redirects": [
     {
-      "source": "/topics/efield.html",
-      "destination": "/topics/fields.html",
+      "source": "/topics/magind.html",
+      "destination": "/",
       "permanent": true
     }
   ]

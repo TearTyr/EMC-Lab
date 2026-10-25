@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
+  <meta name="description" content="Sixteen multiple-choice questions on circuits and electric fields — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta name="theme-color" content="#17181c">
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
@@ -40,15 +40,15 @@
   <meta property="og:site_name" content="EMC Lab">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Quiz">
-  <meta property="og:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
+  <meta property="og:description" content="Sixteen multiple-choice questions on circuits and electric fields — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta property="og:url" content="https://emc-lab.vercel.app/quiz.html">
   <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=5">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
+  <meta property="og:image:alt" content="EMC Lab — an interactive electricity tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Quiz">
-  <meta name="twitter:description" content="Twenty-four multiple-choice questions on circuits, electric fields and magnetism/induction — with automatic scoring, worked explanations and a per-chapter breakdown.">
+  <meta name="twitter:description" content="Sixteen multiple-choice questions on circuits and electric fields — with automatic scoring, worked explanations and a per-chapter breakdown.">
   <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=5">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
@@ -112,7 +112,7 @@
     <div class="wrap nav-inner">
       <a class="brand" href="index.html" aria-label="EMC Lab — home">
         <img class="brand-mark" src="img/mascot.png" width="34" height="34" alt="">
-        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electromagnetics</span></span>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electricity</span></span>
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
               title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
@@ -130,10 +130,9 @@
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="nav-drop-menu" id="topicsMenu">
-            <span class="dd-head">The three chapters</span>
+            <span class="dd-head">The chapters</span>
             <a class="dd-link" href="topics/current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · P = VI · series &amp; parallel · circuit builder</small></a>
             <a class="dd-link" href="topics/fields.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charge · Coulomb + superposition · E-field &amp; field lines</small></a>
-            <a class="dd-link" href="topics/magind.html"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
           </div>
         </div>
         <a class="nav-link nav-cta" href="quiz.html">Take the quiz</a>
@@ -151,18 +150,18 @@
       <div class="quiz-head">
         <div class="quiz-head-text">
           <span class="eyebrow eyebrow-amber">Assessment</span>
-          <h1 class="h-topic">Electromagnetics quiz</h1>
+          <h1 class="h-topic">Electricity quiz</h1>
         </div>
       </div>
       <p class="lede">
-        <span id="quiz-total">24</span> multiple-choice questions — eight per chapter — each with a worked
+        <span id="quiz-total">16</span> multiple-choice questions — eight per chapter — each with a worked
         explanation and a hint. Scoring is automatic; your best result is saved in this browser.
       </p>
 
       <!-- Stat tiles: hidden by js/quiz.js while an attempt is in progress,
            so the first question card lands inside the first viewport. -->
       <div class="stat-strip stat-strip-4" id="quiz-stats" style="max-width:640px">
-        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">24</span></div>
+        <div class="stat"><span class="stat-label">Questions</span><span class="stat-value hl-cyan" id="quiz-count">16</span></div>
         <div class="stat"><span class="stat-label">Best score</span><span class="stat-value hl-emerald" id="quiz-best">—</span></div>
         <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="quiz-attempts">0</span></div>
         <div class="stat"><span class="stat-label">Pass mark</span><span class="stat-value hl-amber">70%</span></div>
@@ -201,8 +200,8 @@
             </button>
             <div class="quiz-pill" id="quizPill" hidden role="status" aria-label="Quiz progress">
               <span class="pill-track"><span class="pill-fill" id="quiz-progress-fill"></span></span>
-              <span class="pill-text" id="pillText">0/24</span>
-              <span class="pill-sr" id="quiz-progress-text">0 of 24 answered</span>
+              <span class="pill-text" id="pillText">0/16</span>
+              <span class="pill-sr" id="quiz-progress-text">0 of 16 answered</span>
               <span id="quiz-live" hidden></span>
               <span class="pill-flags" id="pillFlags" hidden>
                 <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9M3 2.2h6.2l-1.4 2 1.4 2H3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -218,7 +217,7 @@
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="ch1" aria-pressed="false">1 · Circuits</button>
                 <button class="btn btn-sm" type="button" data-quiz-filter="ch2" aria-pressed="false">2 · Fields &amp; Coulomb</button>
-                <button class="btn btn-sm" type="button" data-quiz-filter="ch3" aria-pressed="false">3 · Magnetism</button></div>
+                </div>
             </div>
             <div class="qopts-cell">
               <span class="ctl-label">Status</span>
@@ -255,7 +254,7 @@
             <button class="btn btn-primary" type="button" id="quiz-submit" data-quiz-submit>Submit quiz</button>
             <button class="btn" type="button" id="quiz-shuffle">Shuffle order</button>
             <span class="tag tag-amber" id="quiz-streak" hidden aria-label="Current correct streak">streak ×0</span>
-            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">24</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
+            <p class="tiny faint qopts-submit-note">Submitting grades all <span id="quiz-total-end">16</span> questions at once — filters only change the view, and blanks count as incorrect.</p>
             <p class="tiny faint qopts-submit-hint" id="quiz-submit-hint" data-submit-hint role="status" hidden></p>
           </div>
 
@@ -393,7 +392,6 @@
         <ul class="footer-links">
           <li><a href="topics/current.html">1 · Circuits & Ohm’s Law</a></li>
           <li><a href="topics/fields.html">2 · Electric Fields & Coulomb’s Law</a></li>
-          <li><a href="topics/magind.html">3 · Magnetism & Induction</a></li>
           <li><a href="quiz.html">Quiz</a></li>
         </ul>
       </div>

@@ -57,7 +57,7 @@ const OUT_OF_SCOPE = [
    progress-key mentions inside common.js (the migration MUST name old keys). */
 const ALLOW = [
   { file: 'js/common.js', re: /emc\.progress\.v3'|emc\.splash/i },   // legacy-key migration list
-  { file: 'js/registry.js', re: /charge|coulomb|field|current|magind/ } // alias map (ids, not topics)
+  { file: 'js/registry.js', re: /charge|coulomb|field|current/ } // alias map (ids, not topics)
 ];
 
 const FETCH_RES = [

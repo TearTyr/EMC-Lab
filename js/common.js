@@ -809,11 +809,11 @@ window.EMC = (function () {
   })();
 
   /* ------------------------------------------------------------------------ 7. Progress tracking ------------------------------------------------------------------------ */
-  /* Progress tracks exactly the three principal chapters from the registry —
+  /* Progress tracks exactly the two chapters from the registry —
      no more, no less. The ids are derived, never hand-typed here. */
   const TOPICS = (window.EMC_REGISTRY && Array.isArray(window.EMC_REGISTRY.chapters) && window.EMC_REGISTRY.chapters.length
     ? window.EMC_REGISTRY.chapters.map(c => c.id)
-    : ['ch1', 'ch2', 'ch3']);
+    : ['ch1', 'ch2']);
   const PROGRESS_KEY = 'emc.progress.v4';
   const LEGACY_KEYS = ['emc.progress.v3', 'emc.progress.v2', 'emc.progress.v1'];
 
@@ -832,7 +832,6 @@ window.EMC = (function () {
   const TOPIC_TO_CHAPTER = {
     current: 'ch1', circuits: 'ch1',
     charges: 'ch2', efield: 'ch2', charge: 'ch2', coulomb: 'ch2', field: 'ch2',
-    magind: 'ch3'
   };
   function migrateLegacy(p) {
     const t = (p && p.topics) || {};
@@ -844,7 +843,6 @@ window.EMC = (function () {
       if (ch) credit(ch); else credit(old);        // already a current chapter id
     }
     /* the v1 split pair: both halves required (mirrors the historical rule) */
-    if (t.magnetism && t.induction) credit('ch3');
     return {
       topics,
       quizBest: Number(p.quizBest) || 0,

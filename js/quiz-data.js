@@ -1,15 +1,14 @@
-/* Quiz bank: 24 multiple-choice questions — exactly 8 per chapter — with
+/* Quiz bank: 16 multiple-choice questions — exactly 8 per chapter — with
    worked explanations and hints.
    Schema: { id, topic, label, level ('easy'|'full'), q, options[4], answer
    (0-based), explain, hint }.
-   Coverage: ch1 Circuits & Ohm's law 8 · ch2 Electric fields & Coulomb's law 8
-   · ch3 Magnetism & induction 8. Every ch2 question derives from a lecture
+   Coverage: ch1 Circuits & Ohm's law 8 · ch2 Electric fields & Coulomb's law 8 Every ch2 question derives from a lecture
    item (docs/spec/brief-digest.md §1.2); the three worked-example questions
    use the lecture's own configurations and were independently recomputed
    (docs/spec/verify-checks.mjs). Displayed totals are derived from
    BANK.length, never hand-maintained. k = 8.99×10⁹ N·m²/C² everywhere —
    the lecture's value, computed AND printed (BUG_AUDIT DATA-01).
-   The bank is exactly the curated 24 (8 per chapter). */
+   The bank is exactly the curated 16 (8 per chapter). */
 window.EMC_QUIZ = [
 
   /* ================= Chapter 1 — Circuits & Ohm's law ================= */
@@ -190,95 +189,6 @@ window.EMC_QUIZ = [
     answer: 1,
     explain: "F = |q₀|E = (18×10⁻⁸)(2.0) = <b>3.6×10⁻⁷ N</b>, and a POSITIVE charge is pushed <b>along</b> E. (Swap in q₀ = −24×10⁻⁸ C and you get 4.8×10⁻⁷ N opposite E — the lecture’s part (b), and the corrected value of the slide’s 4.7×10⁻⁷ N.)",
     hint: "Multiply |q₀| by E; the sign of q₀ only picks the direction. (9.0×10⁻¹¹ is the division slip.)"
-  },
-
-  /* ============== Chapter 3 — Magnetism & induction ============== */
-  {
-    id: 17, topic: 'ch3', label: "Magnetism & Induction", level: 'easy',
-    q: "Outside a bar magnet, magnetic field lines run:",
-    options: ["from the south pole to the north pole",
-              "from the north pole to the south pole",
-              "only through the middle of the magnet",
-              "in straight lines that never curve"],
-    answer: 1,
-    explain: "Outside the magnet lines go <b>N → S</b>; inside they continue S → N, so every line is a <b>closed loop</b> — the graphical statement of “no magnetic monopoles”.",
-    hint: "Compass needles point away from N…"
-  },
-  {
-    id: 18, topic: 'ch3', label: "Magnetism & Induction", level: 'easy',
-    q: "A charged particle moves PARALLEL to a uniform magnetic field. The magnetic force on it is:",
-    options: ["maximum",
-              "qvB",
-              "zero",
-              "perpendicular to the field"],
-    answer: 2,
-    explain: "F = qvB sinθ with θ = 0°, so sinθ = 0 and <b>F = 0</b> — the particle continues in a straight line at constant speed.",
-    hint: "F = qvB sinθ. What is sin 0°?"
-  },
-  {
-    id: 19, topic: 'ch3', label: "Magnetism & Induction", level: 'full',
-    q: "A positive charge moves to the right (+x) through a magnetic field pointing OUT of the page (+z). The force points:",
-    options: ["up (+y)",
-              "down (−y)",
-              "to the right (+x)",
-              "out of the page (+z)"],
-    answer: 1,
-    explain: "F = qv × B: x̂ × ẑ = −ŷ, so the force is <b>downward</b>. Right hand: fingers along v, curl out of the page, thumb points down.",
-    hint: "Cross-product order matters: v × B, not B × v."
-  },
-  {
-    id: 20, topic: 'ch3', label: "Magnetism & Induction", level: 'full',
-    q: "A charged particle moves in a circle at constant speed in a uniform magnetic field. Which statement is correct?",
-    options: ["The magnetic force does work, increasing its kinetic energy",
-              "The force is always perpendicular to v, so it does no work and only bends the path",
-              "The particle accelerates along its velocity",
-              "The orbit radius is independent of the particle’s mass"],
-    answer: 1,
-    explain: "F = qv × B is always ⊥ v, so F·v = 0: <b>no work, no change of speed</b> — only direction. And r = mv/(|q|B) certainly depends on mass.",
-    hint: "A perpendicular force can never change the SPEED."
-  },
-  {
-    id: 21, topic: 'ch3', label: "Magnetism & Induction", level: 'full',
-    q: "A 200-turn coil sees its flux change at 0.05 Wb/s per turn. The induced EMF is:",
-    options: ["0.25 V",
-              "10 V",
-              "4000 V",
-              "0.00025 V"],
-    answer: 1,
-    explain: "Faraday: |EMF| = N·|dΦ/dt| = 200 × 0.05 = <b>10 V</b> — it depends on the RATE of change of flux, not the flux itself.",
-    hint: "EMF = N × rate. Multiply, don’t divide."
-  },
-  {
-    id: 22, topic: 'ch3', label: "Magnetism & Induction", level: 'easy',
-    q: "Lenz’s law says the induced current flows so that it:",
-    options: ["reinforces the change in flux that produced it",
-              "opposes the change in flux that produced it",
-              "always flows clockwise",
-              "makes the total flux through the coil zero"],
-    answer: 1,
-    explain: "The induced current <b>opposes the CHANGE</b> (the minus sign in EMF = −NdΦ/dt) — energy conservation in disguise: you must do work against the opposition.",
-    hint: "Nature resists change — but it opposes the CHANGE, not the flux itself."
-  },
-  {
-    id: 23, topic: 'ch3', label: "Magnetism & Induction", level: 'full',
-    q: "A bar magnet is pushed through a coil connected to a resistor. Which change would NOT alter the induced EMF?",
-    options: ["Moving the magnet faster",
-              "Using more turns",
-              "Using a stronger magnet",
-              "Increasing the circuit resistance"],
-    answer: 3,
-    explain: "EMF = −N dΦ/dt depends on turns, strength and speed only. R changes the induced <b>current</b> (I = EMF/R) and the heating — never the EMF.",
-    hint: "Which quantity appears in Faraday’s law — and which only in Ohm’s?"
-  },
-  {
-    id: 24, topic: 'ch3', label: "Magnetism & Induction", level: 'easy',
-    q: "A strong magnet dropped down a vertical copper tube falls much more slowly than in free fall. Why?",
-    options: ["Copper is magnetic and attracts the magnet",
-              "The moving magnet induces eddy currents whose fields oppose the motion (Lenz’s law)",
-              "Air resistance inside the tube is much larger",
-              "The magnet loses its magnetism inside copper"],
-    answer: 1,
-    explain: "The falling magnet changes the flux through the tube, driving <b>eddy currents</b>; by Lenz’s law their field drags upward. The lost potential energy becomes heat (I²R) in the copper — the eddy-current brake.",
-    hint: "Copper is not magnetic — but it IS a conductor. What does a moving magnet do to conductors?"
   }
+
 ];

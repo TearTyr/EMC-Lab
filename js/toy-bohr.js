@@ -3,7 +3,7 @@
    Tune r (slider or drag) and the speed readout follows from the equation;
    at r = 5.29×10⁻¹¹ m it lands on the lecture's 2.19×10⁶ m/s and earns a
    star. The orbit is drawn at a CONSTANT honest slow-down factor (the same
-   pattern as the Lorentz sim), so faster electrons visibly circle faster. */
+   pattern as the other sims), so faster electrons visibly circle faster. */
 (function () {
   const canvas = document.getElementById('toy-bohr');
   if (!canvas) return;

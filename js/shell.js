@@ -4,7 +4,7 @@
    into the #shell-topic section and loads that chapter's sim scripts ONCE over
    the network (re-executed per mount, so each sim IIFE re-binds through
    EMC.whenNear to the freshly mounted canvases). Routes: #/charge, #/coulomb, #/field,
-   #/current, #/magind; unknown #/… falls back to home; every other hash stays a normal
+   #/current; unknown #/… falls back to home; every other hash stays a normal
    in-page anchor. Inactive sections are hidden AND inert; stages of a leaving
    topic are destroyed through the Stage's single cleanup path. */
 (function () {
@@ -42,7 +42,7 @@
   const srcCache = new Map();      // chapter id -> sim id -> script src (as shipped)
   const scriptCache = new Map();   // sim url -> source text (network: once)
   let active = 'home';             // 'home' | chapter id
-  let pendingAnchor = null;        // e.g. sim-induction-panel from a deep link
+  let pendingAnchor = null;        // e.g. sim-arena-panel from a deep link
   let loadToken = 0;               // ignores fetches that lose a race
 
   /* ---- routing ---------------------------------------------------------- */
@@ -51,7 +51,7 @@
     if (h.indexOf('#/') !== 0) return null;     // plain anchor: leave it native
     const raw = h.slice(2);
     if (byId(raw)) return raw;
-    /* Legacy routes (#/charge, #/current, #/magind, #/efield …) resolve
+    /* Legacy routes (#/charge, #/current, #/efield …) resolve
        through the registry alias map onto the chapter that owns them now, and
        the URL is normalised to the chapter route so reloads and shares keep a
        meaningful address. A legacy lesson id doubles as the section anchor on

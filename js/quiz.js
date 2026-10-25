@@ -47,7 +47,7 @@
 
   const S = {
     order: BANK.slice(),          // current question order (shuffle changes this)
-    filter: 'all',                // 'all' | chapter id (ch1/ch2/ch3) | 'wrong' | 'unanswered' | 'flagged'
+    filter: 'all',                // 'all' | chapter id (ch1/ch2) | 'wrong' | 'unanswered' | 'flagged'
     answers: new Map(),           // question id -> chosen option index
     marked: new Map(),            // question id -> true/false (only once graded)
     flagged: new Set(),           // question ids flagged for review before submit
@@ -1007,10 +1007,10 @@
     box.classList.remove('score-enter');
     void box.offsetWidth;               // restart the entrance on every retake
     box.classList.add('score-enter');
-    // The home dashboard promises that a pass (>= 70%) ticks all three chapters.
+    // The home dashboard promises that a pass (>= 70%) ticks both chapters.
     // Say so out loud at the moment it happens instead of letting it be silent.
     const passNote = pct >= 70
-      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks all three chapters
+      ? `<p class="tiny faint" style="margin:.9rem 0 0">Scoring 70% or more also marks both chapters
            as studied on your dashboard \u2014 a pass means the whole course has been covered.
            Un-tick any chapter with the button at the end of its page if you would rather keep
            working on it.</p>`
