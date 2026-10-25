@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Magnetic fields from moving charge, the Lorentz force and cyclotron motion, magnetic flux, Faraday’s and Lenz’s laws — with an RK4 Lorentz sim and a magnet-through-coil induction lab.">
+  <meta name="theme-color" content="#17181c">
+  <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
+     storage failures fall back to the technical default. */
+    try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+    document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
+    /* Boot dead-man switch — part of the ONE loader lifecycle owned by js/common.js.
+       If the engine never comes up (a script failed to load or threw during
+       startup), show an error card with Retry and Home after 1500 ms. When
+       common.js is alive this does nothing: its loader owns the experience and
+       the page content is already on screen either way. */
+    setTimeout(function () {
+      if (window.EMC) return;
+      var home = location.pathname.indexOf('/topics/') >= 0 ? '../index.html' : 'index.html';
+      var d = document.createElement('div');
+      d.id = 'bootFatal'; d.setAttribute('role', 'alert');
+      var p1 = document.createElement('p');
+      p1.innerHTML = '<strong>EMC Lab did not start.</strong> A required script failed to load or threw an error.';
+      var p2 = document.createElement('p');
+      var rb = document.createElement('button');
+      rb.type = 'button'; rb.id = 'bootFatalRetry'; rb.textContent = 'Retry';
+      var ha = document.createElement('a'); ha.textContent = 'Home'; ha.href = home;
+      p2.appendChild(rb); p2.appendChild(document.createTextNode(' ')); p2.appendChild(ha);
+      d.appendChild(p1); d.appendChild(p2);
+      (document.body || document.documentElement).appendChild(d);
+      rb.addEventListener('click', function () { location.reload(); });
+    }, 1500);
+  </script>
+  <title>3 · Magnetism &amp; Induction — EMC Lab</title>
+  <link rel="canonical" href="https://emc-lab.vercel.app/topics/magind.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EMC Lab">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Magnetism &amp; Induction — EMC Lab (Chapter 3)">
+  <meta property="og:description" content="Magnetic fields from moving charge, the Lorentz force and cyclotron motion, magnetic flux, Faraday’s and Lenz’s laws — with an RK4 Lorentz sim and a magnet-through-coil induction lab.">
+  <meta property="og:url" content="https://emc-lab.vercel.app/topics/magind.html">
+  <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=5">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="EMC Lab — an interactive electromagnetics tutorial">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Magnetism &amp; Induction — EMC Lab (Chapter 3)">
+  <meta name="twitter:description" content="Magnetic fields from moving charge, the Lorentz force and cyclotron motion, magnetic flux, Faraday’s and Lenz’s laws — with an RK4 Lorentz sim and a magnet-through-coil induction lab.">
+  <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=5">
+  <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
+       and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
+       home screens. All three carry the same artwork as the header
+       brand mark — tools/smoke-test.mjs asserts they stay identical. -->
+  <link rel="icon" href="../favicon.ico" type="image/x-icon">
+  <link rel="icon" href="../img/mascot.png" type="image/png">
+  <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+  <link rel="stylesheet" href="../css/site.css">
+  <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-700.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="../vendor/fonts/g8321-400.woff2" crossorigin>
+  <!-- KaTeX: the LaTeX formatter for every equation on the page -->
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
+  <style id="bootLoader">
+    /* Loader visuals: ONE segmented accent bar that advances on real stage
+       completion, plus a screen-reader status line — nothing else. The overlay
+       is built dynamically by js/common.js only when startup exceeds ~150 ms,
+       so these rules cost nothing on fast loads. Flat tokens, transform/opacity
+       only; self-contained so it paints even if site.css is slow. */
+    #bootOverlay {
+      position: fixed; inset: 0; z-index: 200; background: #101116;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      opacity: 1; transition: opacity .24s ease;
+    }
+    #bootOverlay.hide { opacity: 0; pointer-events: none; }
+    #bootOverlay .bo-bar { display: flex; gap: 5px; width: 192px; height: 5px; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #23252c; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg::after {
+      content: ""; position: absolute; inset: 0; background: #e9ff47; border-radius: 999px;
+      transform: scaleX(0); transform-origin: left; transition: transform .2s ease;
+    }
+    #bootOverlay .bo-seg.done::after { transform: scaleX(1); }
+    #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    #bootFatal {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 210; width: min(92vw, 34rem);
+      margin: 0 auto 1rem; background: #17181c; color: #e8eefb;
+      border: 1.5px solid #e9ff47; border-radius: .75rem; padding: 1rem 1.2rem;
+      font: 600 .95rem/1.45 system-ui, sans-serif;
+    }
+    #bootFatal button, #bootFatal a {
+      font: inherit; font-weight: 700; color: #101116; background: #e9ff47;
+      border: 0; border-radius: .5rem; padding: .4rem .9rem; cursor: pointer; text-decoration: none;
+    }
+    #bootFatal a { display: inline-block; margin-left: .4rem; }
+    @media (prefers-reduced-motion: reduce) {
+      #bootOverlay, #bootOverlay .bo-seg::after { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="emc">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <noscript>
+    <div class="wrap"><p class="noscript-note"><strong>JavaScript is turned off.</strong> The tutorial text still reads fine, but the live simulations, the progress dashboard and the quiz all need JavaScript enabled.</p></div>
+  </noscript>
+
+  <header class="site-header">
+    <div class="wrap nav-inner">
+      <a class="brand" href="../index.html" aria-label="EMC Lab — home">
+        <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electromagnetics</span></span>
+      </a>
+      <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
+              title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
+        <span class="dt-label" aria-hidden="true">Details</span>
+        <span class="dt-state" aria-hidden="true">ON</span>
+        <span class="dt-track" aria-hidden="true"><span class="dt-knob"></span></span>
+        <span class="tiny faint" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">toggle explanation detail level</span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+      <nav id="navMenu" class="nav-menu" aria-label="Main navigation">
+        <a class="nav-link" href="../index.html">Home</a>
+        <div class="nav-drop">
+          <button class="nav-link nav-drop-btn" id="topicsBtn" type="button"
+                  aria-expanded="false" aria-controls="topicsMenu">Chapters
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="nav-drop-menu" id="topicsMenu">
+            <span class="dd-head">The three chapters</span>
+            <a class="dd-link" href="current.html"><b>1 · Circuits &amp; Ohm’s Law</b><small>V = IR · P = VI · series &amp; parallel · circuit builder</small></a>
+            <a class="dd-link" href="fields.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charge · Coulomb + superposition · E-field &amp; field lines</small></a>
+            <a class="dd-link" href="magind.html" aria-current="page"><b>3 · Magnetism &amp; Induction</b><small>F = qv × B · flux · Faraday · Lenz</small></a>
+          </div>
+        </div>
+        <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
+      </nav>
+    </div>
+    <div class="scroll-progress"><i id="readingProgress"></i></div>
+  </header>
+
+  <main class="emc-main" id="main" tabindex="-1">
+    <div class="wrap wrap-narrow section-tight topic-head">
+      <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Chapter 3 · Magnetism &amp; Induction</span>
+      </nav>
+      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 3 of 3</span>
+      <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Magnetism &amp; Induction</h1>
+      <p class="lede" data-detail="plain">Magnetic fields arise from moving charge and from the intrinsic spin of particles such as electrons. A changing magnetic flux through a circuit induces a voltage. The two simulations below show both halves of that story.</p>
+      <p class="lede" data-detail="tech">
+        Magnetism arises from moving charge and from the intrinsic spin of particles such as electrons. The magnetic force on a moving charge is always <strong>perpendicular to its velocity</strong> — it changes the charge’s direction but does no work — and a <strong>changing flux</strong> of a field whose lines form <strong>closed loops</strong> through a coil becomes a voltage. This chapter joins the two halves: the Lorentz force, then Faraday’s and Lenz’s laws.
+      </p>
+      <figure class="ch-art" data-mx="rise">
+        <span class="ch-art-frame mx-spin">
+          <img src="../img/art-ch3.png" width="480" height="480"
+            alt="Sticker diagram of a bar magnet with closed field loops circling from its north half to its south half, plus a small compass disc whose needle follows the local field.">
+          <b class="ch-sym" style="left:41%;top:52%" aria-hidden="true">N</b>
+          <b class="ch-sym on-dark" style="left:59%;top:52%" aria-hidden="true">S</b>
+        </span>
+        <figcaption class="small muted">Closed loops, no monopoles: out of N, around, into S.</figcaption>
+      </figure>
+
+      <div class="card mt-4">
+        <h2 class="h-sub" style="margin-top:0" data-mx="slam">Learning objectives</h2>
+        <ul class="objectives" data-mx="lines">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Describe magnetic field lines and why monopoles are absent.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Apply F = qv × B and predict orbit radius r = mv/(|q|B) and period T = 2πm/(|q|B).</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Compute magnetic flux Φ = BA·cosθ and explain why only change induces.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Use EMF = −N·dΦ/dt and Lenz’s law to get magnitudes and directions.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Read the simulated Φ(t) and EMF(t) traces against the theory.</span></li>
+        </ul>
+      </div>
+    </div>
+
+<section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec reveal" id="sources">3.1 · Where magnetism comes from</h2>
+      <p>
+        Every magnetic field in the universe arises from <strong>moving electric charge</strong>
+        or from the <strong>intrinsic spin</strong> of particles such as electrons — a current
+        in a wire, or the electrons inside atoms.
+        In a permanent magnet, huge numbers of atomic magnetic moments line up in regions called
+        <strong>domains</strong>. Heating or hammering a magnet randomises the domains and
+        destroys it; that is why there is a Curie temperature above which ferromagnetism vanishes
+        (1043 K for iron).
+      </p>
+      <dl class="defs">
+        <div><dt>Magnetic poles</dt><dd>Every magnet has a north-seeking (N) and a south-seeking (S) pole. Like poles repel, unlike poles attract — the same rule as charges.</dd></div>
+        <div><dt>No monopoles</dt><dd>Cut a bar magnet in half and you get two smaller magnets, each with its own N and S. No experiment has ever isolated a single magnetic pole, so <strong>magnetic field lines have no beginning and no end</strong>.</dd></div>
+        <div><dt>Magnetic flux density B</dt><dd>The strength of the field, measured in <strong>tesla</strong> (T) = N·s/(C·m) = Wb/m<sup>2</sup>. Earth’s field ≈ 50 µT; a fridge magnet ≈ 5 mT; an MRI scanner 1.5–3 T; the strongest laboratory fields ≈ 45 T.</dd></div>
+      </dl>
+
+      <h2 class="h-sec reveal" id="lines">3.2 · Magnetic field lines and bar magnets</h2>
+      <figure class="fig reveal">
+        <div class="fig-box">
+          <svg viewBox="0 0 560 235" width="560" height="235" role="img"
+               aria-label="A bar magnet with closed field lines leaving the north pole and entering the south pole">
+            <defs>
+              <marker id="magArrow" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto">
+                <path d="M0 0 L7 3 L0 6 z" fill="#c4b5fd"/>
+              </marker>
+            </defs>
+            <!-- closed loops through both poles -->
+            <g fill="none" stroke="#a78bfa" stroke-opacity=".7" stroke-width="1.6">
+              <ellipse cx="280" cy="117" rx="100" ry="24"/>
+              <ellipse cx="280" cy="117" rx="100" ry="50"/>
+              <ellipse cx="280" cy="117" rx="100" ry="78"/>
+              <ellipse cx="280" cy="117" rx="100" ry="104"/>
+            </g>
+            <!-- N -> S direction arrows on the upper half -->
+            <g fill="#c4b5fd">
+              <path d="M274 93 L284 88.5 L284 97.5 Z"/><path d="M274 67 L284 62.5 L284 71.5 Z"/>
+              <path d="M274 39 L284 34.5 L284 43.5 Z"/><path d="M274 13 L284 8.5 L284 17.5 Z"/>
+            </g>
+            <!-- the magnet -->
+            <rect x="180" y="102" width="100" height="30" rx="4" fill="#0369a1"/>
+            <rect x="280" y="102" width="100" height="30" rx="4" fill="#be123c"/>
+            <rect x="180" y="102" width="200" height="30" rx="4" fill="none" stroke="#fff" stroke-opacity=".35"/>
+            <text x="230" y="123" fill="#fff" font-size="17" font-weight="800" font-family="sans-serif" text-anchor="middle">S</text>
+            <text x="330" y="123" fill="#fff" font-size="17" font-weight="800" font-family="sans-serif" text-anchor="middle">N</text>
+            <!-- inside the magnet the lines run S -> N -->
+            <line x1="196" y1="145" x2="364" y2="145" stroke="#6ee7b7" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#magArrow)"/>
+            <text x="280" y="162" fill="#6ee7b7" font-size="11.5" font-family="monospace" text-anchor="middle">inside the magnet: S → N (the loop closes)</text>
+            <!-- a compass -->
+            <g transform="translate(470,52)">
+              <circle r="21" fill="#0a1222" stroke="#5b7299" stroke-width="1.6"/>
+              <line x1="-13" y1="4" x2="13" y2="-4" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/>
+              <line x1="13" y1="-4" x2="4" y2="-1" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/>
+              <text y="34" fill="#a9bad6" font-size="10.5" font-family="monospace" text-anchor="middle">compass aligns</text>
+              <text y="46" fill="#a9bad6" font-size="10.5" font-family="monospace" text-anchor="middle">with the tangent</text>
+            </g>
+            <text x="90" y="205" fill="#a9bad6" font-size="11.5" font-family="monospace">lines leave N,</text>
+            <text x="90" y="220" fill="#a9bad6" font-size="11.5" font-family="monospace">enter S, never cross</text>
+          </svg>
+        </div>
+        <figcaption>Figure 1 — Field lines outside a bar magnet run N → S and continue through the magnet, forming closed loops.</figcaption>
+      </figure>
+
+      <h3 class="h-sub">Field-line rules for magnetism</h3>
+      <ul>
+        <li>Outside the magnet, lines run from the <strong>north pole to the south pole</strong>.</li>
+        <li>Lines are <strong>closed loops</strong> — they continue through the magnet from S to N. This is the difference from electric field lines, which start and stop on charges.</li>
+        <li>Lines <strong>never cross</strong>; the field has one direction at each point.</li>
+        <li><strong>Closer lines = stronger field.</strong> The field is most intense at the poles, where the lines bunch together.</li>
+        <li>The <strong>tangent</strong> to a line is the direction a free north pole (or a compass needle’s north end) would point.</li>
+      </ul>
+
+      <details class="dig dig-trap" data-detail="tech">
+        <summary>A naming trap</summary>
+        <div class="dig-body">
+        <p>
+          The “north pole” of a compass needle points toward the geographic North Pole — which
+          means the Earth’s <em>magnetic</em> pole near geographic north is actually a
+          <strong>south</strong> magnetic pole. Opposite poles attract. Geomagnetic north is
+          currently in the Canadian Arctic and drifts about 40 km per year.
+        </p>
+        </div>
+      </details>
+      <details class="dig dig-trap" data-detail="plain">
+        <summary>A naming trap</summary>
+        <div class="dig-body">
+        <p>
+          A compass “north” end points toward the Arctic — so the magnetism up there must really
+          be a <strong>south</strong> magnetic pole, because opposites attract. The labels on
+          magnets and on the map were fixed long before anyone noticed the flip.
+        </p>
+        </div>
+      </details>
+
+      <h2 class="h-sec reveal" id="force">3.3 · Force on a moving charge</h2>
+      <p>
+        A charge moving through a magnetic field experiences a force perpendicular to both its
+        velocity and the field. This is the <strong>magnetic part of the Lorentz force</strong>:
+      </p>
+      <div class="formula">
+        <span class="eq" data-display data-tex="\vec{F} = q\,\vec{v} \times \vec{B}">F = q v × B</span>
+        <span class="eq" data-display data-tex="|\vec{F}| = |q|\,v B \sin\theta" style="font-size:1.05rem">|F| = |q| v B sinθ</span>
+        <span class="where">θ = the angle between v and B · F in newtons, v in m/s, B in tesla</span>
+      </div>
+      <ul>
+        <li>θ = 0° or 180° (v parallel to B) → <strong>F = 0</strong>. The charge is unaffected.</li>
+        <li>θ = 90° (v perpendicular to B) → <strong>F = |q|vB</strong>, the maximum.</li>
+        <li>A stationary charge feels <strong>no magnetic force at all</strong>, however strong the field.</li>
+        <li>Reversing the sign of q or the direction of B reverses the force.</li>
+      </ul>
+
+      <div class="callout callout-key">
+        <div class="callout-title">The right-hand rule (for a positive charge)</div>
+        <p>
+          <strong>Flat right hand:</strong> fingers point along <strong>v</strong>, curl them
+          toward <strong>B</strong>; your extended <strong>thumb</strong> points along
+          <strong>F</strong>. Equivalent version: index finger = v, middle finger = B, thumb = F,
+          all mutually perpendicular.
+        </p>
+        <p>
+          For a <strong>negative</strong> charge (an electron), find the direction with your
+          right hand and then <strong>reverse it</strong> — or just use your left hand.
+        </p>
+      </div>
+
+      <div class="callout callout-key">
+        <div class="callout-title">Notation for fields perpendicular to the page</div>
+        <p>
+          <strong><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" aria-hidden="true"><circle cx="7.5" cy="7.5" r="6.4" fill="none" stroke="#c4b5fd" stroke-width="1.5"/><circle cx="7.5" cy="7.5" r="2.1" fill="#c4b5fd"/></svg> (a dot)</strong> = the vector comes <em>out</em> of the page toward you —
+          the tip of an arrow. <strong><svg width="15" height="15" viewBox="0 0 15 15" style="vertical-align:-2px" aria-hidden="true"><circle cx="7.5" cy="7.5" r="6.4" fill="none" stroke="#c4b5fd" stroke-width="1.5"/><path d="M4.4 4.4l6.2 6.2M10.6 4.4l-6.2 6.2" stroke="#c4b5fd" stroke-width="1.5"/></svg> (a cross)</strong> = the vector goes <em>into</em> the
+          page — the feathers of an arrow seen from behind.
+        </p>
+      </div>
+
+      <h3 class="h-sub">Circular motion</h3>
+      <p>
+        Because F is always perpendicular to v, the magnetic force acts as a centripetal force.
+        It changes the <em>direction</em> of the velocity but never its magnitude:
+      </p>
+      <div class="formula">
+        <span class="eq" data-display data-tex="|q| v B = \dfrac{m v^2}{r}">|q|vB = mv<sup>2</sup>/r</span>
+        <span class="eq" data-display data-tex="r = \dfrac{mv}{|q|B}" style="font-size:1.05rem">r = mv / (|q|B)</span>
+        <span class="eq" data-display data-tex="T = \dfrac{2\pi m}{|q|B}" style="font-size:1.05rem">T = 2πm / (|q|B)</span>
+        <span class="where">the period does not depend on speed — faster particles simply travel a wider circle in the same time</span>
+      </div>
+
+      <div class="callout callout-key">
+        <div class="callout-title">Worked example</div>
+        <p>A proton enters a 0.50 T field at 2.0×10<sup>5</sup> m/s, perpendicular to the field. Find the force, radius and period.</p>
+        <p class="mono small">
+          F = qvB = (1.602×10<sup>−19</sup>)(2.0×10<sup>5</sup>)(0.50) = <b>1.60×10<sup>−14</sup> N</b><br>
+          r = mv/(qB) = (1.673×10<sup>−27</sup>)(2.0×10<sup>5</sup>) / (1.602×10<sup>−19</sup> × 0.50) = 3.35×10<sup>−22</sup> / 8.01×10<sup>−20</sup> = <b>4.2 mm</b><br>
+          T = 2πm/(qB) = 2π(1.673×10<sup>−27</sup>)/(8.01×10<sup>−20</sup>) = <b>1.31×10<sup>−7</sup> s</b> (131 ns, i.e. f ≈ 7.6 MHz)
+        </p>
+        <p>
+          Replace the proton with an electron at the same speed and the radius shrinks by the mass
+          ratio to about <b>2.3 µm</b> — the electron curves the opposite way, and 1836 times more tightly.
+        </p>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">Why no work is done</div>
+        <p>
+          Power = F·v = |F||v|cos90° = <strong>0</strong>. A magnetic field can never speed a
+          charge up or slow it down; it can only steer it. That is why a cyclotron needs an
+          <em>electric</em> field to add energy and a <em>magnetic</em> field to keep the beam
+          circulating — and it is why the kinetic energy in the Lorentz simulator stays constant.
+        </p>
+      </div>
+
+      <h3 class="h-sub">Force on a current-carrying wire (the motor effect)</h3>
+      <p>
+        A wire carries moving charges, so it too feels a force: <strong>F = BIL sinθ</strong>. This
+        is the principle of the electric motor — a loop in a field experiences a couple that makes
+        it turn. Fleming’s <em>left</em>-hand rule (thumb = motion, first finger = field, second
+        finger = current) gives the same answer as the right-hand rule applied to the positive
+        charge carriers.
+      </p>
+
+      <details class="dig dig-real" data-detail="tech">
+        <summary>Real world</summary>
+        <div class="dig-body">
+        <p>
+          <strong>Mass spectrometers</strong> separate ions by m/q: ions are accelerated, then bent
+          in a known field, and r = mv/(qB) tells you the mass. This is how we measure isotopes and
+          identify molecules.
+        </p>
+        <p>
+          <strong>The aurora.</strong> Charged particles from the solar wind spiral along Earth’s
+          field lines and are funnelled toward the magnetic poles, where they excite oxygen
+          (green, 557.7 nm) and nitrogen (red/blue). The same deflection shields the whole planet
+          from the solar wind.
+        </p>
+        <p>
+          <strong>MRI scanners</strong> use 1.5–3 T fields to make proton spins precess;
+          <strong>particle colliders</strong> use thousands of superconducting dipole magnets to
+          bend beams around a 27 km ring; <strong>eddy-current brakes</strong> on trains and
+          roller coasters use the same force with no friction and no wear.
+        </p>
+        </div>
+      </details>
+      <details class="dig dig-real" data-detail="plain">
+        <summary>Real world</summary>
+        <div class="dig-body">
+        <p>
+          A magnetic field bends a moving charge, and the bend has a radius — so if you know the
+          field you can weigh the particle. That is how a <strong>mass spectrometer</strong> tells
+          isotopes apart. The same bending traps solar particles and slides them down Earth’s field
+          lines to the poles: that is the <strong>aurora</strong>, and it is also why the field
+          shields us. <strong>MRI scanners</strong> and <strong>particle colliders</strong> are the
+          big-engineering versions, and <strong>eddy-current brakes</strong> slow trains with no
+          friction at all.
+        </p>
+        </div>
+      </details>
+
+      <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec reveal" id="sim-lorentz-panel" style="scroll-margin-top:5rem">3.4 · Simulation — the Lorentz force</h2>
+      <p class="sim-hint tiny faint">Set B and v, then press play — the orbit is integrated step by step (RK4).</p>
+      <p>
+        Pick a particle, a speed, a field strength and the two directions. The simulator draws
+        the exact circular orbit from <strong>r = mv/(|q|B)</strong>, together with the velocity
+        and force vectors at every instant. Watch what happens when you flip the charge from a
+        proton to an electron, or reverse the field: the sense of rotation reverses, exactly as
+        the cross product demands.
+      </p>
+      <p class="small muted">
+        The animation is deliberately slowed down — a real proton in 0.5 T completes an orbit in
+        131 ns. The slow-down factor is printed on the canvas.
+      </p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim">
+      <div class="panel reveal reveal">
+        <div class="panel reveal-head">
+          <h3 class="panel reveal-title"><span class="dot" style="background:#f8aebe"></span> Lorentz force &amp; circular motion</h3>
+          <p class="panel reveal-sub">F = q v × B</p>
+          <div class="panel reveal-actions">
+            <div class="btn-group" id="lor-toggles" role="group" aria-label="Display options">
+              <button class="btn btn-sm" type="button" data-toggle="vectors" aria-pressed="true">Vectors</button>
+              <button class="btn btn-sm" type="button" data-toggle="path" aria-pressed="true">Orbit</button>
+            </div>
+            <button class="btn btn-sm" type="button" id="lor-play">Pause</button>
+            <button class="btn btn-sm btn-ghost" type="button" id="lor-reset">Restart</button>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <canvas id="sim-lorentz" class="sim-canvas tall" role="img"
+                    aria-label="A charged particle moving in a circle in a uniform magnetic field"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#d5b8d8"></i> B field symbols</span>
+              <span><i class="swatch" style="background:#b5d777"></i> velocity v</span>
+              <span><i class="swatch" style="background:#f8aebe"></i> force F (always perpendicular to v)</span>
+              <span><i class="swatch" style="background:#f6d36b"></i> radius to the centre</span>
+            </div>
+          </div>
+          <div class="panel reveal-body">
+            <div class="ctl-stack">
+              <div>
+                <span class="ctl-label" style="margin-bottom:.35rem">Particle</span>
+                <div class="seg" id="lor-particle" role="group" aria-label="Particle">
+                  <button class="seg-btn" type="button" data-value="proton" aria-pressed="true">Proton</button>
+                  <button class="seg-btn" type="button" data-value="electron" aria-pressed="false">Electron</button>
+                  <button class="seg-btn" type="button" data-value="alpha" aria-pressed="false">Alpha</button>
+                </div>
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">v</span> speed <span class="tiny faint">(log)</span></span>
+                <span class="ctl-value" id="lor-vv">200 km/s</span>
+                <input class="range ctl-range" type="range" id="lor-v" min="0" max="1000" step="0.1" value="433" aria-label="Particle speed">
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">B</span> field strength</span>
+                <span class="ctl-value" id="lor-Bv">0.50 T</span>
+                <input class="range ctl-range" type="range" id="lor-B" min="0.05" max="2" step="0.05" value="0.5" aria-label="Magnetic flux density in tesla">
+              </div>
+              <div>
+                <span class="ctl-label" style="margin-bottom:.35rem">Field direction</span>
+                <div class="seg" id="lor-bdir" role="group" aria-label="Magnetic field direction">
+                  <button class="seg-btn" type="button" data-value="out" aria-pressed="true">Out of page (toward you)</button>
+                  <button class="seg-btn" type="button" data-value="in" aria-pressed="false">Into page (away)</button>
+                </div>
+              </div>
+              <div>
+                <span class="ctl-label" style="margin-bottom:.35rem">Velocity direction</span>
+                <div class="seg" id="lor-vdir" role="group" aria-label="Initial velocity direction">
+                  <button class="seg-btn" type="button" data-value="right" aria-pressed="true">→ right</button>
+                  <button class="seg-btn" type="button" data-value="up" aria-pressed="false">↑ up</button>
+                  <button class="seg-btn" type="button" data-value="left" aria-pressed="false">← left</button>
+                  <button class="seg-btn" type="button" data-value="down" aria-pressed="false">↓ down</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="readouts mt-4">
+              <div class="stat"><span class="stat-label">Charge</span><span class="stat-value" id="lor-q">—</span></div>
+              <div class="stat"><span class="stat-label">|F| = qvB</span><span class="stat-value hl-rose" id="lor-force">—</span></div>
+              <div class="stat"><span class="stat-label">Orbit radius</span><span class="stat-value hl-amber" id="lor-radius">—</span></div>
+              <div class="stat"><span class="stat-label">Period T</span><span class="stat-value" id="lor-period">—</span></div>
+              <div class="stat"><span class="stat-label">RK4 vs theory r</span><span class="stat-value hl-emerald" id="lor-rkerr">—</span></div>
+              <div class="stat"><span class="stat-label">ω = qB/m</span><span class="stat-value" id="lor-omega">—</span></div>
+              <div class="stat"><span class="stat-label">Kinetic energy</span><span class="stat-value hl-cyan" id="lor-ke">—</span><span class="stat-sub" id="lor-kev">—</span></div>
+              <div class="stat"><span class="stat-label">Force points</span><span class="stat-value hl-emerald" id="lor-dir">—</span></div>
+            </div>
+            <p class="sim-note mt-3" id="lor-rule">—</p>
+          </div>
+        </div>
+
+        <!-- right-hand-rule challenge -->
+        <div class="panel reveal-body" style="border-top:1px solid var(--line)">
+          <div class="flex flex-wrap items-start gap-4 justify-between">
+            <div style="flex:1 1 320px">
+              <span class="tag tag-violet">Practice</span>
+              <h4 class="font-bold mt-2" style="font-size:1rem">Predict the force direction</h4>
+              <p class="small muted" id="lor-challenge-text" style="margin:.3rem 0 .7rem">—</p>
+              <p class="tiny faint" id="lor-rule-hint">Do the right-hand rule in your head first, then answer.</p>
+            </div>
+            <div>
+              <div class="btn-group" role="group" aria-label="Your answer">
+                <button class="btn" type="button" data-lor-answer="up" aria-pressed="false">↑ up</button>
+                <button class="btn" type="button" data-lor-answer="down" aria-pressed="false">↓ down</button>
+                <button class="btn" type="button" data-lor-answer="left" aria-pressed="false">← left</button>
+                <button class="btn" type="button" data-lor-answer="right" aria-pressed="false">→ right</button>
+                <button class="btn btn-ghost" type="button" id="lor-challenge-new">New scenario</button>
+              </div>
+              <div class="feedback is-hidden" id="lor-challenge-feedback" role="status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose">
+      <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec reveal" id="flux">3.5 · Magnetic flux</h2>
+      <p>
+        Flux measures how much magnetic field <em>threads</em> a loop. It depends on the field
+        strength, the area of the loop, and the orientation between them:
+      </p>
+      <div class="formula">
+        <span class="eq" data-display data-tex="\Phi = B A \cos\theta">Φ = B · A · cosθ</span>
+        <span class="eq" data-display data-tex="\Phi = \int \vec{B}\cdot d\vec{A}" style="font-size:1rem">general form: Φ = ∫ B · dA</span>
+        <span class="where">Φ in webers (Wb) = T·m<sup>2</sup> · θ is the angle between B and the <b>normal</b> to the loop</span>
+      </div>
+
+      <figure class="fig reveal">
+        <div class="fig-box">
+          <svg viewBox="0 0 520 200" width="520" height="200" role="img"
+               aria-label="Magnetic flux through a loop is maximum when the field is perpendicular to the loop's plane and zero when it lies in the plane">
+            <defs><marker id="fa" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#a78bfa"/></marker></defs>
+            <!-- maximum flux: B perpendicular to the plane of the loop -->
+            <g transform="translate(110,100)">
+              <ellipse rx="26" ry="58" fill="rgba(34,211,238,.10)" stroke="#22d3ee" stroke-width="2.4"/>
+              <g stroke="#a78bfa" stroke-width="1.8" marker-end="url(#fa)">
+                <line x1="-62" y1="-30" x2="56" y2="-30"/>
+                <line x1="-62" y1="30" x2="56" y2="30"/>
+              </g>
+              <line x1="0" y1="0" x2="74" y2="0" stroke="#34d399" stroke-width="1.8" stroke-dasharray="5 3"/>
+              <text x="44" y="-9" fill="#6ee7b7" font-size="11.5" font-family="monospace" text-anchor="middle">normal A</text>
+              <text x="0" y="88" fill="#a5f3fc" font-size="12.5" font-family="monospace" text-anchor="middle">θ = 0° → Φ = BA (maximum)</text>
+              <text x="0" y="-72" fill="#c4b5fd" font-size="11.5" font-family="monospace" text-anchor="middle">B</text>
+            </g>
+            <!-- zero flux: B lies in the plane of the loop -->
+            <g transform="translate(380,100)">
+              <ellipse rx="26" ry="58" fill="rgba(34,211,238,.10)" stroke="#22d3ee" stroke-width="2.4"/>
+              <g stroke="#a78bfa" stroke-width="1.8" marker-end="url(#fa)">
+                <line x1="-16" y1="-84" x2="-16" y2="78"/>
+                <line x1="16" y1="-84" x2="16" y2="78"/>
+              </g>
+              <line x1="0" y1="0" x2="74" y2="0" stroke="#34d399" stroke-width="1.8" stroke-dasharray="5 3"/>
+              <text x="44" y="-9" fill="#6ee7b7" font-size="11.5" font-family="monospace" text-anchor="middle">normal A</text>
+              <text x="0" y="88" fill="#a5f3fc" font-size="12.5" font-family="monospace" text-anchor="middle">θ = 90° → Φ = 0</text>
+              <text x="-16" y="-92" fill="#c4b5fd" font-size="11.5" font-family="monospace" text-anchor="middle">B</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 1 — Flux counts the field passing <em>through</em> the loop, so it depends on orientation.</figcaption>
+      </figure>
+
+      <p>
+        A loop of area 0.02 m<sup>2</sup> in a 0.5 T field has Φ = 0.01 Wb when the field is perpendicular
+        to its plane, and <strong>zero</strong> when the field lies in the plane — even though
+        the field is just as strong. Rotate the loop and the flux changes.
+      </p>
+
+      <h2 class="h-sec reveal" id="faraday">3.6 · Faraday’s law</h2>
+      <div class="formula">
+        <span class="eq" data-display data-tex="\mathcal{E} = -N\,\dfrac{d\Phi}{dt}">EMF = − N · dΦ/dt</span>
+        <span class="where">N = number of turns · EMF in volts · Φ in webers · t in seconds</span>
+      </div>
+      <p>
+        The induced EMF is proportional to the <strong>rate of change</strong> of flux linkage —
+        not to the flux itself. A huge but constant flux induces nothing at all. There are
+        exactly three ways to change Φ = BA cosθ:
+      </p>
+      <ol>
+        <li><strong>Change B</strong> — move a magnet toward or away from the coil, or vary the current in a nearby electromagnet.</li>
+        <li><strong>Change A</strong> — stretch, squash or slide the loop so the enclosed area changes.</li>
+        <li><strong>Change θ</strong> — rotate the coil in the field. This is what every generator does.</li>
+      </ol>
+
+      <div class="callout callout-key">
+        <div class="callout-title">Worked example 1 — changing B</div>
+        <p>A 200-turn coil of area 0.010 m<sup>2</sup> sits perpendicular to a field that rises from 0 to 0.5 T in 0.20 s.</p>
+        <p class="mono small">dΦ/dt = A·dB/dt = 0.010 × (0.5/0.20) = 0.025 Wb/s<br>EMF = N·dΦ/dt = 200 × 0.025 = <b>5.0 V</b></p>
+      </div>
+
+      <div class="callout callout-key">
+        <div class="callout-title">Worked example 2 — rotating a coil (an AC generator)</div>
+        <p>A coil of N turns and area A rotates at angular frequency ω in a field B, so θ = ωt:</p>
+        <p class="mono small">
+          Φ = BA cos(ωt) &nbsp;→&nbsp; EMF = −N dΦ/dt = <b>NBAω sin(ωt)</b><br>
+          peak EMF = NBAω. With N = 100, B = 0.5 T, A = 0.02 m<sup>2</sup>, f = 50 Hz (ω = 314 rad/s):<br>
+          peak = 100 × 0.5 × 0.02 × 314 = <b>314 V</b>
+        </p>
+        <p>
+          That is a mains-sized voltage, produced by a hand-sized coil spinning 50 times a second.
+          The output is <strong>sinusoidal and alternating</strong> — which is why the grid carries AC.
+        </p>
+      </div>
+
+      <h3 class="h-sub">Motional EMF</h3>
+      <p>
+        A rod of length L sliding at speed v perpendicular to a field B has its free charges
+        deflected by F = qvB until the electric field they set up balances the magnetic one.
+        The result is a voltage across the rod:
+      </p>
+      <div class="formula"><span class="eq" data-display data-tex="\mathcal{E} = B L v">EMF = B L v</span><span class="where">a 0.20 m rod at 3 m/s in 0.5 T gives 0.30 V</span></div>
+      <p>
+        If the rod completes a circuit of resistance R, the current is I = BLv/R and the magnetic
+        force on that current is F = BIL = B<sup>2</sup>L<sup>2</sup>v/R, opposing the motion. The mechanical power you
+        supply, Fv = B<sup>2</sup>L<sup>2</sup>v<sup>2</sup>/R, is exactly the electrical power I<sup>2</sup>R dissipated in the resistor —
+        energy conservation is built into the equations.
+      </p>
+
+      <h2 class="h-sec reveal" id="lenz">3.7 · Lenz’s law and the minus sign</h2>
+      <p>
+        The negative sign in Faraday’s law is not a formality; it is a complete physical statement
+        known as <strong>Lenz’s law</strong>:
+      </p>
+      <div class="callout callout-key">
+        <div class="callout-title">Lenz’s law</div>
+        <p>
+          The induced current flows in such a direction that its own magnetic field
+          <strong>opposes the change in flux that produced it</strong>.
+        </p>
+      </div>
+      <p>Note carefully: it opposes the <em>change</em>, not the flux itself.</p>
+
+      <figure class="fig reveal">
+        <div class="fig-box">
+          <svg viewBox="0 0 620 210" width="620" height="210" role="img"
+               aria-label="Left: a magnet approaching a coil induces a current that repels it. Right: a magnet leaving induces a current that attracts it.">
+            <defs><marker id="la" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="#fbbf24"/></marker></defs>
+
+            <g transform="translate(0,0)">
+              <!-- coil -->
+              <ellipse cx="200" cy="80" rx="17" ry="46" fill="none" stroke="#cbd5e1" stroke-width="2.6"/>
+              <ellipse cx="212" cy="80" rx="17" ry="46" fill="none" stroke="#cbd5e1" stroke-width="2.6"/>
+              <!-- current symbols: into page at top, out at bottom (CW seen from +x) -->
+              <g stroke="#e8eefb" stroke-width="1.6" fill="none">
+                <circle cx="206" cy="34" r="5"/><path d="M202.6 30.6l6.8 6.8M209.4 30.6l-6.8 6.8"/>
+                <circle cx="206" cy="126" r="5"/>
+              </g>
+              <circle cx="206" cy="126" r="1.9" fill="#e8eefb" stroke="none"/>
+              <!-- magnet approaching -->
+              <rect x="60" y="66" width="46" height="28" rx="3" fill="#0369a1"/>
+              <rect x="106" y="66" width="46" height="28" rx="3" fill="#be123c"/>
+              <text x="83" y="86" fill="#fff" font-size="14" font-weight="800" font-family="sans-serif" text-anchor="middle">S</text>
+              <text x="129" y="86" fill="#fff" font-size="14" font-weight="800" font-family="sans-serif" text-anchor="middle">N</text>
+              <line x1="22" y1="80" x2="52" y2="80" stroke="#34d399" stroke-width="3" marker-end="url(#la)"/>
+              <text x="37" y="66" fill="#6ee7b7" font-size="11" font-family="monospace" text-anchor="middle">v</text>
+              <text x="150" y="150" fill="#fcd34d" font-size="12" font-family="monospace" text-anchor="middle">flux ↑ → coil face becomes N → REPELS</text>
+              <text x="150" y="172" fill="#a9bad6" font-size="12.5" font-family="sans-serif" text-anchor="middle" font-weight="700">APPROACHING</text>
+            </g>
+
+            <g transform="translate(330,0)">
+              <ellipse cx="120" cy="80" rx="17" ry="46" fill="none" stroke="#cbd5e1" stroke-width="2.6"/>
+              <ellipse cx="132" cy="80" rx="17" ry="46" fill="none" stroke="#cbd5e1" stroke-width="2.6"/>
+              <!-- current symbols: out of page at top, into page at bottom (CCW seen from +x) -->
+              <g stroke="#e8eefb" stroke-width="1.6" fill="none">
+                <circle cx="126" cy="34" r="5"/>
+                <circle cx="126" cy="126" r="5"/><path d="M122.6 122.6l6.8 6.8M129.4 122.6l-6.8 6.8"/>
+              </g>
+              <circle cx="126" cy="34" r="1.9" fill="#e8eefb" stroke="none"/>
+              <rect x="186" y="66" width="46" height="28" rx="3" fill="#0369a1"/>
+              <rect x="232" y="66" width="46" height="28" rx="3" fill="#be123c"/>
+              <text x="209" y="86" fill="#fff" font-size="14" font-weight="800" font-family="sans-serif" text-anchor="middle">S</text>
+              <text x="255" y="86" fill="#fff" font-size="14" font-weight="800" font-family="sans-serif" text-anchor="middle">N</text>
+              <line x1="278" y1="80" x2="308" y2="80" stroke="#34d399" stroke-width="3" marker-end="url(#la)"/>
+              <text x="292" y="66" fill="#6ee7b7" font-size="11" font-family="monospace" text-anchor="middle">v</text>
+              <text x="150" y="150" fill="#fcd34d" font-size="12" font-family="monospace" text-anchor="middle">flux ↓ → coil face becomes S → ATTRACTS</text>
+              <text x="150" y="172" fill="#a9bad6" font-size="12.5" font-family="sans-serif" text-anchor="middle" font-weight="700">RECEDING</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>
+          Figure 2 — Lenz’s law in both directions. Circles with a dot mean current coming out of the page;
+          circles with a cross mean current going into the page.
+        </figcaption>
+      </figure>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">Why Lenz’s law must be true</div>
+        <p>
+          Suppose the induced current <em>helped</em> the change instead of opposing it. The
+          magnet would accelerate, increasing the flux faster, driving a bigger current, which
+          would pull the magnet harder still — energy from nowhere. Lenz’s law is
+          <strong>conservation of energy</strong> applied to induction: the electrical energy
+          dissipated as I<sup>2</sup>R heat is paid for by the mechanical work you do against the magnetic
+          opposition. If you stop pushing, the current stops immediately.
+        </p>
+      </div>
+
+      <div class="callout callout-key">
+        <div class="callout-title">The three-step recipe for finding a direction</div>
+        <p><strong>1.</strong> Is the flux through the loop increasing or decreasing? <strong>2.</strong> The induced field must oppose that change — so it points opposite to B if the flux is rising, and along B if it is falling. <strong>3.</strong> Curl your right-hand fingers around the loop in the current direction; your thumb then points along the induced field. That fixes the current direction.</p>
+      </div>
+
+      <details class="dig dig-real" data-detail="tech">
+        <summary>Real world</summary>
+        <div class="dig-body">
+        <p>
+          <strong>Generators</strong> rotate a coil in a field (change θ) — a 1 GW turbine is
+          Faraday’s law at industrial scale. <strong>Transformers</strong> use a changing current
+          in the primary to create a changing flux in an iron core, inducing a voltage in the
+          secondary; the turns ratio sets the voltage ratio, which is why the grid can transmit at
+          400 kV and deliver at 230 V.
+        </p>
+        <p>
+          <strong>Induction hobs</strong> drive 20–50 kHz AC through a coil, inducing eddy currents
+          that heat the pan directly — the glass stays cool. <strong>Wireless phone chargers</strong>
+          are small transformers with an air gap. <strong>Eddy-current brakes</strong> slow trains and
+          fairground drop towers with no contact and no wear. <strong>Guitar pickups</strong> have a
+          magnet inside a coil; a vibrating steel string changes the flux and generates the signal.
+          <strong>Airport security and metal detectors</strong> look for the eddy currents induced in
+          metal objects.
+        </p>
+        </div>
+      </details>
+      <details class="dig dig-real" data-detail="plain">
+        <summary>Real world</summary>
+        <div class="dig-body">
+        <p>
+          Almost every watt you use was made by <strong>Faraday’s law</strong>. A generator spins a
+          coil in a field; a transformer pushes a <em>changing</em> field through a second coil to
+          swap voltage levels, which is how the grid sends power at huge voltage and hands it to
+          your wall at 230 V. An <strong>induction hob</strong> and a <strong>wireless charger</strong>
+          are the same idea in miniature: a changing field drives currents in whatever sits above it.
+          <strong>Metal detectors</strong> and <strong>guitar pickups</strong> listen for those currents.
+        </p>
+        </div>
+      </details>
+
+      <h2 class="h-sec reveal" id="sim-induction-panel" style="scroll-margin-top:5rem">3.8 · Simulation — a magnet through a coil</h2>
+      <p class="sim-hint tiny faint">Drag the magnet (or set a speed) and watch the computed Φ(t) and EMF(t) traces.</p>
+      <p>
+        This is the experiment Faraday actually performed. The coil’s flux is computed from the
+        exact on-axis dipole result
+        <span class="mono">Φ = μ<sub>0</sub>ma<sup>2</sup>/[2(a<sup>2</sup>+z<sup>2</sup>)<sup>3/2</sup>]</span>,
+        then differentiated with respect to time to give the EMF — no approximation and no
+        hand-drawn curve. Drag the magnet yourself, or let the simulator push it through at a set
+        speed, or oscillate it to make AC.
+      </p>
+      <p>
+        Watch the chart as the magnet passes through: the EMF shows <strong>two opposite peaks
+        with a zero crossing at the centre</strong>, because the flux is greatest (and momentarily
+        unchanging) exactly when the magnet is in the middle of the coil.
+      </p>
+    </section>
+
+    <section class="section-tight wrap wrap-sim">
+      <div class="panel reveal reveal">
+        <div class="panel reveal-head">
+          <h3 class="panel reveal-title"><span class="dot"></span> Magnet through a coil</h3>
+          <p class="panel reveal-sub">EMF = −N·dΦ/dt · drag the magnet or use a preset motion</p>
+          <div class="panel reveal-actions">
+            <div class="btn-group" role="group" aria-label="Magnet motion">
+              <button class="btn btn-sm" type="button" data-ind-mode="push" aria-pressed="false">Push through →</button>
+              <button class="btn btn-sm" type="button" data-ind-mode="pull" aria-pressed="false">← Pull back</button>
+              <button class="btn btn-sm" type="button" data-ind-mode="oscillate" aria-pressed="false">Oscillate (AC)</button>
+              <button class="btn btn-sm" type="button" data-ind-mode="manual" aria-pressed="true">Hold</button>
+              <button class="btn btn-sm btn-ghost" type="button" id="ind-reset">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div>
+            <canvas id="sim-induction" class="sim-canvas tall grab" role="img"
+                    aria-label="A bar magnet moving through a coil, with a galvanometer showing the induced current"></canvas>
+            <canvas id="sim-induction-chart" class="sim-canvas chart" role="img"
+                    aria-label="Strip chart of flux linkage and induced EMF against time"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#f8aebe"></i> N pole</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> S pole</span>
+              <span><i class="swatch" style="background:#a8d3e0"></i> flux linkage λ = NΦ</span>
+              <span><i class="swatch" style="background:#f6d36b"></i> induced EMF</span>
+              <span>dot / cross = current out of / into the page</span>
+            </div>
+          </div>
+          <div class="panel reveal-body">
+            <div class="ctl-stack">
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">N</span> number of turns</span>
+                <span class="ctl-value" id="ind-Nv">800 turns</span>
+                <input class="range ctl-range" type="range" id="ind-N" min="50" max="2000" step="10" value="800" aria-label="Number of coil turns">
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">a</span> coil radius</span>
+                <span class="ctl-value" id="ind-av">2.0 cm</span>
+                <input class="range ctl-range" type="range" id="ind-a" min="0.5" max="5" step="0.1" value="2" aria-label="Coil radius in centimetres">
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">m</span> magnet strength <span class="tiny faint">(log)</span></span>
+                <span class="ctl-value" id="ind-mv">0.80 A·m<sup>2</sup></span>
+                <input class="range ctl-range" type="range" id="ind-m" min="0" max="1000" step="0.1" value="751" aria-label="Magnet dipole moment">
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">R</span> circuit resistance</span>
+                <span class="ctl-value" id="ind-Rv">10 Ω</span>
+                <input class="range ctl-range" type="range" id="ind-R" min="1" max="200" step="1" value="10" aria-label="Circuit resistance in ohms">
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">v</span> auto-move speed</span>
+                <span class="ctl-value" id="ind-speedv">0.80 m/s</span>
+                <input class="range ctl-range" type="range" id="ind-speed" min="0.1" max="3" step="0.05" value="0.8" aria-label="Automatic magnet speed in metres per second">
+              </div>
+              <div class="ctl">
+                <span class="ctl-label"><span class="sym">f</span> oscillation frequency</span>
+                <span class="ctl-value" id="ind-oscv">1.6 Hz</span>
+                <input class="range ctl-range" type="range" id="ind-osc" min="0.2" max="5" step="0.1" value="1.6" aria-label="Oscillation frequency in hertz">
+              </div>
+              <label class="ctl" style="grid-template-columns:auto 1fr;cursor:pointer">
+                <input type="checkbox" id="ind-symbols" checked style="accent-color:#f6d36b">
+                <span class="ctl-label" style="font-size:.86rem">Show current-direction symbols (dot / cross) on the winding</span>
+              </label>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- full-width instrument row: keeps the two columns balanced -->
+        <div class="panel reveal-body" style="border-top:1px solid var(--line)">
+            <div class="readouts mt-4">
+              <div class="stat"><span class="stat-label">Position z</span><span class="stat-value" id="ind-z">—</span></div>
+              <div class="stat"><span class="stat-label">Speed v</span><span class="stat-value" id="ind-v">—</span></div>
+              <div class="stat"><span class="stat-label">Φ per turn</span><span class="stat-value hl-cyan" id="ind-phi">—</span></div>
+              <div class="stat"><span class="stat-label">λ = NΦ</span><span class="stat-value hl-cyan" id="ind-lambda">—</span></div>
+              <div class="stat"><span class="stat-label">dλ/dt</span><span class="stat-value" id="ind-dphi">—</span></div>
+              <div class="stat"><span class="stat-label">Induced EMF</span><span class="stat-value hl-amber" id="ind-emf">—</span></div>
+              <div class="stat"><span class="stat-label">Current I</span><span class="stat-value hl-emerald" id="ind-I">—</span></div>
+              <div class="stat"><span class="stat-label">Power I<sup>2</sup>R</span><span class="stat-value" id="ind-P">—</span></div>
+              <div class="stat"><span class="stat-label">Current direction</span><span class="stat-value tight hl-rose" id="ind-dir">—</span></div>
+            </div>
+
+            <p class="sim-note mt-3" id="ind-lenz">—</p>
+            <p class="tiny faint mt-2">
+            The magnet is modelled as a dipole of moment m on the coil axis, so the flux is the
+            standard closed-form result Φ = μ<sub>0</sub>ma<sup>2</sup>/[2(a<sup>2</sup>+z<sup>2</sup>)^{3/2}] and dΦ/dt is evaluated
+            analytically. Typical values here are tens to hundreds of millivolts — the same order
+            as a real classroom demonstration.
+          </p>
+
+          <!-- predict-then-run: the simulator itself grades the prediction -->
+          <div class="panel reveal-body challenge" style="border-top:1.5px solid var(--line)">
+            <div class="flex flex-wrap items-start gap-4 justify-between">
+              <div style="flex:1 1 320px">
+                <span class="tag tag-cyan">Predict, then run</span>
+                <p class="q-prompt mt-2" id="ind-chal-text">—</p>
+                <p class="tiny faint" style="margin-top:.4rem">Answer from the rules first — then press “Try it” and watch the readouts confirm it.</p>
+              </div>
+              <div style="flex:1 1 260px">
+                <div class="btn-group" id="ind-chal-opts" role="group" aria-label="Your prediction"></div>
+                <div class="btn-group mt-2">
+                  <button class="btn btn-sm" id="ind-chal-try" type="button" hidden>Run it on the coil</button>
+                  <button class="btn btn-sm btn-ghost" id="ind-chal-new" type="button">New prediction</button>
+                </div>
+                <div class="feedback is-hidden mt-2" id="ind-chal-fb" role="status"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wrap wrap-narrow prose">
+      <h2 class="h-sec reveal" id="check">3.9 · Check your understanding</h2>
+
+      <details class="check">
+        <summary>An electron moves east at 10<sup>6</sup> m/s through a field of 0.2 T directed into the page. Find the force’s magnitude and direction.</summary>
+        <div class="answer"><b>3.2×10<sup>−14</sup> N, directed south (down the page).</b><br>
+          Magnitude: F = |q|vB sin90° = (1.602×10<sup>−19</sup>)(10<sup>6</sup>)(0.2) = <b>3.2×10<sup>−14</sup> N</b>.<br>
+          Direction: take east = +x̂, north = +ŷ, out of the page = +ẑ, so B = −ẑB.
+          Then v × B = (v x̂) × (−B ẑ) = −vB(x̂ × ẑ) = −vB(−ŷ) = <b>+ŷ = north</b> for a
+          <em>positive</em> charge. The electron carries −e, so the force reverses: <b>south</b>.
+          Always evaluate the cross product first, then apply the sign of q.</div>
+      </details>
+      <details class="check">
+        <summary>A proton and an alpha particle enter the same field with the same speed. Which has the larger orbit radius?</summary>
+        <div class="answer"><b>The alpha particle, by a factor of about 2.</b> From r = mv/(|q|B),
+          with v and B fixed, r is proportional to m/|q|. For a proton m/|q| = m<sub>p</sub>/e; for an alpha particle
+          (a helium nucleus, m ≈ 4m<sub>p</sub>, q = +2e) m/|q| ≈ 4m<sub>p</sub>/2e = 2m<sub>p</sub>/e.
+          Both curve the same way because both are positive — they simply land on different radii.
+          Measuring that radius is exactly how a <b>mass spectrometer</b> identifies an ion.</div>
+      </details>
+      <details class="check">
+        <summary>Can a magnetic field change a particle’s kinetic energy?</summary>
+        <div class="answer"><b>No.</b> F is always perpendicular to v, so F·v = 0 and no work is done. Speed and kinetic energy stay constant; only the direction changes. To change the energy you need an <em>electric</em> field.</div>
+      </details>
+      <details class="check">
+        <summary>Why do field lines never cross, and why must magnetic lines close on themselves?</summary>
+        <div class="answer">If two lines crossed, B would have two directions at one point, which is impossible for a vector field. Magnetic lines close because <strong>∇·B = 0</strong> — there are no magnetic monopoles to act as sources or sinks. Electric field lines, by contrast, begin and end on charges.</div>
+      </details>
+      <details class="check">
+        <summary>A proton and an electron move with the same velocity through the same field. Compare their forces.</summary>
+        <div class="answer"><b>Equal in magnitude, opposite in direction</b> — because |q| is the same (e) for both. Their <em>accelerations</em>, though, differ by the mass ratio 1836: the electron is deflected far more sharply, which is why the aurora and CRT beams are dominated by electron motion.</div>
+      </details>
+
+      
+      
+
+      <details class="check">
+        <summary>A 500-turn coil of area 4.0×10<sup>−3</sup> m<sup>2</sup> is perpendicular to a field that falls from 0.80 T to 0.20 T in 0.10 s. Find the induced EMF.</summary>
+        <div class="answer"><b>12 V.</b> dΦ/dt = A·dB/dt = 4.0×10<sup>−3</sup> × (0.60/0.10) = 0.024 Wb/s. EMF = N·dΦ/dt = 500 × 0.024 = 12 V.</div>
+      </details>
+      <details class="check">
+        <summary>A magnet is held stationary inside a coil connected to a galvanometer. What does the meter read, and why?</summary>
+        <div class="answer"><b>Zero.</b> The flux is large but constant, so dΦ/dt = 0 and EMF = −N·dΦ/dt = 0. Induction requires <em>change</em>. This is why generators must turn and why transformers only work on AC.</div>
+      </details>
+      <details class="check">
+        <summary>You push a magnet into a coil twice as fast. What happens to the EMF, the current and the energy dissipated?</summary>
+        <div class="answer"><b>EMF doubles</b> (dΦ/dt doubles), <b>current doubles</b> (I = EMF/R), and <b>power quadruples</b> (P = EMF<sup>2</sup>/R). The energy dissipated per pass <b>doubles</b>: the pass takes half as long but burns four times the power (×4 × ½ = ×2) — equivalently, the magnetic drag force doubles while you push through the same distance. (The total <em>charge</em> per pass is unchanged: Q = ΔΦ/R.) That doubled effort is exactly Lenz’s law demanding payment.</div>
+      </details>
+      <details class="check">
+        <summary>Why does the EMF trace cross zero as the magnet passes through the centre of the coil?</summary>
+        <div class="answer">At the centre the flux is at its <b>maximum</b>, and at a maximum the derivative is zero. The flux stops rising and starts falling, so dΦ/dt — and therefore the EMF — passes through zero and reverses sign. The trace has two opposite peaks, one on the way in and one on the way out.</div>
+      </details>
+      <details class="check">
+        <summary>A copper ring is held above a solenoid. When the solenoid’s current is switched on, the ring jumps upward. Explain.</summary>
+        <div class="answer">The rising current increases the flux through the ring, inducing a current in it. By Lenz’s law that current opposes the increase, so the ring’s field repels the solenoid’s field and the ring is thrown upward. If the ring has a slit in it, no current can flow and it does not jump — a classic lecture demonstration.</div>
+      </details>
+      <details class="check">
+        <summary>Does the resistance of the coil change the induced EMF? Does it change the induced current?</summary>
+        <div class="answer"><b>No to the first, yes to the second.</b> EMF = −N·dΦ/dt depends only on the geometry and the motion. But I = EMF/R, so a lower resistance gives a larger current, more heating and a stronger braking force — which is why eddy-current brakes use thick copper rather than steel.</div>
+      </details>
+
+            <div class="card mt-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold">Finished with Chapter 3?</h3>
+            <p class="small muted" style="margin:.25rem 0 0">That’s all three chapters — prove it in the quiz.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" type="button" data-complete-topic="ch3" aria-pressed="false">Mark chapter as complete</button>
+            <a class="btn" href="../quiz.html?topic=ch3">Quiz this chapter</a>
+          </div>
+        </div>
+      </div>
+
+      <nav class="pager" aria-label="Topic navigation">
+        <a href="fields.html"><span class="dir">← Previous</span><span class="ttl">2 · Electric fields &amp; Coulomb’s law</span></a>
+        <a class="next" href="../quiz.html"><span class="dir">Next →</span><span class="ttl">Take the quiz</span></a>
+      </nav>
+    </section>
+  </main>
+
+<footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <span class="brand" style="pointer-events:none">
+          <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
+          <span class="brand-name">EMC<em>Lab</em></span>
+        </span>
+        <p class="small muted" style="margin-top:.6rem">Chapter 3 of 3.</p>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Chapters</h3>
+        <ul class="footer-links">
+          <li><a href="../topics/current.html">1 · Circuits & Ohm’s Law</a></li>
+          <li><a href="../topics/fields.html">2 · Electric Fields & Coulomb’s Law</a></li>
+          <li><a href="../topics/magind.html">3 · Magnetism & Induction</a></li>
+          <li><a href="../quiz.html">Quiz</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">On this page</h3>
+        <ul class="footer-links">
+          <li><a href="#sources">3.1 Where magnetism comes from</a></li>
+          <li><a href="#lines">3.2 Field lines &amp; bar magnets</a></li>
+          <li><a href="#force">3.3 Force on a moving charge</a></li>
+          <li><a href="#sim-lorentz-panel">3.4 Lorentz force sim</a></li>
+          <li><a href="#flux">3.5 Magnetic flux</a></li>
+          <li><a href="#faraday">3.6 Faraday’s law</a></li>
+          <li><a href="#lenz">3.7 Lenz’s law</a></li>
+          <li><a href="#sim-induction-panel">3.8 Magnet through a coil</a></li>
+          <li><a href="#check">3.9 Check your understanding</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top:1.6rem">
+      <hr class="hr">
+      <p class="tiny faint center" style="margin-top:1rem">© <span data-year>2026</span> EMC Lab</p>
+    </div>
+  </footer>
+  <script defer src="../vendor/katex/katex.min.js"></script>
+  <script defer src="../js/registry.js"></script>
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/motion.js"></script>
+  <script defer src="../js/sim-lorentz.js"></script>
+  <script defer src="../js/sim-induction.js"></script>
+</body>
+</html>

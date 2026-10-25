@@ -1,0 +1,32 @@
+/* EMC Physics - self-hosted webfonts.
+   ONE family for the whole site: G8321 by Coji Morishita (SIL OFL 1.1),
+   three committed weights:
+     100 Thin    - oversized display numerals (score grade, topic watermark, ring %)
+     400 Regular - body copy, prose, labels (the site's default)
+     700 Bold    - headings, buttons, nav, micro-labels
+   Titles additionally lead with 'fot-yuruka-std': a PRIVATELY licensed face
+   that only machines holding it locally can render (see vendor/fonts/README.md) -
+   everywhere else titles cleanly fall back to G8321 Bold, the same family as
+   the body. No other webfonts are used. */
+
+@font-face {
+  font-family: 'G8321';
+  src: url('../vendor/fonts/g8321-100.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'G8321';
+  src: url('../vendor/fonts/g8321-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'G8321';
+  src: url('../vendor/fonts/g8321-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
