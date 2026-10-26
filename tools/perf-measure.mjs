@@ -182,7 +182,7 @@ async function measurePage(browser, url, profile, name) {
       interactions.push('slider-drag');
     }
   }
-  const dragCanvas = await page.$('#sim-ohm, #sim-fieldpaint, #sim-lorentz');
+  const dragCanvas = await page.$('#sim-ohm, #sim-fieldpaint');
   if (dragCanvas) {
     const bb = await dragCanvas.boundingBox();
     if (bb) {
@@ -332,7 +332,7 @@ async function rss(browser) {
 /* Enforced, reliably-measurable lifecycle invariants (desktop profile):
    1. a boot-visible canvas runs exactly ONE rAF chain (no double scheduling)
    2. a synthetic hidden tab stops every chain (visibilitychange honoured)
-   3. a live sim (lorentz orbit) keeps exactly one chain in view
+   3. a live sim (ohm dots) keeps exactly one chain in view
    4. an essential-motion sim (circuit dots) keeps exactly one chain in view
    Memory is reported informationally here; only loop invariants fail CI. */
 async function guard(browser) {
@@ -398,11 +398,11 @@ async function guard(browser) {
     await page.close();
   }
   {
-    const page = await openPage('topics/magind.html');
-    await page.evaluate(() => document.querySelector('#sim-lorentz').scrollIntoView({ block: 'center' }));
-    await sleep(4000);                                   // let the orbit run
-    check('live lorentz sim keeps exactly 1 chain when visible', await sampleRaf(page, 1500), 1);
-    check('magind hidden chains = 0', await hiddenProbe(page), 0);
+    const page = await openPage('topics/current.html');
+    await page.evaluate(() => document.querySelector('#sim-ohm').scrollIntoView({ block: 'center' }));
+    await sleep(4000);                                   // let the dots run
+    check('live ohm sim keeps exactly 1 chain when visible', await sampleRaf(page, 1500), 1);
+    check('current hidden chains = 0', await hiddenProbe(page), 0);
     await page.close();
   }
   {

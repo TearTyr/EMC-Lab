@@ -112,7 +112,7 @@ const noIntro = pg => pg.addInitScript(() => { try { sessionStorage.setItem('emc
   await noIntro(pg);
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(1200);
-  for (const ch of ['ch1', 'ch2', 'ch3', 'ch1', 'ch2']) {
+  for (const ch of ['ch1', 'ch2', 'ch1', 'ch2']) {
     await pg.evaluate(c => { location.hash = '#/' + c; }, ch);
     await pg.waitForTimeout(120);
   }
@@ -211,7 +211,7 @@ const noIntro = pg => pg.addInitScript(() => { try { sessionStorage.setItem('emc
   await pg.waitForTimeout(1200);
   await pg.evaluate(() => document.dispatchEvent(new CustomEvent('emc:view-shown', { detail: { view: 'x', root: document } })));
   await pg.waitForTimeout(60);
-  await pg.evaluate(() => { location.hash = '#/ch3'; });          // interrupt mid-dip
+  await pg.evaluate(() => { location.hash = '#/ch1'; });          // interrupt mid-dip
   await pg.waitForTimeout(1200);
   const st = await pg.evaluate(() => ({
     flashes: document.querySelectorAll('.mx-flash').length,

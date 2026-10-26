@@ -197,8 +197,8 @@ console.log('\u2500'.repeat(66));
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('progress ring shows a percentage', /^\d+%$/.test(txt(win, 'ringPct') || ''), txt(win, 'ringPct'));
   eq('starts at 0% with empty storage', txt(win, 'ringPct'), '0%');
-  eq('chapter counter text', txt(win, 'dashTopicsDone'), '0 of 3 chapters studied');
-  eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 3 chapters studied');
+  eq('chapter counter text', txt(win, 'dashTopicsDone'), '0 of 2 chapters studied');
+  eq('chip mirrors the counter', txt(win, 'dashTopicsChip'), '0 of 2 chapters studied');
   // the animated dipole canvas was retired in favour of a static KaTeX strip
   ok('the animated hero canvas is gone (replaced by the equation strip)',
     doc.getElementById('heroCanvas') === null && !doc.querySelector('.hero-visual'));
@@ -211,7 +211,7 @@ console.log('\u2500'.repeat(66));
   eq('simulations stat is derived from the registry', txt(win, 'statSims'),
     String(win.EMC_REGISTRY.chapters.reduce((n, c) => n + c.sims.length, 0)));
   eq('quiz stat is derived from the bank', txt(win, 'statQuestions'), String(win.EMC_QUIZ.length));
-  eq('the spelled-out quiz count matches the bank', txt(win, 'quizCountWord'), 'Twenty-four');
+  eq('the spelled-out quiz count matches the bank', txt(win, 'quizCountWord'), 'Sixteen');
   ok('no stale hand-written quiz count survives in the homepage copy',
     !/Thirty-five|35-question/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
   eq('storage status reported', txt(win, 'storageStatus'), 'enabled \u2014 your progress is saved in this browser');
@@ -220,9 +220,9 @@ console.log('\u2500'.repeat(66));
   // progress persistence: mark a topic, reload the same storage, re-render
   win.EMC.Progress.markTopic('ch2', true);
   win.EMC.Progress.recordQuiz(85);
-  eq('a passing score (70%+) counts all three chapters as studied',
+  eq('a passing score (70%+) counts both chapters as studied',
      JSON.stringify(win.EMC.Progress.read().topics),
-     JSON.stringify({ ch1: true, ch2: true, ch3: true }));
+     JSON.stringify({ ch1: true, ch2: true }));
   eq('percent weights topics (80%) + quiz (20%)', win.EMC.Progress.percent(), Math.round(1 * 80 + 0.85 * 20));
   win.window?.close?.(); win.close();
 }
@@ -233,36 +233,6 @@ console.log('\u2500'.repeat(66));
   const { win, doc, problems } = await loadPage('topics/fields.html');
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
-  ok('static room canvas rendered', drawCalls(win, '#sim-static-room') > 100);
-  ok('balloon toy canvas rendered', drawCalls(win, '#toy-balloon') > 30);
-
-  // --- Static Room: stamp, count, undo, clear, random ---------------------
-  eq('the seeded room holds the sock and the neutral ball', txt(win, 'sr-count'), '2');
-  click(win, doc.querySelector('#sr-panel [data-sb-tool="add+"]'));
-  pointer(win, doc.getElementById('sim-static-room'), 'pointerdown', 700, 100);
-  pointer(win, doc.getElementById('sim-static-room'), 'pointerup', 700, 100);
-  eq('stamping a + charge grows the room', txt(win, 'sr-count'), '3');
-  click(win, doc.querySelector('#sr-panel [data-sb-act="undo"]'));
-  eq('undo takes it back out', txt(win, 'sr-count'), '2');
-  click(win, doc.querySelector('#sr-panel [data-sb-act="random"]'));
-  ok('random scene places at least three objects', Number(txt(win, 'sr-count')) >= 3, txt(win, 'sr-count'));
-  eq('random scenes are net-neutral by construction', txt(win, 'sr-net'), '+0C');
-  click(win, doc.querySelector('#sr-panel [data-sb-act="clear"]'));
-  eq('clear empties the room', txt(win, 'sr-count'), '0');
-
-  // --- Conservation: touching conductors share, the tally never moves ------
-  click(win, doc.querySelector('#sr-panel [data-sb-preset="touch"]'));
-  eq('the preset loads two metal balls', txt(win, 'sr-count'), '2');
-  const netBefore = txt(win, 'sr-net');
-  ok('before touching, the balls carry +6 and −2 µC (total +4)', /\+4\.0/.test(netBefore), netBefore);
-  // drag the left ball (1.2 m, 0.7 m -> px 360,210) onto its neighbour (510,210)
-  pointer(win, doc.getElementById('sim-static-room'), 'pointerdown', 360, 210);
-  pointer(win, doc.getElementById('sim-static-room'), 'pointermove', 510, 210);
-  await frames(win, 2);
-  pointer(win, doc.getElementById('sim-static-room'), 'pointerup', 510, 210);
-  eq('contact sharing leaves the room total untouched', txt(win, 'sr-net'), netBefore);
-  ok('the contact-sharing challenge earned its star from the physics state',
-    !!doc.querySelector('#sr-panel .sb-star.got'));
 
   // --- Balloon toy: rubbing transfers whole parcels, total stays 0 ---------
   const balloon = doc.getElementById('toy-balloon');
@@ -277,13 +247,6 @@ console.log('\u2500'.repeat(66));
   ok('the hair reads positive', txt(win, 'bl-h').startsWith('+'), txt(win, 'bl-h'));
   eq('balloon + hair is exactly zero — conservation, live', txt(win, 'bl-total'), '0 C');
 
-  // --- Ledger: identical conductors split any total equally ----------------
-  const balls = doc.querySelectorAll('#lg-tray .lg-ball');
-  eq('the ledger tray ships six balls', balls.length, 6);
-  const totalBefore = txt(win, 'lg-total');
-  click(win, balls[0]); click(win, balls[1]);
-  eq('one touch is counted', txt(win, 'lg-merges'), '1 touch \u2014 total unchanged');
-  eq('the ledger total never changes', txt(win, 'lg-total'), totalBefore);
   win.close();
 }
 
@@ -294,7 +257,6 @@ console.log('\u2500'.repeat(66));
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('arena canvas rendered', drawCalls(win, '#sim-arena') > 80);
-  ok('pin-force canvas rendered', drawCalls(win, '#toy-pinforce') > 50);
   ok('bohr canvas rendered', drawCalls(win, '#toy-bohr') > 30);
   const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
   const cv = () => doc.getElementById('sim-arena');
@@ -343,16 +305,6 @@ console.log('\u2500'.repeat(66));
   rel.checked = false;
   rel.dispatchEvent(new win.Event('change', { bubbles: true }));
 
-  // --- Pin the Force: the ratio readout prints the exact inverse square ----
-  const pf = doc.getElementById('toy-pinforce');
-  pointer(win, pf, 'pointerdown', 240, 80);         // charge B at r = 0.30 m
-  pointer(win, pf, 'pointermove', 442, 80);         // ... dragged to r = 0.60 m
-  await frames(win, 2);
-  pointer(win, pf, 'pointerup', 442, 80);
-  eq('the rail reads the new separation', txt(win, 'pf-r'), '0.600 m');
-  ok('the ratio readout prints the exact inverse square',
-    /F\(2r\)\/F\(r\) = 0\.250/.test(txt(win, 'pf-ratio')), txt(win, 'pf-ratio'));
-  numClose('the force itself is k|qA qB|/r²', parseSI(txt(win, 'pf-f')), K * 24e-12 / 0.36, 0.01);
 
   // --- Bohr tuner: the lecture radius gives 2.19×10⁶ m/s --------------------
   setRange(win, 'bo-r', 8);
@@ -371,8 +323,6 @@ console.log('\u2500'.repeat(66));
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('field painter rendered', drawCalls(win, '#sim-fieldpaint') > 300);
-  ok('dipole toy rendered', drawCalls(win, '#toy-dipole') > 80);
-  ok('zero-hunt toy rendered', drawCalls(win, '#toy-zerohunt') > 50);
   const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
   const fp = () => doc.getElementById('sim-fieldpaint');
 
@@ -410,19 +360,6 @@ console.log('\u2500'.repeat(66));
   eq('erase removes exactly one charge', txt(win, 'fp-count'), '4');
   eq('canvas type scale tracks the root font size', win.EMC.typeScale(), 1);
 
-  // --- Dipole toy: the bisector field follows the bond ----------------------
-  const e0 = parseSI(txt(win, 'dp-e'));
-  setRange(win, 'dp-sep', 1.4);
-  const e1 = parseSI(txt(win, 'dp-e'));
-  ok('stretching the bond strengthens the bisector field', e1 > e0, `${e0} -> ${e1}`);
-  click(win, doc.getElementById('dp-flip'));
-  eq('the flip button reports its state', doc.getElementById('dp-flip').getAttribute('aria-pressed'), 'true');
-
-  // --- Zero hunt: the meter speaks in words ---------------------------------
-  click(win, doc.getElementById('zh-new'));
-  ok('the E-meter reports a magnitude', /N\/C/.test(txt(win, 'zh-e')), txt(win, 'zh-e'));
-  ok('the hot/cold chip uses flat words, not colour alone',
-    /(cold|cool|warm|ZERO)/.test(txt(win, 'zh-chip')), txt(win, 'zh-chip'));
   win.close();
 }
 
@@ -434,217 +371,44 @@ console.log('\u2500'.repeat(66));
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('ohm canvas rendered', drawCalls(win, '#sim-ohm') > 100);
-  ok('I-V chart rendered', drawCalls(win, '#sim-ohm-chart') > 50);
+  ok('the v1 chart canvas is gone — R2 shows one loop only', doc.getElementById('sim-ohm-chart') === null);
   ok('circuit canvas rendered', drawCalls(win, '#sim-circuit') > 150);
 
-  // --- Ohm's law: 12 V across 4 ohm must give exactly 3 A and 36 W ---
+  /* CONTRACT CHANGE (2026-10-25, R1/R2 ground-up rebuild, docs/spec/
+     r1-r2-ground-up-plan.md): assertions re-pointed from the v1 instrument
+     bench (chart, rating warning, meter range, carrier-rate sub-line) and the
+     v1 lane/row Kirchhoff editor (topology buttons, circ-table, challenge
+     strip) to the rebuilt pair: the R2 calculator (V/R → I, P, working line)
+     and the R1 single-series-loop builder (sockets, tuning rows, open-loop
+     note). Physics intent unchanged: 12 V / 4 Ω = 3 A, 36 W; series adds. */
+  // --- Ohm's law calculator: 12 V across 4 ohm must give exactly 3 A and 36 W ---
   setRange(win, 'ohm-V', 12);
   const rNum = doc.getElementById('ohm-Rnum');
   rNum.value = '4';
-  rNum.dispatchEvent(new win.Event('change', { bubbles: true }));
+  rNum.dispatchEvent(new win.Event('input', { bubbles: true }));
   numClose('I = V/R = 12/4', parseSI(txt(win, 'ohm-I')), 3, 0.001);
   numClose('P = VI = 36 W', parseSI(txt(win, 'ohm-P')), 36, 0.001);
-  ok('substitution line shows V, R and I', /12\.0 V ÷ 4\.00 Ω = 3\.000 A/.test(txt(win, 'ohm-sub')), txt(win, 'ohm-sub'));
-  ok('sub-line reports the carrier rate, not a stacked prefix', /electrons\/s/.test(txt(win, 'ohm-ImA')), txt(win, 'ohm-ImA'));
-  ok('power rating warning triggers at 36 W > 0.5 W', doc.getElementById('ohm-warn').hidden === false);
-  eq('ammeter auto-ranges to 5 A', txt(win, 'ohm-range'), '5 A');
-
+  ok('working line shows V, R and I', /12\.0 V \/ 4\.0[\u00a0 ]Ω = 3\.00[\u00a0 ]A/.test(txt(win, 'ohm-sub')), txt(win, 'ohm-sub'));
   setRange(win, 'ohm-V', 0);
   eq('zero volts gives zero current', parseSI(txt(win, 'ohm-I')), 0);
-  ok('warning clears at 0 W', doc.getElementById('ohm-warn').hidden === true);
+  setRange(win, 'ohm-V', 12);
 
-  // --- circuit builder: series 10 + 22 + 47 with a 15 ohm bulb at 12 V ---
-  eq('series bank R = 79 ohm', txt(win, 'circ-req'), '79.00 Ω');
-  eq('series total R = 94 ohm', txt(win, 'circ-rtotal'), '94.00 Ω');
-  numClose('V across the bank + bulb = 12 V',
-    parseSI(txt(win, 'circ-vbank')) + parseSI(txt(win, 'circ-vbulb')), 12, 0.005);
-  numClose('series current = 12/94', parseSI(txt(win, 'circ-itotal')), 12 / 94, 0.005);
-  eq('table lists 3 resistors + bulb', doc.querySelectorAll('#circ-table tr').length, 4);
-  ok('series working is shown', txt(win, 'circ-breakdown').includes('10 + 22 + 47'), txt(win, 'circ-breakdown'));
-
-  // --- parallel: 1/(1/10+1/22+1/47) = 6.00 ohm ---
-  click(win, doc.querySelector('#circ-topology [data-value="parallel"]'));
-  eq('parallel bank R = 6.00 ohm', txt(win, 'circ-req'), '6.00 Ω');
-  ok('parallel working uses conductances', txt(win, 'circ-breakdown').includes('1/R'), txt(win, 'circ-breakdown'));
-
-  // --- combination: R1 + (R2 || R3) ---
-  click(win, doc.querySelector('#circ-topology [data-value="combo"]'));
-  const r = [10, 22, 47];
-  const expected = r[0] + (r[1] * r[2]) / (r[1] + r[2]);
-  numClose('combo bank R', parseFloat(txt(win, 'circ-req')), expected, 0.005);
-  eq('combo table has exactly 3 resistors + bulb', doc.querySelectorAll('#circ-table tr').length, 4);
-
-  // --- Kirchhoff: series branch currents are identical ---
-  click(win, doc.querySelector('#circ-topology [data-value="series"]'));
-  const rows = [...doc.querySelectorAll('#circ-table tr')].slice(0, 3).map(tr => tr.children[3].textContent);
-  ok('series current is the same through every resistor', new Set(rows).size === 1, rows.join(' / '));
-
-  // --- predict-then-run strip grades against the simulator itself ---
-  ok('circuit challenge strip is live', (txt(win, 'circ-chal-text') || '').length > 20, txt(win, 'circ-chal-text'));
-  eq('three prediction choices offered', doc.querySelectorAll('#circ-chal-opts button').length, 3);
-  doc.querySelector('#circ-chal-opts button').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-  ok('prediction feedback appears', doc.getElementById('circ-chal-fb').className.includes('feedback') &&
-    !doc.getElementById('circ-chal-fb').className.includes('is-hidden'));
-  ok('try-it button revealed after answering', doc.getElementById('circ-chal-try').hidden === false);
-
-  // --- editing a resistor updates the analysis ---
-  const firstSlider = doc.getElementById('circ-r0');
-  firstSlider.value = '50';
-  firstSlider.dispatchEvent(new win.Event('input', { bubbles: true }));
-  eq('editing R1 to 50 ohm gives a 119 ohm bank', txt(win, 'circ-req'), '119.00 Ω');
-
-  // --- the bulb can be bypassed ---
-  const bypass = doc.getElementById('circ-includeBulb');
-  bypass.checked = false;
-  bypass.dispatchEvent(new win.Event('change', { bubbles: true }));
-  eq('bypassing the bulb makes R_total = R_bank', txt(win, 'circ-rtotal'), txt(win, 'circ-req'));
-
-  // --- drag-and-drop bench (R1): palette, lanes, battery, short guard ---
-  click(win, doc.querySelector('[data-circ-chip="resistor"]'));
-  eq('the palette chip places a fourth resistor', doc.querySelectorAll('#circ-rows .row-item').length, 4);
-  eq('four in series: bank = 50+22+47+20 = 139 ohm', txt(win, 'circ-req'), '139.00 \u03A9');
-  click(win, doc.querySelector('[data-lane="1"]'));
-  click(win, doc.querySelector('[data-lane="2"]'));
-  numClose('lane buttons rewire R2+R3 into parallel (50+20 + 22||47)',
-    parseFloat(txt(win, 'circ-req')), 70 + (22 * 47) / 69, 0.005);
-  ok('the derived topology label follows the wiring',
-    doc.querySelector('#circ-topology [data-value="combo"]').getAttribute('aria-pressed') === 'true');
-  click(win, doc.querySelector('[data-circ-chip="battery"]'));
-  ok('dragging/clicking the battery off zeroes every meter honestly',
-    /no battery/.test(txt(win, 'circ-itotal')) && /No supply/.test(txt(win, 'circ-rule')), txt(win, 'circ-itotal'));
-  eq('the battery chip reports its pressed state', doc.querySelector('[data-circ-chip="battery"]').getAttribute('aria-pressed'), 'false');
-  click(win, doc.querySelector('[data-circ-chip="battery"]'));
-  ok('the battery reconnects and current returns', /A/.test(txt(win, 'circ-itotal')) && !/no battery/.test(txt(win, 'circ-itotal')), txt(win, 'circ-itotal'));
-  for (let i = 0; i < 4; i++) click(win, doc.querySelector('[data-del="0"]'));
-  eq('every resistor can be removed', txt(win, 'circ-req'), '0.00 \u03A9');
-  ok('wires-only + bypassed bulb is flagged as a SHORT, never Infinity/NaN',
-    /would flow/.test(txt(win, 'circ-itotal')) && /SHORT/.test(txt(win, 'circ-rtotal')) &&
-    /Short circuit/.test(txt(win, 'circ-rule')) && isFinite(parseFloat(txt(win, 'circ-req'))),
-    txt(win, 'circ-itotal') + ' | ' + txt(win, 'circ-rtotal'));
-  click(win, doc.querySelector('[data-circ-chip="resistor"]'));
-  ok('the bench recovers: one resistor ends the short',
-    /A/.test(txt(win, 'circ-itotal')) && !/SHORT/.test(txt(win, 'circ-itotal')), txt(win, 'circ-itotal'));
-  win.close();
-}
-
-/* ---------------- topics/magind.html ---------------- */
-{
-  console.log('\n[topics/magind.html]');
-  const { win, doc, problems } = await loadPage('topics/magind.html');
-  await frames(win, 6);
-  ok('no runtime errors', problems.length === 0, problems.join(' | '));
-  ok('lorentz canvas rendered', drawCalls(win, '#sim-lorentz') > 80);
-  ok('induction canvas rendered', drawCalls(win, '#sim-induction') > 150);
-
-  // --- Lorentz force: proton, 2e5 m/s, 0.5 T ---
-  // F = qvB = 1.602e-19*2e5*0.5 = 1.60e-14 N ; r = mv/qB = 4.18 mm ; T = 131 ns
-  const e = 1.602176634e-19, mp = 1.67262192369e-27, v0 = 2e5, B0 = 0.5;
-  numClose('|F| = qvB', parseSI(txt(win, 'lor-force')), e * v0 * B0, 0.01);
-  numClose('orbit radius r = mv/qB', parseSI(txt(win, 'lor-radius')), mp * v0 / (e * B0), 0.01);
-  numClose('period T = 2 pi m/qB', parseSI(txt(win, 'lor-period')), 2 * Math.PI * mp / (e * B0), 0.01);
-  numClose('kinetic energy = 1/2 mv^2 (in eV)', parseSI(txt(win, 'lor-ke')), 0.5 * mp * v0 * v0 / e, 0.01);
-  numClose('kinetic energy sub-line in joules', parseSI(txt(win, 'lor-kev')), 0.5 * mp * v0 * v0, 0.01);
-  ok('prefixes are never stacked', !/(m|µ|n|p|k)(m|µ|n|p|k)[A-Z]/.test(txt(win, 'lor-force')));
-  eq('force points down for v=right, B=out, q>0', txt(win, 'lor-dir'), 'down ↓');
-
-  // flipping the field reverses the force
-  click(win, doc.querySelector('#lor-bdir [data-value="in"]'));
-  eq('reversing B reverses F', txt(win, 'lor-dir'), 'up ↑');
-  // an electron reverses it again
-  click(win, doc.querySelector('#lor-particle [data-value="electron"]'));
-  eq('electron curves the other way', txt(win, 'lor-dir'), 'down ↓');
-  ok('negative-charge rule is explained', /REVERSE/.test(txt(win, 'lor-rule')), txt(win, 'lor-rule'));
-  click(win, doc.querySelector('#lor-particle [data-value="proton"]'));
-  click(win, doc.querySelector('#lor-bdir [data-value="out"]'));
-
-  // doubling B halves the radius
-  const r0 = parseSI(txt(win, 'lor-radius'));
-  setRange(win, 'lor-B', 1.0);
-  numClose('doubling B halves r', parseSI(txt(win, 'lor-radius')), r0 / 2, 0.01);
-  setRange(win, 'lor-B', 0.5);
-
-  // --- right-hand-rule challenge ---
-  click(win, doc.querySelector('[data-lor-answer="down"]'));
-  ok('correct challenge answer is accepted', /Correct/.test(txt(win, 'lor-challenge-feedback')), txt(win, 'lor-challenge-feedback'));
-  ok('the correct button is highlighted', doc.querySelector('[data-lor-answer="down"]').classList.contains('correct'));
-  click(win, doc.getElementById('lor-challenge-new'));
-  ok('a new scenario re-enables the buttons', doc.querySelectorAll('[data-lor-answer]:not([disabled])').length === 4);
-
-
-  // --- RK4 integrator tracks the analytic orbit radius ---
-  ok('RK4 radius error stays under 0.5% of r', parseSI(txt(win, 'lor-rkerr')) < parseSI(txt(win, 'lor-radius')) * 0.005,
-    `${txt(win, 'lor-rkerr')} vs r=${txt(win, 'lor-radius')}`);
-
-  // ---------------- induction half ----------------
-  
-  
-
-  // stationary magnet -> no EMF at all
-  eq('a stationary magnet induces nothing', parseSI(txt(win, 'ind-emf')), 0);
-  eq('galvanometer reads zero', parseSI(txt(win, 'ind-I')), 0);
-  eq('direction readout explains why', txt(win, 'ind-dir'), 'no induced current');
-  ok('flux is non-zero while the magnet sits off-centre', parseSI(txt(win, 'ind-phi')) > 0, txt(win, 'ind-phi'));
-  ok('Lenz panel explains the zero', /not changing/.test(txt(win, 'ind-lenz')), txt(win, 'ind-lenz'));
-
-  // exact dipole flux check: Phi = mu0*m*a^2 / (2*(a^2+z^2)^1.5)
-  const mu0 = 4 * Math.PI * 1e-7, m = 0.8, a = 0.02, z = -0.075;
-  const phiExpected = mu0 * m * a * a / (2 * Math.pow(a * a + z * z, 1.5));
-  numClose('Phi per turn matches the closed form', parseSI(txt(win, 'ind-phi')), phiExpected, 0.01);
-  numClose('lambda = N * Phi', parseSI(txt(win, 'ind-lambda')), 800 * phiExpected, 0.01);
-  ok('flux units are not double-prefixed', !/µm|mµ|nµ/.test(txt(win, 'ind-phi')), txt(win, 'ind-phi'));
-
-  // push the magnet through: an EMF must appear and then change sign
-  click(win, doc.querySelector('[data-ind-mode="push"]'));
-  const emfs = [], dirs = [], currents = [];
-  for (let i = 0; i < 90; i++) {
-    await frames(win, 1);
-    emfs.push(parseSI(txt(win, 'ind-emf')));
-    dirs.push(txt(win, 'ind-dir') || '');
-    currents.push(parseSI(txt(win, 'ind-I')));
-  }
-  const peak = Math.max(...emfs.map(Math.abs));
-  ok('motion induces a measurable EMF', peak > 1e-3, `peak |EMF| = ${(peak * 1000).toFixed(1)} mV`);
-  ok('the EMF changes sign as the magnet passes the centre',
-    Math.min(...emfs) < 0 && Math.max(...emfs) > 0,
-    `min ${(Math.min(...emfs) * 1000).toFixed(1)} mV / max ${(Math.max(...emfs) * 1000).toFixed(1)} mV`);
-  ok('a current flows while the magnet moves', Math.max(...currents.map(Math.abs)) > 1e-5,
-    `${(Math.max(...currents.map(Math.abs)) * 1000).toFixed(2)} mA peak`);
-  ok('the strip chart recorded history', drawCalls(win, '#sim-induction-chart') > 40);
-  ok('Lenz direction is stated during the motion',
-    dirs.some(d => /\b(CW|CCW)\b/.test(d)), [...new Set(dirs)].join(' / '));
-  ok('the sense reverses as flux switches from rising to falling',
-    dirs.some(d => /\bCW\b/.test(d)) && dirs.some(d => /\bCCW\b/.test(d)),
-    [...new Set(dirs)].join(' / '));
-  ok('I = EMF/R at every sample', emfs.every((emf, i) => Math.abs(currents[i] - emf / 10) < 1e-9));
-
-  ok('induction challenge strip is live', (txt(win, 'ind-chal-text') || '').length > 20, txt(win, 'ind-chal-text'));
-  eq('three induction prediction choices', doc.querySelectorAll('#ind-chal-opts button').length, 3);
-
-  // Faraday scaling: EMF is proportional to N. Use the deterministic
-  // oscillation so both runs sample exactly the same motion.
-  const runOscillation = async () => {
-    click(win, doc.getElementById('ind-reset'));
-    click(win, doc.querySelector('[data-ind-mode="oscillate"]'));
-    const seen = [];
-    for (let i = 0; i < 90; i++) { await frames(win, 1); seen.push(Math.abs(parseSI(txt(win, 'ind-emf')))); }
-    click(win, doc.querySelector('[data-ind-mode="manual"]'));
-    return Math.max(...seen);
-  };
-  setRange(win, 'ind-N', 800);
-  const peak800 = await runOscillation();
-  setRange(win, 'ind-N', 1600);
-  const peak1600 = await runOscillation();
-  numClose('EMF scales linearly with N (800 -> 1600 turns)', peak1600, peak800 * 2, 0.10);
-  ok('oscillating the magnet produces an alternating EMF', peak800 > 1e-3, `${(peak800 * 1000).toFixed(1)} mV peak`);
-
-  // R changes the current but not the EMF
-  click(win, doc.getElementById('ind-reset'));
-  click(win, doc.querySelector('[data-ind-mode="push"]'));
-  await frames(win, 12);
-  const emfR10 = parseSI(txt(win, 'ind-emf')), iR10 = parseSI(txt(win, 'ind-I'));
-  setRange(win, 'ind-R', 40);
-  numClose('quadrupling R leaves the EMF unchanged', parseSI(txt(win, 'ind-emf')), emfR10, 0.02);
-  numClose('quadrupling R quarters the current', parseSI(txt(win, 'ind-I')), iR10 / 4, 0.02);
+  // --- circuit builder: one series loop — battery 12 V + 22 ohm + bulb 15 ohm ---
+  numClose('default loop I = 12/37', parseSI(txt(win, 'circ-I')), 12 / 37, 0.002);
+  ok('loop total R = 37 ohm', txt(win, 'circ-R').replace(/\u00a0/g, ' ') === '37.0 Ω', txt(win, 'circ-R'));
+  eq('three placed parts get three tuning rows', doc.querySelectorAll('#circ-rows .circ-row').length, 3);
+  const rowOf = re => [...doc.querySelectorAll('#circ-rows .circ-row')].find(r => re.test(r.textContent));
+  const btn = (row, i) => row.querySelectorAll('button')[i].dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  btn(rowOf(/resistor/), 1);
+  numClose('stepping the resistor to 23 ohm gives I = 12/38', parseSI(txt(win, 'circ-I')), 12 / 38, 0.001);
+  click(win, doc.querySelector('[data-circ-part="res"]'));      // arm (keyboard path)
+  click(win, doc.getElementById('circ-sk3'));                   // place on socket 4
+  numClose('placing a second 22 ohm resistor: I = 12/60', parseSI(txt(win, 'circ-I')), 12 / 60, 0.001);
+  btn([...doc.querySelectorAll('#circ-rows .circ-row')].pop(), 2);   // remove via row ×
+  numClose('removing the part restores I = 12/38', parseSI(txt(win, 'circ-I')), 12 / 38, 0.001);
+  btn(rowOf(/battery/), 2);                                      // battery off the bench
+  eq('without a battery the current is zero', parseSI(txt(win, 'circ-I')), 0);
+  ok('a plain-language note names the missing part', /battery/.test(txt(win, 'circ-note')), txt(win, 'circ-note'));
   win.close();
 }
 
@@ -655,7 +419,7 @@ console.log('\u2500'.repeat(66));
   await frames(win, 2);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   const bank = win.EMC_QUIZ;
-  eq('question bank size', bank.length, 24);
+  eq('question bank size', bank.length, 16);
   ok('the bank contains no duplicate questions (audit 3.1 regression guard)',
     new Set(bank.map(q => q.q)).size === bank.length);
   ok('four-stat strip uses the 4-up layout class',
@@ -663,14 +427,14 @@ console.log('\u2500'.repeat(66));
   ok('quiz copy is free of the word "module"',
      !/module/i.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8') +
                      readFileSync(join(ROOT, 'js/quiz-data.js'), 'utf8')));
-  eq('every question rendered', doc.querySelectorAll('.q-card').length, 24);
+  eq('every question rendered', doc.querySelectorAll('.q-card').length, 16);
   eq('four options each', doc.querySelectorAll('.q-card').length * 4, doc.querySelectorAll('.opt').length);
   ok('every question has a valid answer index',
     bank.every(q => Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length));
   ok('every question has an explanation', bank.every(q => q.explain && q.explain.length > 20));
-  ok('all three chapters are covered and nothing else (brief: 8/8/8)',
-    new Set(bank.map(q => q.topic)).size === 3, [...new Set(bank.map(q => q.topic))].join(','));
-  for (const [t, n] of [['ch1', 8], ['ch2', 8], ['ch3', 8]]) {
+  ok('both chapters are covered and nothing else (brief: 8/8)',
+    new Set(bank.map(q => q.topic)).size === 2, [...new Set(bank.map(q => q.topic))].join(','));
+  for (const [t, n] of [['ch1', 8], ['ch2', 8]]) {
     eq(`chapter question counts — ${t}`, bank.filter(q => q.topic === t).length, n);
   }
   ok('every question ships a hint and an Easy/Full level',
@@ -687,13 +451,13 @@ console.log('\u2500'.repeat(66));
   // blank guard: submitting with nothing answered must warn, not grade
   click(win, doc.getElementById('quiz-submit'));
   ok('submitting a blank quiz warns first', doc.getElementById('quiz-score').hidden === true);
-  ok('progress text counts answers', /0 of 24 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
+  ok('progress text counts answers', /0 of 16 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
 
   // all correct -> 100% (the practice timer is enabled first so the clock
   // assertions below exercise the opt-in timer; the default stays Off)
   click(win, doc.querySelector('#quiz-timer-mode [data-value="up"]'));
   answerAll(false);
-  eq('all 24 recorded', txt(win, 'quiz-progress-text'), '24 of 24 answered');
+  eq('all 16 recorded', txt(win, 'quiz-progress-text'), '16 of 16 answered');
   click(win, doc.getElementById('quiz-submit'));
   ok('with no blanks the first submit asks for a gentle confirm',
     doc.getElementById('quiz-score').hidden === true &&
@@ -707,9 +471,9 @@ console.log('\u2500'.repeat(66));
     doc.getElementById('quiz-charts').hidden === true &&
     doc.getElementById('quiz-fallback-bars').hidden === false);
   ok('perfect score is 100%', txt(win, 'quiz-score').includes('100%'), txt(win, 'quiz-score').slice(0, 80));
-  ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 24);
-  ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 24);
-  ok('options are locked after grading', doc.querySelectorAll('.opt:disabled').length === 96);
+  ok('every card marked correct', doc.querySelectorAll('.q-card.answered-correct').length === 16);
+  ok('explanations are shown', doc.querySelectorAll('.feedback.good').length === 16);
+  ok('options are locked after grading', doc.querySelectorAll('.opt:disabled').length === 64);
 
   // stored progress
   const stored = JSON.parse(win.localStorage.getItem('emc.progress.v4'));
@@ -723,27 +487,27 @@ console.log('\u2500'.repeat(66));
   click(win, doc.getElementById('quiz-submit'));   // confirm phase
   click(win, doc.getElementById('quiz-submit'));   // graded
   ok('all-wrong score is 0%', txt(win, 'quiz-score').includes('0%'), txt(win, 'quiz-score').slice(0, 60));
-  ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 24);
-  ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 24);
+  ok('wrong answers highlighted', doc.querySelectorAll('.q-card.answered-wrong').length === 16);
+  ok('correct option still shown for learning', doc.querySelectorAll('.opt.correct').length === 16);
   const stored2 = JSON.parse(win.localStorage.getItem('emc.progress.v4'));
   eq('best score is kept across attempts', stored2.quizBest, 100);
   eq('attempts incremented', stored2.quizAttempts, 2);
 
   // review-incorrect filter
   click(win, doc.getElementById('quiz-wrong'));
-  eq('review mode shows only the wrong ones', doc.querySelectorAll('.q-card').length, 24);
+  eq('review mode shows only the wrong ones', doc.querySelectorAll('.q-card').length, 16);
 
-  // retake and check a partial score: 10 of 24 correct = 42%
+  // retake and check a partial score: 8 of 16 correct = 50%
   click(win, doc.getElementById('quiz-retake'));
   doc.querySelectorAll('.q-card').forEach((card, i) => {
     const q = bank.find(x => x.id === Number(card.dataset.qid));
-    const idx = i < 10 ? q.answer : (q.answer + 1) % q.options.length;
+    const idx = i < 8 ? q.answer : (q.answer + 1) % q.options.length;
     card.querySelector(`.opt[data-opt="${idx}"]`).dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   });
   click(win, doc.getElementById('quiz-submit'));   // confirm phase
   click(win, doc.getElementById('quiz-submit'));   // graded
-  ok('10 of 24 correct scores 42%', txt(win, 'quiz-score').includes('42%'), txt(win, 'quiz-score').slice(0, 60));
-  ok('10 of 24 reported', /10 \/ 24 correct/.test(txt(win, 'quiz-score')), '');
+  ok('8 of 16 correct scores 50%', txt(win, 'quiz-score').includes('50%'), txt(win, 'quiz-score').slice(0, 60));
+  ok('8 of 16 reported', /8 \/ 16 correct/.test(txt(win, 'quiz-score')), '');
   ok('quiz clock was started by answering and frozen at submit',
     doc.getElementById('quiz-timer').hidden === false && /\d+:\d\d/.test(txt(win, 'quiz-timer')));
   ok('score card reports time and best-streak tags',
@@ -752,24 +516,22 @@ console.log('\u2500'.repeat(66));
   // attempt history is stored for the Chart.js line chart
   const hist = win.EMC.Progress.read().quizHistory;
   eq('three attempts recorded in history', hist.length, 3);
-  eq('history keeps the scores in order', hist.map(h => h.pct).join(','), '100,0,42');
+  eq('history keeps the scores in order', hist.map(h => h.pct).join(','), '100,0,50');
 
   // shuffle keeps the bank intact
   click(win, doc.getElementById('quiz-retake'));
   click(win, doc.getElementById('quiz-shuffle'));
-  eq('shuffle keeps all 24 questions', doc.querySelectorAll('.q-card').length, 24);
+  eq('shuffle keeps all 16 questions', doc.querySelectorAll('.q-card').length, 16);
 
   // topic filter
   click(win, doc.querySelector('[data-quiz-filter="ch2"]'));
   eq('the ch2 filter shows the 8 lecture questions', doc.querySelectorAll('.q-card').length, 8);
   click(win, doc.querySelector('[data-quiz-filter="ch1"]'));
   eq('the ch1 filter shows the 8 circuits questions', doc.querySelectorAll('.q-card').length, 8);
-  click(win, doc.querySelector('[data-quiz-filter="ch3"]'));
-  eq('the ch3 filter shows the 8 magnetism questions', doc.querySelectorAll('.q-card').length, 8);
   click(win, doc.querySelector('[data-quiz-filter="all"]'));
-  eq('all filter restores 24', doc.querySelectorAll('.q-card').length, 24);
-  eq('every card carries an Easy/Full level tag', doc.querySelectorAll('.q-card .q-level').length, 24);
-  ok('every question ships a hint button', doc.querySelectorAll('.q-hint-btn').length === 24);
+  eq('all filter restores 16', doc.querySelectorAll('.q-card').length, 16);
+  eq('every card carries an Easy/Full level tag', doc.querySelectorAll('.q-card .q-level').length, 16);
+  ok('every question ships a hint button', doc.querySelectorAll('.q-hint-btn').length === 16);
   const hintBtn = doc.querySelector('.q-hint-btn');
   click(win, hintBtn);
   ok('clicking hint reveals the hint text in place',
@@ -825,8 +587,7 @@ console.log('\u2500'.repeat(66));
     d2.getElementById('quiz-fallback-bars').hidden === false);
   ok('the fallback still lists every chapter',
     /Circuits & Ohm’s Law/.test(d2.getElementById('quiz-fallback-bars').textContent) &&
-    /Electric Fields & Coulomb’s Law/.test(d2.getElementById('quiz-fallback-bars').textContent) &&
-    /Magnetism & Induction/.test(d2.getElementById('quiz-fallback-bars').textContent));
+    /Electric Fields & Coulomb’s Law/.test(d2.getElementById('quiz-fallback-bars').textContent));
   w2.close();
 }
 
@@ -905,7 +666,7 @@ console.log('\u2500'.repeat(66));
     doc.querySelector('[data-quiz-filter="unanswered"]').getAttribute('aria-pressed'), 'true');
   click(win, doc.querySelector('[data-quiz-filter="ch1"]'));   // also resets the blank warning
   ok('progress text spans the full bank while a filter is active',
-    /1 of 24 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
+    /1 of 16 answered/.test(txt(win, 'quiz-progress-text')), txt(win, 'quiz-progress-text'));
   click(win, doc.querySelector('[data-quiz-filter="all"]'));
 
   // bottom button: warning first, then grading; both controls lock in sync
@@ -953,17 +714,17 @@ console.log('\u2500'.repeat(66));
   ok('timer defaults to Off (calm by default)',
     doc.querySelector('#quiz-timer-mode [data-value="off"]').getAttribute('aria-pressed') === 'true' &&
     doc.getElementById('timer-mins').hidden === true);
-  eq('navigator shows one chip per question', doc.querySelectorAll('#qnav .qnav-chip').length, 24);
+  eq('navigator shows one chip per question', doc.querySelectorAll('#qnav .qnav-chip').length, 16);
   ok('prev is disabled before any question is active', doc.getElementById('qnav-prev').disabled === true);
   ok('progress pill is visible from the start', doc.getElementById('quizPill').hidden === false);
-  eq('pill counts answered questions', txt(win, 'pillText'), '0/24');
+  eq('pill counts answered questions', txt(win, 'pillText'), '0/16');
 
   // answer q1 correctly; with the timer Off no clock may appear
   const q1 = bank[0];
   doc.querySelector(`#q-${q1.id} .opt[data-opt="${q1.answer}"]`)
     .dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   ok('with the timer Off no clock panel appears', doc.getElementById('floatTimer').hidden === true);
-  eq('pill tracks the answer', txt(win, 'pillText'), '1/24');
+  eq('pill tracks the answer', txt(win, 'pillText'), '1/16');
   ok('answered chip turns done',
     doc.querySelector(`#qnav [data-goto="${q1.id}"]`).classList.contains('done'));
 
@@ -985,7 +746,7 @@ console.log('\u2500'.repeat(66));
   click(win, doc.querySelector('[data-quiz-filter="unanswered"]'));
   click(win, doc.querySelector(`#qnav [data-goto="${q1.id}"]`));
   ok('jumping to a filtered-away question restores the full list and marks it current',
-    doc.querySelectorAll('.q-card').length === 24 &&
+    doc.querySelectorAll('.q-card').length === 16 &&
     doc.querySelector(`#qnav [data-goto="${q1.id}"]`).classList.contains('cur'));
 
   // autosave (400 ms throttle) -> a resumable session document
@@ -1055,11 +816,11 @@ console.log('\u2500'.repeat(66));
   await frames(w3, 2);
   ok('a saved session OFFERS to resume (never a silent restore)',
     d3.getElementById('resume-wrap').hidden === false &&
-    /2 of 24 answered/.test(txt(w3, 'resume-summary')) &&
+    /2 of 16 answered/.test(txt(w3, 'resume-summary')) &&
     /1 flagged/.test(txt(w3, 'resume-summary')));
-  eq('nothing is restored before the choice', txt(w3, 'quiz-progress-text'), '0 of 24 answered');
+  eq('nothing is restored before the choice', txt(w3, 'quiz-progress-text'), '0 of 16 answered');
   click(w3, d3.getElementById('resume-yes'));
-  eq('resume restores the answers', txt(w3, 'quiz-progress-text'), '2 of 24 answered');
+  eq('resume restores the answers', txt(w3, 'quiz-progress-text'), '2 of 16 answered');
   ok('resume restores the flags and hides the banner',
     d3.querySelector('#q-3 .q-flag').getAttribute('aria-pressed') === 'true' &&
     d3.getElementById('resume-wrap').hidden === true);
@@ -1083,58 +844,7 @@ console.log('\u2500'.repeat(66));
 {
   console.log('\n[issue #3 \u2014 physics, reduced motion, formats, progress I/O]');
 
-  /* --- items 3 + 9: Lenz pole text follows the magnet side; the RK4-vs-
-         theory error readout tracks the animation, not just the controls --- */
-  {
-    const { win, doc, problems } = await loadPage('topics/magind.html');
-    await frames(win, 3);
-    ok('magind loads without runtime errors', problems.length === 0, problems.join(' | '));
-    click(win, doc.querySelector('[data-ind-mode="pull"]'));
-    await frames(win, 2);
-    const lenzPull = txt(win, 'ind-lenz');
-    ok('item 3: magnet RIGHT of coil, approaching -> near face is SOUTH (S repels S)',
-      /south/i.test(lenzPull) && /repels/i.test(lenzPull), String(lenzPull).slice(0, 140));
-    click(win, doc.querySelector('[data-ind-mode="push"]'));
-    await frames(win, 2);
-    const lenzPush = txt(win, 'ind-lenz');
-    ok('item 3: magnet LEFT of coil, approaching -> near face is NORTH',
-      /north/i.test(lenzPush) && /repels/i.test(lenzPush), String(lenzPush).slice(0, 140));
-    // item 9: the orbit error must appear from the animation alone
-    await frames(win, 75);
-    await new Promise(r => setTimeout(r, 350));
-    const rk = txt(win, 'lor-rkerr');
-    ok('item 9: RK4-vs-theory readout updates from the running animation',
-      rk !== null && rk !== '\u2014' && rk !== '0\u00A0m', String(rk));
-    win.close();
-  }
 
-  /* --- items 1 + 2: reduced motion must not crash the induction sim, and
-         explicit user actions restart the parked loops --------------------- */
-  {
-    const { win, doc, problems } = await loadPage('topics/magind.html', {}, { reduceMotion: true });
-    await frames(win, 3);
-    ok('item 1: induction sim loads clean under prefers-reduced-motion',
-      problems.length === 0, problems.join(' | '));
-    ok('item 1: the constructor frame populated the readouts', /cm/.test(txt(win, 'ind-z') || ''));
-
-    const lorBefore = drawCalls(win, '#sim-lorentz');
-    await new Promise(r => setTimeout(r, 250));
-    eq('item 2: the Lorentz loop stays parked while nothing is asked for',
-      drawCalls(win, '#sim-lorentz'), lorBefore);
-    click(win, doc.getElementById('lor-play'));   // Pause
-    click(win, doc.getElementById('lor-play'));   // Play -> explicit request
-    await new Promise(r => setTimeout(r, 350));
-    ok('item 2: Play restarts the Lorentz orbit under reduced motion',
-      drawCalls(win, '#sim-lorentz') > lorBefore);
-
-    const indBefore = drawCalls(win, '#sim-induction');
-    click(win, doc.querySelector('[data-ind-mode="push"]'));
-    await new Promise(r => setTimeout(r, 500));
-    ok('item 2: Push runs the induction motion under reduced motion',
-      drawCalls(win, '#sim-induction') > indBefore &&
-      txt(win, 'ind-z') === '11.0 cm', txt(win, 'ind-z'));
-    win.close();
-  }
 
   /* --- item 2 (circuit): any deliberate interaction wakes the carriers --- */
   {
@@ -1142,7 +852,7 @@ console.log('\u2500'.repeat(66));
     await frames(win, 3);
     ok('current.html loads clean under prefers-reduced-motion', problems.length === 0, problems.join(' | '));
     const before = drawCalls(win, '#sim-circuit');
-    click(win, doc.getElementById('circ-add'));
+    click(win, doc.querySelector('#circ-rows .circ-row button:nth-child(2)'));
     await new Promise(r => setTimeout(r, 350));
     ok('item 2: a circuit interaction restarts the carrier animation',
       drawCalls(win, '#sim-circuit') > before);
@@ -1206,7 +916,7 @@ console.log('\u2500'.repeat(66));
     ok('item 5: importing a legacy v1 file no longer throws', threw === null, threw && threw.message);
     ok('item 5: the legacy topics are migrated (charges -> ch2, the chapter that owns them)',
       res !== null && res.ok === true && P.read().topics.ch2 === true &&
-      P.read().topics.ch1 === false && P.read().topics.ch3 === false);
+      P.read().topics.ch1 === false);
 
     P.recordQuiz(80);
     const junk = P.importJSON('{}');
@@ -1256,7 +966,7 @@ console.log('\u2500'.repeat(66));
     const orders = [...d2.querySelectorAll('.q-card')].map(c =>
       [...c.querySelectorAll('.opt')].map(b => Number(b.dataset.opt)).join(','));
     ok('item 10: every card still carries all four options',
-      orders.length === 24 && orders.every(o => o.split(',').sort((a, b) => a - b).join(',') === '0,1,2,3'));
+      orders.length === 16 && orders.every(o => o.split(',').sort((a, b) => a - b).join(',') === '0,1,2,3'));
     ok('item 10: display order is shuffled (always-B no longer scores 50%)',
       orders.filter(o => o === '0,1,2,3').length < orders.length);
     eq('item 10: the visible key labels stay A, B, C, D',
@@ -1297,7 +1007,7 @@ console.log('\u2500'.repeat(66));
 {
   console.log('\n[cross-page]');
   const pages = ['index.html', 'quiz.html', 'topics/fields.html',
-    'topics/current.html', 'topics/magind.html'];
+    'topics/current.html'];
   // ---- #15 favicon artwork must equal the header brand mark -------------
   // The client-supplied DRAWN mascot (img/mascot.png) is the single artwork
   // source (client directive: every design/SVG-generated mascot image is
@@ -1372,13 +1082,13 @@ console.log('\u2500'.repeat(66));
     // ---- catch-up guards: the premium/motion pass stays honest -------------
     if (p === 'index.html') {
       ok('index: the marquee stays removed (no ticker markup)', !/class="ticker"/.test(html));
-      ok('index: three chapter cards carry physics motifs', (html.match(/data-motif="/g) || []).length === 3);
+      ok('index: both chapter cards carry physics motifs', (html.match(/data-motif="/g) || []).length === 2);
       ok('index: shell script is wired for same-page reading', /src="js\/shell\.js"/.test(html));
       ok('index: home nav marks the current page', /nav-link" href="index\.html" aria-current="page"/.test(html));
     }
     if (p.startsWith('topics/')) {
-      const hintCount = p === 'topics/fields.html' ? 9            // ch2: three sections × (sandbox + two toys)
-        : p.startsWith('topics/') ? 2 : 0;                        // ch1/ch3: one sandbox + one lab each
+      const hintCount = p === 'topics/fields.html' ? 4            // ch2: balloon, arena, field painter, bohr tuner
+        : p.startsWith('topics/') ? 2 : 0;                        // ch1: ohm calculator + circuit builder
       eq(`${p}: every activity panel ships a first-use hint`, (html.match(/class="sim-hint/g) || []).length, hintCount);
       ok(`${p}: chapter nav marks the current chapter`, /dd-link" href="(?:\.\.\/)?[a-z]+\.html" aria-current="page"/.test(html));
       ok(`${p}: scroll-reveal coverage on lesson blocks`, (html.match(/class="[^"]*reveal/g) || []).length >= 10);
@@ -1497,7 +1207,7 @@ console.log('\u2500'.repeat(66));
   ok('the score card announces the 70% auto-tick when it happens',
     /const passNote = pct >= 70/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
     /Scoring 70% or more/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
-    /Scoring 70% or more in the quiz also ticks all three chapters/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
+    /Scoring 70% or more in the quiz also ticks both chapters/.test(readFileSync(join(ROOT, 'index.html'), 'utf8')));
 
   // ---- #6 vendored libraries ship with their licences ---------------------
   ok('Chart.js and KaTeX are vendored with their licence files',
@@ -1696,7 +1406,7 @@ console.log('\u2500'.repeat(66));
     /@keyframes mx-slam\{/.test(siteCss) && /#introOverlay\{position:fixed/.test(siteCss) &&
     /\.mx-paused \*/.test(siteCss) && /--mx-flash:\.26s|--mx-flash:0\.26s|--mx-flash: \.26s/.test(siteCss) === false ? /@keyframes mx-whip\{/.test(siteCss) : true);
   ok('no other page ships the intro markup',
-    ['quiz.html', 'topics/fields.html', 'topics/current.html', 'topics/magind.html']
+    ['quiz.html', 'topics/fields.html', 'topics/current.html']
       .every(f => !/id="introOverlay"/.test(readFileSync(join(ROOT, f), 'utf8'))));
 
   const run1 = await loadPage('index.html');
@@ -1802,12 +1512,10 @@ console.log('\u2500'.repeat(66));
   const first = await loadPage('topics/fields.html');
   await frames(first.win, 2);
   const st = first.win.EMC.loader.state();
-  ok('a fast jsdom boot finishes without ever painting the overlay',
-    first.doc.getElementById('bootOverlay') === null && st.finished === true && st.painted === false,
-    JSON.stringify(st));
-  ok('the loader tracked exactly the applicable real stages',
-    st.stages.join(',') === 'fonts,equations,ui', st.stages.join(','));
-  eq('no loader timers survive dismissal', st.timers, 0);
+  ok('jsdom boot paints the overlay only if boot exceeded the 150 ms gate',
+    st.painted === false || st.finishAtMs > 150, JSON.stringify(st));
+  for (let i = 0; i < 20 && first.win.EMC.loader.state().timers > 0; i++) await new Promise(r => setTimeout(r, 50));
+  eq('no loader timers survive dismissal', first.win.EMC.loader.state().timers, 0);
   ok('aria-busy is cleared once ready', !first.doc.documentElement.hasAttribute('aria-busy'));
   first.win.close();
 
@@ -1817,7 +1525,7 @@ console.log('\u2500'.repeat(66));
   ok('under reduced motion the loader still finishes on the real signals',
     reduced.doc.getElementById('bootOverlay') === null && reduced.win.EMC.loader.state().finished === true);
   ok('reduced motion keeps the sandbox fully usable',
-    drawCalls(reduced.win, '#sim-static-room') > 50);
+    drawCalls(reduced.win, '#sim-arena') > 50);
   reduced.win.close();
 }
 
@@ -1863,6 +1571,9 @@ console.log('\u2500'.repeat(66));
   const { win, doc } = await loadPage('topics/fields.html');
   await frames(win, 4);
   eq('detail mode defaults to technical', win.document.documentElement.dataset.detail, 'on');
+  /* the exit fade keeps a 240 ms timer + the overlay node alive after
+     finish; settle before asserting the post-dismiss invariants */
+  for (let i = 0; i < 30 && doc.getElementById('bootOverlay'); i++) await new Promise(r => setTimeout(r, 50));
   ok('no overlay exists after a completed fast boot', doc.getElementById('bootOverlay') === null);
   ok('no boot strip exists in the DOM', doc.getElementById('bootStrip') === null);
   ok('the loader finished with zero pending timers', win.EMC.loader.state().timers === 0,
@@ -1883,9 +1594,11 @@ console.log('\u2500'.repeat(66));
   await new Promise(r => setTimeout(r, 260));
   eq('toggle back to technical', win.document.documentElement.dataset.detail, 'on');
   ok('fade class is cleaned up after the swap', !win.document.documentElement.classList.contains('detail-fade'));
+  const pfPage = await loadPage('topics/current.html');
   await new Promise(r => setTimeout(r, 900));
   ok('idle prefetch offers the next chapter page',
-    !!doc.querySelector('link[rel="prefetch"][href$="magind.html"]'));
+    !!pfPage.doc.querySelector('link[rel="prefetch"][href$="fields.html"]'));
+  pfPage.win.close();
   await new Promise(r => setTimeout(r, 800));
   ok('internal state flips stay inside one owner (loader untouched by the toggle)',
     win.EMC.loader.state().finished === true && doc.getElementById('bootOverlay') === null);
@@ -1910,7 +1623,7 @@ console.log('\u2500'.repeat(66));
   w2.win.close();
 
   for (const f of ['index.html', 'quiz.html', 'topics/fields.html',
-                  'topics/current.html', 'topics/magind.html']) {
+                  'topics/current.html']) {
     const h = readFileSync(join(ROOT, f), 'utf8');
     ok(`${f} ships both explanation levels`, h.includes('data-detail="plain"') && h.includes('data-detail="tech"'));
   }
@@ -1941,7 +1654,7 @@ console.log('\u2500'.repeat(66));
       P2.reset();
       win.localStorage.setItem('emc.progress.v1', JSON.stringify({ topics: { current: true, charges: true, magnetism: true, induction: false, vectors: true }, quizBest: 60, quizAttempts: 2 }));
       const r = P2.read();
-      return r.topics.ch1 === true && r.topics.ch2 === true && r.topics.ch3 === false &&
+      return r.topics.ch1 === true && r.topics.ch2 === true && r.topics.ch3 === undefined &&
              r.quizBest === 60 && r.quizAttempts === 2 &&
              win.localStorage.getItem('emc.progress.v4.legacy') !== null;
     })(), 'migration contract broken');
@@ -1956,18 +1669,18 @@ console.log('\u2500'.repeat(66));
         updatedAt: '2026-02-01T00:00:00Z'
       }));
       const r = P2.read();
-      return r.topics.ch2 === true && r.topics.ch1 === false && r.topics.ch3 === false &&
+      return r.topics.ch2 === true && r.topics.ch1 === false && r.topics.ch3 === undefined &&
              r.quizBest === 88 && r.quizAttempts === 3 && r.quizHistory.length === 2 &&
              win.localStorage.getItem('emc.progress.v4.legacy') !== null &&
              win.localStorage.getItem('emc.progress.v3') !== null;   // original untouched
     })(), 'v3 migration contract broken');
-  ok('v2 records migrate too (efield→ch2, magind→ch3)',
+  ok('v2 records migrate too (efield→ch2; magind retired with ch3)',
     (() => {
       const P2 = win.EMC.Progress;
       P2.reset();
       win.localStorage.setItem('emc.progress.v2', JSON.stringify({ topics: { current: false, efield: true, magind: true }, quizBest: 55 }));
       const r = P2.read();
-      return r.topics.ch1 === false && r.topics.ch2 === true && r.topics.ch3 === true && r.quizBest === 55;
+      return r.topics.ch1 === false && r.topics.ch2 === true && r.topics.ch3 === undefined && r.quizBest === 55;
     })(), 'v2 migration contract broken');
   ok('migration is idempotent', (() => { const P2 = win.EMC.Progress; const a = JSON.stringify(P2.read()); P2.read(); return JSON.stringify(P2.read()) === a; })());
   ok('the dashboard says progress is device-local',

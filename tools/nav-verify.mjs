@@ -64,7 +64,7 @@ async function page(opts = {}) {
   const { ctx, pg } = await page();
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(500);
-  for (const [label, hrefPart] of [['ch1', 'current.html'], ['ch2', 'fields.html'], ['ch3', 'magind.html']]) {
+  for (const [label, hrefPart] of [['ch1', 'current.html'], ['ch2', 'fields.html']]) {
     await pg.evaluate(() => { location.hash = '#/'; });
     await pg.waitForTimeout(200);
     await pg.click('#topicsBtn');                        // open the dropdown first
@@ -86,7 +86,7 @@ async function page(opts = {}) {
 
 /* ---- 3. direct URLs ------------------------------------------------------- */
 {
-  for (const u of ['/index.html', '/quiz.html', '/topics/current.html', '/topics/fields.html', '/topics/magind.html']) {
+  for (const u of ['/index.html', '/quiz.html', '/topics/current.html', '/topics/fields.html']) {
     const { ctx, pg } = await page();
     const res = await pg.goto(B + u, { waitUntil: 'load' });
     await pg.waitForTimeout(400);
@@ -112,8 +112,9 @@ async function page(opts = {}) {
   }
   await pg.goto(B + '/index.html#/magind', { waitUntil: 'load' });
   await pg.waitForTimeout(1000);
-  const legacy = await pg.evaluate(() => ({ hash: location.hash, mounted: !document.getElementById('shell-topic').hidden }));
-  ok('4 legacy hash #/magind resolves to #/ch3', legacy.hash === '#/ch3' && legacy.mounted, JSON.stringify(legacy));
+  const legacy = await pg.evaluate(() => ({ hash: location.hash, home: document.getElementById('shell-topic').hidden }));
+  ok('4 retired legacy hash #/magind falls back home (ch3 gone, no dead route)',
+    (legacy.hash === '' || legacy.hash === '#/' || legacy.hash === '#') && legacy.home, JSON.stringify(legacy));
   await ctx.close();
 }
 
@@ -153,17 +154,17 @@ async function page(opts = {}) {
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.evaluate(() => { location.hash = '#/ch1'; });
   await pg.waitForTimeout(900);
-  await pg.evaluate(() => { location.hash = '#/ch3'; });
+  await pg.evaluate(() => { location.hash = '#/ch2'; });
   await pg.waitForTimeout(900);
   await pg.goBack(); await pg.waitForTimeout(700);
   const back = await pg.evaluate(() => ({ hash: location.hash, h1: (document.querySelector('#shell-topic h1') || {}).textContent }));
   ok('6 back returns to ch1 mounted', back.hash === '#/ch1' && /Circuits/.test(back.h1 || ''), JSON.stringify(back));
   await pg.goForward(); await pg.waitForTimeout(700);
   const fwd = await pg.evaluate(() => ({ hash: location.hash, h1: (document.querySelector('#shell-topic h1') || {}).textContent }));
-  ok('6 forward returns to ch3 mounted', fwd.hash === '#/ch3' && /Magnetism/.test(fwd.h1 || ''), JSON.stringify(fwd));
+  ok('6 forward returns to ch2 mounted', fwd.hash === '#/ch2' && /Electric Fields/.test(fwd.h1 || ''), JSON.stringify(fwd));
   await pg.reload({ waitUntil: 'load' }); await pg.waitForTimeout(1000);
   const rel = await pg.evaluate(() => ({ hash: location.hash, mounted: !document.getElementById('shell-topic').hidden, h1: (document.querySelector('#shell-topic h1') || {}).textContent }));
-  ok('7 reload on #/ch3 remounts the chapter', rel.mounted && rel.hash === '#/ch3' && /Magnetism/.test(rel.h1 || ''), JSON.stringify(rel));
+  ok('7 reload on #/ch2 remounts the chapter', rel.mounted && rel.hash === '#/ch2' && /Electric Fields/.test(rel.h1 || ''), JSON.stringify(rel));
   await ctx.close();
 }
 
@@ -174,7 +175,7 @@ async function page(opts = {}) {
   const hrefs = await pg.evaluate(() => [...document.querySelectorAll('a[data-topic-link], .nav-drop-menu a')]
     .map(a => a.getAttribute('href')));
   ok('8 every chapter link keeps a real standalone href',
-    hrefs.length >= 6 && hrefs.every(h => /^topics\/(current|fields|magind)\.html/.test(h)), hrefs.join(' '));
+    hrefs.length >= 4 && hrefs.every(h => /^topics\/(current|fields)\.html/.test(h)), hrefs.join(' '));
   await ctx.close();
 }
 
@@ -188,15 +189,15 @@ async function page(opts = {}) {
   await pg.evaluate(() => document.querySelector('#sim-arena-panel').scrollIntoView());
   await pg.waitForTimeout(900);                      // let the arena stage spin up
   const before = await pg.evaluate(() => ({ stats: window.EMC.stats(), ids: window.EMC.debugStages().map(s => s.id) }));
-  await pg.evaluate(() => { location.hash = '#/ch3'; });
+  await pg.evaluate(() => { location.hash = '#/ch1'; });
   await pg.waitForTimeout(1200);
   const after = await pg.evaluate(() => ({
     stats: window.EMC.stats(),
     ids: window.EMC.debugStages().map(s => s.id),
     focus: document.activeElement ? (document.activeElement.tagName + ':' + (document.activeElement.textContent || '').slice(0, 30)) : 'none'
   }));
-  const CH2 = ['sim-static-room', 'toy-balloon', 'toy-ledger', 'sim-arena', 'toy-pinforce', 'toy-bohr', 'sim-fieldpaint', 'toy-dipole', 'toy-zerohunt'];
-  ok('9 ch2 -> ch3 tears down every ch2 stage (identity, not count)',
+  const CH2 = ['toy-balloon', 'sim-arena', 'toy-bohr', 'sim-fieldpaint'];
+  ok('9 ch2 -> ch1 tears down every ch2 stage (identity, not count)',
     before.ids.some(id => CH2.includes(id)) && after.ids.every(id => !CH2.includes(id)),
     `${before.ids.join(',')} -> ${after.ids.join(',')}`);
   ok('9 focus moves into the mounted chapter', /H1/.test(after.focus), after.focus);

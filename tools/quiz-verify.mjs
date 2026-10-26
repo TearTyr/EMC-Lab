@@ -59,7 +59,7 @@ async function page(opts = {}, url = '/quiz.html') {
   await pg.keyboard.press('2');                     // answer option B of the active card
   await pg.waitForTimeout(300);
   const after = await pg.textContent('#pillText');
-  ok('keyboard: "2" answers the active card', before === '0/24' && after === '1/24', `${before} -> ${after}`);
+  ok('keyboard: "2" answers the active card', before === '0/16' && after === '1/16', `${before} -> ${after}`);
   await pg.keyboard.press('f');                     // flag it
   await pg.waitForTimeout(250);
   const flagged = await pg.evaluate(() => document.querySelectorAll('.q-card.flagged').length);
@@ -68,7 +68,7 @@ async function page(opts = {}, url = '/quiz.html') {
   await pg.waitForTimeout(400);
   await pg.keyboard.press('3');
   await pg.waitForTimeout(250);
-  ok('keyboard: "n" + number answers the next blank', (await pg.textContent('#pillText')) === '2/24', await pg.textContent('#pillText'));
+  ok('keyboard: "n" + number answers the next blank', (await pg.textContent('#pillText')) === '2/16', await pg.textContent('#pillText'));
   /* the guard: with focus on a link (A) or input, shortcuts must NOT fire */
   const guard = await pg.evaluate(() => {
     document.querySelector('a.nav-link').focus();
@@ -77,7 +77,7 @@ async function page(opts = {}, url = '/quiz.html') {
     return document.getElementById('pillText').textContent;
   });
   await pg.waitForTimeout(200);
-  ok('keyboard: shortcuts are ignored while focus is in nav/inputs', guard === '2/24', guard);
+  ok('keyboard: shortcuts are ignored while focus is in nav/inputs', guard === '2/16', guard);
   await ctx.close();
 }
 
@@ -101,7 +101,7 @@ async function page(opts = {}, url = '/quiz.html') {
     });
     return count;
   });
-  ok('all 24 answered through real clicks', n === 24, String(n));
+  ok('all 16 answered through real clicks', n === 16, String(n));
   const submits = await pg.evaluate(() => [...document.querySelectorAll('button')]
     .filter(b => /submit/i.test(b.textContent) || b.id.includes('submit')).map(b => b.id || b.textContent.trim()));
   ok('submit exists near top and bottom (dual submit)', submits.length >= 2, submits.join(' | '));
@@ -134,7 +134,7 @@ async function page(opts = {}, url = '/quiz.html') {
     marks: document.querySelectorAll('.q-card.answered-correct').length,
     pill: document.getElementById('pillText').textContent
   }));
-  ok('retake clears every mark and the pill', cleared.marks === 0 && cleared.pill === '0/24', JSON.stringify(cleared));
+  ok('retake clears every mark and the pill', cleared.marks === 0 && cleared.pill === '0/16', JSON.stringify(cleared));
   await ctx.close();
 }
 
@@ -205,7 +205,7 @@ async function page(opts = {}, url = '/quiz.html') {
   ok('reload after answering offers an explicit resume', banner === true);
   await pg.click('#resume-yes');
   await pg.waitForTimeout(500);
-  ok('resume restores both answers', (await pg.textContent('#pillText')) === '2/24', await pg.textContent('#pillText'));
+  ok('resume restores both answers', (await pg.textContent('#pillText')) === '2/16', await pg.textContent('#pillText'));
   await ctx.close();
 }
 

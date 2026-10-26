@@ -55,6 +55,11 @@
       "source": "/topics/magind.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/topics/efield.html",
+      "destination": "/topics/fields.html",
+      "permanent": true
     }
   ]
 }

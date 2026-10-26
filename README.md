@@ -1,17 +1,16 @@
 # EMC Lab — Interactive Electromagnetics Tutorial
 
 A responsive, interactive educational website for **Calculus-based Physics 2** (Electricity
-group). The course brief's three chapters are the site's three chapters — all principal,
+group). The course brief's Electricity chapters are the site's two chapters — all principal,
 nothing optional:
 
 | # | Chapter | Page | What's inside |
 |---|---------|------|---------------|
 | 1 | **Circuits & Ohm's Law** | `topics/current.html` | V, I, R, power, series/parallel reduction, an Ohm's-law bench (R2) and a drag-and-drop circuit builder with resistors, a battery and a bulb whose brightness follows P = VI (R1) |
 | 2 | **Electric Fields & Coulomb's Law** | `topics/fields.html` | the graded lecture in three sections — 2.1 Electric Charge, 2.2 Coulomb's Law (1-D/2-D superposition, Bohr atom), 2.3 Electric Field (E = F/\|q₀\|, field lines, the two-charge y-axis example) — with nine open sandboxes and toys |
-| 3 | **Magnetism & Induction** | `topics/magind.html` | Lorentz force F = qv × B, magnetic motion, flux, Faraday's law, Lenz's law on a live coil |
 
 Plus a **24-question auto-graded quiz** (exactly 8 per chapter) with Chart.js score
-analytics, and device-local **progress tracking** for the three chapters.
+analytics, and device-local **progress tracking** for the two chapters.
 
 > Every number on every screen is computed from the real equations — Ohm's law,
 > Coulomb's law with vector superposition, E = Σ kq r̂/r², F = qv × B, ε = −N dΦ/dt.
@@ -26,7 +25,7 @@ analytics, and device-local **progress tracking** for the three chapters.
 **Chart.js** under `vendor/` — the site makes **zero third-party requests** and opens
 straight from the file system.
 
-**Single source of truth:** `js/registry.js` defines the three chapters, their paths,
+**Single source of truth:** `js/registry.js` defines the two chapters, their paths,
 quiz tags and simulations. Navigation, chapter counts, progress topics, quiz
 categories, the production page list and `sitemap.xml` are all derived from it —
 never hand-typed. Legacy ids from earlier site generations (`charge`, `coulomb`,
@@ -73,22 +72,21 @@ quiz.html             the 24-question quiz (filters, timers, navigator, charts, 
 topics/
   current.html        Chapter 1 — Circuits & Ohm's Law   (sim-ohm, sim-circuit)
   fields.html         Chapter 2 — Electric Fields & Coulomb's Law (§§2.1–2.3, nine sims/toys)
-  magind.html         Chapter 3 — Magnetism & Induction  (sim-lorentz, sim-induction)
   charge.html         redirect stub → fields.html#charge   (old URL, anchors preserved)
   coulomb.html        redirect stub → fields.html#coulomb
   field.html          redirect stub → fields.html#field
 js/
-  registry.js         the three chapters + legacy alias map (pure-JSON core)
+  registry.js         the two chapters + legacy alias map (pure-JSON core)
   common.js           engine: constants, Stage (HiDPI canvas + rAF), loader, Detail Mode,
                       Progress (v4 + migrations), KaTeX pipeline, UI primitives
-  shell.js            same-page chapter reader for index.html (hash routes #/ch1…#/ch3,
+  shell.js            same-page chapter reader for index.html (hash routes #/ch1…#/ch2,
                       legacy aliases, one cleanup path for mounted sims)
   home.js             dashboard + derived hero counters
   quiz.js             quiz engine (exam/instant, timers, autosave + bank fingerprint,
                       Chart.js with CSS-bar fallback)
   quiz-data.js        the 24-question bank (8/8/8)
   sandbox-core.js     shared free-play engine for the ch2 sandboxes
-  sim-*.js, toy-*.js  the 13 simulations/toys (one file each, registry-listed)
+  sim-*.js, toy-*.js  the 6 simulations/toys (one file each, registry-listed)
 css/                  input.css (source) → site.css (built), fonts.css
 vendor/               KaTeX + Chart.js + OFL fonts (same-origin, licensed)
 tools/                dev tooling (see §7)
@@ -104,7 +102,7 @@ Video/                the original reference MP4 (analysis source; never shipped
 ## 3. Features
 
 - **Three chapters, one quiz, one progress ring.** Counts on every screen are derived
-  from the registry and the bank (3 chapters · 13 sims · 24 questions).
+  from the registry and the bank (2 chapters · 6 sims · 16 questions).
 - **Detail Mode.** One header switch flips every explanation between a simplified and a
   full-technical variant — applied before first paint (no flash of the wrong level),
   persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
@@ -149,19 +147,12 @@ Video/                the original reference MP4 (analysis source; never shipped
 
 | Sim | Chapter | Governing equations (computed live) |
 |-----|---------|-------------------------------------|
-| Ohm bench (`sim-ohm`) | 1 | I = V/R, P = VI, P = I²R; carrier rate I/e; auto-ranging meters; rated-power warning |
-| Circuit builder (`sim-circuit`) | 1 | Series/parallel/combo reduction, Kirchhoff-exact branch solve; bulb brightness ∝ P |
-| Static Room (`sim-static-room`) | 2 §2.1 | softened Coulomb pair sum; contact sharing (q₁+q₂)/2; unbreakable conservation tally |
+| Ohm's law calculator (`sim-ohm`) | 1 | I = V/R and P = VI on one loop; charge-dot speed ∝ I; exact-value inputs + lecture presets (rebuilt per docs/spec/r1-r2-ground-up-plan.md §3) |
+| Circuit builder (`sim-circuit`) | 1 | one series loop, six sockets: drag/drop battery, resistors, bulb; I = V/ΣR; bulb glow ∝ P = I²R; open-loop and short notes (rebuilt per plan §4; parallel = milestone M2) |
 | Rub the Balloon (`toy-balloon`) | 2 §2.1 | q = n·e in whole electrons; equal-and-opposite readouts |
-| Charge Ledger (`toy-ledger`) | 2 §2.1 | identical conductors split any total equally; total invariant |
 | Tug-of-War Arena (`sim-arena`) | 2 §2.2 | F = k\|q₁q₂\|/r² + vector superposition; lecture line & 2-D presets reproduce 5.69 N and 22.7 N ∠24°; release mode integrates F = ma |
-| Pin the Force (`toy-pinforce`) | 2 §2.2 | the 1/r² hyperbola, live ratio readout F(2r)/F(r) = 0.250 |
 | Bohr Tuner (`toy-bohr`) | 2 §2.2 | v = √(ke²/(mₑr)) → 2.188×10⁶ m/s at r = 5.29×10⁻¹¹ m (Coulomb pull as the **centripetal** force) |
 | Field Painter (`sim-fieldpaint`) | 2 §2.3 | E(P) = Σ kq (P−r)/\|P−r\|³; lecture replica preset: E₁ = 73,388 N/C, net 75,595 N/C +y, Eₓ = 0 |
-| Dipole Builder (`toy-dipole`) | 2 §2.3 | bisector field of a live dipole |
-| Zero-Field Hunt (`toy-zerohunt`) | 2 §2.3 | sweep for E = 0 with a words-not-colour meter |
-| Lorentz Lab (`sim-lorentz`) | 3 | F = qv × B, r = mv/(\|q\|B), RK4-checked orbits |
-| Coil Lab (`sim-induction`) | 3 | Φ = BA cosθ, ε = −N dΦ/dt, Lenz-direction current |
 
 Softening (≤1 cm) keeps close-range forces finite; the stability warning says so
 outright. The lecture's check values are independently recomputed by

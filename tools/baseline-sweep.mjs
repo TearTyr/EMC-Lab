@@ -25,7 +25,7 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(8245, '127.0.0.1', r));
 const B = 'http://127.0.0.1:8245';
-const PAGES = ['/', '/quiz.html', '/topics/fields.html', '/topics/current.html', '/topics/magind.html'];
+const PAGES = ['/', '/quiz.html', '/topics/fields.html', '/topics/current.html'];
 const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
 const results = [];
 

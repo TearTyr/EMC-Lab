@@ -129,19 +129,6 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
   await ctx.close();
 }
 
-/* ---- lorentz: play / pause / reset mid-run ---- */
-{
-  const { ctx, pg } = await page(B + '/topics/magind.html');
-  await pg.click('#lor-play'); await pg.waitForTimeout(500);
-  await pg.click('#lor-play'); await pg.waitForTimeout(120);
-  await pg.click('#lor-play'); await pg.waitForTimeout(300);
-  await pg.click('#lor-reset'); await pg.waitForTimeout(200);
-  ok('lorentz: play/pause/reset cycle survives mid-run resets', true);
-  await pg.click('#ind-reset'); await pg.waitForTimeout(200);
-  ok('induction: reset while the loop runs', true);
-  await ctx.close();
-}
-
 /* ---- ohm: repeated preset clicks keep one coherent state ---- */
 {
   const { ctx, pg } = await page(B + '/topics/current.html');
@@ -153,78 +140,72 @@ const box = async (pg, sel) => pg.locator(sel).boundingBox();
   await ctx.close();
 }
 
-/* ---- circuit builder: real drag & drop (R1: place / rewire / delete / disconnect) ---- */
+/* ---- circuit builder: real drag & drop (R1 rebuild: place / move / delete / disconnect) ---- */
 {
   const { ctx, pg } = await page(B + '/topics/current.html');
   await pg.locator('#sim-circuit').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(500);
   const bb = await pg.locator('#sim-circuit').boundingBox();
   const w = bb.width, h = bb.height;
-  const BX = Math.max(40, w * 0.075), RX = w - BX;
-  const TY = Math.max(38, h * 0.16), BY = h - Math.max(40, h * 0.17);
-  const rows0 = await pg.locator('#circ-rows .row-item').count();
+  /* socket geometry mirrors js/sim-circuit.js layout(): six taps on the loop */
+  const m = Math.min(w, h) * 0.16;
+  const S = [
+    { x: m + (w - 2 * m) * .25, y: m }, { x: m + (w - 2 * m) * .75, y: m },
+    { x: w - m, y: h / 2 }, { x: m + (w - 2 * m) * .75, y: h - m },
+    { x: m + (w - 2 * m) * .25, y: h - m }, { x: m, y: h / 2 }
+  ];
+  const rows = () => pg.locator('#circ-rows .circ-row').count();
+  const rows0 = await rows();
 
-  /* 1. drag the resistor chip from the palette onto the bench */
-  const chip = await pg.locator('[data-circ-chip="resistor"]').boundingBox();
+  /* 1. drag the resistor chip from the palette onto socket 4 */
+  const chip = await pg.locator('[data-circ-part="res"]').boundingBox();
   await pg.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2);
   await pg.mouse.down();
-  await pg.mouse.move(bb.x + w * 0.5, bb.y + TY, { steps: 8 });
+  await pg.mouse.move(bb.x + S[3].x, bb.y + S[3].y, { steps: 8 });
   await pg.mouse.up();
   await pg.waitForTimeout(250);
-  ok('circuit: dragging the palette chip onto the bench places a resistor',
-    (await pg.locator('#circ-rows .row-item').count()) === rows0 + 1);
+  ok('circuit: dragging the palette chip onto a socket places the part',
+    (await rows()) === rows0 + 1);
 
-  /* 2. drag two resistors from the top wire into the parallel lane. The
-        layout re-flows after every rewire, so positions are recomputed from
-        the live state (exposed as window.__CIRC) before each grab. */
-  const serPos = () => pg.evaluate(() => {
-    const st = window.__CIRC.state;
-    const c = document.getElementById('sim-circuit');
-    const w = c.clientWidth, h = c.clientHeight;
-    const BX = Math.max(40, w * 0.075), RX = w - BX;
-    const TY = Math.max(38, h * 0.16);
-    const serIdx = st.resistors.map((r, i) => i).filter(i => st.lanes[i] !== 'parallel');
-    const hasPar = st.lanes.some(l => l === 'parallel');
-    const x0 = BX + 64, x1 = hasPar ? BX + (RX - BX) * 0.50 : RX - 30;
-    const k = serIdx.length - 1;                       // the last series resistor
-    return { x: x0 + (x1 - x0) * ((k + 0.5) / serIdx.length), y: TY, idx: serIdx[k] };
-  });
-  for (let n = 0; n < 2; n++) {
-    const pos = await serPos();
-    await pg.mouse.move(bb.x + pos.x, bb.y + pos.y);
-    await pg.mouse.down();
-    await pg.mouse.move(bb.x + pos.x, bb.y + h * 0.78, { steps: 6 });
-    await pg.mouse.up();
-    await pg.waitForTimeout(250);
-  }
-  const req = (await pg.textContent('#circ-req')).trim();
-  const lanes = await pg.evaluate(() => window.__CIRC.state.lanes.join(','));
-  ok('circuit: dropping resistors low rewires them into parallel (10+22 + 47||20 = 46.03)',
-    /46\.0/.test(req) && lanes === 'series,series,parallel,parallel', req + ' ' + lanes);
-
-  /* 3. drag a resistor off the bench -> deleted */
-  const pos3 = await serPos();
-  await pg.mouse.move(bb.x + pos3.x, bb.y + pos3.y);
+  /* 2. drag the placed bulb from socket 3 to socket 5 (move, same loop) */
+  await pg.mouse.move(bb.x + S[2].x, bb.y + S[2].y);
   await pg.mouse.down();
-  await pg.mouse.move(bb.x - 60, bb.y + pos3.y, { steps: 6 });
+  await pg.mouse.move(bb.x + S[4].x, bb.y + S[4].y, { steps: 6 });
   await pg.mouse.up();
   await pg.waitForTimeout(250);
-  ok('circuit: dragging a resistor off the bench deletes it',
-    (await pg.locator('#circ-rows .row-item').count()) === rows0);
+  ok('circuit: dragging a placed part moves it between sockets',
+    (await pg.textContent('#circ-sk4')).includes('bul'));
 
-  /* 4. drag the battery off -> honest zero current; chip click reconnects */
-  await pg.mouse.move(bb.x + BX, bb.y + (TY + BY) / 2);
+  /* 3. drag the bulb off the bench -> deleted */
+  await pg.mouse.move(bb.x + S[4].x, bb.y + S[4].y);
   await pg.mouse.down();
-  await pg.mouse.move(bb.x - 60, bb.y + (TY + BY) / 2, { steps: 6 });
+  await pg.mouse.move(bb.x - 60, bb.y + S[4].y, { steps: 6 });
   await pg.mouse.up();
   await pg.waitForTimeout(250);
-  const dead = await pg.textContent('#circ-itotal');
+  ok('circuit: dragging a part off the bench deletes it', (await rows()) === rows0);
+
+  /* 4. drag the battery off -> honest open loop; keyboard path reconnects */
+  await pg.mouse.move(bb.x + S[0].x, bb.y + S[0].y);
+  await pg.mouse.down();
+  await pg.mouse.move(bb.x - 60, bb.y + S[0].y, { steps: 6 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(250);
+  const dead = await pg.textContent('#circ-I');
+  const note = await pg.textContent('#circ-note');
   ok('circuit: dragging the battery off kills the current (no fake numbers)',
-    /no battery/.test(dead), dead);
-  await pg.click('[data-circ-chip="battery"]');
+    /0/.test(dead) && /battery/i.test(note), dead + ' | ' + note);
+  await pg.click('[data-circ-part="bat"]');
+  await pg.click('#circ-sk0');
+  await pg.waitForTimeout(200);
+  const stillOpen = await pg.textContent('#circ-I');
+  ok('circuit: battery back but bulb still missing -> loop stays honestly open',
+    /^0/.test(stillOpen.trim()), stillOpen);
+  await pg.click('[data-circ-part="bulb"]');
+  await pg.click('#circ-sk2');
   await pg.waitForTimeout(250);
-  const alive = await pg.textContent('#circ-itotal');
-  ok('circuit: the battery chip reconnects it and current returns', /\d/.test(alive) && !/no battery/.test(alive), alive);
+  const alive = await pg.textContent('#circ-I');
+  ok('circuit: arming + placing by keyboard completes the loop and current returns',
+    /A/.test(alive) && !/^0/.test(alive.trim()), alive);
   await ctx.close();
 }
 

@@ -52,7 +52,7 @@
        home screens. All three carry the same artwork as the header
        brand mark — tools/smoke-test.mjs asserts they stay identical. -->
   <link rel="icon" href="../favicon.ico" type="image/x-icon">
-  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../img/mascot.png" type="image/png">
   <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
@@ -108,7 +108,7 @@
   <header class="site-header">
     <div class="wrap nav-inner">
       <a class="brand" href="../index.html" aria-label="EMC Lab — home">
-        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
+        <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electricity</span></span>
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
@@ -971,7 +971,7 @@
     <div class="wrap footer-grid">
       <div>
         <span class="brand" style="pointer-events:none">
-          <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
+          <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
         <p class="small muted" style="margin-top:.6rem">Chapter 2 of 3.</p>
@@ -1009,5 +1009,16 @@
   <script defer src="../js/sim-arena.js"></script>
   <script defer src="../js/toy-bohr.js"></script>
   <script defer src="../js/sim-fieldpaint.js"></script>
+<script>
+  if (/\.vercel\.app$/.test(location.hostname)) {
+    var va = document.createElement('script');
+    va.defer = true;
+    va.src = 'https://cdn.vercel-insights.com/v1/script.js';
+    document.head.appendChild(va);
+    import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
+      .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
+      .catch(function () { /* analytics is optional; never break the page */ });
+  }
+</script>
 </body>
 </html>

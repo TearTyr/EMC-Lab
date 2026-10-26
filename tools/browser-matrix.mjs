@@ -4,7 +4,7 @@
    Run: node tools/browser-matrix.mjs
    Runs the SAME core flows on every available engine:
      chromium (Chrome), firefox, and chromium with channel 'msedge' (Edge).
-   Flows: home boots with derived counts -> all three chapters mount ->
+   Flows: home boots with derived counts -> both chapters mount ->
    circuit builder controls move real readouts -> quiz answers + submits +
    scores 100% -> Detail toggle agrees across attr/aria/label/content.
    A browser that cannot launch is reported UNTESTED, never assumed (R9).
@@ -76,11 +76,11 @@ for (const eng of ENGINES) {
             document.getElementById('statQuestions').textContent].join('|'),
     overlay: !!document.getElementById('bootOverlay')
   }));
-  ok('home boots with derived counts 3|13|24', home.emc && home.stats === '3|13|24', home.stats);
+  ok('home boots with derived counts 2|6|16', home.emc && home.stats === '2|6|16', home.stats);
   ok('no boot overlay lingering', home.overlay === false);
 
-  /* --- the three chapters mount via the shell --- */
-  for (const [route, want] of [['#/ch1', 'Circuits'], ['#/ch2', 'Electric Fields'], ['#/ch3', 'Magnetism']]) {
+  /* --- both chapters mount via the shell --- */
+  for (const [route, want] of [['#/ch1', 'Circuits'], ['#/ch2', 'Electric Fields']]) {
     await pg.evaluate(r => { location.hash = r; }, route);
     await pg.waitForTimeout(1300);
     const st = await pg.evaluate(() => ({
@@ -90,25 +90,27 @@ for (const eng of ENGINES) {
     ok(`chapter ${route} mounts`, st.mounted && st.h1.includes(want), st.h1.slice(0, 40));
   }
 
-  /* --- circuit builder: controls move real readouts --- */
-  await pg.goto(B + '/topics/current.html', { waitUntil: 'load' });
+  /* --- circuit builder: placing a part moves real readouts --- */
+  await pg.evaluate(() => { location.hash = '#/ch1'; });
+  await pg.waitForTimeout(1300);
   await pg.evaluate(() => document.getElementById('sim-circuit').scrollIntoView());
-  await pg.waitForTimeout(1200);
-  const c0 = await pg.evaluate(() => document.getElementById('circ-req').textContent);
-  await pg.evaluate(() => document.querySelector('[data-lane="1"]').click());
-  await pg.waitForTimeout(300);
-  await pg.evaluate(() => document.querySelector('[data-lane="2"]').click());
   await pg.waitForTimeout(400);
-  const c1 = await pg.evaluate(() => ({
-    req: document.getElementById('circ-req').textContent,
-    lanes: window.__CIRC.state.lanes.join(',')
-  }));
-  ok('circuit builder rewire changes the computed R(eq)',
-    c0.includes('79.00') && /24\.99/.test(c1.req) && c1.lanes === 'series,parallel,parallel', `${c0} -> ${c1.req}`);
-  await pg.evaluate(() => document.querySelector('[data-circ-chip="battery"]').click());
+  const c0 = await pg.evaluate(() => document.getElementById('circ-R').textContent);
+  await pg.evaluate(() => {
+    document.querySelector('[data-circ-part="res"]').click();
+    document.getElementById('circ-sk3').click();
+  });
   await pg.waitForTimeout(300);
-  const bat = await pg.evaluate(() => document.getElementById('circ-itotal').textContent);
-  ok('battery toggle reports honest zero current', /no battery/.test(bat), bat);
+  const c1 = await pg.evaluate(() => ({
+    R: document.getElementById('circ-R').textContent,
+    I: document.getElementById('circ-I').textContent
+  }));
+  ok('circuit builder placement changes the computed loop R and I',
+    c1.R !== c0 && /A/.test(c1.I), c0 + ' -> ' + JSON.stringify(c1));
+  await pg.evaluate(() => document.getElementById('circ-sk0').click());
+  await pg.waitForTimeout(300);
+  const bat = await pg.evaluate(() => document.getElementById('circ-I').textContent);
+  ok('removing the battery zeroes the current honestly', /0/.test(bat), bat);
 
   /* --- quiz: answer all, submit twice, 100% --- */
   await pg.goto(B + '/quiz.html', { waitUntil: 'load' });
@@ -122,7 +124,7 @@ for (const eng of ENGINES) {
     });
     return k;
   });
-  ok('quiz: all 24 answered by real clicks', n === 24, String(n));
+  ok('quiz: all 16 answered by real clicks', n === 16, String(n));
   await pg.evaluate(() => document.getElementById('quiz-submit').scrollIntoView());
   await pg.evaluate(() => document.getElementById('quiz-submit').click());
   await pg.waitForTimeout(300);

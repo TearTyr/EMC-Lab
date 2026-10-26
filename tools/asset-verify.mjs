@@ -64,7 +64,7 @@ const ok = (name, cond, extra = '') => {
 }
 
 const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
-const PAGES = [['index.html', 0], ['quiz.html', 0], ['topics/current.html', 1], ['topics/fields.html', 1], ['topics/magind.html', 1]];
+const PAGES = [['index.html', 0], ['quiz.html', 0], ['topics/current.html', 1], ['topics/fields.html', 1]];
 
 async function auditPage(url, artCount, viewport) {
   const ctx = await browser.newContext({ viewport: viewport || { width: 1280, height: 900 } });

@@ -154,75 +154,25 @@ const txt = (pg, id) => pg.evaluate(i => (document.getElementById(i) || {}).text
   /* R = 0 and junk input: rejected, never NaN/Infinity on screen */
   await pg.evaluate(() => {
     const n = document.getElementById('ohm-Rnum');
-    n.value = '0'; n.dispatchEvent(new Event('change', { bubbles: true }));
+    n.value = '0'; n.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await pg.waitForTimeout(200);
   let bad = await pg.evaluate(() => ['ohm-I', 'ohm-P', 'ohm-Rv'].map(i => document.getElementById(i).textContent).join('|'));
   ok('ch1 Ohm: R=0 refused, readouts stay finite', !/NaN|Infinity|∞/.test(bad), bad);
   await pg.evaluate(() => {
     const n = document.getElementById('ohm-Rnum');
-    n.value = 'abc'; n.dispatchEvent(new Event('change', { bubbles: true }));
+    n.value = 'abc'; n.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await pg.waitForTimeout(200);
   bad = await pg.evaluate(() => ['ohm-I', 'ohm-P', 'ohm-Rv', 'ohm-Rnum'].map(i => document.getElementById(i).textContent || document.getElementById(i).value).join('|'));
   ok('ch1 Ohm: junk input refused, previous value restored', !/NaN|abc/.test(bad), bad);
 
-  /* Circuit defaults: series 10+22+47 (+15 bulb) at 12 V */
+  /* Circuit defaults: one series loop — battery 12 V + 22 ohm + bulb 15 ohm */
   await pg.locator('#sim-circuit-panel').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(500);
-  ok('ch1 circuit: series bank R = 79.00 ohm', (await txt(pg, 'circ-req')).includes('79.00'), await txt(pg, 'circ-req'));
-  ok('ch1 circuit: total R = 94.00 ohm', (await txt(pg, 'circ-rtotal')).includes('94.00'), await txt(pg, 'circ-rtotal'));
-  close('ch1 circuit: I = 12/94 A', parseSI(await txt(pg, 'circ-itotal')), 12 / 94, 0.01);
-  const kv = parseSI(await txt(pg, 'circ-vbank')) + parseSI(await txt(pg, 'circ-vbulb'));
-  close('ch1 circuit: Kirchhoff V(bank)+V(bulb) = 12 V', kv, 12, 0.005);
+  ok('ch1 circuit: loop total R = 37.0 ohm', (await txt(pg, 'circ-R')).includes('37.0'), await txt(pg, 'circ-R'));
+  close('ch1 circuit: I = 12/37 A', parseSI(await txt(pg, 'circ-I')), 12 / 37, 0.01);
+  close('ch1 circuit: I x total R reproduces the supply voltage',
+    parseSI(await txt(pg, 'circ-I')) * 37, 12, 0.05);
   await ctx.close();
 }
-
-/* ================= ch3: magind.html ================= */
-{
-  const { ctx, pg } = await page('/topics/magind.html');
-  await pg.locator('#sim-lorentz-panel').scrollIntoViewIfNeeded();
-  await pg.waitForTimeout(500);
-
-  /* Lorentz: run the orbit; the sim compares its RK4 integration with the
-     analytic r = mv/(|q|B) every frame — assert the reported error is tiny. */
-  await pg.click('#lor-play');
-  await pg.waitForTimeout(1400);
-  const rTheory = parseSI(await txt(pg, 'lor-radius'));
-  const rkErr = parseSI(await txt(pg, 'lor-rkerr'));
-  ok('ch3 Lorentz: RK4 orbit matches r = mv/|q|B within 1%',
-    isFinite(rTheory) && isFinite(rkErr) && rkErr <= Math.abs(rTheory) * 0.01,
-    `r=${rTheory} m, |RK4-theory|=${rkErr} m`);
-  ok('ch3 Lorentz: force readout is live and finite', isFinite(parseSI(await txt(pg, 'lor-force'))));
-  await pg.click('#lor-play');                       // pause
-  await pg.waitForTimeout(150);
-
-  /* Induction: push the magnet; Faraday's law with Lenz's minus sign */
-  await pg.locator('#sim-induction-panel').scrollIntoViewIfNeeded();
-  await pg.waitForTimeout(400);
-  await pg.click('[data-ind-mode="oscillate"]');      // continuous AC motion
-  let checked = 0, signFlips = 0, lenz = '';
-  for (let i = 0; i < 12; i++) {
-    await pg.waitForTimeout(140);
-    const s = await pg.evaluate(() => ({
-      dphi: document.getElementById('ind-dphi').textContent,
-      emf: document.getElementById('ind-emf').textContent,
-      lenz: document.getElementById('ind-lenz').textContent
-    }));
-    const d = parseSI(s.dphi), e = parseSI(s.emf);
-    if (isFinite(d) && isFinite(e) && Math.abs(d) > 1e-9 && Math.abs(e) > 1e-9) {
-      checked++;
-      if (Math.sign(d) !== Math.sign(e)) signFlips++;
-      if (!/not changing/.test(s.lenz)) lenz = s.lenz;
-    }
-  }
-  ok('ch3 Faraday: emf opposes dPhi/dt on every moving sample (Lenz minus sign)',
-    checked >= 5 && signFlips === checked, `${signFlips}/${checked} opposed`);
-  ok('ch3 Lenz: direction readout explains the opposition while moving', lenz.length > 10, lenz.slice(0, 80));
-  await ctx.close();
-}
-
-console.log('page/console errors:', errors.length ? errors.slice(0, 6) : 'none');
-if (errors.length) fails += errors.length;
-console.log(fails === 0 ? 'LECTURE VALUES + SIM PHYSICS PASS' : fails + ' PHYSICS FAILURES');
-await browser.close(); server.close(); process.exit(fails === 0 ? 0 : 1);

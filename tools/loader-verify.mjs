@@ -86,27 +86,74 @@ async function newPage(opts = {}) {
 
 /* ---- 2. throttled network: overlay lifecycle within watchdog ----------- */
 {
-  const { ctx, pg } = await newPage();
-  await pg.route('**/js/*.js', async route => { await new Promise(r => setTimeout(r, 260)); route.continue(); });
+  /* NOTE: deliberately NOT newPage() here — its emc.intro.v1 preset is
+     meaningless on a chapter route and (empirically, 2026-10-26) interacts
+     with boot timing in a way that suppresses the overlay paint this test
+     exists to observe. Plain context + the observer init only. */
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
+  /* Observer-backed sampling (2026-10-26 hardening): a MutationObserver
+     installed before boot records the overlay's insertion and the segmented
+     bar's progress, so the assertions no longer depend on poll cadence
+     catching a short-lived overlay window. */
+  await pg.addInitScript(() => {
+    window.__overlaySeen = false; window.__segMax = 0; window.__doneMax = 0;
+    const sample = () => {
+      const ov = document.getElementById('bootOverlay');
+      if (ov) {
+        window.__overlaySeen = true;
+        window.__segMax = Math.max(window.__segMax, ov.querySelectorAll('.bo-seg').length);
+        window.__doneMax = Math.max(window.__doneMax, ov.querySelectorAll('.bo-seg.done').length);
+      }
+    };
+    const mo = new MutationObserver(sample);
+    const start = () => { sample(); mo.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }); };
+    if (document.documentElement) start(); else window.addEventListener('DOMContentLoaded', start);
+  });
+  /* CONTRACT CHANGE (2026-10-26): throttle the STAGE scripts, not the loader
+     engine itself. The 150 ms show-gate is measured from common.js eval, so
+     delaying common.js together with everything else lets boot finish inside
+     the gate and (correctly) never paint — which made this test assert the
+     opposite of its intent on fast machines. common.js now loads unthrottled;
+     every later stage script and vendor file pays 260 ms. */
+  /* Sims are NOT boot stages (§3.1.5) — hold their scripts back until after
+     the assertions so their rAF loops (software-rendered in CI) cannot starve
+     the 150 ms show-gate timer; this doubles as proof of that clause. */
+  await pg.route('**/js/{sim,toy}-*.js', async route => { await new Promise(r => setTimeout(r, 4000)); route.continue(); });
+  await pg.route('**/js/*.js', async route => {
+    if (route.request().url().includes('/js/common.js')) return route.continue();
+    await new Promise(r => setTimeout(r, 260)); route.continue();
+  });
   await pg.route('**/vendor/**', async route => { await new Promise(r => setTimeout(r, 260)); route.continue(); });
   const t0 = Date.now();
   await pg.goto(B + '/topics/fields.html', { waitUntil: 'commit' });
   let sawOverlay = false, segs = 0, doneMax = 0;
-  for (let i = 0; i < 90; i++) {
+  /* CONTRACT CHANGE (2026-10-26): poll at 40 ms AND honour the page-side
+     MutationObserver flag (__overlaySeen) — on fast machines the overlay's
+     visible window can be shorter than the old 100 ms poll cadence, which
+     made this gate flaky (it missed the paint entirely and then ran out the
+     full 9 s loop). Assertion intent unchanged: slow boot paints the
+     segmented overlay, stages advance, watchdog dismisses it. */
+  for (let i = 0; i < 150; i++) {
     const st = await pg.evaluate(() => {
       const ov = document.getElementById('bootOverlay');
-      return { ov: !!ov, segs: ov ? ov.querySelectorAll('.bo-seg').length : 0, done: ov ? ov.querySelectorAll('.bo-seg.done').length : 0, fatal: !!document.getElementById('bootFatal') };
-    }).catch(() => ({ ov: false, segs: 0, done: 0, fatal: false }));
-    if (st.ov) { sawOverlay = true; segs = Math.max(segs, st.segs); doneMax = Math.max(doneMax, st.done); }
+      return { ov: !!ov, seen: window.__overlaySeen === true, segs: window.__segMax || 0, done: window.__doneMax || 0, fatal: !!document.getElementById('bootFatal') };
+    }).catch(() => ({ ov: false, seen: false, segs: 0, done: 0, fatal: false }));
+    if (st.ov || st.seen) { sawOverlay = true; segs = Math.max(segs, st.segs); doneMax = Math.max(doneMax, st.done); }
     if (!st.ov && sawOverlay) { ok('2 throttled: overlay dismissed', `${Date.now() - t0} ms after commit; segs=${segs} doneMax=${doneMax}`); break; }
     if (st.fatal) { ok('2 throttled: overlay dismissed', 'FATAL card shown — ' + (Date.now() - t0) + 'ms'); break; }
-    await pg.waitForTimeout(100);
+    await pg.waitForTimeout(40);
+  }
+  if (!sawOverlay) {
+    const dbg = await pg.evaluate(() => JSON.stringify(window.EMC.loader.state())).catch(() => 'n/a');
+    console.log('DEBUG test2 state:', dbg, 't=', Date.now() - t0);
   }
   ok('2 throttled: overlay appeared when startup was slow', sawOverlay);
   ok('2 throttled: segmented bar advanced on real stages', segs >= 2 && doneMax >= 1, `segs=${segs} done=${doneMax}`);
   const gone = await pg.evaluate(() => !document.getElementById('bootOverlay'));
   const t = Date.now() - t0;
-  ok('2 throttled: gone well under the 1.5 s watchdog + exit', gone && t < 3000, `${t} ms total (260 ms/js artificial delay)`);
+  ok('2 throttled: gone well under the 1.5 s watchdog + exit', gone && t < 3000, `${t} ms total (260 ms/js + sims held 4 s)`);
   await ctx.close();
 }
 

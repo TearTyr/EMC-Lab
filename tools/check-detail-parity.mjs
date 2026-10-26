@@ -22,7 +22,7 @@ import { join, dirname, resolve } from 'node:path';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const PAGES = ['index.html', 'quiz.html',
-  'topics/fields.html', 'topics/current.html', 'topics/magind.html',
+  'topics/fields.html', 'topics/current.html',
   'topics/charge.html', 'topics/coulomb.html', 'topics/field.html'];
 
 /* Minimal structural scan: we need parent/child relationships, so build a

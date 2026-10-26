@@ -161,30 +161,29 @@ const focusVisible = pg => pg.evaluate(() => {
     Number(v1.v) > Number(v0) && /A/.test(v1.I), JSON.stringify(v1));
   await pg.evaluate(() => document.getElementById('sim-circuit').scrollIntoView());
   await pg.waitForTimeout(600);
-  /* moving ONE resistor to a lone parallel branch keeps R(eq) identical
-     (a single branch adds its own R) - rewire TWO to see 10 + 22||47 */
-  await pg.evaluate(() => document.querySelector('[data-lane="1"]').focus());
+  /* keyboard path: arm a resistor from the palette, place it on socket 4 */
+  await pg.evaluate(() => document.querySelector('[data-circ-part="res"]').focus());
   await pg.keyboard.press('Enter');
   await pg.waitForTimeout(200);
-  await pg.evaluate(() => document.querySelector('[data-lane="2"]').focus());
+  await pg.evaluate(() => document.getElementById('circ-sk3').focus());
   await pg.keyboard.press('Enter');
   await pg.waitForTimeout(400);
-  const lane = await pg.evaluate(() => ({
-    lanes: window.__CIRC.state.lanes.join(','),
-    req: document.getElementById('circ-req').textContent
+  const placed = await pg.evaluate(() => ({
+    rows: document.querySelectorAll('#circ-rows .circ-row').length,
+    R: document.getElementById('circ-R').textContent
   }));
-  ok('A6 lane rewire is keyboard-operable (Enter ×2 → 10 + 22||47 = 24.99 Ω)',
-    lane.lanes === 'series,parallel,parallel' && /24\.99/.test(lane.req), JSON.stringify(lane));
-  await pg.evaluate(() => document.querySelector('[data-circ-chip="battery"]').focus());
+  ok('A6 placing a part is keyboard-operable (arm + socket Enter -> 59.0 ohm)',
+    placed.rows === 4 && /59\.0/.test(placed.R), JSON.stringify(placed));
+  await pg.evaluate(() => document.getElementById('circ-sk0').focus());
   await pg.keyboard.press('Enter');
   await pg.waitForTimeout(300);
   const bat = await pg.evaluate(() => ({
-    on: window.__CIRC.state.batteryIn,
-    pressed: document.querySelector('[data-circ-chip="battery"]').getAttribute('aria-pressed'),
-    it: document.getElementById('circ-itotal').textContent
+    note: document.getElementById('circ-note').textContent,
+    it: document.getElementById('circ-I').textContent,
+    label: document.getElementById('circ-sk0').getAttribute('aria-label')
   }));
-  ok('A7 battery chip toggles by keyboard with aria-pressed + honest readout',
-    bat.on === false && bat.pressed === 'false' && /no battery/.test(bat.it), JSON.stringify(bat));
+  ok('A7 socket buttons remove by keyboard with an honest open-loop readout',
+    /0/.test(bat.it) && /battery/i.test(bat.note) && /empty/.test(bat.label), JSON.stringify(bat));
   await ctx.close();
 }
 
@@ -195,7 +194,7 @@ const focusVisible = pg => pg.evaluate(() => {
   await pg.waitForTimeout(600);
   await pg.evaluate(() => document.querySelector('.q-card').scrollIntoView());
   await pg.waitForTimeout(500);
-  /* answer all 24 with the keyboard: number key for the active card, 'n' to
+  /* answer all 16 with the keyboard: number key for the active card, 'n' to
      jump to the next blank, then WAIT for the smooth scroll to settle (the
      active-card observer only re-targets once scrolling stops — the same
      rhythm a human typist waits for). */
@@ -206,7 +205,7 @@ const focusVisible = pg => pg.evaluate(() => {
       else { same = 0; last = window.scrollY; }
     }, 60);
   }));
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 16; i++) {
     await pg.keyboard.press(String((i % 4) + 1));
     await pg.waitForTimeout(120);
     await pg.keyboard.press('n');
@@ -214,7 +213,7 @@ const focusVisible = pg => pg.evaluate(() => {
     await pg.waitForTimeout(150);
   }
   const pill = await pg.textContent('#pillText');
-  ok('A8 the whole quiz is answerable by keyboard alone', pill === '24/24', pill);
+  ok('A8 the whole quiz is answerable by keyboard alone', pill === '16/16', pill);
   await pg.evaluate(() => document.getElementById('quiz-submit').focus());
   await pg.keyboard.press('Enter');
   await pg.waitForTimeout(250);

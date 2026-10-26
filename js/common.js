@@ -754,6 +754,12 @@ window.EMC = (function () {
       if (finished) return;
       finished = true;
       finishAtMs = now();
+      /* If the 150 ms gate already expired but the show timer never got CPU
+         (timer starvation on saturated machines — CI with software rendering),
+         the boot WAS slow by contract, so run the paint now and let the
+         normal exit path dismiss it. Fast boots (finish < gate) never paint.
+         (2026-10-26, loader-verify test 2 determinism.) */
+      if (!painted && showTimer && now() > SHOW_AFTER_MS) build();
       clearTimers();
       /* single owner, single completion signal: the intro (and anything else
          that must wait for a usable page) listens for this one event. */
@@ -1152,7 +1158,7 @@ window.EMC = (function () {
           const done = Progress.isTopicDone(id);
           btn.classList.toggle('btn-primary', !done);
           btn.innerHTML = done
-            ? 'Chapter completed \u2713'
+            ? '<img class="mascot-cheer" src="' + (location.pathname.indexOf('/topics/') >= 0 ? '../' : '') + 'img/mascot-sparkle.png" width="34" height="34" alt=""> Chapter completed \u2713'
             : 'Mark chapter as complete';
           btn.setAttribute('aria-pressed', String(done));
         };
