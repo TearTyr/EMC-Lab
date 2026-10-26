@@ -16,6 +16,12 @@
   if (!overlay) return;
 
   const SESSION_KEY = 'emc.intro.v1';
+  /* #7.11: sessionStorage is per-tab, so every new tab replayed the whole
+     intro. A 7-day localStorage mirror keeps it once-per-browser; the
+     session key stays as the fast path and the memory fallback survives
+     blocked storage. */
+  const LS_KEY = 'emc.intro.v1.ls';
+  const LS_TTL_MS = 7 * 24 * 3600 * 1000;
   const INTRO_MS = 12000;          // engine timeline length
   const REDUCED_MOTION_MS = 1200;
   const EXIT_BUFFER_MS = 700;      // .done fade (.5 s) + slack
@@ -42,12 +48,17 @@
   function clearTimers() { for (const timer of timers) clearTimeout(timer); timers = []; }
 
   function hasPlayedThisSession() {
-    try { return sessionStorage.getItem(SESSION_KEY) === '1'; }
-    catch { return window.__emcIntroSeen === true; }
+    try { if (sessionStorage.getItem(SESSION_KEY) === '1') return true; } catch { /* below */ }
+    try {
+      const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (v && typeof v.t === 'number' && Date.now() - v.t < LS_TTL_MS) return true;
+    } catch { /* blocked or corrupt: fall through */ }
+    return window.__emcIntroSeen === true;
   }
   function markAsPlayed() {
     window.__emcIntroSeen = true;
     try { sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* memory fallback */ }
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ t: Date.now() })); } catch { /* memory fallback */ }
   }
 
   /* ---------------------------------------------------------------- engine */

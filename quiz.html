@@ -385,7 +385,7 @@
           <img class="brand-mark" src="img/mascot.png" width="34" height="34" alt="">
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
-        <p class="small muted" style="margin-top:.6rem">Twenty-four questions — eight per chapter.</p>
+        <p class="small muted" style="margin-top:.6rem"><span id="quizFooterN">16</span> questions — <span id="quizFooterPer">8</span> per chapter.</p>
       </div>
       <div>
         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Chapters</h3>
@@ -411,16 +411,5 @@
   <script defer src="js/motion.js"></script>
   <script defer src="js/quiz-data.js"></script>
   <script defer src="js/quiz.js"></script>
-<script>
-  if (/\.vercel\.app$/.test(location.hostname)) {
-    var va = document.createElement('script');
-    va.defer = true;
-    va.src = 'https://cdn.vercel-insights.com/v1/script.js';
-    document.head.appendChild(va);
-    import('https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs')
-      .then(function (m) { if (m && m.injectSpeedInsights) m.injectSpeedInsights(); })
-      .catch(function () { /* analytics is optional; never break the page */ });
-  }
-</script>
 </body>
 </html>

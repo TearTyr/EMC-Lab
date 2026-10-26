@@ -1,5 +1,13 @@
 # Brief & Lecture Digest (substitute for the missing PDFs — transcribed from the task prompt §1.1–1.3)
 
+
+> **SCOPE DECISION (owner directive, patches 1–3, 2026-10-25/26).** The digest
+> below records the ORIGINAL course brief (three chapters incl. Magnetism &
+> Induction; a 24-question quiz, 8 per chapter). The shipped site scope is now
+> **two chapters (1 Circuits & Ohm's Law, 2 Electric Fields & Coulomb's Law),
+> six simulations, a 16-question quiz**; the magnetism brief rows are deferred
+> by owner decision, not rejected. Where this digest and `js/registry.js`
+> disagree, the registry is the living source of truth. (ISSUE #7.8)
 ## Course brief — required deliverables (Electricity group)
 
 | Req | Must exist and work |

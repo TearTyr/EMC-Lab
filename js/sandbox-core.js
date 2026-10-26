@@ -59,6 +59,9 @@
     const e2 = eps(worldM) * eps(worldM);
     for (const o of objects) {
       if (!o.q) continue;
+      /* ISSUE #7.2: the ghost test charge FEELS E, never MAKES it — skip it
+         as a source everywhere (fieldAt, traceLines seeds, forceOn). */
+      if (o.type === 'test') continue;
       const dx = xm - o.x, dy = ym - o.y;
       const r2 = dx * dx + dy * dy + e2;
       const r = Math.sqrt(r2);
@@ -173,26 +176,10 @@
       if (state.ruler && state.ruler.y1 > 1e6) { state.ruler.y1 = state.ruler.y2 = worldH * 0.85; }
     }
 
-    /* -- physics ------------------------------------------------------------ */
-    function polarForce(o, b) {
-      /* Polarisation pull between a charged object and a NEUTRAL conductor
-         ball: image-charge model of a conducting sphere (real physics,
-         grounded-sphere approximation; the ball's own net q stays 0). */
-      const rm = Math.hypot(o.x - b.x, o.y - b.y);
-      if (rm <= BALL_R * 1.05) return null;
-      const qSrc = o.q !== 0 ? o.q : b.q;
-      if (!qSrc) return null;
-      const qImg = -qSrc * (BALL_R / rm);
-      const d = rm - BALL_R * BALL_R / rm;
-      const F = Math.min(K * Math.abs(qSrc * qImg) / (d * d + eps(WORLD_M) ** 2), F_CAP);
-      /* always attractive: toward the charged object, from the neutral one */
-      const toward = o.q === 0 ? 1 : -1;   // neutral o is pulled toward b
-      return { F, ux: toward * (b.x - o.x) / rm, uy: toward * (b.y - o.y) / rm };
-    }
     function forceOn(o) {
       let fx = 0, fy = 0;
       for (const b of state.objects) {
-        if (b === o) continue;
+        if (b === o || b.type === 'test') continue;   // #7.2: ghost never a source
         let dx = o.x - b.x, dy = o.y - b.y;
         let rm = Math.hypot(dx, dy);
         if (rm < 1e-6) {
@@ -205,10 +192,6 @@
           const F = pairF(o.q, b.q, rm, WORLD_M);
           const s = o.q * b.q > 0 ? 1 : -1;            // repel along +d, attract along −d
           fx += s * F * dx / rm; fy += s * F * dy / rm;
-        } else if (opts.materials && ((o.type === 'ball' && o.q === 0 && b.q !== 0) ||
-          (b.type === 'ball' && b.q === 0 && o.q !== 0))) {
-          const p = polarForce(o, b);
-          if (p) { fx += p.F * p.ux; fy += p.F * p.uy; }
         }
       }
       return { fx, fy, mag: Math.hypot(fx, fy) };
@@ -243,26 +226,6 @@
       } catch (e) { /* corrupt snapshot: ignore */ }
     }
 
-    /* -- materials: conductor touch sharing (charge conserved) ------------------ */
-    function shareTouches() {
-      if (!opts.materials) return;
-      const balls = state.objects.filter(o => o.type === 'ball');
-      for (let i = 0; i < balls.length; i++) {
-        for (let j = i + 1; j < balls.length; j++) {
-          const a = balls[i], b = balls[j];
-          const d = Math.hypot(a.x - b.x, a.y - b.y);
-          const touchDist = BALL_R * 2.05;
-          if (d < touchDist) {
-            const total = a.q + b.q;                   // conserved, never created
-            a.q = total / 2; b.q = total / 2;
-            const push = (touchDist - d) / 2 + 0.001;
-            const ux = d > 1e-9 ? (b.x - a.x) / d : 1, uy = d > 1e-9 ? (b.y - a.y) / d : 0;
-            a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
-            a.wobble = b.wobble = 1;
-          }
-        }
-      }
-    }
 
     /* -- release-mode integration (semi-implicit Euler, capped) ------------------- */
     let lastT = 0;
@@ -279,7 +242,7 @@
             const sp = clamp((Math.log10(f.mag) + 2) * 0.9, 0.15, 5);
             o.x += f.ex / f.mag * sp * dt; o.y += f.ey / f.mag * sp * dt;
           }
-        } else if (state.toggles.release && (o.q !== 0 || (opts.materials && o.type === 'ball'))) {
+        } else if (state.toggles.release && o.q !== 0) {
           const F = forceOn(o);
           if (F.mag >= F_CAP * 0.995) state.maxed = true;
           o.vx += F.fx / PUCK_MASS * dt; o.vy += F.fy / PUCK_MASS * dt;
@@ -300,8 +263,7 @@
           if (o.trail.length > 120) o.trail.shift();
         } else if (o.trail.length) o.trail.length = 0;
       }
-      shareTouches();
-      const warn = gid('warn');
+        const warn = gid('warn');
       if (warn) {
         const msg = state.maxed ? 'forces maxed — close-range softening is keeping the sim stable' : '';
         if (warn.textContent !== msg) warn.textContent = msg;
@@ -311,8 +273,8 @@
 
     /* -- field-line tracing (world coords, px stepping) ------------------------- */
     function traceLines(ctx, w, h, lite) {
-      const seeds = state.objects.filter(o => o.q > 0);
-      const sources = seeds.length ? seeds : state.objects.filter(o => o.q < 0);
+      const seeds = state.objects.filter(o => o.q > 0 && o.type !== 'test');
+      const sources = seeds.length ? seeds : state.objects.filter(o => o.q < 0 && o.type !== 'test');
       const step = lite ? 3.4 : 2.6, maxSteps = lite ? 420 : 900;
       ctx.save(); ctx.lineWidth = 1.35; ctx.lineCap = 'round';
       for (const c of sources) {
@@ -499,10 +461,6 @@
               if (rm < 1e-9) continue;
               let F2 = 0, s = 0;
               if (o.q !== 0 && b.q !== 0) { F2 = pairF(o.q, b.q, rm, WORLD_M); s = o.q * b.q > 0 ? 1 : -1; }
-              else if (opts.materials && ((o.type === 'ball' && o.q === 0 && b.q !== 0) || (b.type === 'ball' && b.q === 0 && o.q !== 0))) {
-                const pf = polarForce(o, b);
-                if (pf) { F2 = pf.F; s = 1; }
-              }
               if (!F2) continue;
               const L2 = logLen(F2, maxLen * 0.8);
               const ux2 = s * dx / rm, uy2 = s * dy / rm;
@@ -682,7 +640,17 @@
     function copyShare() {
       const code = shareCode();
       if (!code) return;
-      const url = location.href.split('#')[0] + '#s=' + code;
+      /* #7.4a: the key carries the sandbox id so a code only ever loads into
+         the sandbox it came from; #7.4b: links copied inside the homepage
+         reader point at the chapter's standalone page, which is the only
+         place a #s- hash can mount. */
+      let base = location.pathname;
+      if (/(^|\/)index\.html$/.test(base) || base === '/' || base === '') {
+        const R = window.EMC_REGISTRY;
+        const ch = R && R.chapters.find(c => (c.sims || []).indexOf(canvas.id) >= 0);
+        if (ch) base = '/' + ch.path;
+      }
+      const url = location.origin + base + '#s-' + canvas.id + '=' + code;
       try { if (window.history && history.replaceState) history.replaceState(null, '', url); } catch (e) { /* file:// */ }
       const done = () => EMC.toast('Setup link copied to the clipboard');
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -965,8 +933,7 @@
           const o = state.dragging.ref;
           const F = forceOn(o);
           o.wobble = clamp(Math.log10(Math.max(F.mag, 1e-9)) / 6 + 0.5, 0, 1);  // bigger force, bigger thump
-          shareTouches();
-          if (opts.onUp) opts.onUp(api, o);
+                if (opts.onUp) opts.onUp(api, o);
         }
         state.dragging = null; downAt = null;
         canvas.classList.remove('grabbing'); canvas.classList.remove('dragging');
@@ -1042,7 +1009,7 @@
     if (opts.ruler && !state.ruler) state.ruler = { x1: WORLD_M * 0.2, y1: 9e9, x2: WORLD_M * 0.8, y2: 9e9 };
     let shared = null;
     try {
-      const h = (location.hash || '').match(/[#&]s=([^&]+)/);
+      const h = (location.hash || '').match(new RegExp('[#&]s-' + canvas.id + '=([^&]+)'));
       if (h) shared = decode(h[1]);
     } catch (e) { shared = null; }
     if (shared && shared.objects.length) {

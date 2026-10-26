@@ -491,6 +491,7 @@ window.EMC = (function () {
         // Keep receiving move events even if the pointer leaves the canvas.
         if (this.canvas.setPointerCapture) { try { this.canvas.setPointerCapture(e.pointerId); } catch (_) {} }
         handler({ ...p, down: true, type: 'down', e });
+        if (!this._running) this.draw();      // #6.2/#7.5: no loop => redraw by hand
         e.preventDefault();
       });
       this._trackListener(this.canvas, 'pointermove', e => {
@@ -502,13 +503,13 @@ window.EMC = (function () {
         if (!this._pmRaf) {
           this._pmRaf = requestAnimationFrame(() => {
             this._pmRaf = 0;
-            if (this._pm) { const q = this._pm; this._pm = null; handler(q); }
+            if (this._pm) { const q = this._pm; this._pm = null; handler(q); if (!this._running) this.draw(); }
           });
         }
       });
       const flushMove = () => {
         if (this._pmRaf) { cancelAnimationFrame(this._pmRaf); this._pmRaf = 0; }
-        if (this._pm) { const q = this._pm; this._pm = null; handler(q); }
+        if (this._pm) { const q = this._pm; this._pm = null; handler(q); if (!this._running) this.draw(); }
       };
       const up = e => {
         flushMove();                       // never drop the last position
@@ -516,6 +517,7 @@ window.EMC = (function () {
         this.pointer.down = false;
         this.canvas.classList.remove('dragging');
         handler({ ...p, down: false, type: 'up', e });
+        if (!this._running) this.draw();
       };
       this._trackListener(this.canvas, 'pointerup', up);
       this._trackListener(this.canvas, 'pointercancel', up);
@@ -848,7 +850,8 @@ window.EMC = (function () {
       const ch = TOPIC_TO_CHAPTER[old];
       if (ch) credit(ch); else credit(old);        // already a current chapter id
     }
-    /* the v1 split pair: both halves required (mirrors the historical rule) */
+    /* each legacy key credits the chapter that owns it now (#7.8: the old
+       "both halves of a split pair" rule died with the v1 topic list) */
     return {
       topics,
       quizBest: Number(p.quizBest) || 0,
@@ -1270,6 +1273,25 @@ window.EMC = (function () {
        and any topic link on hover/focus intent. Deduped, same-origin only, and
        link rel=prefetch keeps it at browser-idle priority so it never competes
        with the critical path. */
+    /* ---- Vercel analytics — PR #1 (Speed Insights) + PR #2 (Web Analytics)
+       reintegrated 2026-10-26 in the only form this repo's contracts allow.
+       The auto-PRs installed third-party CDN tags (cdn.vercel-insights.com,
+       cdn.jsdelivr.net), which the NET-01 network-purity gate forbids, and an
+       npm package that a fully static site never executes. Vercel also serves
+       both collectors SAME-ORIGIN under /_vercel/, so we inject those paths —
+       and only on the Vercel production origin, so gate runs, previews and
+       localhost never emit a beacon. ------------------------------------ */
+    initAnalytics() {
+      const prod = /(^|\.)vercel\.app$/.test(location.hostname);
+      if (!prod) return;
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      for (const src of ['/_vercel/insights/script.js', '/_vercel/speed-insights/script.js']) {
+        const s = document.createElement('script');
+        s.defer = true; s.src = src;
+        s.addEventListener('error', () => {});   // analytics must never break the page
+        document.head.appendChild(s);
+      }
+    },
     initPrefetch() {
       const seen = new Set();
       const add = href => {
@@ -1501,6 +1523,7 @@ window.EMC = (function () {
     UI.initStorageNotice();
     UI.initYear();
     UI.initDetailToggle();
+    UI.initAnalytics();
     UI.initPrefetch();
     UI.initPageTransitions();
     UI.initPlates();

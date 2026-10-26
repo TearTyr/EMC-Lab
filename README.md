@@ -7,9 +7,9 @@ nothing optional:
 | # | Chapter | Page | What's inside |
 |---|---------|------|---------------|
 | 1 | **Circuits & Ohm's Law** | `topics/current.html` | V, I, R, power, series/parallel reduction, an Ohm's-law bench (R2) and a drag-and-drop circuit builder with resistors, a battery and a bulb whose brightness follows P = VI (R1) |
-| 2 | **Electric Fields & Coulomb's Law** | `topics/fields.html` | the graded lecture in three sections — 2.1 Electric Charge, 2.2 Coulomb's Law (1-D/2-D superposition, Bohr atom), 2.3 Electric Field (E = F/\|q₀\|, field lines, the two-charge y-axis example) — with nine open sandboxes and toys |
+| 2 | **Electric Fields & Coulomb's Law** | `topics/fields.html` | the graded lecture in three sections — 2.1 Electric Charge, 2.2 Coulomb's Law (1-D/2-D superposition, Bohr atom), 2.3 Electric Field (E = F/\|q₀\|, field lines, the two-charge y-axis example) — with four open sandboxes and toys |
 
-Plus a **24-question auto-graded quiz** (exactly 8 per chapter) with Chart.js score
+Plus a **16-question auto-graded quiz** (exactly 8 per chapter) with Chart.js score
 analytics, and device-local **progress tracking** for the two chapters.
 
 > Every number on every screen is computed from the real equations — Ohm's law,
@@ -185,8 +185,14 @@ with bun as configured in `vercel.json` (`buildCommand: bun run build`,
 - Framework preset: **Other**; Build command `bun run build`; Output directory `public`
   (also pinned in `vercel.json`, which overrides the dashboard).
 - `vercel.json` carries the cache headers and the legacy `/topics/efield.html` redirect.
-- No analytics or speed-insights integrations: the site must stay zero-third-party
-  (`tools/check-scope.mjs` fails the build locally on any external fetch).
+- Vercel analytics — PR #1 (Speed Insights) and PR #2 (Web Analytics)
+  reintegrated in the only form that keeps the zero-third-party contract:
+  `UI.initAnalytics()` in `js/common.js` injects the platform's SAME-ORIGIN
+  collectors (`/_vercel/insights/script.js`, `/_vercel/speed-insights/script.js`)
+  plus the `window.va` bootstrap, and only on the Vercel production origin —
+  gate runs, previews and localhost never emit a beacon, and
+  `tools/check-scope.mjs` still fails any external fetch. The PRs' npm packages
+  are pinned in `package.json` as the version record. What is collected: Web Analytics counts pageviews without cookies or personal data; Speed Insights reports Core Web Vitals for the production origin only.
 
 ---
 

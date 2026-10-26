@@ -1220,6 +1220,17 @@ console.log('\u2500'.repeat(66));
     /"name": "emc-lab"/.test(readFileSync(join(ROOT, 'package.json'), 'utf8')) &&
     pages.every(f => /property="og:site_name" content="EMC Lab"/.test(readFileSync(join(ROOT, f), 'utf8'))));
 
+  // ---- #11b vercel analytics: same-origin collectors, production-gated -----
+  const commonAnalytics = readFileSync(join(ROOT, 'js/common.js'), 'utf8');
+  ok('vercel analytics (PR #1/#2) reintegrated same-origin and production-gated',
+    /initAnalytics\(\)/.test(commonAnalytics) &&
+    /\/_vercel\/insights\/script\.js/.test(commonAnalytics) &&
+    /\/_vercel\/speed-insights\/script\.js/.test(commonAnalytics) &&
+    /vercel\W+app\$/.test(commonAnalytics));
+  ok('no third-party analytics tags in shipped html',
+    ['index.html', 'quiz.html', 'topics/current.html', 'topics/fields.html']
+      .every(f => !/cdn\.vercel-insights|cdn\.jsdelivr/.test(readFileSync(join(ROOT, f), 'utf8'))));
+
   // ---- #12 the advertised social card exists at the promised size ----------
   const ogPath = join(ROOT, 'img/og-card.png');
   let ogDims = '';
@@ -1425,7 +1436,19 @@ console.log('\u2500'.repeat(66));
      (2026-10-25, intro v6): window [11400, 13800]; CONTRACT CHANGE (2026-10-25,
      intro v8 drop-in cut, 12 s engine + .5 s fade): window re-pointed to
      [12000, 15000] ms. Logged in BUG_AUDIT. */
-  const tEnd0 = Date.now();
+  /* CONTRACT CHANGE (2026-10-26, ISSUE #7.3): the window is measured from the
+     moment the overlay actually starts playing, not from a wall-clock point
+     after boot — on fast machines play begins before the old anchor and a
+     correct 12.0 s timeline measured ~11.5 s against it. From play-start,
+     [12000,15000] is the exact engine contract: 12 s picture + .5 s fade
+     + .7 s removal buffer. */
+  let tPlay = Date.now();
+  for (let i = 0; i < 100; i++) {
+    const ov = run1.doc.getElementById('introOverlay');
+    if (ov && ov.classList.contains('play')) { tPlay = Date.now(); break; }
+    await new Promise(r => setTimeout(r, 25));
+  }
+  const tEnd0 = tPlay;
   let removedAt = -1;
   while (Date.now() - tEnd0 < 17600) {
     if (!run1.doc.getElementById('introOverlay')) { removedAt = Date.now() - tEnd0; break; }

@@ -1399,3 +1399,16 @@
   render();
   initKeyboardAndFocus();
 })();
+/* #7.6: the footer counts come from the bank itself so they cannot drift */
+(function fillFooter() {
+  const run = () => {
+    const bank = window.EMC_QUIZ || [];
+    const n = bank.length;
+    const per = new Set(bank.map(q => q.topic)).size || 1;
+    const a = document.getElementById('quizFooterN'), b = document.getElementById('quizFooterPer');
+    if (a) a.textContent = String(n);
+    if (b) b.textContent = String(Math.round(n / per));
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once: true });
+  else run();
+})();

@@ -119,6 +119,19 @@
       const s = solve();
       ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#3a3d45';
       EMC.roundRect(ctx, m, m, w - 2 * m, h - 2 * m, 18); ctx.stroke();
+      /* #7.7: a part INSERTS into the wire — erase a gap at every occupied
+         socket so the symbol is in the conductor's path, not bypassed by it.
+         Socket wire directions: top/bottom horizontal, sides vertical. */
+      const ANG = [0, 0, Math.PI / 2, 0, 0, Math.PI / 2];
+      pts.forEach((p, i) => {
+        if (!sockets[i]) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.translate(p.x, p.y); ctx.rotate(ANG[i]);
+        ctx.lineWidth = 9; ctx.lineCap = 'butt';
+        ctx.beginPath(); ctx.moveTo(-34, 0); ctx.lineTo(34, 0); ctx.stroke();
+        ctx.restore();
+      });
 
       /* empty sockets: quiet taps; occupied: part symbols */
       pts.forEach((p, i) => {
@@ -128,20 +141,17 @@
           ctx.beginPath(); ctx.arc(p.x, p.y, drag ? 9 : 6, 0, 7); ctx.fill();
           return;
         }
-        ctx.save(); ctx.translate(p.x, p.y);
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(ANG[i]);   // local X = wire direction
         if (soc.kind === 'bat') {
+          /* cell plates ACROSS the wire: long + plate, short − plate */
           ctx.strokeStyle = '#f6d36b'; ctx.lineWidth = 4;
-          ctx.beginPath(); ctx.moveTo(-14, -8); ctx.lineTo(14, -8); ctx.stroke();
-          ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(-7, 6); ctx.lineTo(7, 6); ctx.stroke();
-          ctx.fillStyle = '#f6d36b'; ctx.font = '700 12px G8321, system-ui, sans-serif';
-          ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(`${soc.val} V`, 0, -14);
+          ctx.beginPath(); ctx.moveTo(-5, -16); ctx.lineTo(-5, 16); ctx.stroke();
+          ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(6, -8); ctx.lineTo(6, 8); ctx.stroke();
         } else if (soc.kind === 'res') {
           ctx.strokeStyle = '#f8aebe'; ctx.lineWidth = 3.5; ctx.beginPath();
           const zw = 56, zh = 11, n = 6; ctx.moveTo(-zw / 2, 0);
           for (let k = 0; k < n; k++) ctx.lineTo(-zw / 2 + zw * (k + .5) / n, k % 2 ? zh : -zh);
           ctx.lineTo(zw / 2, 0); ctx.stroke();
-          ctx.fillStyle = '#f8aebe'; ctx.font = '700 12px G8321, system-ui, sans-serif';
-          ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(`${soc.val} Ω`, 0, 14);
         } else {
           const glow = s.Pbulb != null ? clamp(s.Pbulb / 6, 0, 1) : 0;
           for (let g = 3; g >= 1; g--) {
@@ -156,6 +166,13 @@
           ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(0, -4); ctx.lineTo(6, 4); ctx.stroke();
         }
         ctx.restore();
+        /* value labels stay upright whatever the wire direction */
+        if (soc.kind !== 'bulb') {
+          ctx.fillStyle = soc.kind === 'bat' ? '#f6d36b' : '#f8aebe';
+          ctx.font = '700 12px G8321, system-ui, sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+          ctx.fillText(`${soc.val} ${soc.kind === 'bat' ? 'V' : 'Ω'}`, p.x, p.y - 22);
+        }
       });
 
       /* charge dots at speed ∝ I — one loop, one flow */
