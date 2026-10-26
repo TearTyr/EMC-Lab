@@ -56,7 +56,7 @@
        home screens. All three carry the same artwork as the header
        brand mark — tools/smoke-test.mjs asserts they stay identical. -->
   <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link rel="icon" href="img/mascot.png" type="image/png">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="stylesheet" href="css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
@@ -150,7 +150,7 @@
   <header class="site-header">
     <div class="wrap nav-inner">
       <a class="brand" href="index.html" aria-label="EMC Lab — home">
-        <img class="brand-mark" src="img/mascot.png" width="34" height="34" alt="">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
         <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electricity</span></span>
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
@@ -193,19 +193,15 @@
 
     <section class="hero">
       <div class="wrap hero-stack">
-        <img class="mascot hero-mascot reveal" src="img/mascot.png" width="355" height="360"
-             alt="Denki-chan, the EMC Lab mascot — a round cream creature with a lightning bolt">
-        <span class="eyebrow reveal rv-d1">Circuits · Electric charge · Electric fields</span>
-        <h1 class="h-hero reveal rv-d2">Learn electricity by playing with it.</h1>
-        <p class="lede reveal rv-d3">
-          The whole Electricity brief in <span id="ledeChapters">two</span> chapters, <span id="ledeSims">six</span> live
-          sandboxes and simulations and a <span id="ledeQuizN">16</span>-question scored quiz.
-          Build a circuit and watch the bulb follow P = VI, rub a balloon, tug charges around an arena, paint an electric field and tune a Bohr orbit — every number on screen is computed from the real equations, not faked.
+        <h1 class="h-hero reveal rv-d1">Electricity</h1>
+        <p class="lede reveal rv-d2">
+          Calculus-based Physics 2. Chapter 1 covers circuits and Ohm’s law; Chapter 2 covers electric charge,
+          Coulomb’s law and the electric field. Each chapter has simulations, and a quiz tests both.
         </p>
         <div class="btn-row reveal rv-d3">
-          <a class="btn btn-primary" href="topics/current.html">Start with Chapter 1</a>
-          <a class="btn" href="topics/fields.html#sim-fieldpaint-panel">Jump to the field painter</a>
-          <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
+          <a class="btn btn-primary" href="topics/current.html">Chapter 1 · Circuits</a>
+          <a class="btn" href="topics/fields.html">Chapter 2 · Electric fields</a>
+          <a class="btn btn-ghost" href="quiz.html">Quiz</a>
         </div>
         <!-- Hero equation strip (replaces the old animated dipole canvas): the four
              governing laws of the lecture, typeset by KaTeX through the same
@@ -217,47 +213,9 @@
           <span class="eq-item"><span data-tex="E = \dfrac{F}{|q_0|}">E = F/|q<sub>0</sub>|</span><small>electric field</small></span>
           <span class="eq-item"><span data-tex="E = \dfrac{kq}{r^2}">E = k·q/r<sup>2</sup></span><small>point charge</small></span>
         </div>
-        <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
-             EMC_QUIZ (single sources of truth); the numbers below are the no-JS
-             fallbacks and must match the current content. -->
-        <div class="stat-strip reveal">
-          <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan" id="statChapters">3</span></div>
-          <div class="stat"><span class="stat-label">Sandboxes &amp; sims</span><span class="stat-value hl-amber" id="statSims">13</span></div>
-          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">24</span></div>
-        </div>
       </div>
     </section>
 
-
-    <section class="section wrap">
-      <h2 class="h-sec reveal">How to use this site</h2>
-      <p class="lede" style="margin:.35rem 0 0">Read a chapter — 30-second summary first — play with its sandboxes, then prove it in the quiz. Your progress is saved on this device only.</p>
-      <div class="steps mt-4">
-        <div class="card step reveal">
-          <h3 class="font-bold">Read the lesson</h3>
-          <p class="small muted" style="margin:.35rem 0 0">
-            Each chapter opens with a 30-second summary and one key formula, then tells the
-            same idea in plain words, then in full technical detail with the course’s own
-            worked examples. The Details switch in the header picks your depth.
-          </p>
-        </div>
-        <div class="card step reveal">
-          <h3 class="font-bold">Play with the sandbox</h3>
-          <p class="small muted" style="margin:.35rem 0 0">
-            Every chapter ships open sandboxes and toys: build circuits, drop as many charges
-            as you like, drag anything, flip the switches. Optional challenges give stars;
-            nothing ever blocks your play, and every setup copies to a shareable link.
-          </p>
-        </div>
-        <div class="card step reveal">
-          <h3 class="font-bold">Prove it in the quiz</h3>
-          <p class="small muted" style="margin:.35rem 0 0">
-            <span id="quizCountWord">Twenty-four</span> multiple-choice questions with hints and worked explanations. Your best score is
-            saved in this browser so you can track improvement.
-          </p>
-        </div>
-      </div>
-    </section>
 
     <hr class="hr">
 
@@ -316,13 +274,7 @@
     </section>
 
     <section class="section wrap">
-      <h2 class="h-sec reveal">Every simulation is a sandbox, driven by real equations</h2>
-      <p class="lede" data-detail="plain" style="margin:0 0 1.2rem">Every sandbox works out its numbers from the real physics equations while you play — nothing is faked or pre-recorded.</p>
-      <p class="lede" style="margin-bottom:1.2rem" data-detail="tech">
-        Nothing is animated by hand: every frame is computed from q = n·e, Coulomb’s law with
-        vector superposition, or E = Σ kq r̂/r². Change anything and the physics re-solves —
-        including the lecture’s own worked answers, which fall out of the live readouts.
-      </p>
+      <h2 class="h-sec reveal">Simulations</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <a class="card card-hover reveal" href="topics/fields.html#toy-balloon-panel">
           <span class="tag tag-cyan">Chapter 2 · §2.1</span>
@@ -365,7 +317,7 @@
 
     <section class="section wrap">
       <h2 class="h-sec reveal">Quick formula reference</h2>
-      <p class="lede" style="margin:.35rem 0 0">One cheat-sheet table: Chapter 2’s formulas first, then Chapters 1 and 3, with units and what each tells you.</p>
+      <p class="lede" style="margin:.35rem 0 0">Formulas from both chapters, with units and what each tells you.</p>
       <div class="panel reveal">
         <div class="table-scroll">
           <table class="data">
@@ -387,7 +339,7 @@
       </div>
       <p class="tiny faint mt-3">
         Constants used throughout: k = 8.99×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup> (the lecture’s value — computed with it
-        everywhere on this site, so every readout matches the lecture’s worked answers), e = 1.602×10<sup>−19</sup> C, μ<sub>0</sub> = 4π×10<sup>−7</sup> T·m/A (Chapter 3).
+        everywhere on this site, so every readout matches the lecture’s worked answers), e = 1.602×10<sup>−19</sup> C.
       </p>
     </section>
 
@@ -462,7 +414,7 @@
     <div class="wrap footer-grid footer-grid-2">
       <div>
         <span class="brand" style="pointer-events:none">
-          <img class="brand-mark" src="img/mascot.png" width="34" height="34" alt="">
+          <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
         <p class="small muted" style="margin-top:.6rem">
@@ -476,7 +428,7 @@
         <ul class="footer-links">
           <li><a href="topics/current.html">1 · Circuits & Ohm’s Law</a></li>
           <li><a href="topics/fields.html">2 · Electric Fields & Coulomb’s Law</a></li>
-          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">24</span> questions)</a></li>
+          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">16</span> questions)</a></li>
         </ul>
       </div>
     </div>

@@ -37,7 +37,7 @@
   <meta property="og:site_name" content="EMC Lab">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Electric Fields &amp; Coulomb's Law — EMC Lab">
-  <meta property="og:description" content="Electric charge in minutes: like repels unlike, q = n·e, conservation, conductors and insulators — with a free-play Static Room, a balloon-rubbing toy and an unbreakable charge ledger.">
+  <meta property="og:description" content="Electric charge in minutes: like repels unlike, q = n·e, conservation, conductors and insulators — with a balloon-rubbing simulation.">
   <meta property="og:url" content="https://emc-lab.vercel.app/topics/fields.html">
   <meta property="og:image" content="https://emc-lab.vercel.app/img/og-card.png?v=5">
   <meta property="og:image:width" content="1200">
@@ -45,14 +45,14 @@
   <meta property="og:image:alt" content="EMC Lab — an interactive electricity tutorial">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Electric Fields &amp; Coulomb's Law — EMC Lab">
-  <meta name="twitter:description" content="Electric charge in minutes: like repels unlike, q = n·e, conservation, conductors and insulators — with a free-play Static Room, a balloon-rubbing toy and an unbreakable charge ledger.">
+  <meta name="twitter:description" content="Electric charge in minutes: like repels unlike, q = n·e, conservation, conductors and insulators — with a balloon-rubbing simulation.">
   <meta name="twitter:image" content="https://emc-lab.vercel.app/img/og-card.png?v=5">
   <!-- Favicon set: SVG artwork for modern browsers, an ICO fallback for Safari
        and any tool that probes /favicon.ico, and an apple-touch-icon for iOS
        home screens. All three carry the same artwork as the header
        brand mark — tools/smoke-test.mjs asserts they stay identical. -->
   <link rel="icon" href="../favicon.ico" type="image/x-icon">
-  <link rel="icon" href="../img/mascot.png" type="image/png">
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
@@ -108,8 +108,8 @@
   <header class="site-header">
     <div class="wrap nav-inner">
       <a class="brand" href="../index.html" aria-label="EMC Lab — home">
-        <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
-        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Physics</span></span>
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
+        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electricity</span></span>
       </a>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
               title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
@@ -196,7 +196,7 @@
       </div>
 <section class="section wrap wrap-narrow prose reveal" id="charge-summary" style="scroll-margin-top:5rem">
       <div class="card">
-        <h3 class="h-sub" style="margin-top:0">30-second summary</h3>
+        <h3 class="h-sub" style="margin-top:0">Summary</h3>
         <ul class="topic-list">
           <li>Two kinds of charge: proton <b>+</b>, electron <b>−</b>, neutron <b>0</b>.</li>
           <li><b>Like repels, unlike attracts.</b></li>
@@ -347,7 +347,7 @@
     <section class="section-tight wrap wrap-sim reveal" id="toy-balloon-panel" style="scroll-margin-top:5rem">
       <div class="panel reveal">
         <div class="panel-head">
-          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Tiny toy · Rub the Balloon</h4>
+          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Simulation · Rub the Balloon</h4>
           <p class="panel-sub">q = n·e — one electron parcel at a time</p>
         </div>
         <p class="sim-hint tiny faint">Drag the balloon onto the hair and rub back and forth. Each stroke moves whole electrons; the counters tick in exact lockstep. Then park it near the paper bits.</p>
@@ -408,7 +408,7 @@
       </div>
 <section class="section wrap wrap-narrow prose reveal" id="coulomb-summary" style="scroll-margin-top:5rem">
       <div class="card">
-        <h3 class="h-sub" style="margin-top:0">30-second summary</h3>
+        <h3 class="h-sub" style="margin-top:0">Summary</h3>
         <ul class="topic-list">
           <li>Every charge pushes or pulls every other charge (the Lesson 1 rule — now with a number).</li>
           <li>The force dies with the <b>square</b> of distance: 2× r → ¼ F.</li>
@@ -624,7 +624,7 @@
     <section class="section-tight wrap wrap-sim reveal" id="toy-bohr-panel" style="scroll-margin-top:5rem">
       <div class="panel reveal">
         <div class="panel-head">
-          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Tiny toy · Bohr Tuner</h4>
+          <h4 class="panel-title"><span class="dot" style="background:#a8d3e0"></span> Simulation · Bohr Tuner</h4>
           <p class="panel-sub">v = √(k e²/(mₑ r)) — tune the radius, read the speed</p>
         </div>
         <p class="sim-hint tiny faint">Drag the electron or use the slider. Hit the lecture radius (5.29×10⁻¹¹ m) and the speed lands on 2.19×10⁶ m/s — ★.</p>
@@ -676,13 +676,13 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Define E = F/|q₀| in N/C and state the positive-test-charge direction rule.</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Compute E = kq/r² for a point charge and superpose fields by components.</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Draw field lines and state their five rules.</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Use F = |q₀|E for positive and negative charges, and locate zero-field points.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Use F = |q₀|E for positive and negative charges.</span></li>
         </ul>
       </div>
       </div>
 <section class="section wrap wrap-narrow prose reveal" id="field-summary" style="scroll-margin-top:5rem">
       <div class="card">
-        <h3 class="h-sub" style="margin-top:0">30-second summary</h3>
+        <h3 class="h-sub" style="margin-top:0">Summary</h3>
         <ul class="topic-list">
           <li>A charge changes the space around it — that condition is the <b>electric field E</b>.</li>
           <li>E at a point = force per unit <b>positive</b> test charge, in N/C.</li>
@@ -971,7 +971,7 @@
     <div class="wrap footer-grid">
       <div>
         <span class="brand" style="pointer-events:none">
-          <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
+          <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
           <span class="brand-name">EMC<em>Lab</em></span>
         </span>
         <p class="small muted" style="margin-top:.6rem">Chapter 2 of 3.</p>

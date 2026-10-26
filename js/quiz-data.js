@@ -121,8 +121,8 @@ window.EMC_QUIZ = [
               "Rubbing only TRANSFERS electrons — the hair gains exactly what the balloon takes, so the total never changes",
               "The total charge should have decreased instead"],
     answer: 2,
-    explain: "Conservation of charge: rubbing moves electrons, it never makes them. Balloon −ne, hair +ne, total exactly 0 — the Charge Ledger toy cannot be broken.",
-    hint: "Play with the Charge Ledger: can you make the big tally move?"
+    explain: "Conservation of charge: rubbing moves electrons, it never makes them. Balloon −ne, hair +ne, total exactly 0 — the balloon sandbox cannot break it.",
+    hint: "Try the balloon sandbox: can you make the total charge change?"
   },
   {
     id: 11, topic: 'ch2', label: "Coulomb’s law", level: 'full',

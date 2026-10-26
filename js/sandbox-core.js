@@ -1,5 +1,5 @@
 /* Sandbox core — the shared free-play engine behind the three lesson
-   sandboxes (Static Room, Tug-of-War Arena, Field Painter). One rule set for
+   sandboxes (Tug-of-War Arena, Field Painter). One rule set for
    all: every object is draggable, every readout is computed per frame from
    F = k|q1q2|/r^2 (softened at close range so the sim can never blow up) and
    E(P) = SUM k q (P-r)/|P-r|^3 — nothing is animated by hand.
@@ -19,8 +19,9 @@
 
   /* ---- physics helpers (also exported for the tiny toys) ---------------- */
   const SOFTEN = 0.04;          // softening = 4% of the world width ...
-  const SOFT_MAX = 0.01;        // ... but never more than 1 cm, so lecture-scale
-                                // distances (0.10-0.40 m) stay exact to <1%
+  const SOFT_MAX = 0.001;       // ... but never more than 1 mm: it only tames the
+                                // r -> 0 singularity; lecture distances (0.10-0.70 m)
+                                // stay exact to < 0.01%, so readouts match the slides
   const F_CAP = 1e4;            // newtons — arrows/readouts flag "maxed"
   const V_MAX = 30;             // m/s — release-mode speed cap (3 m world)
   const PUCK_MASS = 0.01;       // kg — the honest "play mass" of a puck
@@ -748,7 +749,7 @@
       const s = document.createElement('span');
       s.textContent = 'You just showed that ' + opts.discovery.text + ' ';
       const a = document.createElement('a');
-      a.className = 'link'; a.href = opts.discovery.href; a.textContent = 'Back to the 30-second summary \u2192';
+      a.className = 'link'; a.href = opts.discovery.href; a.textContent = 'Back to the Summary \u2192';
       box.appendChild(s); box.appendChild(a);
     }
 

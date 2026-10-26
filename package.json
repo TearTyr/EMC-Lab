@@ -5,6 +5,7 @@
   "scripts": {
     "check": "node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs",
     "test": "node tools/smoke-test.mjs",
+    "check:physics": "node tools/check-physics.mjs",
     "build:css": "tailwindcss -c tailwind.config.js -i css/input.css -o css/site.css --minify",
     "build:public": "node tools/build-public.mjs",
     "build": "bun run build:css && bun run build:public",

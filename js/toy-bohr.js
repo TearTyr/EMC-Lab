@@ -96,8 +96,10 @@
       }
     });
 
-    stage.bindRange('bo-r', 'bo-rv', v => { state.r = v * 1e-11; state.touched = true; state.starred = false; readouts(); },
+    let primed = false;   /* bindRange fires once at bind time; that call is not the user */
+    stage.bindRange('bo-r', 'bo-rv', v => { state.r = v * 1e-11; if (primed) { state.touched = true; state.starred = false; } readouts(); },
       v => `${v.toFixed(2)}×10⁻¹¹ m`);
+    primed = true;
 
     readouts();
     stage.draw();

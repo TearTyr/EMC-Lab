@@ -1152,7 +1152,7 @@ window.EMC = (function () {
           const done = Progress.isTopicDone(id);
           btn.classList.toggle('btn-primary', !done);
           btn.innerHTML = done
-            ? '<img class="mascot-cheer" src="' + (location.pathname.indexOf('/topics/') >= 0 ? '../' : '') + 'img/mascot-sparkle.png" width="34" height="34" alt=""> Chapter completed \u2713'
+            ? 'Chapter completed \u2713'
             : 'Mark chapter as complete';
           btn.setAttribute('aria-pressed', String(done));
         };

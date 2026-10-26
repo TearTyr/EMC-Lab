@@ -20,7 +20,7 @@
      \u2713/\u2717 glyphs, and state must never ride on colour alone). */
   /* Denki-chan cheers beside the word badge on a pass (aria-hidden: the words
      carry the state, the mascot carries the personality). */
-  const CHEER = '<img class="mascot-cheer" src="img/mascot-sparkle.png" width="34" height="34" alt="">';
+  const CHEER = '';
   const FACE_HAPPY = '<span class="fbadge fbadge-ok" aria-hidden="true">Correct</span>';
   const FACE_OOPS = '<span class="fbadge fbadge-no" aria-hidden="true">Not quite</span>';
 
