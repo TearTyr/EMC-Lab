@@ -213,7 +213,7 @@
   }
   /* Hidden tab: drop the rAF chain and bank the elapsed time, so a backgrounded
      intro neither burns battery nor jump-cuts on return (and a settled home
-     page truly has zero chains — perf-measure guards exactly that). */
+     page truly has zero chains). */
   function onVis() {
     if (!playing || removed) return;
     if (document.hidden) {

@@ -258,7 +258,7 @@ console.log('\u2500'.repeat(66));
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('arena canvas rendered', drawCalls(win, '#sim-arena') > 80);
   ok('bohr canvas rendered', drawCalls(win, '#toy-bohr') > 30);
-  const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
+  const K = 8.99e9;   // the lecture’s constant — the engine uses it too
   const cv = () => doc.getElementById('sim-arena');
 
   // --- Lecture line example: q₂=−4 at 0, q₁=+3 at 0.20, q₃=−7 at 0.35 m
@@ -323,7 +323,7 @@ console.log('\u2500'.repeat(66));
   await frames(win, 6);
   ok('no runtime errors', problems.length === 0, problems.join(' | '));
   ok('field painter rendered', drawCalls(win, '#sim-fieldpaint') > 300);
-  const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
+  const K = 8.99e9;   // the lecture’s constant — the engine uses it too
   const fp = () => doc.getElementById('sim-fieldpaint');
 
   // --- Lecture replica: ±4 µC on the y-axis, probe parked at P -------------
@@ -1013,7 +1013,7 @@ console.log('\u2500'.repeat(66));
   // source (client directive: every design/SVG-generated mascot image is
   // replaced by the drawn artwork). The header brand mark references that file
   // directly; the ICO and apple-touch PNGs are committed rasterisations of it.
-  // The old SVG-path token comparison is superseded - see BUG_AUDIT test log.
+  // The old SVG-path token comparison is superseded
   for (const p of pages) {
     const html = readFileSync(join(ROOT, p), 'utf8');
     ok(`${p}: declares a viewport`, /name="viewport"/.test(html));
@@ -1197,11 +1197,6 @@ console.log('\u2500'.repeat(66));
   ok('every printed Coulomb constant is 8.99\u00D710\u2079 (the lecture value \u2014 and the engine computes with it too)',
     /8\.99\u00D710/.test(printed) && !/8\.988\u00D710/.test(printed) &&
     /K: 8\.99e9/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
-
-  // ---- #9 water density is the round 1000 everywhere it is printed ---------
-  ok('printed vacuum permeability is the CODATA 4pi×10⁻⁷ form',
-    /4π×10<sup>−7<\/sup>/.test(printed) &&
-    /MU0: 1\.25663706212e-6/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
 
   // ---- #10 the 70% rule is announced where it fires ------------------------
   ok('the score card announces the 70% auto-tick when it happens',
@@ -1435,7 +1430,7 @@ console.log('\u2500'.repeat(66));
      + 180 ms exit + polling slack → [13900, 16300] ms; CONTRACT CHANGE
      (2026-10-25, intro v6): window [11400, 13800]; CONTRACT CHANGE (2026-10-25,
      intro v8 drop-in cut, 12 s engine + .5 s fade): window re-pointed to
-     [12000, 15000] ms. Logged in BUG_AUDIT. */
+     [12000, 15000] ms. */
   /* CONTRACT CHANGE (2026-10-26, ISSUE #7.3): the window is measured from the
      moment the overlay actually starts playing, not from a wall-clock point
      after boot — on fast machines play begins before the old anchor and a

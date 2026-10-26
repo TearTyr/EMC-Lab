@@ -6,7 +6,7 @@
      ch1 Circuits & Ohm's Law            (brief R1–R3)
      ch2 Electric Fields & Coulomb's Law (the graded lecture: charge,
          Coulomb's law and electric field as its three sections).
-      field, efield, charges, current, circuits,) onto the
+   An alias map folds every legacy topic id (field, efield, charges, current, circuits, …) onto the
    chapter that owns it now, so old hash routes, old quiz deep links and old
    progress records all resolve instead of 404ing or losing data.
    The object below must stay pure JSON: tools/build-public.mjs parses it

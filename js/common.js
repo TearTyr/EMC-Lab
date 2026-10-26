@@ -830,7 +830,7 @@ window.EMC = (function () {
        v1  current, charges, magnetism, induction
        v2  current, efield, magind
        v3  charge, coulomb, field  (circuits and magnetism were untracked then)
-       v4  ch1, ch2, ch3
+       v4  ch1, ch2, ch3   (ch3 = the magnetism chapter, since removed)
      Migration ORs the old flags into the new chapters, so marking any one of
      charge/coulomb/field credits ch2 — a reader who studied a section has not
      lost it. The v1 magnetism/induction pair still needs BOTH halves, exactly
@@ -912,7 +912,7 @@ window.EMC = (function () {
       p.quizBest = Math.max(p.quizBest, pct);
       p.quizHistory = (p.quizHistory || []).concat([{ pct, at: new Date().toISOString() }]).slice(-20);
       // as promised on the home dashboard: a passing score counts as having
-      // studied all three chapters
+      // studied every chapter
       if (pct >= 70) TOPICS.forEach(t => { p.topics[t] = true; });
       this.write(p);
       return p;

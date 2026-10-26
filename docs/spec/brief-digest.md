@@ -40,7 +40,7 @@ Retired material may stay in `archive/`.
 | Electric field E = F/\|q₀\|, direction of force on a positive test charge, N/C; field lines | F = \|q₀\|E |
 | Field of a point charge, two-charge field (±4.00 µC, 0.700 m, 31.0°) | E₁ = E₂ ≈ 73,388 N/C; net **75,595 N/C along +y**, E_x = 0 |
 
-**Known errors in the lecture — fix on the site, list in BUG_AUDIT.md:**
+**Known errors in the lecture — fix on the site, keep a note in the README:**
 1. Slide 21(b): |−24×10⁻⁸ C| × 2.0 N/C = **4.8×10⁻⁷ N**, not 4.7×10⁻⁷.
 2. The Bohr slide calls mv²/r the "centrifugal force." The inward force that supplies it
    is the **centripetal** force. Use that term.
@@ -53,7 +53,7 @@ Retired material may stay in `archive/`.
 |---|---|---|
 | `ch1` | Circuits & Ohm's Law | Brief R1–R3. Cover voltage, current, resistance, power, series/parallel, circuit reduction |
 | `ch2` | Electric Fields & Coulomb's Law | Lecture §1.2. Existing Charge/Coulomb/Field lessons become sections of this chapter. Keep their content and sims |
-| `ch3` | Magnetism & Induction | **Not in either document.** Project-approved scope: Lorentz force, magnetic motion, flux, Faraday, Lenz, induction. Keep as already built; add nothing beyond these topics |
+| `ch3` | Magnetism & Induction | **Removed.** Not in the brief or the lecture, so the site has two chapters and a 16-question quiz |
 
 - **Quiz:** exactly **24** unique active questions, **8 per chapter**, each with one
   correct answer and a scientifically valid explanation. Ch2 questions must derive from

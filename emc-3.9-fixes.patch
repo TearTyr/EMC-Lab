@@ -1,0 +1,2582 @@
+diff --git a/.gitattributes b/.gitattributes
+index ac6ac8d..e69de29 100644
+--- a/.gitattributes
++++ b/.gitattributes
+@@ -1,3 +0,0 @@
+-# the reference footage is source material, not shipped content:
+-# store it as an LFS object so clones stay light (no history rewrite).
+-Video/*.mp4 filter=lfs diff=lfs merge=lfs -text
+diff --git a/BUG_AUDIT.md b/BUG_AUDIT.md
+deleted file mode 100644
+index 4f93027..0000000
+--- a/BUG_AUDIT.md
++++ /dev/null
+@@ -1,238 +0,0 @@
+-# BUG_AUDIT — EMC Lab audit & contract register
+-
+-Compact register of every audited finding and every gate-contract change. **All
+-findings below are resolved**; the code plus the gates in `README.md` §7 are the
+-living source of truth. The full narrative history (repro steps, root causes,
+-per-phase evidence) lives in git history — the evidence piles and the long-form
+-entries were pruned in the 2026-10-24 repository cleanup because every fix is in
+-the code and every gate is re-runnable.
+-
+-Status key: **Fixed** = repro re-run and passing · **Not reproducible** = never
+-observed on the audit branch · **Deliberate** = informed reversal of a report.
+-Browsers actually exercised: Playwright Chromium 156 / Firefox 157 / Edge 156
+-(msedge channel) — the single Playwright stack also drives the perf tools since
+-the 2026-10-24 consolidation.
+-
+----
+-
+-## 1. Resolved findings
+-
+-| ID | Sev | Finding (one line) | Outcome |
+-|---|---|---|---|
+-| BOOT-01 | Crit | Engine dead on every page (boot threw before `window.EMC`) | Fixed — loader lifecycle owned solely by `js/common.js` |
+-| BOOT-02 | High | Loader violated the §3.1 lifecycle contract | Fixed — `tools/loader-verify.mjs` (16 checks) encodes it |
+-| BOOT-03 | High | Boot overlay stuck ~4 s on every page | Fixed — symptom of BOOT-01/02 |
+-| SIM-01 | Crit | Canvas grew without bound (resize feedback loop) | Fixed — HiDPI `Stage` in `js/common.js` |
+-| SIM-02 | High | Sandbox preset clicks before init silently dropped | Fixed — input queued until init |
+-| DETAIL-01 | High | Detail Mode toggle dead; state contract off-spec | Fixed — pref applied pre-paint, `aria-pressed` |
+-| DETAIL-02 | High | Explanation-level parity violations | Fixed — `tools/check-detail-parity.mjs` gate |
+-| SCOPE-01 | Crit | Site scope contradicted the course brief | Fixed — the brief's three chapters, all principal |
+-| DEPLOY-01 | Info | Production assets minified+hashed, source paths 404 | By design — `tools/build-public.mjs` content-hash + immutable headers |
+-| NET-01 | High | Third-party runtime requests in production | Fixed — KaTeX/Chart.js/fonts vendored; `tools/check-scope.mjs` gates it |
+-| UI-01 | Med | Horizontal overflow at 360 px | Fixed — `overflow-x: clip`, coarse-pointer pass |
+-| DATA-01 | High | Coulomb constant not the lecture value | Fixed — k = 8.99×10⁹ computed *and* printed everywhere |
+-| DATA-02 | High | Arena "lecture" presets ≠ lecture configurations | Fixed — presets reproduce 5.69 N / 22.7 N ∠24° |
+-| DATA-03 | High | Field worked-example geometry ≠ lecture | Fixed — replica preset reads 75,595 N/C +y |
+-| R1-01 | Crit | Circuit builder had no drag & drop (brief R1 gap) | Fixed — `js/sim-circuit.js` bench |
+-| A11Y-01 | High | Keyboard 'n' jump answered the wrong card; inert complete-buttons | Fixed |
+-| NAV-01 | High | Shell routing dead (downstream of BOOT-01) | Fixed — full §3.3 matrix via `tools/nav-verify.mjs` |
+-| NAV-02 | Med | Chapter links full-navigated without View Transitions; VT aborts | Fixed — one cleanup path in `js/shell.js` |
+-| NAV-03 | Med | Reported chapter-navigation flakiness | Not reproducible |
+-| DET-03 | Med | Reported Details-switch inconsistency / typography jump | Not reproducible |
+-| LINK-01 | Med | Reported broken links | Not reproducible |
+-| INTRO-01 | Feat | Once-per-session opening (brief PART 6) | Working — now the v6 chorus compression + mascot wink finale (`js/intro.js`, INTRO-05) |
+-| INTRO-02 | Med | Intro beats hid their own content (colour + back-fill) | Fixed — opacity/fill discipline in the intro CSS |
+-| MASCOT-01 | Info | Mascot restored as identity anchor (PART 7.4) | Deliberate |
+-| MASCOT-02 | Info | Client's drawn mascot art integrated | Working — hero/header/favicon/social card |
+-| DATA-04 | Med | Slide-21 example quoted a ×10³-rescaled field | Fixed — lecture's real 2.0 N/C → 3.6/4.8×10⁻⁷ N |
+-| TOOL-01 | Med | Perf scripts unrunnable from a clean install | Fixed — devDeps declared |
+-| TOOL-02 | Low | Repo hygiene / dead files | Fixed |
+-| TOOL-03 | Info | Smoke test re-encoded to the brief's scope | Done — strictness increased, not loosened |
+-| QUIZ-01 | High | Quiz engine runtime gaps (stale state, §3.5 browser items) | Fixed — `tools/quiz-verify.mjs` |
+-| QUIZ-02 | Med | Floating timer covered answer options at 360 px | Fixed |
+-| PHASE-7 | — | Drawn-mascot identity + footage-driven intro v3 | Done |
+-| PHASE-8 | — | Site-wide motion system, sticker assets, gate harnesses | Done — `js/motion.js`, `tools/motion-verify.mjs`, `tools/asset-verify.mjs` |
+-| PHASE-9 | — | Intro v4: 1:6 reference cut (9c) + S4 at footage tempo (9d) | Superseded by PHASE-10 |
+-| PHASE-10 | — | Intro v5 "chorus cut" rebuilt off footage 21 s (main motion), topics + formulas with blur whips | Current — `docs/reference/animation-reference.md` §4 |
+-| CLEANUP-26-10-24 | — | Purpose-based repo restructure (evidence piles, archive, one-off tools removed) | Done — this register is its survivor |
+-| INTRO-03 | High | Intro CSS timeline ran from page-parse, JS master clock from `.play`: slow boots played the opening beats invisibly, joined mid-composition and froze on the closed letterbox tail (measured 767 ms drift with an 800 ms-delayed dependency; up to ~1.5 s at the watchdog ceiling) | Fixed — `#introOverlay:not(.play)` pauses the subtree at t=0; `currentTime = 0` at `.play` verified under delayed boot |
+-| INTRO-04 | Med | Animated blur whips re-rasterise per frame: ~150 dropped frames + 1.0 s worst frame on a mid-tier phone profile across the 14 s composition | Fixed — `.lite` cut on `EMC.lowTier` (blur-free keyframe swaps, identical beat grid); worst frame −44 %; full fidelity elsewhere |
+-| SHELL-01 | Med | A transient sim-script fetch failure cached `''` for the whole session — that chapter's sims stayed silently dead across every later mount until a full reload | Fixed — failures are never cached; the next mount retries |
+-| DEPLOY-02 | Low | `/img/` + `/favicon.ico` served `max-age=0, must-revalidate`: a revalidation round trip per image per pageview | Fixed — 24 h cache headers in `vercel.json`; og-card cache-buster bumped ?v=4→?v=5 on all five pages |
+-| ASSET-01 | Low | Repo/deploy hygiene: 56 KB of unreferenced woff2 (lilita-one, m-plus-rounded-1c ×2) shipped to production; og-card.png 877 KB; dead `window.tailwind` inline script on all five pages (CDN-era leftover) | Fixed — fonts removed, og-card losslessly recompressed to 601 KB (pixels verified identical, IHDR gate intact), dead script removed |
+-| CLEAN-26-10-25b | Low | Site-wide load cleanup: the three intro face PNGs (~56 K) were fetched on every homepage load even when the intro never plays (replayed sessions, and the bytes sat in the critical path); mascot-sparkle shipped 355×360 / 43 K for a use that renders at 34 px; dead code carried (buildArcLetters + arc markup, `in-hid` keyframe, roundTo/mapRange/bootStage) | Done — faces ship as `data-src` and get their `src` in beginIntro (zero bytes when the intro doesn't play); sparkle downsized to 128 px / 15 K; dead code removed; index transfer 385 K → 357 K, all budgets green |
+-| INTRO-08 | Feat | Friend's drop-in revision 2 (2026-10-25): mascot 40→34 cqw (portrait 46→38), triangle ears → inset-box-shadow crescents, shape-face positions nudged (t1 29/47, t2 71/47, ears top 32), electron orbit radii derived from `--mk` instead of fixed 27/7.5, and the three face PNGs replaced by the revision's embedded art (identical RGB, smoother alpha rim) | Done — re-integrated over the v8 integration; `--mk` read cached per run/resize instead of per frame; smoke crescent/size tokens re-pointed (§2) |
+-| R1R2-01 | Feat | R1/R2 rebuilt from the ground up per `docs/spec/r1-r2-ground-up-plan.md`: the v1 Ohm instrument-bench and the v1 lane/row Kirchhoff editor (both off-brief) replaced by the R2 calculator (V/R → I on one loop) and the R1 six-socket series drag/drop builder with a complete keyboard path | Done — smoke/interaction/lecture/a11y/perf re-pointed to the new DOM; physics intents kept (12 V/4 Ω = 3 A; series adds; bulb glow ∝ P) |
+-| BRAND-01 | Med | Patch-3 replaced every drawn-mascot brand surface with a generated lightning-bolt SVG (favicon.svg, brand marks) , dropped the hero mascot and swapped the charcoal+pastel palette for flat grey/primary colours | Reverted — mascot.png is again the single artwork source (favicon.ico set, png icon, apple-touch, brand marks, hero, cheer, og-card, intro); `img/favicon.svg` deleted; charcoal+pastel tokens restored; smoke #15 enforces the icon/brand identity |
+-| SCOPE-02 | Med | Patches 1–3 cut the site to two chapters / six sims / sixteen quiz questions but left every gate asserting the three-chapter world (baseline red: 60+ stale assertions, dead-page loads) | Reconciled across 12 tools with intent preserved (counts, quiz flows, migrations, nav matrix, perf guard); loader test 2 made deterministic: observer-backed sampling, stage-only throttle, sim scripts held (sims are not boot stages, §3.1.5), and `finish()` now paints when the 150 ms gate expired but the show timer starved — fast boots still never paint |
+-| NET-02 | Med | Vercel auto-PRs #1/#2 installed third-party CDN analytics tags (a NET-01 violation) plus an npm package a fully static site never executes | Reintegrated as same-origin, production-origin-gated injection in `js/common.js` (`UI.initAnalytics`: `/_vercel/insights/script.js` + `/_vercel/speed-insights/script.js` + `window.va` bootstrap, only on `*.vercel.app`); deps pinned in `package.json`; smoke pins both the gate and the absence of CDN tags |
+-| PHYS-01 | Med | The ghost test charge acted as a SOURCE of the field it measures: `fieldAt`, `traceLines` seeds and `forceOn` all included `type:'test'` (issue #7.2 — field lines sprouted at q₀) | Fixed — test-type objects skipped as sources in all three; the ghost feels E, never makes it |
+-| SAN-01 | Low | Dead `materials` code (conductor touch-sharing, polarisation) with a latent Newton's-third-law sign bug in `polarForce` (issue #7.9) | Removed — no sandbox ever passed `materials:true`; Static Room (its only consumer) is gone |
+-| UX-02 | Med | Share links broken twice: one `#s=` key loaded into EVERY sandbox on a page, and links copied inside the home reader pointed at index.html which never routes `#s…` (issue #7.4) | Fixed — keys are per-sandbox (`#s-<canvas-id>=`) and copyShare builds the chapter's standalone URL from the registry |
+-| UX-03 | Med | Under reduced motion the pointer-driven toys (balloon, Bohr) updated readouts but never redrew — the rAF loop is off and nothing invalidated (issues #6.2, #7.5) | Fixed once in `Stage.onPointer`: every handler run draws when the loop isn't running, for all current and future sims |
+-| UX-04 | Low | The 12 s intro replayed in every new tab (`sessionStorage` is per-tab, issue #7.11) | Fixed — 7-day `localStorage` mirror (`emc.intro.v1.ls`) beside the session key; blocked-storage fallback unchanged |
+-| R1R2-02 | Low | Builder schematic drew symbols over an unbroken wire and never rotated them to the wire direction (issue #7.7) | Fixed — wire gaps erased at occupied sockets; battery plates/resistor zigzag drawn in the wire's local frame; labels stay upright |
+-| SCOPE-03 | Low | Spec/doc drift after the ch3 removal: brief-digest still required 3 chapters/24 questions, quiz footer said "Twenty-four", stale ch3 comments (issues #7.8, #6.17) | Fixed — scope decision recorded in brief-digest, footer filled from the bank at runtime, registry/common comments cleaned |
+-| TEST-01 | Med | Smoke's intro auto-end window anchored to a wall-clock point AFTER boot, so a correct 12.0 s timeline measured ~11.5 s on fast machines (issue #7.3) | Re-anchored to the overlay's play-start; [12000,15000] ms from play is now the exact engine contract |
+-| INTRO-07 | Feat | Intro v8 "drop-in cut": the friend's frame-accurate recreation replaces the v7 explainer outright (user directive: "remove our old intro and integrate this") — shape-face countdown → flash cut at 3.0 s → title card with per-act mascot face swaps, ghost mascots, orbiting electrons, drifting charges, beat pulse → Start at 9.8 s → flash out 11.2 s → 12 s finish; rAF timeline in `js/intro.js`, container-query stage in CSS | Done — repo contracts preserved (session key, loader-done wait, skip/CTA clickability, rm static end frame, deferred face fetch); two integration bugs fixed: friend's top-right skip covered the nav quiz CTA (moved bottom-right), and v6/v7 vestige rules (`in-fadeout`, `in-vis`) leaked delay-phase animations into reduced-motion counts |
+-| INTRO-08 | High | The first v8 integration diverged from the friend's cut (his timeline silently re-timed -0.5 s: BEAT0 3.0, faces 4/8.3, Start 9.8) and shipped two bugs: the ghost column rendered six empty `<img>` tags (their `src` was never set) and the Start CTA inherited `.btn`'s transform transition, which fought the engine's per-frame scale writes and smeared the pop | Fixed - the friend's authoritative timing map restored verbatim (BEAT0 3.5, countdown .36 s steps to 3.13, faces 4.5/8.8, letters 3.7, sub 4.5, charges 4.3, electrons 5.1, ring 8.8, Start 10.3; 12 s total unchanged); ghosts fetch the shared focus face on play; `.in-start { transition: none }`; dead v6 CSS block + stale v6 HTML comment removed; smoke tokens re-pointed and both fixes pinned as assertions |
+-| INTRO-06 | Feat | Intro v7 explainer re-stage (user storyboard 2026-10-25 + three new mascot faces): mascot drops in → settles → hops → formula cards slide in left/right → each zoom-explained (held) with a 2 s checkmark → shared-charge values converge to 1:1 → star-sparkle wink + tilt → fade. Faces swap per step (focus/happy/sparkle); spacing from one gap token; all motion eased; blur whips retired entirely | Done — `img/mascot-face-{focus,happy,sparkle}.png` (bg-cut cutouts), stage markup in index.html, v7 keyframes in input.css; smoke re-pointed (§2) |
+-| INTRO-05 | Feat | Intro v6 (user directive 2026-10-25: "keep it simple … close to the animation"): the 49 s of footage from 21 s compressed ~4.3:1 into 11.5 s by keeping ten whole beat phrases at native speed and cutting on the footage's own beats; speech panels / navy chips / callback / letterbox wipe retired; new finale — mascot spin → head tilt → star-sparkle wink → fade-out | Done — beat grid + finale in `css/input.css`, `INTRO_MS = 11500`; gates re-pointed (§2); trace harness in `.scratch/trace/` |
+-| GATE-01 | Med | smoke-test's two blur/gradient ban scans keyed a marker string (`PHASE 8 — site-wide motion system`) that no longer exists in input.css → `indexOf` = −1 → both scans silently degenerated to a one-character slice (vacuous since the phase-8 comment was retitled) | Fixed — re-pointed to the real header `Site-wide motion system`; strictness increase, logged in §2 |
+-| SHELL-02 | Crit | **Production-only:** the shell's hard-coded skip list (`'registry.js','common.js','motion.js'` substring match) missed content-hashed production names (`common.58f7f516.js` ∌ `common.js`) → **common.js re-executed on every shell chapter mount**, re-running boot(): Detail toggle dead after the first chapter visit (double-bound handler flips twice = net zero), Topics dropdown and mobile nav menu dead (open-then-cancel), boot loader re-armed (overlay flash), scroll/prefetch/transition listeners accumulating. Every behavioural gate serves the UNHASHED source layout, where the filter works — so the whole suite stayed green while the deployed site rotted per chapter switch. Repro: visit any chapter from the homepage, then flip Details / open the dropdown | Fixed — shell skip-set is now basename-matched against the scripts index actually loaded (hash-proof, `js/shell.js` LOADED) + common.js carries a re-execution guard (a live engine is returned, never re-booted); new production-layout gate `tools/prod-verify.mjs` (`npm run verify:prod`, 14 checks) proven to FAIL 7 checks on the pre-fix build |
+-
+-## 2. Binding contract changes (test-change justification log)
+-
+-Integrity rule: gate windows and assertions are only ever **re-pointed with a
+-written justification, never deleted or weakened**. The changes that still shape
+-the gates today:
+-
+-- **R1/R2 + scope + brand re-points (R1R2-01/BRAND-01/SCOPE-02, 2026-10-26):** quiz-count tokens 24→16 everywhere (bank, filters, pills, history, keyboard A8), chapter tokens 3→2 (counters, progress sets, motif/stat counts, nav matrix, prefetch target), deleted-sim assertions removed (static-room, ledger, pin-force, dipole, zero-hunt, lorentz, induction) with their pages; R1/R2 assertions re-pointed to the rebuilt DOM (ohm-V/R + num inputs, working line, circ-I/R/P, sockets, tuning rows, open-loop note). Loader test 2: polling → MutationObserver sampling, throttle moved off common.js, sim scripts held 4 s, and the product gained the finish-time paint for gate-expired starved boots. No assertion deleted for being inconvenient — every removal tracks a deleted feature, every re-point keeps the physics intent.
+-
+-- **Issues #6/#7 re-points (2026-10-26):** share-code keys moved `#s=` → `#s-<canvas-id>=`; intro persistence gained a 7-day localStorage mirror (session key still asserted by smoke and intro-verify); the intro auto-end window re-anchored to play-start (TEST-01); `Stage.onPointer` now draws when idle, which strengthens the reduced-motion contracts (toys redraw under drag); quiz footer counts filled from the bank at runtime. No assertion deleted or weakened.
+-the gates today:
+-
+-- **Intro v8 fidelity-restore re-points (INTRO-08, 2026-10-25):** the first v8
+-  integration had silently re-timed the friend's cut −0.5 s and never set the
+-  ghosts' `src`; his authoritative timing map (the attached
+-  `EMC Lab · 12s intro(1).html`) is restored verbatim — BEAT0 3.0→**3.5**,
+-  countdown .24/.2/2.77→**.36/.25/3.13**, faces 4/8.3→**4.5/8.8**, letters
+-  3.2/4.6→**3.7/5.1**, sub 4→**4.5**, charges 3.8→**4.3**, electrons
+-  4.6→**5.1**, ring 8.3→**8.8**, Start 9.8→**10.3**. The 12 s total is
+-  unchanged, so no auto-end window moves (intro-verify 12.0–15.0 s, smoke
+-  [12000,15000] ms); the skip/CTA a11y waits are untouched. Smoke tokens
+-  re-pointed: `BEAT0 = 3.5`, the face-swap line, the Start-visibility line.
+-  Two NEW pinned assertions (fix guards): the ghost column fetches the focus
+-  face in `loadFaces()`, and `#introOverlay .in-start` carries
+-  `transition: none` (it wears `.btn`, whose transform transition would lag
+-  every per-frame CTA scale write). One stale label renamed to what it now
+-  asserts (v8 art tokens, not the retired v6 collage bed) and the cssNoIntro
+-  comment refreshed (v8 quotes no gradients — the dead v6 stripe/blur CSS and
+-  the stale v6 HTML comment were deleted). Skip stays bottom-right (INTRO-07
+-  rationale). No assertion deleted or weakened; a local freeze-frame probe
+-  (`.scratch/visual-check.mjs`, gitignored) re-verified every beat visually.
+-
+-- **Loader numerics (BOOT-02):** `loader-verify` asserts stage order, ~240 ms exit,
+-  1500 ms watchdog, fatal-card behaviour.
+-- **Scope re-encode (SCOPE-01/TOOL-03):** smoke suite re-pointed to the three
+-  chapters; strictness increased (24-question invariants, parity gate added).
+-- **K constant (DATA-01):** smoke expects `K: 8.99e9`; the ±2 % numeric tolerance
+-  is unchanged (constant correction, not loosening).
+-- **Intro v4 1:6 cut (9c):** `intro-verify` auto-end window moved to 11.5–14.5 s.
+-- **Intro S4 footage tempo (9d):** window moved to **13.6–16.6 s** after `load`;
+-  overlay-removal waits 20 s; `capture-intro-video` 25 s; `capture-site-intro`
+-  loop cap 16 s; all verifier file-server walks exclude `Video/` (the 46 MB MP4
+-  OOM-killed a renderer when preloaded); `stability-stress` scenarios 13/10/8 run
+-  in fresh contexts (same-site renderer RAM). Assertions byte-identical.
+-- **Intro v5 chorus cut (PHASE-10, user directive 2026-10-24):** v4-grammar
+-  assertions replaced by v5-grammar ones (topic-slam stroke, whip keyframes, ramp
+-  steps, beat onsets, collage bed) plus an assertion that the v4 classes are gone;
+-  the flat-art **blur ban now holds site-wide except `#introOverlay`** (user asked
+-  for the footage's smear grammar "with blur and stuff") and `check-scope` strips
+-  the intro block before its ban scan; `TOTAL_MS = 14000` keeps the unchanged
+-  13.6–16.6 s window (measured auto-end ≈14.5 s).
+-- **Single browser stack (2026-10-24 consolidation):** `perf-audit`, `perf-measure`
+-  and `make-og-card` moved from puppeteer to Playwright chromium (the engine every
+-  other gate already used); the `PERF_ENGINE` switch, the puppeteer import fallbacks
+-  and the `PUPPETEER_EXECUTABLE_PATH` workaround were deleted and the `puppeteer`
+-  devDependency dropped. Guard invariants are counts (0/1 rAF chains, CLS < 0.01)
+-  and audit budgets are server-gzipped transfer bytes, so neither is
+-  engine-sensitive; re-verified green on the new engine (guard OK, all budgets met,
+-  og-card regenerated pixel-equivalent).
+-- **Intro lifecycle refactor merge (2026-10-24):** origin's refactor of the v5
+-  controller (named listener bookkeeping + CTA-click preservation) renamed
+-  `sessionPlayed()` to `hasPlayedThisSession()`; the smoke source-token assertion
+-  was re-pointed to the new identifier — intent unchanged (chapter-route skip,
+-  replay gate, boot-fatal cancel all still asserted).
+-- **Social card becomes AI-generated artwork (2026-10-24, user directive after the
+-  lavender kawaii UI redesign):** `img/og-card.png` is now generated artwork
+-  (1200×630, cache-buster bumped ?v=2→?v=3 on all six pages) instead of a render
+-  of `tools/og-card.html`; the renderer pair (`tools/og-card.html` +
+-  `tools/make-og-card.mjs` + the `og:card` script) was deleted — "no need to use
+-  the css or js to generate an image". The smoke size assertion (1200×630 IHDR)
+-  still guards the committed PNG; the derived-counts mechanism retired with the
+-  renderer (the artwork carries no counts).
+-- **Start-CTA focus gate (PHASE-10 follow-up):** the intro CTA is
+-  `visibility: hidden` until it pops so `introSkip` stays the first tab stop
+-  (`a11y-verify` gate A0).
+-- **Motion-marker re-point (GATE-01, 2026-10-25):** smoke-test's two
+-  blur/gradient ban scans (`cssNoIntro` and the "blur whips live in the intro
+-  overlay alone" tail scan) keyed the marker `PHASE 8 — site-wide motion
+-  system`, which has not existed in input.css since the section was retitled
+-  `Site-wide motion system`: `indexOf` returned −1, `slice(−1)` yielded a
+-  one-character slice and both bans silently scanned nothing. Re-pointed at
+-  the real header — a strictness INCREASE (the motion-system and ch-art CSS
+-  are now genuinely scanned and pass; the post-marker region was verified
+-  free of gradient/backdrop-filter/blur tokens before the change). Assertion
+-  logic is otherwise byte-identical.
+-- **Intro clock sync + low-tier cut (INTRO-03/INTRO-04, 2026-10-25):** no
+-  gate window or assertion changed. The `#introOverlay:not(.play)` pause rule
+-  pins the CSS beat grid to the JS master clock (all 12 intro-verify checks
+-  green; measured auto-end ≈14.5 s, unchanged) and the `.lite` keyframe swaps
+-  are name-only overrides that inherit every delay/duration/easing, so the
+-  v5 grammar assertions (stroke, whip keyframes, ramp steps, collage bed)
+-  hold on both cuts — smoke asserts the blur whips exist in source, which
+-  they still do, unchanged, for full-fidelity machines.
+-- **Intro v8 revision-2 re-points (INTRO-08, 2026-10-25):** two smoke tokens
+-  moved with the art: the shape-face assertion now matches the crescent
+-  grammar (`box-shadow: inset 2cqw` + the mirrored `#t2`) instead of the
+-  retired triangle `clip-path`, and the stage-size assertion matches
+-  `--mk: 34cqw`. No window or behaviour assertion changed (a sizing/art
+-  revision leaves timeline and contracts untouched).
+-- **Intro v8 re-points (INTRO-07, 2026-10-25):** the intro is no longer CSS
+-  keyframes — the friend's engine owns ONE finite rAF timeline, so the
+-  "CSS-keyframes-only" source token was re-pointed to engine-grammar tokens
+-  (BEAT clock, face-swap line, flash line, Start-visibility line, rm static
+-  frame) and `perf-measure`'s home budgets now preset the session key like
+-  every other harness, with a NEW check proving the timeline rAF is finite
+-  (home settles to 0 chains after the overlay leaves). Auto-end windows moved
+-  11.2-14.2 → **12.0-15.0 s** (intro-verify) and [11400,13800] →
+-  **[12000,15000]** (smoke); the skip/CTA dismiss waits in a11y-verify and
+-  verify:prod moved 400 → 1000 ms because the exit is now a .5 s `.done` fade;
+-  the CTA pointer-events token moved to `.in-start.on` (base CTA is inert until
+-  it pops, keeping introSkip the first tab stop). Blur ban unchanged and still
+-  green (v8 uses none). All re-points are window/token moves for the new
+-  engine — no assertion deleted or weakened.
+-- **Cleanup re-points (CLEAN-26-10-25b, 2026-10-25):** three smoke tokens
+-  moved, none deleted: the intro face-img assertions now match `data-src=`
+-  (the deferred-fetch form), the mascot-sparkle size floor dropped 20 K → 4 K
+-  (the art now ships at 128 px for its only 34 px use; the hero mark keeps its
+-  20 K floor), and the loader-storage scan's end marker moved from the deleted
+-  'Legacy alias' comment to the §7 section header (the −1 indexOf had made the
+-  scan whole-file and thus failing). Intent of every assertion unchanged.
+-- **Intro v7 re-points (INTRO-06, 2026-10-25):** master clock unchanged
+-  (INTRO_MS 11500), so no timing window moved. Smoke's intro grammar assertions
+-  were re-pointed from the retired chorus-cut tokens (slam stroke, eq-chip bg,
+-  whip keyframes, ramp steps, --ti values, finale spin/tilt) to the v7 grammar
+-  (in-drop/in-settle/in-hop/in-slideL/R/in-zoom hold/in-ratio, the two 2 s check
+-  windows, the 9.45 s value swap, in-tilt-end/in-star/in-fadeout, the face-img
+-  tags with explicit dimensions, the single --in-gap spacing token). The blur
+-  exception for the intro overlay was REMOVED and strengthened: the scan now
+-  asserts no blur token anywhere in the comment-stripped stylesheet (v7 uses
+-  none) — a strictness increase. Bed assertions kept (collage bed still ships).
+-- **Intro v6 re-points (INTRO-05, 2026-10-25):** master clock 14000 → 11500
+-  (11.05 s picture + 0.45 s fade). `intro-verify` auto-end window 13.6–16.6 s →
+-  **11.2–14.2 s**; `smoke-test` auto-end [13900,16300] → **[11400,13800]** and its
+-  v5-grammar token list drops the retired pieces (speech panels, navy chips,
+-  wipe, arrow draw; `in-f5 --ti` 10.9s → 8.1s) in favour of the finale grammar
+-  (`in-spin`/`in-tilt`/`in-star`/`in-fadeout`); capture-tool caps 16 s → 13 s and
+-  25 s → 20 s. All re-points are window/token moves for the shorter cut — no
+-  assertion was deleted or weakened; measured auto-end ≈12.05 s after load.
+-- **Production-layout gate (SHELL-02, 2026-10-25):** NEW gate
+-  `tools/prod-verify.mjs` (`npm run verify:prod`) — an addition, no existing
+-  assertion re-pointed. It runs the shell-mount-affected contracts (engine
+-  identity across mounts, Detail-toggle flips after one AND two mounts,
+-  dropdown, 360 px nav menu, zero re-created boot overlays, lazy sim init,
+-  zero errors) against the HASHED `public/` build, because every pre-existing
+-  behavioural gate serves the source layout and a source-layout-only suite
+-  passed while production was broken. Proven to catch the original bug:
+-  7 FAILs on the pre-fix build, PASS after. `build:public` auto-runs when
+-  `public/` is missing.
+-
+-## 3. Pointers
+-
+-- Requirements & lecture values: `docs/spec/` (lecture PDF, brief digest,
+-  independent recompute `docs/spec/verify-checks.mjs`).
+-- Intro & motion grammar: `docs/reference/animation-reference.md`.
+-- Commands & gates: `README.md` §7.
+-- Pre-cleanup narrative (per-bug repro/root-cause/evidence): git history.
+diff --git a/README.md b/README.md
+index 9fac496..1e5ba97 100644
+--- a/README.md
++++ b/README.md
+@@ -1,274 +1,64 @@
+-# EMC Lab — Interactive Electromagnetics Tutorial
++# EMC Lab — Electricity
+ 
+-A responsive, interactive educational website for **Calculus-based Physics 2** (Electricity
+-group). The course brief's Electricity chapters are the site's two chapters — all principal,
+-nothing optional:
++Interactive tutorial website for **Calculus-based Physics 2** (Electricity group).
++Plain HTML, CSS and JavaScript with Canvas simulations; no framework and no runtime dependencies.
++The site makes no requests to other sites.
+ 
+-| # | Chapter | Page | What's inside |
+-|---|---------|------|---------------|
+-| 1 | **Circuits & Ohm's Law** | `topics/current.html` | V, I, R, power, series/parallel reduction, an Ohm's-law bench (R2) and a drag-and-drop circuit builder with resistors, a battery and a bulb whose brightness follows P = VI (R1) |
+-| 2 | **Electric Fields & Coulomb's Law** | `topics/fields.html` | the graded lecture in three sections — 2.1 Electric Charge, 2.2 Coulomb's Law (1-D/2-D superposition, Bohr atom), 2.3 Electric Field (E = F/\|q₀\|, field lines, the two-charge y-axis example) — with four open sandboxes and toys |
++## What it covers
+ 
+-Plus a **16-question auto-graded quiz** (exactly 8 per chapter) with Chart.js score
+-analytics, and device-local **progress tracking** for the two chapters.
++| Page | Contents | Source |
++|---|---|---|
++| Home | Navigation, formula reference, progress | Project brief |
++| 1. Circuits & Ohm's Law (`topics/current.html`) | Current, voltage, resistance, power; **Ohm's law calculator** (change R and V, read I and P); **circuit builder** with battery, resistors and bulb; series and parallel | Project brief |
++| 2. Electric Fields & Coulomb's Law (`topics/fields.html`) | Electric charge, Coulomb's law with superposition, electric field; four simulations (balloon, Coulomb arena, Bohr tuner, field painter) | Lecture PHYSICS2 LEC01 |
++| Quiz (`quiz.html`) | 16 questions (8 per chapter), hints, worked explanations, Chart.js score charts, best score saved in the browser | Project brief |
+ 
+-> Every number on every screen is computed from the real equations — Ohm's law,
+-> Coulomb's law with vector superposition, E = Σ kq r̂/r², F = qv × B, ε = −N dΦ/dt.
+-> Nothing is animated by hand. The Coulomb constant is **k = 8.99×10⁹ N·m²/C²**
+-> (the lecture's value) everywhere — computed *and* printed — so every readout
+-> reproduces the lecture's worked answers (±1 C at 1 km → 8990 N; net 5.69 N on the
+-> +3 µC line example; 22.7 N at ≈24° in 2-D; v = 2.188×10⁶ m/s for Bohr; 75,595 N/C
+-> along +y for the two-charge field).
++**Scope.** The project brief lists only the Electricity group (circuit builder, Ohm's law calculator,
++circuit quiz) and the lecture covers charge, Coulomb's law and the electric field. A magnetism and
++induction chapter was built earlier but is in neither document, so it was removed.
+ 
+-**Stack:** HTML + vanilla JavaScript + Canvas 2D, Tailwind CSS compiled locally
+-(`css/input.css` → `css/site.css` via the Tailwind CLI), vendored **KaTeX** and
+-**Chart.js** under `vendor/` — the site makes **zero third-party requests** and opens
+-straight from the file system.
++All numbers on screen come from the equations. The Coulomb constant is k = 8.99×10⁹ N·m²/C²
++(the lecture's value), so the readouts reproduce the lecture's worked answers: ±1 C at 1 km → 8,990 N;
++5.69 N on the +3 µC line example; 22.7 N at 24° in 2-D; Bohr speed 2.19×10⁶ m/s; E = 75,595 N/C along +y.
+ 
+-**Single source of truth:** `js/registry.js` defines the two chapters, their paths,
+-quiz tags and simulations. Navigation, chapter counts, progress topics, quiz
+-categories, the production page list and `sitemap.xml` are all derived from it —
+-never hand-typed. Legacy ids from earlier site generations (`charge`, `coulomb`,
+-`field`, `current`, `magind`, …) resolve through its alias map, so old links, old
+-hash routes, old quiz deep links and old progress records all keep working.
++## Run it
+ 
+-**Scope map:** `BUG_AUDIT.md` is the compact register of every audited finding and
+-every gate-contract change (all resolved; narrative history lives in git). The
+-requirement digest and the lecture PDF are in `docs/spec/`; the reference-video
+-analysis behind the intro and the site-wide motion system is in
+-`docs/reference/animation-reference.md`.
++Serve the folder with any static server, for example `python3 -m http.server`, and open
++`http://localhost:8000`. Progress is saved in the browser's local storage; no account is needed.
+ 
+----
++## Structure
+ 
+-## 1. Quick start
++- `js/registry.js` is the single list of chapters and simulations; navigation, counts and quiz
++  categories are derived from it.
++- `js/` has one file per simulation (`sim-*.js`, `toy-*.js`), the shared engines (`common.js`,
++  `sandbox-core.js`), the quiz and the intro.
++- `css/input.css` is compiled to `css/site.css` with Tailwind (`npm run build:css`).
++  KaTeX and Chart.js are vendored in `vendor/`.
++- `docs/spec/` has the project brief digest and the lecture PDF. `tools/` has the checks and the build.
+ 
+-The site is static. Any of these works:
++## Checks
+ 
+-### Option A — open directly
+-Double-click `index.html`. Everything works from the file system (the same-page
+-chapter reader needs `http://`, so on `file://` chapter links simply open the
+-standalone pages — which is the intended fallback).
++| Command | What it checks |
++|---|---|
++| `npm run check` | Links and ids, detail-toggle parity, scope and network purity, physics values |
++| `npm run check:physics` | Lecture values, all quiz answers, force softening, banned wording |
++| `npm test` | Full runtime test of both chapters, the simulations, the quiz and progress |
++| `npm run test:browsers` | Core flows in Chrome, Firefox and Edge (needs those browsers installed) |
+ 
+-### Option B — local web server (recommended)
+-```bash
+-python3 -m http.server 8000        # or: npx serve .
+-# then open  http://localhost:8000
+-```
++Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
+ 
+-### Option C — any static host
+-Upload the repo root, or run the production build (§5) and upload `public/`.
++## Browsers
+ 
+-The reference footage under `Video/` is a Git LFS object; the site, the tests and
+-every gate run without it (all harness file-servers exclude `Video/`). Install
+-`git-lfs` and run `git lfs pull` only if you want to re-inspect the footage.
++The core flows pass in Chromium 141 (the Chrome engine). Firefox and Edge are in the same
++`npm run test:browsers` script but have not been run yet: run it on a machine that has them and
++record the result here before submitting.
+ 
+----
++## Deploy
+ 
+-## 2. File structure
++Vercel runs `bun run build` and serves `public/`, where scripts and styles get content-hashed names.
++Vercel deploys the production branch set in the project's Git settings, so push to that branch.
+ 
+-```
+-index.html            home: hero, chapter cards, sim index, formula sheet, progress dashboard
+-quiz.html             the 24-question quiz (filters, timers, navigator, charts, resume)
+-topics/
+-  current.html        Chapter 1 — Circuits & Ohm's Law   (sim-ohm, sim-circuit)
+-  fields.html         Chapter 2 — Electric Fields & Coulomb's Law (§§2.1–2.3, nine sims/toys)
+-  charge.html         redirect stub → fields.html#charge   (old URL, anchors preserved)
+-  coulomb.html        redirect stub → fields.html#coulomb
+-  field.html          redirect stub → fields.html#field
+-js/
+-  registry.js         the two chapters + legacy alias map (pure-JSON core)
+-  common.js           engine: constants, Stage (HiDPI canvas + rAF), loader, Detail Mode,
+-                      Progress (v4 + migrations), KaTeX pipeline, UI primitives
+-  shell.js            same-page chapter reader for index.html (hash routes #/ch1…#/ch2,
+-                      legacy aliases, one cleanup path for mounted sims)
+-  home.js             dashboard + derived hero counters
+-  quiz.js             quiz engine (exam/instant, timers, autosave + bank fingerprint,
+-                      Chart.js with CSS-bar fallback)
+-  quiz-data.js        the 24-question bank (8/8/8)
+-  sandbox-core.js     shared free-play engine for the ch2 sandboxes
+-  sim-*.js, toy-*.js  the 6 simulations/toys (one file each, registry-listed)
+-css/                  input.css (source) → site.css (built), fonts.css
+-vendor/               KaTeX + Chart.js + OFL fonts (same-origin, licensed)
+-tools/                dev tooling (see §7)
+-docs/spec/            requirement digest + independent recompute of every lecture value
+-docs/reference/       reference-video analysis behind the intro & motion system
+-Video/                the original reference MP4 (analysis source; never shipped;
+-                      stored via Git LFS — `git lfs pull` after cloning if you need
+-                      to re-derive the footage analysis; no gate reads it)
+-```
++## Credits
+ 
+----
+-
+-## 3. Features
+-
+-- **Three chapters, one quiz, one progress ring.** Counts on every screen are derived
+-  from the registry and the bank (2 chapters · 6 sims · 16 questions).
+-- **Detail Mode.** One header switch flips every explanation between a simplified and a
+-  full-technical variant — applied before first paint (no flash of the wrong level),
+-  persisted per browser, keyboard-operable (`aria-pressed` + announced), and guaranteed
+-  pair-complete by `npm run check` (parity gate). Sims, scroll position and quiz state
+-  survive the flip untouched.
+-- **Once-per-session intro (v8 "drop-in cut", ~12 s).** The homepage opens with
+-  the frame-accurate recreation of the reference edit: a shape-face countdown
+-  (ears/eyes pop, 3-2-1, G/O) flash-cuts at 3.5 s into the title card — the
+-  mascot with per-act face swaps (sparkle → focus → happy), ghost mascots,
+-  letter-popped "EMC Lab" title, sub chip and feature chips, drifting +/−
+-  charges, orbiting electrons and a burst ring on the ~68 BPM beat — Start at
+-  10.3 s, flash out at 11.2 s, done at 12 s. One rAF timeline in `js/intro.js`
+-  (BEAT0 3.5 / BEAT 0.88), container-query sizing so the composition scales as
+-  one unit, `?t=<s>` freezes any frame for tuning. Repo contracts kept: once
+-  per session, chapter routes skip it, skip/Start clickable through playback,
+-  reduced motion draws the static end frame, face art fetches only when the
+-  intro actually plays. `npm run intro-verify` proves the whole contract.
+-  The client's drawn mascot artwork anchors every brand surface
+-  (hero, header/footer marks, favicon set, social card) — no SVG-generated
+-  mascot art remains; the hero mascot is capped (capped layout
+-  area, `pointer-events: none`, gentle float) and reacts once to meaningful
+-  moments (quiz pass, chapter completion) beside word-based state text.
+-- **Loader contract.** Page content renders immediately; a segmented accent bar appears
+-  only if startup exceeds ~150 ms, tracks real stages (fonts, above-fold equations,
+-  critical UI), exits in ~240 ms, and is capped by a 1500 ms watchdog. A failed critical
+-  dependency shows Retry + Home — never a permanent spinner. `tools/loader-verify.mjs`
+-  proves the whole contract in a real browser.
+-- **Quiz.** Exam or instant marking, optional timers (practice count-up / challenge
+-  count-down with auto-submit), question navigator, flags, shuffle, autosave & resume
+-  (with explicit stale-bank detection), dual submit buttons, per-chapter breakdown,
+-  Chart.js analytics with a CSS-bar fallback if the library fails.
+-- **Progress.** localStorage only — no accounts, no backend, no network. v1/v2/v3
+-  records migrate losslessly into the v4 chapter schema; Export/Import moves progress
+-  between devices as JSON.
+-- **Accessibility.** Semantic landmarks, skip link, visible focus, ≥4.5:1 body contrast,
+-  state never carried by colour alone, full keyboard flows, `prefers-reduced-motion`
+-  honoured everywhere (decorative motion off, state feedback intact).
+-
+----
+-
+-## 4. The physics inside each simulation
+-
+-| Sim | Chapter | Governing equations (computed live) |
+-|-----|---------|-------------------------------------|
+-| Ohm's law calculator (`sim-ohm`) | 1 | I = V/R and P = VI on one loop; charge-dot speed ∝ I; exact-value inputs + lecture presets (rebuilt per docs/spec/r1-r2-ground-up-plan.md §3) |
+-| Circuit builder (`sim-circuit`) | 1 | one series loop, six sockets: drag/drop battery, resistors, bulb; I = V/ΣR; bulb glow ∝ P = I²R; open-loop and short notes (rebuilt per plan §4; parallel = milestone M2) |
+-| Rub the Balloon (`toy-balloon`) | 2 §2.1 | q = n·e in whole electrons; equal-and-opposite readouts |
+-| Tug-of-War Arena (`sim-arena`) | 2 §2.2 | F = k\|q₁q₂\|/r² + vector superposition; lecture line & 2-D presets reproduce 5.69 N and 22.7 N ∠24°; release mode integrates F = ma |
+-| Bohr Tuner (`toy-bohr`) | 2 §2.2 | v = √(ke²/(mₑr)) → 2.188×10⁶ m/s at r = 5.29×10⁻¹¹ m (Coulomb pull as the **centripetal** force) |
+-| Field Painter (`sim-fieldpaint`) | 2 §2.3 | E(P) = Σ kq (P−r)/\|P−r\|³; lecture replica preset: E₁ = 73,388 N/C, net 75,595 N/C +y, Eₓ = 0 |
+-
+-Softening (≤1 cm) keeps close-range forces finite; the stability warning says so
+-outright. The lecture's check values are independently recomputed by
+-`node docs/spec/verify-checks.mjs` (all twelve, ≤1 %).
+-
+----
+-
+-## 5. Build & deploy
+-
+-The committed site runs with **no build step**. The build exists for production:
+-
+-```bash
+-npm install                # devDependencies: jsdom, tailwindcss, playwright
+-npm run build:css          # Tailwind CLI: css/input.css -> css/site.css (minified)
+-npm run build:public       # assemble public/: hashed+minified assets, link verification,
+-                           # sitemap.xml + generated pages; fails on any broken reference
+-```
+-
+-`package.json` scripts historically call `bun`; **npm works identically** for every
+-script (the two `build:*` steps are the same binaries). On Vercel the project builds
+-with bun as configured in `vercel.json` (`buildCommand: bun run build`,
+-`outputDirectory: public`). Production assets ship under content-hash names with
+-1-year immutable headers — that is by design, so source paths like `/js/common.js`
+-404 in production while `/js/common.<hash>.js` serves.
+-
+----
+-
+-## 6. Hosting on Vercel
+-
+-- Framework preset: **Other**; Build command `bun run build`; Output directory `public`
+-  (also pinned in `vercel.json`, which overrides the dashboard).
+-- `vercel.json` carries the cache headers and the legacy `/topics/efield.html` redirect.
+-- Vercel analytics — PR #1 (Speed Insights) and PR #2 (Web Analytics)
+-  reintegrated in the only form that keeps the zero-third-party contract:
+-  `UI.initAnalytics()` in `js/common.js` injects the platform's SAME-ORIGIN
+-  collectors (`/_vercel/insights/script.js`, `/_vercel/speed-insights/script.js`)
+-  plus the `window.va` bootstrap, and only on the Vercel production origin —
+-  gate runs, previews and localhost never emit a beacon, and
+-  `tools/check-scope.mjs` still fails any external fetch. The PRs' npm packages
+-  are pinned in `package.json` as the version record. What is collected: Web Analytics counts pageviews without cookies or personal data; Speed Insights reports Core Web Vitals for the production origin only.
+-
+----
+-
+-## 7. Developer commands
+-
+-```bash
+-npm run check          # links + ids + data hooks, Detail-Mode parity, scope & network purity
+-npm run test           # jsdom smoke test (557 assertions: physics, quiz, loader, a11y, migration, intro)
+-npm run test:interact  # real Chromium drives every sim (mouse/touch/keyboard, rude cases)
+-npm run test:shell     # shell stress: rapid route switching, teardown, reduced motion
+-npm run loader-verify  # (node tools/loader-verify.mjs) the §3.1 loader contract, 16 checks
+-npm run intro-verify   # the once-per-session intro contract (PART 6.4), 12 checks
+-npm run motion-verify  # site-wide motion system: reveals, route flash dip, whip, 10 checks
+-npm run asset-verify   # image/asset contract: decode, dims, alt, lazy, stretch, art, favicon ICO
+-npm run stability-stress # the reported-bug reproduction matrix (nav/Details/typography), 35 checks
+-npm run perf           # transfer/DOM/font budgets per page
+-npm run perf:guard     # animation-chain budgets, CLS, anchor clearance
+-npm run verify:prod    # production-layout gate: shell-mount contracts against the
+-                       # HASHED public/ build (auto-builds when missing) — run after
+-                       # every build:public, before every deploy
+-npm run shots          # screenshots of every page + sim panel
+-npm run build          # build:css + build:public
+-```
+-
+-Every `*-verify` gate above also has a plain script name (`npm run a11y-verify`,
+-`nav-verify`, `quiz-verify`, `lecture-values`, `asset-verify`, …). A few harnesses
+-are manual only (`node tools/<name>.mjs`): `browser-matrix` (gate B:
+-Chromium+Firefox+Edge core flows), `capture-site-intro` (timestamped intro frame
+-loop → `/tmp/introcap`), `capture-intro-video [outDir]` (intro as WebM) and
+-`baseline-sweep [name]` (responsive sweep → `shots/sweeps/[name]/`).
+-
+-All test tooling is dev-only; the shipped site has zero runtime dependencies.
+-Playwright browsers: `npx playwright install chromium firefox` (+ `msedge` channel for
+-the Edge run).
+-
+-**Harness notes (sandbox/low-RAM environments).**
+-- Run the browser gates **one at a time**; `pkill -9 -f "chrome|chromium"` between runs —
+-  zombie browsers from a crashed run cause `Target crashed` on the next harness's first page.
+-- Every browser harness — gates, screenshots and the perf tools alike — runs on
+-  Playwright's chromium (`npx playwright install chromium` once).
+-- The intro runs ~11.5 s (11.05 s picture + 0.45 s fade): `intro-verify` waits up to
+-  20 s for overlay removal, `capture-intro-video` up to 20 s.
+-- Dev-only footage tooling (never shipped, gitignored): `.scratch/footage/` holds the
+-  sha-verified MP4, every frame from 21.0 s, contact sheets and the 11.5 s song-edit
+-  proof cut; `.scratch/trace/trace.html` is the frame-by-frame trace harness
+-  (footage × real intro CSS, beat-map synced) — serve the repo root and open it.
+-- Verifier file-servers preload the repo into RAM and exclude `docs/`, `.scratch/`,
+-  `shots/` and `Video/` (never requested by any page; a page that did request them
+-  would 404 into the `misses[]` assertion).
+-- `check-links.mjs` keeps a `DYNAMIC_IDS` allowlist (includes `introOverlay`: markup only
+-  in index.html, every script reference null-guarded, behaviour covered by intro-verify).
+-
+----
+-
+-## 8. Browser support
+-
+-Tested with Playwright in this repo's audit harnesses: **Chromium 156**, **Firefox 157**
+-and **Edge 156** (msedge channel) for the core flows; the same Playwright Chromium for
+-the performance budgets. A browser that cannot launch on your machine is reported
+-UNTESTED by `browser-matrix`, never assumed. The site degrades without JavaScript (all prose readable, noscript
+-notices) and without localStorage (progress disabled, everything else intact).
+-
+----
+-
+-## 9. Licence and credits
+-
+-- Code & content: educational use, EMC Lab project.
+-- KaTeX (MIT) and Chart.js (MIT) are vendored with their licences under `vendor/`.
+-- Fonts: G8321 (SIL OFL 1.1) committed as woff2; KaTeX fonts (SIL OFL) vendored.
+-- Physics content follows standard calculus-based texts (Halliday/Resnick/Walker,
+-  Serway, Young & Freedman) and the course lecture; constants: k = 8.99×10⁹ N·m²/C²
+-  (lecture value, used everywhere), e = 1.602×10⁻¹⁹ C, μ₀ = 4π×10⁻⁷ T·m/A.
+-- The social card (`img/og-card.png`, 1200×630) is committed raster artwork
+-  composed from the site's own design tokens — charcoal `--bg` surface, pink
+-  brand accent, electric-yellow tagline, the pastel law chips, outline pills
+-  and the client's mascot art in its canonical cream art frame with ghost
+-  mascots — rasterised by `tools/make-og-card.mjs` (headless render of the
+-  token sheet, then committed as a plain PNG; meta tags cache-bust `?v=`).
+-  Regenerate with that script, never by hand-painting pixels.
++Physics content follows the course lecture and standard calculus-based texts
++(Halliday/Resnick/Walker, Serway, Young & Freedman).
+diff --git "a/Video/\343\202\267\343\202\247\343\203\252\343\203\274\343\203\251\343\202\244\343\203\211.mp4" "b/Video/\343\202\267\343\202\247\343\203\252\343\203\274\343\203\251\343\202\244\343\203\211.mp4"
+deleted file mode 100644
+index 526e9e7..0000000
+--- "a/Video/\343\202\267\343\202\247\343\203\252\343\203\274\343\203\251\343\202\244\343\203\211.mp4"
++++ /dev/null
+@@ -1,3 +0,0 @@
+-version https://git-lfs.github.com/spec/v1
+-oid sha256:348b38c39f7f1aa82db623c0d94a42ed09768696af3037eff20754c8bcb5ed66
+-size 46580541
+diff --git a/docs/reference/animation-reference.md b/docs/reference/animation-reference.md
+deleted file mode 100644
+index 514c9de..0000000
+--- a/docs/reference/animation-reference.md
++++ /dev/null
+@@ -1,273 +0,0 @@
+-# Animation reference — `Video/シェリーライド.mp4` → EMC Lab intro & motion system
+-
+-One authoritative analysis of the reference video and its mapping onto the site.
+-Consolidates (and replaces) the former `evidence/video-analysis/*.md` set:
+-`reference-analysis.md`, `frame-timeline.md`, `transition-inventory.md`,
+-`intro-1to6-map.md`. All observations were derived by direct frame inspection
+-of the original MP4 (method in §7); the MP4 in `Video/` remains the authority —
+-if this document and the footage disagree, the footage wins.
+-
+-## 1. Source facts (measured with ffmpeg 7.0.2)
+-
+-| property | value |
+-|---|---|
+-| path | `Video/シェリーライド.mp4` (repo original, md5 `28bb22f6cc290a110cb96f325677276f`) |
+-| container duration | **70.47 s** (00:01:10.47), bitrate 5287 kb/s |
+-| video stream | h264 High, yuv420p (tv, bt709, progressive), **1920×1080, 60 fps** |
+-| decoded video frames | **4225 frames, n=0…4224, last pts_time 70.416 s** |
+-| audio | AAC-LC 44100 Hz stereo 128 kb/s |
+-| extra stream | attached PNG cover 1280×720 (stream 0:2) — exclude via `-map 0:v:0` |
+-| tail | **no black tail** — final frames f4215–4224 are the yellow end card |
+-
+-Frame numbers below are 0-based decode indices; `t_ref ≈ f/60 + 0.016` s.
+-
+-## 2. Scene & transition timeline (complete video)
+-
+-| # | range (s) | section | on screen | motion / transitions |
+-|---|---|---|---|---|
+-| S1 | 0.000–2.616 | confetti overture | flat saturated yellow; nothing else until f14 | discrete pop-ins, one confetti element (triangle/dot/crescent/micro-glyph, ≤3 % width, light blue) per 0.25–0.5 s, **no tween**; field then static |
+-| S2 | 2.616–12.116 | title lockup | **flash #1**: pure white exactly 2 frames (f156–157) → ~90 ms staggered dissolve-out-of-white; outlined two-line title locked below centred character cut-out; white silhouette strip + tiny EQ glyphs behind | paper-doll micro swaps as 1-frame discrete cuts on a 1.5 s macro + 0.30 s doublet-fill beat grid (f230, 263, 281, 299, 317, 410…); **whip-squash** f440–447 (cut-out scaleX→~0.1, ~120 ms) between pose families A→B; pose B lands f448 |
+-| S3 | 12.116–18.916 | handwritten skit | **flash #2** (2 white frames + ~250 ms exponential decay); two handwritten black lines top-left; tilted 3D inset still (dark-red interior) left-of-centre | inset **continuous rotateY spin**, period ≈2 s (edge-on ↔ facing every ~0.5–1 s); red “VS” discrete pop f≈840; second line pair + second inset staggered pop f≈870; third line discrete swap f≈960 |
+-| S4 | 18.916–21.449 | black/red insert | **hard cut, zero white frames** (f1134): black field, giant cropped 3D red-haired face, two pink chibi cut-outs flanking, tiny caption 「大丈夫か？」 | chibi pose swaps f1140→f1160 (discrete); **staged slams ~0.3 s apart from f≈1200 (20.0 s)**: red banner block → big laughing thumbs-up chibi → outlined caption; black stamp glyph slam f1260 (21.0 s) |
+-| S5 | 21.449–40.216 | chorus collage A | **flash #3, ramped**: 4-frame ramp-in (63→102→147→204→255, f1284–1287) + ~300 ms decay; blue/white panel collage, name plate chip, “OVERDRIVE” chip, yellow zigzag wedges | rotated outlined lyric slams one per beat; 1–2 frame motion-blur whip into pose swaps (f1410–1440); vertical lyric bubble columns slam word-by-word (f≈1440/1500); diagonal speech-bubble panels slide+rotate in from top-left with staggered typed lines (chip first, then lines ~0.3 s apart), hold ~3 s, swap out; title callback bottom-centre + black diagonal arrow slash drawn over it (f≈1800, 0.5 s draw); four rotated corner word-boxes slam in one beat (f≈1860, more pairs to f≈2280); arc-curved outlined text sweeps top (f2010–2100); dark-navy chips slide in horizontally 0.3 s stagger (f2130–2190), exit via whip-blur f≈2227 |
+-| S6 | 40.216–49.633 | chorus collage B | **flash #4** (2 white frames + ~200 ms decay) | **locked two-line horizontal lyric** bottom held ~9 s while centre pose swaps on the beat grid; small chibi “fairy” cut-outs orbit the frame edges, swapping positions ~every 1 s; name chip top-centre |
+-| S7 | 49.633–59.016 | chorus collage C | **flash #5** (2 white frames + ~300 ms decay) | white rounded correction panels slam in with scribble + **strikethrough-X draw** (f≈3060); big blue corner words per beat; **black starburst badges** with white text pop with slight scale overshoot (f≈3270, f≈3300); white diamond panels swap with blur; bottom-line word slams; motion-blur whip f3468 |
+-| S8 | 59.016–68.516 | bookend callback | **flash #6** (2 white frames + ~150 ms decay) → identical composition to S2 (yellow field, same lockup, silhouette strip) with pose C | pose micro swaps on the grid (f≈3900, 3960, 4020…) — the opening’s exact framing reused as closing motif |
+-| S9 | 68.516–70.433 | end card | **hard cut, zero white** (f4110): yellow field + one small (~15 % width) bordered still (thumbs-up pose, red bg) centred | static hold to the final frame f4224; no black tail |
+-
+-Pacing: phrase pulse ≈1.15–1.20 s; doublet fills ≈0.30 s; sub-beats ≈0.55–0.60 s.
+-
+-### Frame-accurate onset notes (dense passages)
+-
+-- **Flash #1 onset (S1→S2):** f0–14 flat yellow; confetti pops f15/30/60/75/90/105/120/135
+-  (0.25/0.50/1.00/1.25/1.50/1.75/2.00/2.25 s); f156–157 pure white ×2; f158–163 staggered
+-  dissolve-out (~90 ms): title glyphs → mascot → strip land in bursts. Lockup settled f198.
+-- **S2 pose grid:** micro swaps f230/263/281/299/317/410 (pose A); whip-squash sliver
+-  f440–447; pose B lands f448; micro swaps f460/550/640/661/678.
+-- **S3 skit:** f726–727 white ×2; f728–740 decay 255→214; f729+ lines 1+2 present, inset
+-  enters spinning (edge f733 → face f740 → edge f760; period ≈2 s, continuous to f1133);
+-  VS pop f≈840 (14.0 s); line pair 2 + inset 2 f≈870 (14.5 s); line 3 replaces the top
+-  pair f≈960 (16.0 s, 「ちょっと後者に行ってくる」).
+-- **S4 insert (the “00:20” passage):** f1134 (18.916 s) HARD CUT, zero white — black field +
+-  3D face + chibi pair + caption already composed on the first frame; chibi pose swap
+-  f1140→f1160 (19.0–19.3 s); from f≈1200 (20.0 s) three staged slams ~0.3 s apart
+-  (red banner → thumbs-up chibi → outlined caption); stamp glyph slam f1260 (21.0 s);
+-  ramped flash #3 f1284–1287 (21.40–21.45 s, 63→102→147→204→255) + ~300 ms decay into S5.
+-- **S5 chorus A:** collage present at decay f1290+; lyric slams 限界まで f≈1320, 足掻いた
+-  f≈1420, 人 f≈1470, は f≈1530, 生 f≈1540; whips f1410–1440, f≈1510; vertical bubble columns
+-  f≈1440 & f≈1500 word-by-word; speech panel 1 f1560–1740 (chip then lines 0.3 s stagger),
+-  panel 2 enters 28.0 s, both exit 29.5 s; title callback + arrow slash f≈1800 (30.0 s,
+-  0.5 s draw); corner boxes し/た/い/所 f≈1860 (31.0 s), だけ f≈1878, 現/実/は f≈1900;
+-  arc text f2010–2100 (33.5–35.0 s); navy chips 吐いた/エラー/ずら f2130–2190 (35.5–36.5 s),
+-  exit whip f2227 (37.1 s).
+-- **S6:** f2413–2414 white ×2 + ~200 ms decay; locked bottom lyric f2420→f2978 (~9.3 s,
+-  never moves); centre pose swaps on the grid; fairies swap edge positions ~1 s.
+-- **S7:** f2978–2979 white ×2 + ~300 ms decay; correction panels + X draw f≈2995–3075;
+-  corner words ばっ/か/持て/は/や/す f3048–3075; starbursts f≈3270 (54.5 s), f≈3300 (55.0 s);
+-  white diamonds f3330–3345, exit blur f≈3370; bottom-line slams f3420–3465; whip f≈3468.
+-- **S8:** f3541–3542 white ×2 + ~150 ms decay; f3544+ bookend lockup (pose C); micro swaps
+-  f≈3660/3720/3780/3900/3960/4020.
+-- **S9:** f4110 (68.516 s) hard cut, zero white; static end card to f4224 (70.416 s).
+-
+-### Flash grammar (whole video)
+-
+-Section-boundary flashes = pure white **exactly 2 frames (33 ms)** + exponential luminance
+-decay 150–300 ms into the new scene (decays: 90 / 250 / 300-ramped / 200 / 300 / 150 ms for
+-flashes #1–#6). Exception: flash #3 **ramps in** over 4 frames (entering the busiest section).
+-Hard cuts (zero white) are reserved for “different world” boundaries: f1134 (18.916 s) and
+-f4110 (68.516 s).
+-
+-## 3. Transition technique inventory → site adaptation
+-
+-Site classes live in `css/input.css` (motion system, after the intro block) and are gated by
+-`js/motion.js` (classes only added when motion is allowed; reduced-motion collapses every
+-pattern to its final state instantly — content is never hidden behind an animation).
+-
+-| # | technique | reference parameters | site adaptation | class |
+-|---|---|---|---|---|
+-| 1 | discrete pop-in | appears in 1 frame, no tween; stagger 0.25–0.5 s; size ≤3 % field | confetti/chips/badges snap in, stagger 200–300 ms | `emc-pop` |
+-| 2 | white-flash dip | 2 frames pure white (33 ms) + exp decay 150–300 ms | 2-frame-equivalent snap to 85 % white + ≤260 ms decay, pointer-events none | `emc-flash` |
+-| 3 | ramped flash | 4-frame luminance ramp 63→255 then decay | intro S4→S5 boundary keeps the ramp; site-wide system keeps the single flash grammar | intro-only |
+-| 4 | hard cut | zero-frame switch, no white (different-world) | verdict/preset high-energy flips; intro S3→S4 and S8→S9 | `emc-cut` |
+-| 5 | whip-squash | scaleX→~0.1 for ~120 ms, new state pops | mascot/panel content swaps 60–120 ms | `emc-swap` |
+-| 6 | motion-blur whip | 1–2 frame horizontal smear | **banned** (flat-art rules); #5 substitutes | — |
+-| 7 | word slam | appears already rotated ±8–20°, 1/beat, holds ≥1 phrase | headings pre-rotated ≤8°, settle 180 ms | `emc-slam` |
+-| 8 | corner slam cluster | 4 rotated one-char boxes in one beat, corners | card-grid entrance: 4 cards, ≤8°, 60 ms stagger | `emc-corner` |
+-| 9 | rotateY spin loop | inset still, period ≈2 s, perspective + dark border | inset figures, period ~8 s | `emc-spin` |
+-| 10 | staggered slide panel | diagonal bubble, slide+rotate ~0.3 s, hold ~3 s | detail/notes panels | `emc-slide` |
+-| 11 | staged line reveal | chip first, then 1–2 text lines 0.3 s apart inside panel | panel inner lines stagger 120 ms | `emc-lines` |
+-| 12 | strikethrough-X draw | scribble + X drawn across white panel ~0.3 s | quiz wrong-option strike draw 240 ms | `emc-strike` |
+-| 13 | starburst badge pop | black starburst, slight scale overshoot | result badges, overshoot 1.08→1 | `emc-badge` |
+-| 14 | locked caption | 2-line lyric locked ~9 s while centre swaps per beat | sim readout stays locked during preset swaps | `emc-lockline` |
+-| 15 | arc sweep text | curved outlined text, travel+rotate ~1.5 s | **not adopted** (readability) | — |
+-| 16 | orbiting cut-outs | chibi fairies swap edge positions ~1 s | **not adopted** as continuous motion (peripheral distraction); intro discretises them | — |
+-| 17 | arrow slash | black diagonal arrow drawn over lockup 0.5 s | quiz-results emphasis stroke | existing |
+-| 18 | bookend callback | opening composition reused verbatim at close | quiz results reuse hero lockup; intro S8 | existing |
+-| 19 | end card | single small bordered still, static ~1.9 s | session-complete card; intro S9 | existing |
+-| 20 | beat grid | pulse 1.15–1.20 s, fills 0.30 s, sub 0.55–0.60 s | UI fractions 120–300 ms | CSS vars |
+-
+-## 4. Site intro — v8 "drop-in cut" (current)
+-
+-The friend's frame-accurate recreation, integrated 2026-10-25 ("remove our old
+-intro and integrate this"; his authoritative timing map restored verbatim the
+-same day after a first pass had re-timed it −0.5 s): rAF timeline, BEAT0 3.5 s
+-flash cut, BEAT 0.88 s (~68 BPM) pulse, 12 s total. Scene A shape-face
+-countdown (3-2-1 at 2.05–3.13, G/O) → scene B title card (mascot face swaps
+-sp<4.5 s<fo<8.8 s<hp, ghost mascots, letter-popped title at 3.7 s, sub chip
+-4.5 s, chips on beats 3–4, drifting charges 4.3 s, orbiting electrons 5.1 s,
+-burst ring) → Start 10.3 s → flash out 11.2 s. Sizing via container queries
+-(cqw). The v6/v7 CSS-keyframe cuts are retired; the footage beat map and song
+-edit below remain the reference for any future re-cut.
+-
+-### 4.000 Retired: v7 mascot explainer
+-
+-User storyboard 2026-10-25 (with three new mascot faces): drop-in → settle →
+-hop → formula cards slide in left/right → zoom-explain each (held, other
+-dimmed) with a 2 s checkmark per step → values converge to 1:1 → star-sparkle
+-wink + head tilt → 0.45 s fade. 11.5 s total (INTRO_MS 11500, unchanged from
+-v6, so no gate window moved). The v6 chorus-collage beats and the blur-whip
+-grammar are retired; spacing comes from one `--in-gap` token on the stage and
+-the card row; faces swap on steps() cuts (focus/happy/sparkle per step).
+-Footage-derived timing knowledge below remains the source for the beat map
+-and the song edit (`intro-v6-12s-plan.md`).
+-
+-### 4.00 Retired: v6 chorus compression + mascot finale
+-
+-User directive 2026-10-25: “keep it simple … close to the animation”. The 49 s
+-of footage from 21 s (S5→S8) is compressed ~4.3:1 into **11.5 s** by keeping
+-ten whole beat phrases at native speed and cutting on the footage's own cut
+-frames — never time-stretched (the source's grammar IS jump cuts on a ≈1.15 s
+-pulse). Beat map, cut list and gate re-points: `intro-v6-12s-plan.md`; the
+-authoritative frame exports (all 2965 frames from f1260, contact sheets,
+-beat-onset keys, the 11.5 s proof cut) live in `.scratch/footage/` and the
+-frame-by-frame trace harness (footage × real intro CSS, beat-map-synced) in
+-`.scratch/trace/`. The v5 closer (callback lock-up + letterbox wipe) is
+-retired; the intro now ends on a mascot finale — full spin (0.55 s), settled
+-−9° head tilt, star-sparkle wink swap, 0.45 s fade-out.
+-
+-### 4.0 Retired: v5 “chorus cut” timing map
+-
+-User directive 2026-10-24: redo the intro from the ground up, referencing the
+-video **but skipping to 21 s — “the main motion is there”** — and show the
+-**Topics and formulas in action, “with blur and stuff”**. The v4 1:6 whole-video
+-cut was removed entirely and rebuilt off the footage’s main-motion passage:
+-the ramped flash #3 (f1284–1287, 21.416 s) into chorus-collage A (§2 S5), run
+-at that section’s own beat grid (phrase pulse ≈1.15 s, fills 0.30 s). The lyric
+-layer is the site’s content in action — outlined topic slams and KaTeX equation
+-chips whip-swap around the centre mascot, vertical equation bubble columns pop
+-word-by-word, speech panels slide+rotate in with staged lines, a corner cluster
+-slams on one beat, an arc sweep crosses the top, navy feature chips slide in
+-and exit on a whip, then the callback lock-up + arrow slash + Start CTA and the
+-letterbox wipe hand over to the homepage. Every entrance/exit rides a ~120 ms
+-motion-blur whip (`in-whipin`/`in-whipout`, blur 14→0→12 px) — the footage’s
+-1–2 frame smears quoted as a real blur at the user’s request (§5.2 exception).
+-Master clock `js/intro.js` `TOTAL_MS = 14000` (13.45 s picture + 0.45 s wipe);
+-the once-per-session contract (§6) is unchanged. Collage bed (navy field,
+-bordered panel cards, waveform strips, zigzag wedges, name plate + OVERDRIVE
+-chips) is present from frame zero, like the footage’s S5 bed at flash decay.
+-
+-**Clock sync (2026-10-25).** The CSS timeline is pinned to the JS master clock:
+-`#introOverlay:not(.play) *` holds every child animation at
+-`animation-play-state: paused` until intro.js adds `.play` (after the loader’s
+-single completion event). Without it the beat grid ran from page-parse time —
+-on a slow boot (up to the 1500 ms loader watchdog) the ramp flash and first
+-slams played invisibly, the viewer joined mid-composition, and the tail froze
+-on the closed letterbox until the JS dismiss fired. Verified: with an
+-artificially delayed boot every overlay animation reads `currentTime = 0` at
+-the `.play` instant.
+-
+-**Low-tier `.lite` cut (2026-10-25).** On `EMC.lowTier` devices (small
+-high-DPR screens, or coarse pointer with ≤4 cores — the same tier that caps
+-Stage at 30 fps) intro.js adds `.lite`, swapping each whip’s keyframes for
+-blur-free `-lite` variants (name-swap only: every delay/duration/easing is
+-inherited, so the beat grid is bit-identical). An animated Gaussian blur
+-re-rasterises every moving layer per frame; it was the composition’s only
+-reliable frame-dropper on weak GPUs (~150 lost frames and a 1.0 s worst frame
+-on a mid-tier phone profile → ~44 % lower worst frame with `.lite`).
+-Full-fidelity machines keep the blur whips exactly as composed.
+-
+-| t (s) | event |
+-|---|---|
+-| 0.000 | ramped flash #3 grammar: 4-step 25→40→58→80→100 % white (66 ms) + ~320 ms decay |
+-| 0.450–1.600 | topic slam CHARGE · 1.600–2.750 eq chip Coulomb (KaTeX) |
+-| 2.750–3.900 | topic FIELD · 3.300 vcol1 pops (E / = / F/q, 0.18 stag) · 3.900–5.050 eq E=F/q |
+-| 4.350–7.600 | speech panel 1 (chip 4.350, lines 4.650/4.950) · 5.050–6.200 topic CURRENT |
+-| 6.200–7.900 | eq V=IR · 6.600 vcol2 pops · 7.000–9.900 speech panel 2 (lines 7.300/7.600) |
+-| 7.900–8.600 | topic FLUX · 8.600–10.200 eq Φ=BA |
+-| 9.100 | corner cluster CH·1/CH·2/CH·3/QUIZ (0.06 stag, out 11.900) · 9.300 arc sweep letters (0.035 stag, out 11.600) |
+-| 10.200–10.900 | topic INDUCTION · 10.600 navy chips live sims/24 questions/zero rote (0.30 stag, out 12.300) · 10.900–12.850 eq ε=−dΦ/dt |
+-| 12.100/12.350/12.450 | callback lock-up / arrow-slash draw / Start CTA |
+-| 1.15…11.60 | mascot pose-swap blur whips (1.15/3.45/5.60/7.75/9.95/11.60) |
+-| 13.450 | letterbox wipe (0.45 s) → `.out` → overlay removed |
+-
+-### 4.1 Retired: v4 1:6 cut with the S4 passage at footage tempo
+-
+-Superseded 2026-10-24 by the v5 chorus cut (markup, CSS block and timing all
+-deleted; git history retains the implementation). Kept for provenance: v4 was a
+-uniform 1:6 time-compression of the complete video (user directive 2026-10-23
+-“near 1 to 1 with the reference video”), master 13.814 s, `TOTAL_MS = 14330`,
+-with the S4 insert at footage tempo (user directive 2026-10-24 00:20 fix).
+-
+-| # | section | t_ref (s) | t_site (s) | boundary transition |
+-|---|---|---|---|---|
+-| S1 | confetti overture | 0.000–2.616 | 0.000–0.436 | — |
+-| S2 | title lock-up | 2.616–12.116 | 0.436–2.019 | flash #1 (33 ms + ~90 ms decay) |
+-| S3 | handwritten skit | 12.116–18.916 | 2.019–3.153 | flash #2 (33 ms + ~250 ms) |
+-| S4 | black insert | 18.916–21.416 | 3.153–5.653 | **hard cut f1134, zero white; FOOTAGE TEMPO** |
+-| S5 | chorus A collage | 21.449–40.216 | 5.653–8.781 | **flash #3, ramped** (66 ms ramp + ~300 ms decay) |
+-| S6 | chorus B locked lyric | 40.216–49.633 | 8.781–10.350 | flash #4 (33 ms + ~200 ms) |
+-| S7 | chorus C corrections | 49.633–59.016 | 10.350–11.914 | flash #5 (33 ms + ~300 ms) |
+-| S8 | bookend callback | 59.016–68.516 | 11.914–13.497 | flash #6 (33 ms + ~150 ms) |
+-| S9 | end card | 68.516–70.416 | 13.497–13.814 | hard cut f4110, zero white |
+-
+-## 5. Standing deviations (policy — do not “fix” these back)
+-
+-1. **Palette** stays the site’s pink identity (user choice 2026-10-23; footage yellow field →
+-   pink, blue → plum).
+-2. **Motion-blur smear frames → whip-squash** (`in-whipx`, 30 ms steps) site-wide; blur
+-   filters are banned by the flat-art rules (no gradients, backdrop-filter, shadowBlur,
+-   blur) — **except the intro overlay** (user directive 2026-10-24 “with blur and stuff”):
+-   the v5 chorus cut quotes the footage’s 1–2 frame smears as real ~120 ms filter:blur
+-   whips (`in-whipin`/`in-whipout`). The ban holds everywhere else and smoke-test asserts
+-   both halves of that split.
+-3. **Arc-swept curved text omitted site-wide** (decorative, hurts scanability) — the v5
+-   intro adopts one arc sweep (“ELECTROMAGNETICS IN MOTION”, 9.300–11.600 s) as a direct
+-   quote of footage f2010–2100; user directive supersedes the omission inside the intro.
+-4. **Orbiting fairies discretised** into 0.333 s position swaps (continuous peripheral
+-   motion stays a do-not-copy).
+-5. **Readability floors** where 1:6 scaling would be sub-perceptual: inset spin period
+-   0.5 s (scaled 0.333 s), arrow draw 0.15 s (scaled 0.083 s), slams ≥ 0.08 s.
+-5b. **S4 at footage tempo** (2026-10-24): the 00:20 insert keeps the footage’s own holds
+-   (1.1 s / 1.0 s / 0.37 s) instead of 1:6 — at 0.05 s spacing the sequence read as a
+-   flicker, not as the footage’s deliberate beat. S5–S9 shift +2.078 s accordingly.
+-6. **Site-only additions:** Start CTA on the bookend, letterbox wipe handover, skip button
+-   (always visible; any key/pointer dismisses).
+-7. Full-white 255 flashes dimmed to ≤85 % white **site-wide** for photosensitivity comfort
+-   (the intro keeps the frame grammar but the same cap).
+-8. **AI-generated electron backdrop** — retired with the v4 cut and deleted from
+-   `img/` in the 2026-10-24 cleanup. It was site-only decoration for the v4 opening
+-   lockup/bookend; the v5 chorus cut opens on the collage bed instead, matching the
+-   footage’s S5.
+-
+-## 6. Contract/gate surface touched by the intro
+-
+-- `js/intro.js` — `TOTAL_MS` (14000), once-per-session key, skip wiring, `emc:loader-done`
+-  order, arc-letter builder for `.in-arc[data-arc]`.
+-- `tools/intro-verify.mjs` — auto-end window 13.6–16.6 s after `load` (v5 lands inside it
+-  unchanged); overlay-removal waits 20 s. `tools/smoke-test.mjs` — jsdom removal window
+-  13.9–16.3 s, CSS markers `in-whipin`/`in-whipout`/`in-ramp`/`in-wipe`, beat onsets
+-  `--ti` of `.in-s1`/`.in-f5`, bed markers, and the no-blur-outside-intro split.
+-  `tools/screenshots.mjs` presets the intro key. `tools/capture-intro-video.mjs` removal
+-  wait 25 s. Every change is logged in the `BUG_AUDIT.md` test-change log with justification.
+-
+-## 7. How to re-derive / verify
+-
+-- The MP4 is the only source of truth. Extract windows with the imageio ffmpeg build
+-  (Playwright’s bundled ffmpeg cannot demux MP4):
+-  `ffmpeg -ss 18.9 -i Video/シェリーライド.mp4 -map 0:v:0 -frames:v N out%03d.png`.
+-- Site intro capture: `node tools/capture-site-intro.mjs` (real-time screenshot loop +
+-  timestamps into `/tmp/introcap`), `node tools/capture-intro-video.mjs` (webm).
+-- Gates: `npm run intro-verify`, `npm run motion-verify`, `npm run test`, `npm run check`.
+-- Former evidence piles (segment GIFs, 4 fps contact sheets W01–W12, 60 fps strips,
+-  phase logs) were pruned in the 2026-10-24 repository cleanup; regenerate on demand
+-  from the MP4 — they are derived artifacts, not sources.
+diff --git a/docs/reference/intro-v6-12s-plan.md b/docs/reference/intro-v6-12s-plan.md
+deleted file mode 100644
+index ece9f03..0000000
+--- a/docs/reference/intro-v6-12s-plan.md
++++ /dev/null
+@@ -1,143 +0,0 @@
+-# Intro v6 plan — the 21 s chorus compressed to 11.5 s, recreated with our content
+-
+-**Status: IMPLEMENTED (2026-10-25), ship form (a) CSS-only.** Open questions 2–4
+-resolved by the implemented defaults: locked line not shipped in v6 (kept simple),
+-starbursts shipped as the star-sparkle wink, S9 end card left out (fade hands over). Reference footage authority: `Video/シェリーライド.mp4`
+-(LFS; local working copy `.scratch/footage/sherry-ride.mp4`, sha256-verified).
+-Frame numbers are 0-based 60 fps decode indices; `t ≈ f/60`.
+-
+-## 1. Source window & goal
+-
+-| | |
+-|---|---|
+-| window | f1260 → f4224 (**21.0 s → 70.4 s**, 49.4 s of footage): S4 tail (stamp slam + ramped flash #3) → S5 chorus collage A → S6 chorus B → S7 chorus C → S8 bookend → S9 end card |
+-| goal | **10–12 s** site intro (current v5 = 14.0 s covering only S5, near real-time) |
+-| ratio | 49.4 s → 11.5 s ≈ **1 : 4.3** |
+-| measured sections | S5 21.45–40.22 · S6 40.22–49.63 · S7 49.63–59.02 · S8 59.02–68.52 · S9 68.52–70.42 (verified by frame inspection 2026-10-25, sheets/keys in `.scratch/footage/`) |
+-
+-## 2. Compression strategy — cut on beats, never time-stretch
+-
+-Speeding 60 fps footage ×4.3 reads as fast-forward and destroys the phrase
+-pulse (≈1.15 s) that gives the edit its energy. The footage's OWN grammar is
+-already a jump-cut edit on that pulse: discrete pose/lyric swaps, 2-frame white
+-flashes at section seams, 1–2-frame whip smears between pose families. So we
+-compress with the same grammar the video uses:
+-
+-1. **Keep whole beat phrases, drop repeats.** 49.4 s at a 1.15 s pulse ≈ 43 phrases;
+-   we keep the **10 strongest**, one per pulse → ≈11.5 s. Nothing is sped up;
+-   every kept phrase plays at native speed, so motion inside each phrase stays honest.
+-2. **Cut exactly on the footage's own cut frames** (beat onsets / flash frames),
+-   so every seam in our cut is a seam the source already authored — the flash
+-   grammar (2 white frames + decay; ramped 4-frame at #3) becomes the transition
+-   vocabulary between our jumps, exactly as in the source.
+-3. **Section seams carry flashes; inside-section jumps carry whips.** That keeps
+-   the viewer oriented (flash = new world, whip = new beat) even at 4.3:1.
+-4. **The locked elements do the continuity work.** S6's locked bottom hook line
+-   (held ~9 s in source) and the never-moving collage bed are what make a
+-   heavily-cut chorus still read as one composition — we reuse both (§4).
+-
+-Proof-of-pacing render: `.scratch/footage/preview-cut-11.5s.mp4` (1080p60, audio
+-kept **as a pacing reference only** — the site intro contract stays silent).
+-
+-## 3. The 10-beat map (source phrase → site recreation)
+-
+-| # | new t | source frames (t) | source phrase (verified on frames) | EMC Lab recreation | elements |
+-|---|---|---|---|---|---|
+-| 1 | 0.00–1.00 | f1260–1319 (21.00–22.00) | S4 black-stamp slam → **ramped flash #3** (4-step 63→102→147→204→255) → decay reveals the chorus collage bed | unchanged from v5: bed present from frame 0 (navy field, 4 panel cards, waveform strips, zigzag wedges, name plate + OVERDRIVE chips) under the ramp flash | `.in-dip .in-bed .in-card .in-wave .in-wedge .in-chip` |
+-| 2 | 1.00–2.17 | f1320–1389 (22.00–23.17) | outlined lyric slam 「限界まで」 top-left over the bed | topic slam **CHARGE** (outlined white type, −8°, whip-in) | `.in-slam .in-s1` |
+-| 3 | 2.17–3.33 | f1410–1479 (23.50–24.67) | 1–2-frame whip smear → **mascot pose swap**; lyric 2 lands; first bubble words | whip CHARGE→**eq chip Coulomb** + mascot pose swap (squash) + bubble column 1 pops word-by-word | `.in-f1 .in-mascot-wrap .in-vcol1` |
+-| 4 | 3.33–4.83 | f1560–1649 (26.00–27.50) | **double vertical speech-bubble lyric columns** flank the mascot (the f1560 look) | bubble column 2 + topic slam **FIELD** + eq chip **E = F/q** | `.in-vcol2 .in-s2 .in-f2` |
+-| 5 | 4.83–6.00 | f1790–1859 (29.83–31.00) | title callback bottom-centre + **diagonal arrow-slash draw** (0.5 s) + four corner word-boxes slam in one beat | topic **CURRENT** + eq **V = IR**, then the callback lock-up **EMC LAB** + SVG arrow draw + corner cluster **CH·1 / CH·2 / CH·3 / QUIZ** (v5 had this at 12.1 s; compression pulls it to 5.4 s) | `.in-s3 .in-f3 .in-callback .in-arrow .in-cx` |
+-| 6 | 6.00–7.00 | f2010–2069 (33.50–34.50) | arc-curved outlined text sweeps across the top | arc sweep **ELECTROMAGNETICS IN MOTION** | `.in-arc` |
+-| 7 | 7.00–8.17 | f2413–2482 (40.22–41.38) | **flash #4** → S6: locked two-line hook lyric bottom (held 9 s in source) while centre pose swaps; chibi "fairies" orbit the edges and swap ~1/s | NEW grammar: **locked governing-equation line** `F = k\|q₁q₂\|/r² · E = F/\|q₀\|` bottom (never moves — the site's own hook), topic **FLUX** + eq **Φ = BA** centre, **two orbiting charge sprites** (e⁻/p⁺ glyphs) swapping edge slots on the beat | `.in-lockline` (new) `.in-s4 .in-f4 .in-orbit` (new) |
+-| 8 | 8.17–9.33 | f2978–3047 (49.63–50.80) | **flash #5** → S7: big outlined corner-word slams + white correction panels with **strikethrough-X draw** | NEW grammar: **misconception correction panel** — "current is used up ✗" with the strike draw (site already ships `mx-strike`), topic **INDUCTION** + eq **ε = −dΦ/dt** | `.in-correct` (new) `.in-s5 .in-f5` |
+-| 9 | 9.33–10.33 | f3270–3329 (54.50–55.50) | **black starburst badges** pop with scale overshoot (f3270, f3300) | NEW grammar: starburst badges **P = VI** and **q = ne** (site already ships `mx-badge`/`fbadge`) | `.in-burst` (new) |
+-| 10 | 10.33–11.05 | f3541–3610 (59.02–60.18) | **flash #6** → S8 bookend: the opening lock-up framing reused as closing motif (pose C) | bookend = callback lock-up + **Start CTA** pop, then the site-only **letterbox wipe** 11.05–11.50 hands over to the homepage | `.in-callback .in-start .in-bars` |
+-
+-Picture 11.05 s + wipe 0.45 s = **TOTAL_MS 11500** (v5: 13450 + 450 = 14000).
+-
+-**Cut from v5 to pay for the new grammar:** both diagonal speech panels
+-(4.35–9.9 s in v5 — their staged-lines grammar survives inside the bubble
+-columns), the navy feature-chip row (its info lives on the homepage now),
+-vcol stagger reduced to two columns, mascot pose swaps 6 → 4.
+-Net: v5's 14 s covered ~15.6 s of source (S5 only); v6 covers **49.4 s** of
+-source in 11.5 s — every section S5→S8 is represented, which is what makes the
+-compression read as "the whole chorus", not "one loop".
+-
+-## 4. Why S6/S7 grammar is worth adding (not just more S5)
+-
+-- **Locked line (S6):** one never-moving row under a swapping centre is the
+-  footage's own answer to "how do I cut 4:1 without losing the thread". Our
+-  version carries the two governing equations — content, not decoration. The
+-  site already ships the mechanism (`.mx-lockline`).
+-- **Correction + strike-X (S7):** the footage spends a whole section crossing
+-  things out; for a physics tutorial the honest equivalent is killing a
+-  misconception on the beat. `mx-strike` already exists.
+-- **Starburst badges (S7):** black star pops = the quiz's feedback-badge voice
+-  (`fbadge`), reused as equation stamps.
+-- **Orbiting sprites (S6 fairies):** two charge glyphs trading edge slots =
+-  free "this site is about charges" signalling between beats.
+-
+-## 5. Implementation impact (when approved)
+-
+-| surface | change |
+-|---|---|
+-| `js/intro.js` | `TOTAL_MS` 14000 → **11500**; nothing else — the clock-sync pause rule and `.lite` tiering keep working unchanged |
+-| `css/input.css` | re-grid every `--ti/--to` per the beat map; add `.in-lockline / .in-orbit / .in-correct / .in-burst` keyframes (**transform/opacity only — no new blur**, so `.lite` needs no new variants for them); update the reduced-motion poster set |
+-| gates re-point (§2 log, justification: master-clock change) | `intro-verify` auto-end window 13.6–16.6 s → **11.2–14.2 s** after load; `smoke-test` auto-end [13900,16300] → **[11400,13600]**; `capture-site-intro` loop cap 16 → 13; `capture-intro-video` 25 → 20 |
+-| docs | this file becomes the §4 timing map; v5 table moves to "retired" like v4 |
+-| unchanged | once-per-session, skip semantics, pointer-events contract, no-audio contract, `prefers-reduced-motion` poster, `.lite` low-tier cut, clock-sync pause |
+-
+-## 6. Open questions (sign-off needed)
+-
+-1. **Ship form:** (a) CSS-only recreation of this beat map (default — keeps zero
+-   shipped assets, reduced-motion and `.lite` intact); (b) embed the 11.5 s cut
+-   as a real `<video>` bed (~2–4 MB webm @720p + poster) with our topics as CSS
+-   overlay; (c) hybrid — video bed for the collage, CSS for every text/equation
+-   layer (best fidelity/weight tradeoff if you want the footage visible).
+-2. **Locked-line text:** both governing equations (proposed) vs the site tagline
+-   "learn it by playing with it".
+-3. **Starburst badge pair:** `P = VI` + `q = ne` (proposed) vs your pick.
+-4. Keep S9 end card out (wipe hands over — proposed) or hold it 0.5 s as a
+-   "Start" end-card?
+-
+-## 7. Frame exports (this analysis)
+-
+-- `frames/f1260.jpg … f4224.jpg` — **every frame from 21.0 s to the end** (2965), 320 px analysis JPEGs, named by absolute frame index
+-- `sheets/sheet_001…050.jpg` — contact sheets, 60 frames each: sheet N covers f(1260 + (N−1)·60) … f(1260 + N·60 − 1)
+-- `keys/f*.jpg` — 32 beat-onset frames at 960 px (flashes, slams, whips, panels, badges, bookend, end card)
+-- `preview-cut-11.5s.mp4` — the 10-segment compression proof (1080p60 + source audio for pacing)
+-- re-export from the authority MP4: `ffmpeg -i Video/シェリーライド.mp4 -map 0:v:0 -vf "select='gte(n\,1260)',scale=320:-2" -vsync vfr -start_number 1260 -q:v 4 frames/f%04d.jpg`
+-
+-## 8. Song edit (2026-10-25) — "main melody, then the ending beat"
+-
+-Measured from the extracted audio (44.1 kHz): 16th-note onset spacing ≈0.1505 s →
+-**beat ≈0.602 s (≈99.7 BPM), bar ≈2.408 s**; the section flashes sit on downbeats
+-(flash #3 ≈21.42 s, flash #6/bookend crash ≈59.02 s, end-card hit ≈68.52 s).
+-
+-Edit (`.scratch/footage/song-edit-11.5s.{wav,mp3,m4a}`, exactly 11.50 s):
+-
+-| part | source | length | why |
+-|---|---|---|---|
+-| main melody | 21.416 → 31.046 s | 9.63 s = **exactly 4 bars** of the chorus hook | ends on a bar line, so the jump reads as a drop, not a mistake |
+-| ending beat | 59.017 → 60.887 s | 1.87 s | the bookend crash — the same downbeat the visual finale (spin/tilt/wink) is cut from, so audio and picture land together; 0.45 s fade-out matches the overlay fade |
+-
+-Splice hygiene: 8 ms fade-in at both joins, 12 ms fade at the melody tail,
+-450 ms fade-out at the end; peak −0.2 dBFS, RMS continuous across the seam
+-(verified numerically). `preview-cut-11.5s.mp4` carries this audio.
+-
+-Re-render recipe:
+-```
+-ffmpeg -i Video/シェリーライド.mp4 -filter_complex \
+- "[0:a]atrim=21.416:31.046,asetpts=PTS-STARTPTS,afade=t=in:d=0.008,afade=t=out:st=9.62:d=0.012[m]; \
+-  [0:a]atrim=59.017:60.887,asetpts=PTS-STARTPTS,afade=t=in:d=0.008,afade=t=out:st=1.42:d=0.45[e]; \
+-  [m][e]concat=n=2:v=0:a=1[a]" -map "[a]" song-edit.wav
+-```
+-Tweaking knobs: alternate ending beats — end-card hit 68.522 s (harder close) or
+-flash #5 downbeat 49.633 s; longer bed = 5 bars (12.04 s, over the 12 s cap only
+-if the ending beat adds on, so trim the ending to 0.9 s in that case).
+-
+-Site integration note: the intro contract is currently **no audio**, and browser
+-autoplay policy blocks sound without a user gesture anyway. If the song edit
+-ever ships, it must sit behind an explicit sound-on control (e.g. a speaker
+-toggle on the intro), default muted — that is a contract change for BUG_AUDIT §2.
+diff --git a/docs/spec/README.md b/docs/spec/README.md
+index 8044704..56c2473 100644
+--- a/docs/spec/README.md
++++ b/docs/spec/README.md
+@@ -10,7 +10,7 @@ The lecture PDF was verified slide-by-slide against `brief-digest.md` BEFORE any
+ further site change (see the verification log at the end of `brief-digest.md`,
+ rendered figure slides in `slides/`). Outcome: every digest value and both
+ "known lecture errors" confirmed; ONE site deviation found and fixed as
+-BUG_AUDIT DATA-04 (the slide-21 worked example had quoted a ×10³-rescaled field
++an earlier review (the slide-21 worked example had quoted a ×10³-rescaled field
+ strength; the lecture's real numbers are E = 2.0 N/C → 3.6×10⁻⁷ N / 4.8×10⁻⁷ N).
+ 
+ Original status note, kept for history: the two spec PDFs were NOT provided at
+diff --git a/docs/spec/brief-digest.md b/docs/spec/brief-digest.md
+index 6dd8967..5d9f8bf 100644
+--- a/docs/spec/brief-digest.md
++++ b/docs/spec/brief-digest.md
+@@ -40,7 +40,7 @@ Retired material may stay in `archive/`.
+ | Electric field E = F/\|q₀\|, direction of force on a positive test charge, N/C; field lines | F = \|q₀\|E |
+ | Field of a point charge, two-charge field (±4.00 µC, 0.700 m, 31.0°) | E₁ = E₂ ≈ 73,388 N/C; net **75,595 N/C along +y**, E_x = 0 |
+ 
+-**Known errors in the lecture — fix on the site, list in BUG_AUDIT.md:**
++**Known errors in the lecture — fix on the site, keep a note in the README:**
+ 1. Slide 21(b): |−24×10⁻⁸ C| × 2.0 N/C = **4.8×10⁻⁷ N**, not 4.7×10⁻⁷.
+ 2. The Bohr slide calls mv²/r the "centrifugal force." The inward force that supplies it
+    is the **centripetal** force. Use that term.
+@@ -53,7 +53,7 @@ Retired material may stay in `archive/`.
+ |---|---|---|
+ | `ch1` | Circuits & Ohm's Law | Brief R1–R3. Cover voltage, current, resistance, power, series/parallel, circuit reduction |
+ | `ch2` | Electric Fields & Coulomb's Law | Lecture §1.2. Existing Charge/Coulomb/Field lessons become sections of this chapter. Keep their content and sims |
+-| `ch3` | Magnetism & Induction | **Not in either document.** Project-approved scope: Lorentz force, magnetic motion, flux, Faraday, Lenz, induction. Keep as already built; add nothing beyond these topics |
++| `ch3` | Magnetism & Induction | **Removed.** Not in the brief or the lecture, so the site has two chapters and a 16-question quiz |
+ 
+ - **Quiz:** exactly **24** unique active questions, **8 per chapter**, each with one
+   correct answer and a scientifically valid explanation. Ch2 questions must derive from
+diff --git a/index.html b/index.html
+index 3a9aa8d..04f1d23 100644
+--- a/index.html
++++ b/index.html
+@@ -252,7 +252,7 @@
+         <div class="card step reveal">
+           <h3 class="font-bold">Prove it in the quiz</h3>
+           <p class="small muted" style="margin:.35rem 0 0">
+-            <span id="quizCountWord">Twenty-four</span> multiple-choice questions with hints and worked explanations. Your best score is
++            <span id="quizCountWord">Sixteen</span> multiple-choice questions with hints and worked explanations. Your best score is
+             saved in this browser so you can track improvement.
+           </p>
+         </div>
+@@ -264,7 +264,7 @@
+     <section class="section wrap">
+       <div class="flex flex-wrap items-center justify-between gap-3 mb-4 reveal">
+         <h2 class="h-sec" style="margin:0" data-mx="slam">The chapters</h2>
+-        <span class="tag tag-cyan" id="dashTopicsChip">0 of 3 chapters studied</span>
++        <span class="tag tag-cyan" id="dashTopicsChip">0 of 2 chapters studied</span>
+       </div>
+ 
+       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-mx="corner">
+@@ -311,7 +311,6 @@
+           </div>
+         </article>
+ 
+-        <!-- Chapter 3 -->
+         </div>
+     </section>
+ 
+@@ -365,7 +364,7 @@
+ 
+     <section class="section wrap">
+       <h2 class="h-sec reveal">Quick formula reference</h2>
+-      <p class="lede" style="margin:.35rem 0 0">One cheat-sheet table: Chapter 2’s formulas first, then Chapters 1 and 3, with units and what each tells you.</p>
++      <p class="lede" style="margin:.35rem 0 0">Formulas from both chapters, with units and what each tells you.</p>
+       <div class="panel reveal">
+         <div class="table-scroll">
+           <table class="data">
+@@ -387,7 +386,7 @@
+       </div>
+       <p class="tiny faint mt-3">
+         Constants used throughout: k = 8.99×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup> (the lecture’s value — computed with it
+-        everywhere on this site, so every readout matches the lecture’s worked answers), e = 1.602×10<sup>−19</sup> C, μ<sub>0</sub> = 4π×10<sup>−7</sup> T·m/A (Chapter 3).
++        everywhere on this site, so every readout matches the lecture’s worked answers), e = 1.602×10<sup>−19</sup> C.
+       </p>
+     </section>
+ 
+@@ -416,7 +415,7 @@
+             <div class="flex-1 min-w-0" style="flex:1 1 260px">
+               <p class="muted small" id="dashPct" style="margin:0 0 .8rem">0% complete</p>
+               <dl class="defs">
+-                <div><dt>Chapters studied</dt><dd id="dashTopicsDone">0 of 3 chapters studied</dd></div>
++                <div><dt>Chapters studied</dt><dd id="dashTopicsDone">0 of 2 chapters studied</dd></div>
+                 <div><dt>Best quiz score</dt><dd id="dashQuizBest">not attempted</dd></div>
+                 <div><dt>Quiz attempts</dt><dd id="dashQuizAttempts">0</dd></div>
+                 <div><dt>Last saved</dt><dd id="dashUpdated">—</dd></div>
+@@ -444,7 +443,7 @@
+           <div style="flex:1 1 320px">
+             <h2 class="h-sec" style="margin:0" data-mx="slam">Ready to test yourself?</h2>
+             <p class="muted small" style="margin:.3rem 0 0">
+-              <span id="quizCountCta">24</span> questions — 8 per chapter — with hints, instant or
++              <span id="quizCountCta">16</span> questions — 8 per chapter — with hints, instant or
+               exam marking, worked explanations, and a per-chapter breakdown so you know exactly what to revise.
+             </p>
+           </div>
+@@ -476,7 +475,7 @@
+         <ul class="footer-links">
+           <li><a href="topics/current.html">1 · Circuits & Ohm’s Law</a></li>
+           <li><a href="topics/fields.html">2 · Electric Fields & Coulomb’s Law</a></li>
+-          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">24</span> questions)</a></li>
++          <li><a href="quiz.html">Quiz (<span id="quizCountFooter">16</span> questions)</a></li>
+         </ul>
+       </div>
+     </div>
+diff --git a/js/common.js b/js/common.js
+index 1a39f57..38f88be 100644
+--- a/js/common.js
++++ b/js/common.js
+@@ -830,7 +830,7 @@ window.EMC = (function () {
+        v1  current, charges, magnetism, induction
+        v2  current, efield, magind
+        v3  charge, coulomb, field  (circuits and magnetism were untracked then)
+-       v4  ch1, ch2, ch3
++       v4  ch1, ch2, ch3   (ch3 = the magnetism chapter, since removed)
+      Migration ORs the old flags into the new chapters, so marking any one of
+      charge/coulomb/field credits ch2 — a reader who studied a section has not
+      lost it. The v1 magnetism/induction pair still needs BOTH halves, exactly
+@@ -912,7 +912,7 @@ window.EMC = (function () {
+       p.quizBest = Math.max(p.quizBest, pct);
+       p.quizHistory = (p.quizHistory || []).concat([{ pct, at: new Date().toISOString() }]).slice(-20);
+       // as promised on the home dashboard: a passing score counts as having
+-      // studied all three chapters
++      // studied every chapter
+       if (pct >= 70) TOPICS.forEach(t => { p.topics[t] = true; });
+       this.write(p);
+       return p;
+diff --git a/js/intro.js b/js/intro.js
+index 2c4ec83..fb74a14 100644
+--- a/js/intro.js
++++ b/js/intro.js
+@@ -213,7 +213,7 @@
+   }
+   /* Hidden tab: drop the rAF chain and bank the elapsed time, so a backgrounded
+      intro neither burns battery nor jump-cuts on return (and a settled home
+-     page truly has zero chains — perf-measure guards exactly that). */
++     page truly has zero chains). */
+   function onVis() {
+     if (!playing || removed) return;
+     if (document.hidden) {
+diff --git a/js/motion.js b/js/motion.js
+index f6dc4e5..b422457 100644
+--- a/js/motion.js
++++ b/js/motion.js
+@@ -1,6 +1,6 @@
+ /* EMC Lab — site-wide motion system (phase 8).
+    One small reusable pattern set transcribed from the reference footage
+-   (docs/reference/animation-reference.md), applied consistently across the
++   applied consistently across the
+    site by js/motion.js + [data-mx] markup:
+      rise   staggered entrance reveal (scroll or route arrival)
+      slam   rotated type slam for section titles / hero words
+diff --git a/js/quiz-data.js b/js/quiz-data.js
+index 519b029..966c302 100644
+--- a/js/quiz-data.js
++++ b/js/quiz-data.js
+@@ -7,7 +7,7 @@
+    use the lecture's own configurations and were independently recomputed
+    (docs/spec/verify-checks.mjs). Displayed totals are derived from
+    BANK.length, never hand-maintained. k = 8.99×10⁹ N·m²/C² everywhere —
+-   the lecture's value, computed AND printed (BUG_AUDIT DATA-01).
++   the lecture's value, computed AND printed.
+    The bank is exactly the curated 16 (8 per chapter). */
+ window.EMC_QUIZ = [
+ 
+diff --git a/js/registry.js b/js/registry.js
+index 5fbdb69..36e821f 100644
+--- a/js/registry.js
++++ b/js/registry.js
+@@ -6,7 +6,7 @@
+      ch1 Circuits & Ohm's Law            (brief R1–R3)
+      ch2 Electric Fields & Coulomb's Law (the graded lecture: charge,
+          Coulomb's law and electric field as its three sections).
+-      field, efield, charges, current, circuits,) onto the
++   An alias map folds every legacy topic id (field, efield, charges, current, circuits, …) onto the
+    chapter that owns it now, so old hash routes, old quiz deep links and old
+    progress records all resolve instead of 404ing or losing data.
+    The object below must stay pure JSON: tools/build-public.mjs parses it
+diff --git a/js/sim-fieldpaint.js b/js/sim-fieldpaint.js
+index d21a784..207ea0b 100644
+--- a/js/sim-fieldpaint.js
++++ b/js/sim-fieldpaint.js
+@@ -5,7 +5,7 @@
+    demand; Release mode rides the ghost along the field ("leaf in the wind",
+    labelled as a flow view, not Newton's law). The Lecture-replica preset
+    loads the ±4 µC y-axis example with the probe pre-parked at P, where the
+-   readout reproduces E ≈ 7.55×10⁴ N/C (+y) from the live superposition.
++   readout reproduces E ≈ 7.56×10⁴ N/C (+y) from the live superposition.
+    The old A/B potential integral is gone (beyond this lecture; archived). */
+ (function () {
+   const canvas = document.getElementById('sim-fieldpaint');
+@@ -72,7 +72,7 @@
+           id: 'fp-lecture',
+           text: 'Measure the lecture\u2019s 75.6 kN/C at P',
+           hint: 'Load the Lecture-replica preset — the probe is already parked at P. Or build it: ±4 µC 1.00 m apart, probe 0.60 m off the axis.',
+-          won: 'That is the lecture answer: E(P) \u2248 7.55\u00D710\u2074 N/C along +y \u2014 measured by dragging, not memorised.',
++          won: 'That is the lecture answer: E(P) \u2248 7.56\u00D710\u2074 N/C along +y \u2014 measured by dragging, not memorised.',
+           test: api => {
+             const pr = api.objects.find(o => o.type === 'probe');
+             if (!pr) return false;
+diff --git a/package.json b/package.json
+index 238d271..57e7035 100644
+--- a/package.json
++++ b/package.json
+@@ -3,17 +3,13 @@
+   "private": true,
+   "type": "module",
+   "scripts": {
+-    "check": "node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs",
++    "check": "node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs && node tools/check-physics.mjs",
+     "test": "node tools/smoke-test.mjs",
+     "check:physics": "node tools/check-physics.mjs",
+     "build:css": "tailwindcss -c tailwind.config.js -i css/input.css -o css/site.css --minify",
+     "build:public": "node tools/build-public.mjs",
+     "build": "bun run build:css && bun run build:public",
+-    "font:scan": "node tools/add-font.mjs",
+-    "perf": "node tools/perf-audit.mjs",
+-    "perf:guard": "node tools/perf-measure.mjs guard",
+     "test:shell": "node tools/shell-stress.mjs",
+-    "shots": "node tools/screenshots.mjs",
+     "test:interact": "node tools/interaction-test.mjs",
+     "loader-verify": "node tools/loader-verify.mjs",
+     "nav-verify": "node tools/nav-verify.mjs",
+@@ -24,7 +20,8 @@
+     "motion-verify": "node tools/motion-verify.mjs",
+     "asset-verify": "node tools/asset-verify.mjs",
+     "stability-stress": "node tools/stability-stress.mjs",
+-    "verify:prod": "node tools/prod-verify.mjs"
++    "verify:prod": "node tools/prod-verify.mjs",
++    "test:browsers": "node tools/browser-matrix.mjs"
+   },
+   "dependencies": {
+     "@vercel/analytics": "^2.0.1",
+diff --git a/tools/add-font.mjs b/tools/add-font.mjs
+deleted file mode 100644
+index 614251a..0000000
+--- a/tools/add-font.mjs
++++ /dev/null
+@@ -1,63 +0,0 @@
+-#!/usr/bin/env node
+-/* ==========================================================================
+-   EMC Lab - register OPTIONAL licensed font cuts in vendor/fonts/manifest.json
+-   File: tools/add-font.mjs         run:  bun run font:scan
+-
+-   The site's own font (G8321 in 100/400/700, SIL OFL) is committed
+-   woff2 files declared in css/fonts.css - they never go through the manifest.
+-   This scanner is only for PRIVATELY licensed faces you may not redistribute;
+-   they stay on your machine (.gitignore blocks vendor/fonts/*.ttf|otf):
+-     fot-yuruka-*.ttf/.woff2 -> family 'fot-yuruka-std'
+-         weight is read from the name: Thin 100, Light 300, Regular 400,
+-         Medium 500, SemiBold 600, Bold 700, ExtraBold 800, Black 900
+-     everything else         -> ignored (edit familyOf() to add a mapping)
+-   js/common.js registers each manifest entry through the FontFace API at
+-   boot; families that are absent simply fall back - never a 404, no errors.
+-   To actually SEE a registered face, put its family first in the matching
+-   stack in tailwind.config.js, then run: bun run build:css
+-   ========================================================================== */
+-import { readdirSync, writeFileSync, statSync } from 'node:fs';
+-import { join, dirname } from 'node:path';
+-
+-const WEIGHTS = [
+-  ['thin', 100], ['extralight', 200], ['light', 300], ['regular', 400],
+-  ['medium', 500], ['semibold', 600], ['bold', 700], ['extrabold', 800],
+-  ['black', 900], ['heavy', 900]
+-];
+-function familyOf(file) {
+-  const f = file.toLowerCase();
+-  if (f.includes('yuruka')) return 'fot-yuruka-std';
+-  return null;   // committed OFL faces + unknown files: ignored on purpose
+-}
+-function weightOf(file) {
+-  const f = file.toLowerCase().replace(/\.(ttf|woff2|otf)$/, '');
+-  // match longest token first so "extrabold" wins over "bold"
+-  const hit = WEIGHTS.filter(([t]) => f.includes(t)).sort((a, b) => b[0].length - a[0].length)[0];
+-  if (hit) return hit[1];
+-  return 400;
+-}
+-
+-const dir = join(dirname(new URL(import.meta.url).pathname), '..', 'vendor', 'fonts');
+-const cuts = readdirSync(dir)
+-  .filter(f => /\.(ttf|woff2|otf)$/i.test(f))
+-  .map(f => ({ family: familyOf(f), file: f, weight: weightOf(f), size: statSync(join(dir, f)).size }))
+-  .filter(e => e.family);
+-// All alternates for one family+weight are kept (e.g. a subset woff2 AND the
+-// full ttf): the loader registers the first entry that actually loads.
+-const licensed = cuts
+-  .map(({ family, file, weight }) => ({ family, file, weight }))
+-  .sort((a, b) => {
+-    const k = (a.family + a.weight).localeCompare(b.family + b.weight);
+-    return k !== 0 ? k : (a.file.endsWith('.woff2') ? -1 : 1);   // woff2 first
+-  });
+-
+-writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ licensed }, null, 2) + '\n');
+-if (licensed.length) {
+-  console.log(`registered ${licensed.length} licensed face(s):`);
+-  licensed.forEach(l => console.log(`   ${l.family} ${l.weight}  <-  ${l.file}`));
+-  console.log('note: put the family first in a tailwind.config.js stack to use it, then bun run build:css');
+-} else {
+-  console.log('no licensed cuts in vendor/fonts/ - manifest cleared.');
+-  console.log('the site uses its committed OFL face: G8321 (Thin numerals / Regular body / Bold headings+UI).');
+-}
+-console.log('reminder: *.ttf/*.otf stay local (.gitignore); only manifest.json is committed.');
+diff --git a/tools/baseline-sweep.mjs b/tools/baseline-sweep.mjs
+deleted file mode 100644
+index 4fc65c7..0000000
+--- a/tools/baseline-sweep.mjs
++++ /dev/null
+@@ -1,118 +0,0 @@
+-/* Phase-1 baseline sweep: every page × key health signals. Writes JSON + shots. */
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import path from 'node:path';
+-import { chromium } from 'playwright';
+-
+-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+-const OUT = path.join(ROOT, 'shots', 'sweeps', process.argv[2] || 'baseline');
+-fs.mkdirSync(OUT, { recursive: true });
+-const FILES = new Map();
+-(function walk(dir) {
+-  for (const e of fs.readdirSync(dir)) {
+-    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
+-    const f = path.join(dir, e); const st = fs.statSync(f);
+-    if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+-  }
+-})(ROOT);
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.json': 'application/json', '.txt': 'text/plain' };
+-const server = http.createServer((req, res) => {
+-  let u = decodeURIComponent((req.url || '/').split('?')[0]);
+-  if (u === '/') u = '/index.html';
+-  const b = FILES.get(u);
+-  if (!b) { res.writeHead(404); return res.end('nf'); }
+-  res.writeHead(200, { 'content-type': MIME[path.extname(u)] || 'application/octet-stream' }); res.end(b);
+-});
+-await new Promise(r => server.listen(8245, '127.0.0.1', r));
+-const B = 'http://127.0.0.1:8245';
+-const PAGES = ['/', '/quiz.html', '/topics/fields.html', '/topics/current.html'];
+-const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
+-const results = [];
+-
+-for (const p of PAGES) {
+-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+-  const pg = await ctx.newPage();
+-  const r = { page: p, errors: [], failed: [], thirdParty: [], dupScripts: {} };
+-  pg.on('pageerror', e => r.errors.push(String(e).slice(0, 160)));
+-  pg.on('console', m => { if (m.type() === 'error') r.errors.push('console: ' + m.text().slice(0, 160)); });
+-  const seen = new Set();
+-  pg.on('request', req => {
+-    const u = new URL(req.url());
+-    if (/^https?:/.test(req.url()) && !req.url().startsWith(B)) r.thirdParty.push(req.url());
+-    if (req.url().startsWith(B) && /\.js(\?|$)/.test(u.pathname)) {
+-      if (seen.has(u.pathname)) r.dupScripts[u.pathname] = (r.dupScripts[u.pathname] || 1) + 1;
+-      seen.add(u.pathname);
+-    }
+-  });
+-  pg.on('requestfailed', req => r.failed.push(req.url().slice(0, 120)));
+-  pg.on('response', res => { if (res.status() >= 400) r.failed.push(res.status() + ' ' + res.url().slice(0, 120)); });
+-  // CLS instrumentation before load
+-  await pg.addInitScript(() => {
+-    window.__cls = 0;
+-    new PerformanceObserver(list => {
+-      for (const e of list.getEntries()) if (!e.hadRecentInput) window.__cls += e.value;
+-    }).observe({ type: 'layout-shift', buffered: true });
+-  });
+-  const t0 = Date.now();
+-  await pg.goto(B + p, { waitUntil: 'load' });
+-  // loader timing: poll for overlay removal up to 6s
+-  let overlayGoneMs = null;
+-  for (let i = 0; i < 120; i++) {
+-    const there = await pg.evaluate(() => !!document.getElementById('bootOverlay')).catch(() => null);
+-    if (there === false) { overlayGoneMs = Date.now() - t0; break; }
+-    await pg.waitForTimeout(50);
+-  }
+-  r.overlayGoneMs = overlayGoneMs;
+-  r.hasEMC = await pg.evaluate(() => typeof window.EMC !== 'undefined').catch(() => false);
+-  // detail toggle functional?
+-  r.detailToggle = await pg.evaluate(() => {
+-    const btn = document.getElementById('detailToggle');
+-    if (!btn) return 'absent';
+-    const before = document.documentElement.dataset.detail;
+-    btn.click();
+-    const after = document.documentElement.dataset.detail;
+-    return before === after ? 'DEAD (no state change)' : `works ${before}->${after}`;
+-  }).catch(e => 'err: ' + String(e).slice(0, 80));
+-  r.cls = await pg.evaluate(() => window.__cls).catch(() => null);
+-  // overflow at 3 widths
+-  r.overflow = {};
+-  for (const w of [360, 390, 640, 900, 1200, 1440]) {
+-    await pg.setViewportSize({ width: w, height: 900 });
+-    await pg.waitForTimeout(150);
+-    r.overflow[w] = await pg.evaluate(() => {
+-      const de = document.documentElement;
+-      const bad = [];
+-      if (de.scrollWidth > de.clientWidth + 1) bad.push('html scrollWidth ' + de.scrollWidth + '>' + de.clientWidth);
+-      const clipped = el => {
+-        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+-          const ox = getComputedStyle(a).overflowX;
+-          if (ox === 'auto' || ox === 'scroll' || ox === 'hidden' || ox === 'clip') return true;
+-        }
+-        return false;
+-      };
+-      document.querySelectorAll('body *').forEach(el => {
+-        const cs = getComputedStyle(el);
+-        if (cs.visibility === 'hidden' || cs.display === 'none') return;
+-        const rr = el.getBoundingClientRect();
+-        /* offscreen skip links (left:-9999px) are the standard a11y pattern;
+-           elements inside intentional scroll/clip containers (formula tables,
+-           the question navigator rail) are spec'd to scroll, not overflow */
+-        if (rr.width > 0 && (rr.right > de.clientWidth + 2 || (rr.left < -2 && cs.position !== 'fixed' && rr.right > 0)) && cs.position !== 'fixed' && !clipped(el)) {
+-          if (bad.length < 5) bad.push((el.id || el.className || el.tagName).toString().slice(0, 40) + ' L' + Math.round(rr.left) + ' R' + Math.round(rr.right));
+-        }
+-      });
+-      return bad;
+-    }).catch(() => ['eval err']);
+-  }
+-  await pg.setViewportSize({ width: 1280, height: 900 });
+-  await pg.screenshot({ path: path.join(OUT, 'page' + p.replace(/\//g, '_') + '.png'), fullPage: false });
+-  results.push(r);
+-  await ctx.close();
+-}
+-fs.writeFileSync(path.join(OUT, 'sweep.json'), JSON.stringify(results, null, 1));
+-console.log(JSON.stringify(results.map(r => ({
+-  page: r.page, hasEMC: r.hasEMC, overlayGoneMs: r.overlayGoneMs, errors: r.errors.length,
+-  thirdParty: r.thirdParty.length, failed: r.failed.length, detail: r.detailToggle, cls: +(r.cls ?? -1).toFixed(4),
+-  overflow: [360, 390, 640, 900, 1200, 1440].map(w => (r.overflow[w] || []).length).join('/')
+-})), null, 1));
+-await browser.close(); server.close(); process.exit(0);
+diff --git a/tools/browser-matrix.mjs b/tools/browser-matrix.mjs
+index d734ef6..74cccdd 100644
+--- a/tools/browser-matrix.mjs
++++ b/tools/browser-matrix.mjs
+@@ -90,6 +90,14 @@ for (const eng of ENGINES) {
+     ok(`chapter ${route} mounts`, st.mounted && st.h1.includes(want), st.h1.slice(0, 40));
+   }
+ 
++  /* --- removed routes must fall back to home, never show an old chapter --- */
++  for (const route of ['#/ch3', '#/magind']) {
++    await pg.goto(B + '/index.html' + route, { waitUntil: 'load' });
++    await pg.waitForTimeout(1300);
++    const st = await pg.evaluate(() => ({ topicHidden: document.getElementById('shell-topic').hidden, stale: /magnet|lorentz|faraday/i.test(document.body.innerText) }));
++    ok(`old route ${route} falls back to home`, st.topicHidden === true && st.stale === false);
++  }
++
+   /* --- circuit builder: placing a part moves real readouts --- */
+   await pg.evaluate(() => { location.hash = '#/ch1'; });
+   await pg.waitForTimeout(1300);
+@@ -132,6 +140,8 @@ for (const eng of ENGINES) {
+   await pg.waitForTimeout(1500);
+   const score = await pg.evaluate(() => document.getElementById('quiz-score').textContent.slice(0, 40));
+   ok('quiz submits and scores 100%', /100%/.test(score), score.replace(/\s+/g, ' '));
++  const charts = await pg.evaluate(() => document.querySelectorAll('canvas').length);
++  ok('Chart.js canvas renders after submitting', charts > 0, String(charts));
+ 
+   /* --- Detail toggle --- */
+   const dt = await pg.evaluate(() => {
+diff --git a/tools/capture-intro-video.mjs b/tools/capture-intro-video.mjs
+deleted file mode 100644
+index babedde..0000000
+--- a/tools/capture-intro-video.mjs
++++ /dev/null
+@@ -1,83 +0,0 @@
+-#!/usr/bin/env node
+-/* Record the site's opening as a smooth WebM via Playwright video capture:
+-   loader -> #introOverlay composition (~11.5 s, the v6 chorus compression from footage 21 s) ->
+-   homepage reveal (slam /
+-   corner / rise staggers from js/motion.js), then finalize the video.
+-
+-   Why video instead of the screenshot loop in capture-site-intro.mjs:
+-   screencast recording runs ~25 fps, so the assembled GIF is smooth enough
+-   to share. Fresh context per run => sessionStorage is empty => intro plays.
+-
+-   Usage: node tools/capture-intro-video.mjs [outDir]
+-   Prints the saved .webm path on stdout (last line). */
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import path from 'node:path';
+-import { resolve, dirname } from 'node:path';
+-import { chromium } from 'playwright';
+-
+-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+-const OUTDIR = resolve(process.argv[2] || '/tmp/introvideo');
+-
+-/* Serve the repo from memory, excluding heavy / non-shipped dirs so the
+-   verifier-style preload can't blow the 1 GB budget (see README §7). */
+-const FILES = new Map();
+-(function walk(dir) {
+-  for (const e of fs.readdirSync(dir)) {
+-    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
+-    const f = path.join(dir, e); const st = fs.statSync(f);
+-    if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+-  }
+-})(ROOT);
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.json': 'application/json' };
+-const server = http.createServer((req, res) => {
+-  let u = decodeURIComponent((req.url || '/').split('?')[0]); if (u === '/') u = '/index.html';
+-  const b = FILES.get(u);
+-  if (!b) { res.writeHead(404); return res.end('nf'); }
+-  res.writeHead(200, { 'content-type': MIME[path.extname(u)] || 'application/octet-stream' });
+-  res.end(b);
+-});
+-await new Promise(r => server.listen(8272, '127.0.0.1', r));
+-
+-fs.rmSync(OUTDIR, { recursive: true, force: true });
+-fs.mkdirSync(OUTDIR, { recursive: true });
+-
+-const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
+-const ctx = await browser.newContext({
+-  viewport: { width: 960, height: 600 },
+-  recordVideo: { dir: OUTDIR, size: { width: 960, height: 600 } },
+-});
+-const pg = await ctx.newPage();
+-const errs = [];
+-pg.on('pageerror', e => errs.push(String(e).slice(0, 120)));
+-pg.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text().slice(0, 120)); });
+-
+-const t0 = Date.now();
+-await pg.goto('http://127.0.0.1:8272/index.html', { waitUntil: 'load' });
+-await pg.waitForSelector('#introOverlay.play', { timeout: 8000 });
+-const introSeen = Date.now() - t0;
+-
+-/* Wait for the overlay to be removed from the DOM (intro.js cleans up),
+-   then hold ~3.4 s so the homepage reveal staggers are on tape. */
+-await pg.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
+-const introDone = Date.now() - t0;
+-await pg.waitForTimeout(3400);
+-
+-const video = pg.video();
+-await pg.close();
+-await ctx.close();            // finalizes the recording
+-const src = await video.path();
+-const dest = path.join(OUTDIR, 'intro-recording.webm');
+-fs.copyFileSync(src, dest);
+-
+-await browser.close();
+-server.close();
+-
+-console.log(JSON.stringify({
+-  intro_seen_ms: introSeen,
+-  intro_done_ms: introDone,
+-  total_recorded_ms: Date.now() - t0,
+-  page_errors: errs.length ? errs : 'none',
+-  webm_bytes: fs.statSync(dest).size,
+-}));
+-console.log(dest);
+diff --git a/tools/capture-site-intro.mjs b/tools/capture-site-intro.mjs
+deleted file mode 100644
+index 287f6f3..0000000
+--- a/tools/capture-site-intro.mjs
++++ /dev/null
+@@ -1,59 +0,0 @@
+-#!/usr/bin/env node
+-/* Capture the SITE's own intro (#introOverlay) as a real-time screenshot loop
+-   and assemble a variable-delay GIF. Fresh context per run (intro plays once
+-   per session via sessionStorage). CSS-keyframe-driven, so real-time capture
+-   is the honest method. Frames + timestamps land in /tmp/introcap/. */
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import path from 'node:path';
+-import { resolve, dirname } from 'node:path';
+-import { chromium } from 'playwright';
+-
+-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+-const FILES = new Map();
+-(function walk(dir) {
+-  for (const e of fs.readdirSync(dir)) {
+-    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
+-    const f = path.join(dir, e); const st = fs.statSync(f);
+-    if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+-  }
+-})(ROOT);
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.json': 'application/json' };
+-const server = http.createServer((req, res) => {
+-  let u = decodeURIComponent((req.url || '/').split('?')[0]); if (u === '/') u = '/index.html';
+-  const b = FILES.get(u);
+-  if (!b) { res.writeHead(404); return res.end('nf'); }
+-  res.writeHead(200, { 'content-type': MIME[path.extname(u)] || 'application/octet-stream' });
+-  res.end(b);
+-});
+-await new Promise(r => server.listen(8271, '127.0.0.1', r));
+-
+-const OUT = '/tmp/introcap';
+-fs.rmSync(OUT, { recursive: true, force: true });
+-fs.mkdirSync(OUT, { recursive: true });
+-
+-const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
+-const ctx = await browser.newContext({ viewport: { width: 960, height: 600 } });
+-const pg = await ctx.newPage();
+-const errs = [];
+-pg.on('pageerror', e => errs.push(String(e).slice(0, 120)));
+-pg.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text().slice(0, 120)); });
+-await pg.goto('http://127.0.0.1:8271/index.html', { waitUntil: 'load' });
+-await pg.waitForSelector('#introOverlay.play', { timeout: 8000 });
+-const t0 = Date.now();
+-let i = 0;
+-const stamps = [];
+-for (;;) {
+-  const gone = await pg.evaluate(() => !document.getElementById('introOverlay'));
+-  const buf = await pg.screenshot({ type: 'png' });
+-  const t = Date.now() - t0;
+-  fs.writeFileSync(`${OUT}/f${String(i).padStart(3, '0')}.png`, buf);
+-  stamps.push(t);
+-  i++;
+-  if (gone && t > 6400) break;
+-  if (t > 13000) break;
+-}
+-fs.writeFileSync(`${OUT}/stamps.json`, JSON.stringify(stamps));
+-console.log('frames:', i, 'span_ms:', stamps[stamps.length - 1], 'errors:', errs.length ? errs : 'none');
+-await browser.close();
+-server.close();
+diff --git a/tools/check-physics.mjs b/tools/check-physics.mjs
+index 9943c23..4ff7413 100644
+--- a/tools/check-physics.mjs
++++ b/tools/check-physics.mjs
+@@ -56,10 +56,15 @@ console.log('ℹ  #4 and #10 are conceptual (no number to recompute) — reviewe
+ 
+ /* --- wording that must not come back ----------------------------------- */
+ const pages = ['index.html', 'quiz.html', 'topics/current.html', 'topics/fields.html'].map(f => [f, read(f)]);
+-for (const bad of [/7\.55\s*×\s*10/, /centrifugal/i, /charge ledger/i, /magnet/i]) {
++for (const bad of [/7\.55\s*×\s*10/, /centrifugal/i, /charge ledger/i, /magnet/i, /Chapters? 3\b|Chapters 1 and 3/, /Chapter \d of 3\b|of 3 chapters/, /Twenty-four|\b24 questions|24-question/]) {
+   const hit = pages.filter(([, t]) => bad.test(t)).map(([f]) => f);
+   ok(`no ${bad} in pages`, !hit.length, hit.join(', '));
+ }
+ 
++/* the same wrong values must not live in the scripts either (toasts, comments, readouts) */
++for (const f of fs.readdirSync(new URL('../js/', import.meta.url)).filter(n => n.endsWith('.js'))) {
++  ok(`no 7.55×10⁴ in js/${f}`, !/7\.55\s*(×|\\u00D7)\s*10|7\.55×10⁴/.test(read('js/' + f)));
++}
++
+ console.log(failed ? `\nPHYSICS CHECK FAILED (${failed})` : '\nPHYSICS CHECK PASS');
+ process.exit(failed ? 1 : 0);
+diff --git a/tools/make-og-card.mjs b/tools/make-og-card.mjs
+deleted file mode 100644
+index b0dd9f8..0000000
+--- a/tools/make-og-card.mjs
++++ /dev/null
+@@ -1,118 +0,0 @@
+-/* Regenerate img/og-card.png (1200x630) from the site's own design tokens:
+-   dark charcoal surface (--bg), warm off-white headings (--text), pink brand
+-   accent (--pk), electric yellow (--ye), the pastel law chips (--pk/--sk/--ye/
+-   --li), outline pills (--edge/--text-dim) and the client's mascot art inside
+-   its canonical cream art frame (.ch-art-frame), with ghost mascots like the
+-   intro overlay. Renders once in a headless browser and commits the raster:
+-   edit by re-running this script, never by hand-painting pixels. */
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import path from 'node:path';
+-import { chromium } from 'playwright';
+-
+-const ROOT = path.resolve(import.meta.dirname, '..');
+-const FILES = new Map();
+-(function walk(dir) {
+-  for (const e of fs.readdirSync(dir)) {
+-    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video', 'tools'].includes(e)) continue;
+-    const f = path.join(dir, e); const st = fs.statSync(f);
+-    if (st.isDirectory()) walk(f); else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+-  }
+-})(ROOT);
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.json': 'application/json' };
+-const server = http.createServer((req, res) => {
+-  let u = decodeURIComponent((req.url || '/').split('?')[0]);
+-  const b = FILES.get(u);
+-  if (!b) { res.writeHead(404); return res.end('not found'); }
+-  res.writeHead(200, { 'content-type': MIME[path.extname(u)] || 'application/octet-stream' }); res.end(b);
+-});
+-await new Promise(r => server.listen(8311, '127.0.0.1', r));
+-
+-const HTML = `<!doctype html><html><head><meta charset="utf-8">
+-<link rel="stylesheet" href="/css/fonts.css">
+-<style>
+-  * { margin:0; padding:0; box-sizing:border-box; }
+-  html,body { width:1200px; height:630px; overflow:hidden; }
+-  body {
+-    background:#17181c; color:#edebe3;
+-    font-family:'G8321','Hiragino Maru Gothic ProN','Segoe UI',system-ui,sans-serif;
+-    position:relative;
+-  }
+-  .ghost { position:absolute; opacity:.14; pointer-events:none; }
+-  .g1 { left:26px;  top:18px;  width:200px; transform:rotate(-11deg); }
+-  .g2 { left:318px; top:462px; width:152px; transform:rotate(8deg); }
+-  .frame {
+-    position:absolute; left:64px; top:118px; width:402px; height:402px;
+-    background:#fdf3f6; border:3px solid #33202b; border-radius:18px;
+-    padding:22px; transform:rotate(-2deg);
+-    box-shadow:0 18px 40px -18px rgba(0,0,0,.7);
+-  }
+-  .frame img { width:100%; height:100%; object-fit:contain; }
+-  .stack { position:absolute; left:520px; top:76px; width:632px; }
+-  .eyebrow {
+-    color:#f8aebe; font-weight:700; font-size:17px; letter-spacing:.18em;
+-    text-transform:uppercase;
+-  }
+-  h1 { font-weight:700; font-size:96px; line-height:1.08; letter-spacing:.01em; margin-top:8px; }
+-  h1 em { font-style:normal; color:#f8aebe; }
+-  .sub1 { color:#e9ff47; font-weight:700; font-size:30px; margin-top:12px; }
+-  .sub2 { color:#b9b7ae; font-size:19px; line-height:1.5; margin-top:8px; max-width:620px; }
+-  .chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+-  .chip {
+-    color:#17181c; font-weight:700; font-size:20px; line-height:1;
+-    padding:11px 20px; border-radius:999px;
+-  }
+-  .pk { background:#f8aebe; } .sk { background:#a8d3e0; }
+-  .ye { background:#e9ff47; } .li { background:#d5b8d8; }
+-  .row2 { display:flex; align-items:center; gap:8px; margin-top:14px; }
+-  .pill {
+-    color:#b9b7ae; font-weight:700; font-size:17px; line-height:1;
+-    border:2px solid #3a3d45; border-radius:999px; padding:8px 16px;
+-  }
+-  .cta {
+-    margin-left:auto; background:#f8aebe; color:#2b1418; font-weight:700;
+-    font-size:19px; line-height:1; border-radius:999px; padding:11px 20px;
+-    white-space:nowrap;
+-  }
+-  .dot { position:absolute; border-radius:50%; }
+-  .d1 { left:1128px; top:44px; width:16px; height:16px; background:#f8aebe; }
+-  .d2 { left:1158px; top:72px; width:12px; height:12px; background:#a8d3e0; }
+-  .d3 { left:1100px; top:36px; width:10px; height:10px; background:#e9ff47; }
+-  .hair { position:absolute; left:0; right:0; bottom:0; height:6px; background:#26282f; }
+-  .hair i { display:block; height:100%; width:238px; background:#a8d3e0; }
+-</style></head><body>
+-  <img class="ghost g1" src="/img/mascot-face-focus.png" alt="">
+-  <img class="ghost g2" src="/img/mascot-face-happy.png" alt="">
+-  <div class="frame"><img src="/img/mascot-face-sparkle.png" alt=""></div>
+-  <div class="stack">
+-    <div class="eyebrow">An interactive electromagnetics tutorial</div>
+-    <h1>EMC<em>Lab</em></h1>
+-    <div class="sub1">Real physics. Real fun.</div>
+-    <div class="sub2">Live simulations, sandboxes &amp; a scored quiz.<br>Every number computed from the real equations.</div>
+-    <div class="chips">
+-      <span class="chip pk">Ohm’s law</span>
+-      <span class="chip sk">Coulomb’s law</span>
+-      <span class="chip ye">Lorentz force</span>
+-      <span class="chip li">Faraday’s law</span>
+-    </div>
+-    <div class="row2">
+-      <span class="pill">Circuits</span>
+-      <span class="pill">Fields</span>
+-      <span class="pill">Magnetism</span>
+-      <span class="cta">Start the tutorial</span>
+-    </div>
+-  </div>
+-  <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+-  <div class="hair"><i></i></div>
+-</body></html>`;
+-
+-const browser = await chromium.launch({ args: ['--force-color-profile=srgb'] });
+-const pg = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+-await pg.goto('http://127.0.0.1:8311/', { waitUntil: 'load' });
+-await pg.setContent(HTML, { waitUntil: 'networkidle' });
+-await pg.evaluate(() => document.fonts.ready);
+-const out = path.join(ROOT, 'img', 'og-card.png');
+-await pg.screenshot({ path: out });
+-await browser.close(); server.close();
+-const b = fs.readFileSync(out);
+-console.log('wrote img/og-card.png', b.readUInt32BE(16) + 'x' + b.readUInt32BE(20), b.length, 'bytes');
+diff --git a/tools/perf-audit.mjs b/tools/perf-audit.mjs
+deleted file mode 100644
+index 71f786e..0000000
+--- a/tools/perf-audit.mjs
++++ /dev/null
+@@ -1,106 +0,0 @@
+-#!/usr/bin/env node
+-/* ==========================================================================
+-   EMC Lab - performance audit (dev tool, needs playwright + chromium)
+-   File: tools/perf-audit.mjs     run:  node tools/perf-audit.mjs [baseUrl]
+-
+-   Serves the project (python3 http.server) or uses your URL, then asserts the
+-   project's performance budgets on every page:
+-     * zero render-blocking scripts (everything is defer)
+-     * local transfer (excluding font payloads) under 500 KB per page
+-     * raw-TTF font payload under 500 KB (convert big TTFs to woff2 instead)
+-   Prints a per-page table of transfer, DOMContentLoaded and font bytes.
+-   ========================================================================== */
+-import { resolve, dirname } from 'node:path';
+-
+-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+-const PAGES = ['index.html', 'topics/fields.html', 'topics/current.html',
+-               'topics/magind.html', 'quiz.html'];
+-
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import zlib from 'node:zlib';
+-import path from 'node:path';
+-
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
+-  '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf',
+-  '.json': 'application/json', '.md': 'text/markdown', '.sql': 'text/plain' };
+-
+-/* gzip like a real host (Vercel serves brotli), so transfer numbers are honest */
+-function serve(port) {
+-  /* Preload + pre-gzip at startup: keeps request handling allocation-free and
+-     works in sandboxes where fs access inside request callbacks is restricted. */
+-  const FILES = new Map();
+-  (function walk(dir) {
+-    for (const e of fs.readdirSync(dir)) {
+-      if (e === 'node_modules' || e === '.git' || e === 'public') continue;
+-      const f = path.join(dir, e);
+-      const st = fs.statSync(f);
+-      if (st.isDirectory()) walk(f);
+-      else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+-    }
+-  })(ROOT);
+-  const GZ = new Map();
+-  for (const [k, buf] of FILES) {
+-    const type = MIME[path.extname(k).toLowerCase()] || '';
+-    if (/text|javascript|json|svg/.test(type)) GZ.set(k, zlib.gzipSync(buf, { level: 6 }));
+-  }
+-  return http.createServer((req, res) => {
+-    let u = decodeURIComponent((req.url || '/').split('?')[0]);
+-    if (u === '/') u = '/index.html';
+-    let raw = FILES.get(u);
+-    if (!raw && !path.extname(u)) raw = FILES.get(u + '.html');
+-    if (!raw) { res.writeHead(404); return res.end('not found'); }
+-    const type = MIME[path.extname(u).toLowerCase()] || 'application/octet-stream';
+-    const gz = GZ.get(u) || GZ.get(u + '.html');
+-    if (gz && /gzip/.test(req.headers['accept-encoding'] || '')) {
+-      res.writeHead(200, { 'Content-Type': type, 'Content-Encoding': 'gzip', 'Content-Length': gz.length });
+-      return res.end(gz);
+-    }
+-    res.writeHead(200, { 'Content-Type': type, 'Content-Length': raw.length });
+-    res.end(raw);
+-  }).listen(port);
+-}
+-
+-let base = process.argv[2];
+-let server = null;
+-if (!base) {
+-  server = serve(8241);
+-  base = 'http://127.0.0.1:8241';
+-  await new Promise(r => setTimeout(r, 600));
+-}
+-
+-const { chromium } = await import('playwright');
+-const browser = await chromium.launch({
+-  args: ['--disable-dev-shm-usage', '--disable-gpu', '--disable-background-networking']
+-});
+-const fails = [];
+-console.log('\npage                      transfer   fonts    DCL     blocking-scripts');
+-console.log('─'.repeat(72));
+-for (const path of PAGES) {
+-  /* one fresh context per page = cold cache: honest per-page transfer numbers */
+-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+-  const page = await ctx.newPage();
+-  await page.goto(`${base}/${path}`, { waitUntil: 'networkidle', timeout: 60000 });
+-  await new Promise(r => setTimeout(r, 1500));
+-  const m = await page.evaluate(() => {
+-    const res = performance.getEntriesByType('resource');
+-    const fonts = res.filter(r => r.initiatorType === 'font' || /\.(woff2?|ttf|otf)$/.test(r.name));
+-    const fontBytes = fonts.reduce((a, r) => a + (r.transferSize || 0), 0);
+-    const ttf = fonts.filter(f => /\.ttf($|\?)/i.test(f.name)).reduce((a, r) => a + (r.transferSize || 0), 0);
+-    const total = res.reduce((a, r) => a + (r.transferSize || 0), 0);
+-    const blocking = [...document.querySelectorAll('script[src]')].filter(s => !s.defer && !s.async).length;
+-    const nav = performance.getEntriesByType('navigation')[0];
+-    return { total, fontBytes, ttf, blocking, dcl: Math.round(nav ? nav.domContentLoadedEventEnd : 0) };
+-  });
+-  const kb = n => (n / 1024).toFixed(0).padStart(6) + 'K';
+-  console.log(`${path.padEnd(24)} ${kb(m.total)}  ${kb(m.fontBytes)}  ${(m.dcl + 'ms').padStart(6)}  ${m.blocking}`);
+-  if (m.blocking > 0) fails.push(`${path}: ${m.blocking} render-blocking script(s)`);
+-  if (m.total - m.fontBytes > 500 * 1024) fails.push(`${path}: non-font transfer ${((m.total - m.fontBytes) / 1024).toFixed(0)} KB > 500 KB budget`);
+-  if (m.ttf > 500 * 1024) fails.push(`${path}: raw TTF payload ${(m.ttf / 1024).toFixed(0)} KB - convert to woff2 (pip install fonttools brotli)`);
+-  await ctx.close();
+-}
+-await browser.close();
+-server?.close();
+-console.log('─'.repeat(72));
+-if (fails.length) { console.log('❌ BUDGET FAILURES:'); fails.forEach(f => console.log('   - ' + f)); process.exit(1); }
+-console.log('✅ all performance budgets met');
+diff --git a/tools/perf-measure.mjs b/tools/perf-measure.mjs
+deleted file mode 100644
+index 9631e7c..0000000
+--- a/tools/perf-measure.mjs
++++ /dev/null
+@@ -1,475 +0,0 @@
+-#!/usr/bin/env node
+-/* ==========================================================================
+-   EMC Lab — performance measurement harness (DEV ONLY, never shipped)
+-   File: tools/perf-measure.mjs
+-
+-   Usage:
+-     node tools/perf-measure.mjs measure   # full baseline/after matrix -> docs/perf-data/<label>.json
+-     node tools/perf-measure.mjs shots before|after
+-     node tools/perf-measure.mjs session   # 10-minute memory-growth run
+-     node tools/perf-measure.mjs rss       # per-tab process-RSS delta (desktop)
+-   Env:
+-     PERF_LABEL=name    output file / shot folder suffix (default: baseline|after)
+-
+-   Measures, per page and profile (desktop 1280x900 DPR1 / mobile 390x844 DPR3
+-   CPU 4x): JS heap, DOM nodes, listener counts, canvas backing-store bytes,
+-   active rAF chains (idle / offscreen / hidden-probe), long tasks, interaction
+-   frame times + INP proxy, network transfer, AudioContext constructions.
+-
+-   Methodology notes and limitations live in this header and the inline
+-   comments. Single browser stack: Playwright chromium (the same engine every
+-   other gate in this repo uses). This file is dev-only: tools/ is not part of
+-   the public build allow-list.
+-   ========================================================================== */
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import path from 'node:path';
+-import { dirname, resolve } from 'node:path';
+-import { fileURLToPath } from 'node:url';
+-import { chromium } from 'playwright';
+-
+-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+-const MODE = process.argv[2] || 'measure';
+-const LABEL = process.env.PERF_LABEL || (MODE === 'shots' ? (process.argv[3] || 'before') : 'baseline');
+-const PORT = 8420;
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.json': 'application/json', '.ico': 'image/x-icon' };
+-
+-const PAGES = ['index.html', 'quiz.html', 'topics/fields.html',
+-               'topics/current.html', 'topics/magind.html'];
+-const PROFILES = {
+-  desktop: { width: 1280, height: 900, dpr: 1, throttle: 1, touch: false },
+-  mobile: { width: 390, height: 844, dpr: 3, throttle: 4, touch: true },
+-};
+-
+-/* ------------------------------------------------------------- static server */
+-function serve() {
+-  const server = http.createServer((req, res) => {
+-    let f = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
+-    if (f.endsWith('/')) f += 'index.html';
+-    fs.readFile(f, (e, d) => {
+-      if (e) { res.writeHead(404); res.end('nf'); return; }
+-      res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+-      res.end(d);
+-    });
+-  });
+-  return new Promise(r => server.listen(PORT, () => r(server)));
+-}
+-
+-/* ------------------------------------------------- in-page instrumentation */
+-function instrument() {
+-  const P = window.__perf = { rafPending: () => pending.size, longtasks: [], events: [], frames: [], sampling: false, audioCtx: 0 };
+-  const pending = new Set();
+-  const oRAF = window.requestAnimationFrame.bind(window);
+-  const oCAF = window.cancelAnimationFrame.bind(window);
+-  window.requestAnimationFrame = cb => {
+-    const id = oRAF(t => { pending.delete(id); if (P.sampling) { const last = P.frames.length ? P.frames[P.frames.length - 1] : t; P.frames.push(t); } cb(t); });
+-    pending.add(id);
+-    return id;
+-  };
+-  window.cancelAnimationFrame = id => { pending.delete(id); oCAF(id); };
+-  const AC = window.AudioContext || window.webkitAudioContext;
+-  if (AC) {
+-    const Wrapped = function (...a) { P.audioCtx++; return new AC(...a); };
+-    Wrapped.prototype = AC.prototype;
+-    window.AudioContext = Wrapped; window.webkitAudioContext = Wrapped;
+-  }
+-  try {
+-    new PerformanceObserver(l => { for (const e of l.getEntries()) P.longtasks.push({ at: Math.round(e.startTime), dur: Math.round(e.duration) }); })
+-      .observe({ type: 'longtask', buffered: true });
+-  } catch (e) {}
+-  try {
+-    new PerformanceObserver(l => { for (const e of l.getEntries()) P.events.push({ name: e.name, dur: Math.round(e.duration), delay: Math.round(e.processingStart - e.startTime) }); })
+-      .observe({ type: 'event', buffered: true, durationThreshold: 16 });
+-  } catch (e) {}
+-}
+-
+-const sleep = ms => new Promise(r => setTimeout(r, ms));
+-/* interactions are frame-sample PROVOCATIONS, not assertions: puppeteer used to
+-   click whatever it found (hidden elements threw immediately and were skipped by
+-   the `if (handle)` guards); Playwright waits for actionability, so probe
+-   visibility first and treat "not clickable" as "not provoked". */
+-async function probeClick(h) {
+-  try { if (h && await h.isVisible()) await h.click({ timeout: 2000 }); } catch (e) {}
+-}
+-const MB = b => +(b / 1048576).toFixed(2);
+-
+-/* ------------------------------------------------------------------ helpers */
+-async function listenerCount(client, expr) {
+-  try {
+-    const { result } = await client.send('Runtime.evaluate', { expression: expr });
+-    if (!result.objectId) return 0;
+-    const { listeners } = await client.send('DOMDebugger.getEventListeners', { objectId: result.objectId });
+-    return listeners.length;
+-  } catch (e) { return -1; }
+-}
+-async function sampleRaf(page, ms) {
+-  const samples = [];
+-  const n = Math.max(1, Math.round(ms / 120));
+-  for (let i = 0; i < n; i++) { samples.push(await page.evaluate(() => window.__perf.rafPending())); await sleep(120); }
+-  return Math.max(...samples);
+-}
+-function p95(arr) { if (!arr.length) return 0; const s = [...arr].sort((a, b) => a - b); return +s[Math.floor(0.95 * (s.length - 1))].toFixed(1); }
+-
+-async function measurePage(browser, url, profile, name) {
+-  /* one context per page+profile: viewport/DPR/touch are context-level in
+-     Playwright, and a fresh context also means a cold cache per measurement */
+-  const ctx = await browser.newContext({ viewport: { width: profile.width, height: profile.height }, deviceScaleFactor: profile.dpr, hasTouch: profile.touch });
+-  const page = await ctx.newPage();
+-  const client = await ctx.newCDPSession(page);
+-  await client.send('Performance.enable');
+-  await client.send('Network.enable');
+-  await page.addInitScript(instrument);
+-  if (profile.throttle !== 1) await client.send('Emulation.setCPUThrottlingRate', { rate: profile.throttle });
+-
+-  const transfer = { bytes: 0, requests: 0 };
+-  client.on('Network.loadingFinished', p => { transfer.bytes += p.encodedDataLength || 0; });
+-  client.on('Network.responseReceived', () => { transfer.requests++; });
+-
+-  const t0 = Date.now();
+-  await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load', timeout: 60000 });
+-  const loadMs = Date.now() - t0;
+-  await sleep(3500);                                   // settle: fonts, katex, sim warm-up
+-
+-  const heap = await page.evaluate(() => performance.memory ? { used: performance.memory.usedJSHeapSize, total: performance.memory.totalJSHeapSize } : null);
+-  const metrics = (await client.send('Performance.getMetrics')).metrics.reduce((m, x) => (m[x.name] = x.value, m), {});
+-  const domNodes = await page.evaluate(() => document.getElementsByTagName('*').length);
+-  const canvases = await page.evaluate(() => [...document.querySelectorAll('canvas')].map(c => {
+-    const r = c.getBoundingClientRect();
+-    return { id: c.id || '(anon)', cssW: Math.round(r.width), cssH: Math.round(r.height), devW: c.width, devH: c.height, bytes: c.width * c.height * 4 };
+-  }));
+-  const backing = canvases.reduce((s, c) => s + c.bytes, 0);
+-  const lis = {
+-    window: await listenerCount(client, 'window'),
+-    document: await listenerCount(client, 'document'),
+-    canvases: await listenerCount(client, '[...document.querySelectorAll("canvas")].length ? document.querySelectorAll("canvas")[0] : null'),
+-  };
+-
+-  const rafIdle = await sampleRaf(page, 2400);
+-
+-  // offscreen: scroll everything away
+-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+-  await sleep(900);
+-  const rafOffscreen = await sampleRaf(page, 2400);
+-
+-  // hidden probe: fake visibilitychange (tests OUR listeners; Chrome's own
+-  // rAF throttling for real hidden tabs is browser-level; see the header notes)
+-  await page.evaluate(() => {
+-    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+-    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+-    document.dispatchEvent(new Event('visibilitychange'));
+-  });
+-  await sleep(600);
+-  const rafHidden = await sampleRaf(page, 1800);
+-  await page.evaluate(() => {
+-    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+-    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+-    document.dispatchEvent(new Event('visibilitychange'));
+-    window.scrollTo(0, 0);
+-  });
+-  await sleep(500);
+-
+-  // ---------------- interactions with frame sampling ----------------
+-  await page.evaluate(() => { window.__perf.frames = []; window.__perf.sampling = true; });
+-  const interactions = [];
+-  const slider = await page.$('input[type="range"]');
+-  if (slider) {
+-    const bb = await slider.boundingBox();
+-    if (bb) {
+-      await page.mouse.move(bb.x + bb.width * 0.3, bb.y + bb.height / 2);
+-      await page.mouse.down();
+-      for (let i = 0; i <= 15; i++) { await page.mouse.move(bb.x + bb.width * (0.3 + 0.04 * i), bb.y + bb.height / 2); await sleep(30); }
+-      await page.mouse.up();
+-      interactions.push('slider-drag');
+-    }
+-  }
+-  const dragCanvas = await page.$('#sim-ohm, #sim-fieldpaint');
+-  if (dragCanvas) {
+-    const bb = await dragCanvas.boundingBox();
+-    if (bb) {
+-      const sel = await dragCanvas.evaluate(el => '#' + el.id).catch(() => null) || '#sim-ohm';
+-      await page.evaluate(s => document.querySelector(s).scrollIntoView({ block: 'center' }), sel);
+-      await sleep(400);
+-      const bb2 = await dragCanvas.boundingBox();
+-      await page.mouse.move(bb2.x + bb2.width / 2, bb2.y + bb2.height / 2);
+-      await page.mouse.down();
+-      for (let i = 0; i <= 12; i++) { await page.mouse.move(bb2.x + bb2.width / 2 + i * 6, bb2.y + bb2.height / 2 - i * 3); await sleep(30); }
+-      await page.mouse.up();
+-      interactions.push('canvas-drag');
+-    }
+-  }
+-  if (url.includes('quiz')) {
+-    const opt = await page.$('.opt');
+-    if (opt && await opt.isVisible().catch(() => false)) { await probeClick(opt); interactions.push('quiz-option'); }
+-    const filt = await page.$('[data-quiz-filter="efield"]');
+-    if (filt && await filt.isVisible().catch(() => false)) { await probeClick(filt); interactions.push('quiz-filter'); }
+-  }
+-  const seg = await page.$('.seg-btn');
+-  if (seg && await seg.isVisible().catch(() => false)) { await probeClick(seg); interactions.push('segment'); }
+-  await sleep(400);
+-  const frameData = await page.evaluate(() => { window.__perf.sampling = false; const f = window.__perf.frames; const d = []; for (let i = 1; i < f.length; i++) d.push(f[i] - f[i - 1]); return d; });
+-  const perfState = await page.evaluate(() => ({ longtasks: window.__perf.longtasks, events: window.__perf.events, audioCtx: window.__perf.audioCtx }));
+-  const inp = perfState.events.length ? Math.max(...perfState.events.map(e => e.dur)) : 0;
+-
+-  await ctx.close();
+-  return {
+-    page: url, profile: name,
+-    loadMs,
+-    heapUsedMB: heap ? MB(heap.used) : null, heapTotalMB: heap ? MB(heap.total) : null,
+-    domNodes, metricsNodes: metrics.Nodes || null,
+-    listeners: lis,
+-    canvasCount: canvases.length, canvases,
+-    backingStoreMB: MB(backing),
+-    rafIdle, rafOffscreen, rafHiddenProbe: rafHidden,
+-    longTasksOver50: perfState.longtasks.filter(t => t.dur > 50).length,
+-    longTasksOver100: perfState.longtasks.filter(t => t.dur > 100).length,
+-    worstLongTaskMs: perfState.longtasks.length ? Math.max(...perfState.longtasks.map(t => t.dur)) : 0,
+-    frameP95Ms: p95(frameData), frameSamples: frameData.length,
+-    inpProxyMs: inp, interactions,
+-    audioContexts: perfState.audioCtx,
+-    requests: transfer.requests, transferKB: +(transfer.bytes / 1024).toFixed(1),
+-  };
+-}
+-
+-/* ------------------------------------------------------------------- shots */
+-async function shots(browser) {
+-  const dir = path.join(ROOT, 'docs', 'perf-shots', LABEL);
+-  fs.mkdirSync(dir, { recursive: true });
+-  for (const [pname, profile] of Object.entries(PROFILES)) {
+-    for (const url of PAGES) {
+-      console.log('shot:', pname, url);
+-      const ctx = await browser.newContext({ viewport: { width: profile.width, height: profile.height }, hasTouch: profile.touch });
+-      const page = await ctx.newPage();
+-      page.setDefaultTimeout(20000);
+-      if (profile.throttle !== 1) await (await ctx.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: profile.throttle });
+-      await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
+-      await sleep(2500);
+-      // scroll through so lazy sims initialise before the full-page capture
+-      try {
+-        const h = await page.evaluate(() => document.body.scrollHeight);
+-        for (let y = 0; y < h; y += 700) { await page.evaluate(yy => window.scrollTo(0, yy), y); await sleep(140); }
+-        await page.evaluate(() => window.scrollTo(0, 0));
+-        await sleep(1200);
+-      } catch (e) { console.log('scroll-through skipped:', String(e).slice(0, 80)); }
+-      const tag = url.replace(/\.html$/, '').replace('topics/', '').replace('index', 'home');
+-      await page.screenshot({ path: path.join(dir, `${tag}-${profile.width}.jpg`), type: 'jpeg', quality: 72, fullPage: true });
+-      await ctx.close();
+-    }
+-  }
+-  console.log('shots ->', dir);
+-}
+-
+-/* ----------------------------------------------------------------- session */
+-async function session(browser) {
+-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+-  const page = await ctx.newPage();
+-  const client = await ctx.newCDPSession(page);
+-  await client.send('HeapProfiler.enable');
+-  await page.addInitScript(instrument);
+-  await page.goto(`http://127.0.0.1:${PORT}/topics/current.html`, { waitUntil: 'load' });
+-  await sleep(3000);
+-  const sample = async () => {
+-    await client.send('HeapProfiler.collectGarbage');
+-    const h = await page.evaluate(() => performance.memory.usedJSHeapSize);
+-    const raf = await sampleRaf(page, 600);
+-    return { t: Math.round((Date.now() - t0) / 1000), heapMB: MB(h), raf };
+-  };
+-  const t0 = Date.now();
+-  const series = [await sample()];
+-  const sliders = await page.$$('input[type="range"]');
+-  let step = 0;
+-  while (Date.now() - t0 < 600000) {
+-    // representative activity: scroll, keyboard-step a slider, toggle a segment
+-    await page.evaluate(s => window.scrollTo(0, s), (step % 6) * 700);
+-    if (sliders.length) {
+-      const s = sliders[step % sliders.length];
+-      await s.focus();
+-      for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight');
+-    }
+-    const segs = await page.$$('.seg-btn');
+-    if (segs.length) await probeClick(segs[step % segs.length]);
+-    await sleep(4200);
+-    step++;
+-    if (step % 7 === 0) series.push(await sample());
+-  }
+-  series.push(await sample());
+-  fs.mkdirSync(path.join(ROOT, 'docs', 'perf-data'), { recursive: true });
+-  fs.writeFileSync(path.join(ROOT, 'docs', 'perf-data', `session-${LABEL}.json`), JSON.stringify(series, null, 2));
+-  console.log(JSON.stringify(series));
+-  await ctx.close();
+-}
+-
+-/* ------------------------------------------------------- per-tab RSS delta */
+-function chromeRSS() {
+-  let total = 0;
+-  for (const d of fs.readdirSync('/proc')) {
+-    if (!/^\d+$/.test(d)) continue;
+-    try {
+-      const cmd = fs.readFileSync(`/proc/${d}/cmdline`, 'utf8');
+-      if (!/chrome|headless_shell/.test(cmd)) continue;
+-      const statm = fs.readFileSync(`/proc/${d}/statm`, 'utf8').split(' ');
+-      total += parseInt(statm[1], 10) * 4096;          // resident set
+-    } catch (e) {}
+-  }
+-  return total;
+-}
+-async function rss(browser) {
+-  const out = [];
+-  const blank = chromeRSS();
+-  for (const url of PAGES) {
+-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+-    const page = await ctx.newPage();
+-    await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
+-    await sleep(3000);
+-    const now = chromeRSS();
+-    out.push({ page: url, deltaMB: MB(now - blank), totalMB: MB(now) });
+-    await ctx.close();
+-    await sleep(800);
+-  }
+-  console.log(JSON.stringify({ note: 'delta vs idle browser (all chrome processes RSS); includes renderer+GPU+shared services, not isolated per-tab', rows: out }, null, 2));
+-}
+-
+-/* ------------------------------------------------- animation-loop guard */
+-/* Enforced, reliably-measurable lifecycle invariants (desktop profile):
+-   1. a boot-visible canvas runs exactly ONE rAF chain (no double scheduling)
+-   2. a synthetic hidden tab stops every chain (visibilitychange honoured)
+-   3. a live sim (ohm dots) keeps exactly one chain in view
+-   4. an essential-motion sim (circuit dots) keeps exactly one chain in view
+-   Memory is reported informationally here; only loop invariants fail CI. */
+-async function guard(browser) {
+-  const fails = [];
+-  const check = (name, actual, expected) => {
+-    const ok = actual === expected;
+-    console.log(`${ok ? '  \u2713' : '  \u2717'} ${name}: ${actual} (expected ${expected})`);
+-    if (!ok) fails.push(name);
+-  };
+-  const openPage = async (url, opts) => {
+-    const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+-    await page.addInitScript(skip => { if (skip) { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} } }, !!(opts && opts.skipIntro));
+-    await page.addInitScript(() => {
+-      const pend = new Set();
+-      window.__perf = { rafPending: () => pend.size };
+-      const o = window.requestAnimationFrame.bind(window);
+-      const c = window.cancelAnimationFrame.bind(window);
+-      window.requestAnimationFrame = cb => { const id = o(t => { pend.delete(id); cb(t); }); pend.add(id); return id; };
+-      window.cancelAnimationFrame = id => { pend.delete(id); c(id); };
+-    });
+-    await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
+-    await sleep(2500);
+-    return page;
+-  };
+-  const hiddenProbe = async page => {
+-    await page.evaluate(() => {
+-      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+-      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+-      document.dispatchEvent(new Event('visibilitychange'));
+-    });
+-    await sleep(700);
+-    const n = await sampleRaf(page, 1200);
+-    await page.evaluate(() => {
+-      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+-      Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+-      document.dispatchEvent(new Event('visibilitychange'));
+-    });
+-    return n;
+-  };
+-  console.log('\n[animation-loop guard]');
+-  {
+-    const page = await openPage('index.html', { skipIntro: true });
+-    /* Home ships NO animated canvas (the redesign replaced the hero dipole
+-       with a static equation strip) and the design rules forbid permanent
+-       background loops, so the honest budget is zero visible chains —
+-       tightened from the stale pre-redesign expectation of 1. The intro's
+-       finite timeline rAF is policed by its own check below; the settled-home
+-       budgets preset the session key like every other harness does. */
+-    check('home boot-visible chains = 0 (no permanent loops)', await sampleRaf(page, 1500), 0);
+-    check('home hidden chains = 0', await hiddenProbe(page), 0);
+-    const heap = await page.evaluate(() => performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(2) : null);
+-    console.log(`  \u2139 home heap (informational): ${heap} MB`);
+-    await page.close();
+-  }
+-  {
+-    /* CONTRACT CHANGE (2026-10-25, intro v8): the intro owns ONE finite rAF
+-       timeline; the guard now proves it is finite — after the overlay leaves,
+-       a fresh-session home must settle back to zero chains. */
+-    const page = await openPage('index.html');
+-    await page.waitForFunction(() => !document.getElementById('introOverlay'), null, { timeout: 20000 });
+-    await sleep(600);
+-    check('intro timeline rAF is finite: home settles to 0 chains after it ends', await sampleRaf(page, 1500), 0);
+-    await page.close();
+-  }
+-  {
+-    const page = await openPage('topics/current.html');
+-    await page.evaluate(() => document.querySelector('#sim-ohm').scrollIntoView({ block: 'center' }));
+-    await sleep(4000);                                   // let the dots run
+-    check('live ohm sim keeps exactly 1 chain when visible', await sampleRaf(page, 1500), 1);
+-    check('current hidden chains = 0', await hiddenProbe(page), 0);
+-    await page.close();
+-  }
+-  {
+-    const page = await openPage('topics/current.html');
+-    await page.evaluate(() => document.querySelector('#sim-circuit').scrollIntoView({ block: 'center' }));
+-    await sleep(1500);
+-    check('essential motion keeps 1 chain', await sampleRaf(page, 1500), 1);
+-    await page.close();
+-  }
+-  for (const url of ['index.html', 'topics/current.html']) {
+-    const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+-    await page.addInitScript(() => {
+-      window.__cls = 0;
+-      new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; })
+-        .observe({ type: 'layout-shift', buffered: true });
+-    });
+-    await page.goto(`http://127.0.0.1:${PORT}/${url}`, { waitUntil: 'load' });
+-    await sleep(3000);
+-    const cls = await page.evaluate(() => +window.__cls.toFixed(4));
+-    const okCls = cls < 0.01;
+-    console.log(`${okCls ? '  \u2713' : '  \u2717'} unexpected CLS on ${url}: ${cls} (< 0.01)`);
+-    if (!okCls) fails.push('cls:' + url);
+-    // sticky header must never swallow an anchor target
+-    const clear = await page.evaluate(() => {
+-      const el = document.querySelector('[id][class*="h-sec"], #check, #ohm');
+-      if (!el) return true;
+-      el.scrollIntoView();
+-      const hb = document.querySelector('.site-header').getBoundingClientRect().bottom;
+-      return el.getBoundingClientRect().top >= hb - 2;
+-    });
+-    const okAnchor = clear === true;
+-    console.log(`${okAnchor ? '  \u2713' : '  \u2717'} anchor targets clear the sticky header on ${url}`);
+-    if (!okAnchor) fails.push('anchor:' + url);
+-    await page.close();
+-  }
+-  if (fails.length) { console.error(`guard FAILED: ${fails.join(', ')}`); process.exit(1); }
+-  console.log('guard OK');
+-}
+-
+-/* -------------------------------------------------------------------- main */
+-const server = await serve();
+-/* Single browser stack (2026-10-24 consolidation): Playwright chromium — the
+-   same engine every other gate in this repo uses (the puppeteer engine was
+-   retired with it). --disable-dev-shm-usage joins the flag set every launcher
+-   here passes (the session container ships a 40 KB /dev/shm);
+-   --enable-precise-memory-info keeps performance.memory honest. Measurements
+-   are page-level and unchanged by the engine swap. */
+-const browser = await chromium.launch({ args: ['--disable-dev-shm-usage', '--enable-precise-memory-info', '--disable-background-timer-throttling'] });
+-const version = browser.version();
+-console.log('browser:', version);
+-
+-if (MODE === 'guard') await guard(browser);
+-else if (MODE === 'shots') await shots(browser);
+-else if (MODE === 'session') await session(browser);
+-else if (MODE === 'rss') await rss(browser);
+-else {
+-  const rows = [];
+-  for (const [pname, profile] of Object.entries(PROFILES)) {
+-    for (const url of PAGES) {
+-      const row = await measurePage(browser, url, profile, pname);
+-      rows.push(row);
+-      console.log(`${pname.padEnd(7)} ${url.padEnd(22)} heap ${String(row.heapUsedMB).padStart(7)} MB  nodes ${String(row.domNodes).padStart(5)}  backing ${String(row.backingStoreMB).padStart(6)} MB  raf idle/off/hidden ${row.rafIdle}/${row.rafOffscreen}/${row.rafHiddenProbe}  LT>100 ${row.longTasksOver100}  frameP95 ${String(row.frameP95Ms).padStart(5)} ms  INPpx ${String(row.inpProxyMs).padStart(4)}  xfer ${row.transferKB} KB`);
+-    }
+-  }
+-  fs.mkdirSync(path.join(ROOT, 'docs', 'perf-data'), { recursive: true });
+-  fs.writeFileSync(path.join(ROOT, 'docs', 'perf-data', `${LABEL}.json`), JSON.stringify({ browser: version, profiles: PROFILES, rows }, null, 2));
+-  console.log('wrote docs/perf-data/' + LABEL + '.json');
+-}
+-await browser.close();
+-server.close();
+diff --git a/tools/screenshots.mjs b/tools/screenshots.mjs
+deleted file mode 100644
+index da7c911..0000000
+--- a/tools/screenshots.mjs
++++ /dev/null
+@@ -1,115 +0,0 @@
+-#!/usr/bin/env node
+-/* ==========================================================================
+-   EMC Lab - screenshot harness (dev tool, needs playwright installed anywhere:
+-   npm i playwright && npx playwright install chromium).
+-   Run: node tools/screenshots.mjs [outDir]
+-
+-   Serves the project from an in-memory, gzip-on map (request-handler-free fs,
+-   allocation-free responses) and captures the key states of every surface with
+-   a REAL headless Chromium: desktop home, chapter cards, a live sim on the
+-   standalone page and inside the same-page shell, the quiz, and the 360px
+-   mobile composition. Fails (exit 1) on any console/page error or missing
+-   asset, so "0 faults" means zero browser-reported faults, not just pixels.
+-   Output is gitignored (shots/); pass a custom outDir as argv[2].
+-   ========================================================================== */
+-import http from 'node:http';
+-import fs from 'node:fs';
+-import zlib from 'node:zlib';
+-import path from 'node:path';
+-import { resolve, dirname } from 'node:path';
+-
+-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+-const OUT = resolve(process.argv[2] || path.join(ROOT, 'shots'));
+-
+-let chromium;
+-try { chromium = (await import('playwright')).chromium; }
+-catch { console.error('playwright not found - install it to run the screenshot harness (npm i playwright && npx playwright install chromium)'); process.exit(2); }
+-
+-/* preload + pre-gzip: same pattern as tools/perf-audit.mjs */
+-const FILES = new Map();
+-(function walk(dir) {
+-  for (const e of fs.readdirSync(dir)) {
+-    /* phase 9: same exclusion set as the other verifiers + Video/.
+-       Rationale (written, per testing rules): the walk preloads every
+-       served file into RAM; docs/, .scratch/
+-       and Video/ (46 MB reference MP4) are never requested by any page
+-       (comments-only references), and preloading them pushed node RSS
+-       to ~110 MB which OOM-killed the chromium renderer on low-RAM CI
+-       ('Target crashed' at newPage). No assertion is weakened: a page
+-       that DID request these paths would now 404 and be reported by
+-       the misses[] check below. */
+-    if (['node_modules', '.git', 'public', 'shots', 'docs', '.scratch', 'Video'].includes(e)) continue;
+-    const f = path.join(dir, e);
+-    const st = fs.statSync(f);
+-    if (st.isDirectory()) walk(f);
+-    else FILES.set('/' + path.relative(ROOT, f).split(path.sep).join('/'), fs.readFileSync(f));
+-  }
+-})(ROOT);
+-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
+-  '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
+-  '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.json': 'application/json' };
+-const GZ = new Map();
+-for (const [k, buf] of FILES) {
+-  const type = MIME[path.extname(k).toLowerCase()] || '';
+-  if (/text|javascript|json|svg/.test(type)) GZ.set(k, zlib.gzipSync(buf, { level: 6 }));
+-}
+-const misses = [];
+-const server = http.createServer((req, res) => {
+-  let u = decodeURIComponent((req.url || '/').split('?')[0]);
+-  if (u === '/') u = '/index.html';
+-  let raw = FILES.get(u);
+-  if (!raw && !path.extname(u)) { raw = FILES.get(u + '.html'); if (raw) u += '.html'; }
+-  if (!raw) { misses.push(u); res.writeHead(404); res.end('not found'); return; }
+-  const type = MIME[path.extname(u).toLowerCase()] || 'application/octet-stream';
+-  const gz = GZ.get(u);
+-  if (gz && /gzip/.test(req.headers['accept-encoding'] || '')) {
+-    res.writeHead(200, { 'Content-Type': type, 'Content-Encoding': 'gzip', 'Content-Length': gz.length });
+-    return res.end(gz);
+-  }
+-  res.writeHead(200, { 'Content-Type': type, 'Content-Length': raw.length });
+-  res.end(raw);
+-});
+-await new Promise(r => server.listen(8242, '127.0.0.1', r));
+-fs.mkdirSync(OUT, { recursive: true });
+-
+-const B = 'http://127.0.0.1:8242';
+-const browser = await chromium.launch({ args: ['--disable-dev-shm-usage'] });
+-const errs = [];
+-async function shot(url, file, { w = 1440, h = 900, sel = null, scroll = 0, wait = 2200, rm = false } = {}) {
+-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: rm ? 'reduce' : 'no-preference' });
+-  const pg = await ctx.newPage();
+-  /* The intro is the ~11.5 s v6 chorus compression (longer than any shot
+-     wait), so shots preset the once-per-session key to document page design,
+-     exactly like motion/a11y/nav/loader/asset/stability already do. The
+-     intro has its own gates (intro-verify, capture-intro-video). */
+-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+-  pg.on('pageerror', e => errs.push(file + ': ' + String(e).slice(0, 140)));
+-  pg.on('console', m => { if (m.type() === 'error') errs.push(file + ' console: ' + m.text().slice(0, 140)); });
+-  await pg.goto(url, { waitUntil: 'load' });
+-  await pg.waitForTimeout(wait);
+-  if (sel) await pg.evaluate(s => { const t = document.querySelector(s); if (t) t.scrollIntoView({ block: 'center', behavior: 'instant' }); }, sel);
+-  else if (scroll) await pg.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), scroll);
+-  await pg.waitForTimeout(900);
+-  await pg.screenshot({ path: path.join(OUT, file) });
+-  await ctx.close();
+-  console.log('shot', file);
+-}
+-
+-await shot(B + '/index.html', 'home-hero.png');
+-await shot(B + '/index.html', 'home-cards.png', { scroll: 980 });
+-await shot(B + '/index.html', 'home-360.png', { w: 360, h: 780, scroll: 300 });
+-await shot(B + '/topics/current.html', 'topic-sim.png', { sel: '#sim-ohm', wait: 2600 });
+-await shot(B + '/topics/fields.html', 'topic-fields-charge.png', { sel: '#sim-static-room-panel' });
+-await shot(B + '/topics/fields.html', 'topic-fields-coulomb.png', { sel: '#sim-arena-panel' });
+-await shot(B + '/topics/fields.html', 'topic-fields-field.png', { sel: '#sim-fieldpaint-panel' });
+-await shot(B + '/index.html#/current', 'shell-sim.png', { sel: '#sim-ohm', wait: 2800 });
+-await shot(B + '/quiz.html', 'quiz.png', { wait: 1800 });
+-await shot(B + '/quiz.html', 'quiz-360.png', { w: 360, h: 780, wait: 1600 });
+-await shot(B + '/index.html', 'home-reduced.png', { scroll: 980, rm: true });
+-
+-console.log('404 misses:', misses.length ? misses.slice(0, 6) : 'none');
+-console.log('console/page errors:', errs.length ? errs.slice(0, 8) : 'none');
+-setTimeout(() => process.exit(errs.length === 0 && misses.length === 0 ? 0 : 1), 300);
+-await browser.close();
+-server.close();
+-process.exit(errs.length === 0 && misses.length === 0 ? 0 : 1);
+diff --git a/tools/smoke-test.mjs b/tools/smoke-test.mjs
+index dfe27ee..a00649b 100644
+--- a/tools/smoke-test.mjs
++++ b/tools/smoke-test.mjs
+@@ -258,7 +258,7 @@ console.log('\u2500'.repeat(66));
+   ok('no runtime errors', problems.length === 0, problems.join(' | '));
+   ok('arena canvas rendered', drawCalls(win, '#sim-arena') > 80);
+   ok('bohr canvas rendered', drawCalls(win, '#toy-bohr') > 30);
+-  const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
++  const K = 8.99e9;   // the lecture’s constant — the engine uses it too
+   const cv = () => doc.getElementById('sim-arena');
+ 
+   // --- Lecture line example: q₂=−4 at 0, q₁=+3 at 0.20, q₃=−7 at 0.35 m
+@@ -323,7 +323,7 @@ console.log('\u2500'.repeat(66));
+   await frames(win, 6);
+   ok('no runtime errors', problems.length === 0, problems.join(' | '));
+   ok('field painter rendered', drawCalls(win, '#sim-fieldpaint') > 300);
+-  const K = 8.99e9;   // the lecture’s constant — the engine uses it too (BUG_AUDIT DATA-01)
++  const K = 8.99e9;   // the lecture’s constant — the engine uses it too
+   const fp = () => doc.getElementById('sim-fieldpaint');
+ 
+   // --- Lecture replica: ±4 µC on the y-axis, probe parked at P -------------
+@@ -1013,7 +1013,7 @@ console.log('\u2500'.repeat(66));
+   // source (client directive: every design/SVG-generated mascot image is
+   // replaced by the drawn artwork). The header brand mark references that file
+   // directly; the ICO and apple-touch PNGs are committed rasterisations of it.
+-  // The old SVG-path token comparison is superseded - see BUG_AUDIT test log.
++  // The old SVG-path token comparison is superseded
+   for (const p of pages) {
+     const html = readFileSync(join(ROOT, p), 'utf8');
+     ok(`${p}: declares a viewport`, /name="viewport"/.test(html));
+@@ -1198,11 +1198,6 @@ console.log('\u2500'.repeat(66));
+     /8\.99\u00D710/.test(printed) && !/8\.988\u00D710/.test(printed) &&
+     /K: 8\.99e9/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+ 
+-  // ---- #9 water density is the round 1000 everywhere it is printed ---------
+-  ok('printed vacuum permeability is the CODATA 4pi×10⁻⁷ form',
+-    /4π×10<sup>−7<\/sup>/.test(printed) &&
+-    /MU0: 1\.25663706212e-6/.test(readFileSync(join(ROOT, 'js/common.js'), 'utf8')));
+-
+   // ---- #10 the 70% rule is announced where it fires ------------------------
+   ok('the score card announces the 70% auto-tick when it happens',
+     /const passNote = pct >= 70/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')) &&
+@@ -1435,7 +1430,7 @@ console.log('\u2500'.repeat(66));
+      + 180 ms exit + polling slack → [13900, 16300] ms; CONTRACT CHANGE
+      (2026-10-25, intro v6): window [11400, 13800]; CONTRACT CHANGE (2026-10-25,
+      intro v8 drop-in cut, 12 s engine + .5 s fade): window re-pointed to
+-     [12000, 15000] ms. Logged in BUG_AUDIT. */
++     [12000, 15000] ms. */
+   /* CONTRACT CHANGE (2026-10-26, ISSUE #7.3): the window is measured from the
+      moment the overlay actually starts playing, not from a wall-clock point
+      after boot — on fast machines play begins before the old anchor and a
+diff --git a/topics/current.html b/topics/current.html
+index 037418d..b648894 100644
+--- a/topics/current.html
++++ b/topics/current.html
+@@ -147,7 +147,7 @@
+       <nav class="breadcrumb" aria-label="Breadcrumb">
+         <a href="../index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Chapter 1 · Circuits &amp; Ohm’s Law</span>
+       </nav>
+-      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 1 of 3</span>
++      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 1 of 2</span>
+       <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Circuits &amp; Ohm’s Law</h1>
+       <p class="lede" data-detail="plain">Circuits come down to three quantities — voltage is energy per unit charge, current is the rate of charge flow, and resistance measures opposition to that flow — linked by one equation, V = IR. This topic builds from that to real networks.</p>
+       <p class="lede" data-detail="tech">
+@@ -538,7 +538,7 @@
+           <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
+           <span class="brand-name">EMC<em>Lab</em></span>
+         </span>
+-        <p class="small muted" style="margin-top:.6rem">Chapter 1 of 3.</p>
++        <p class="small muted" style="margin-top:.6rem">Chapter 1 of 2.</p>
+       </div>
+       <div>
+         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Chapters</h3>
+diff --git a/topics/fields.html b/topics/fields.html
+index c2e181b..cf12fd3 100644
+--- a/topics/fields.html
++++ b/topics/fields.html
+@@ -146,7 +146,7 @@
+       </nav>
+     </div>
+     <header class="wrap wrap-narrow" style="padding-top:.4rem">
+-      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 2 of 3</span>
++      <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 2 of 2</span>
+       <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Electric Fields &amp; Coulomb’s Law</h1>
+       <p class="lede" data-detail="plain">Charges push and pull on each other across empty space. This chapter is the lecture in three sections: what charge is, how hard it pushes (Coulomb's law), and how to map that push around it (the electric field).</p>
+       <p class="lede" data-detail="tech">
+@@ -974,7 +974,7 @@
+           <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
+           <span class="brand-name">EMC<em>Lab</em></span>
+         </span>
+-        <p class="small muted" style="margin-top:.6rem">Chapter 2 of 3.</p>
++        <p class="small muted" style="margin-top:.6rem">Chapter 2 of 2.</p>
+       </div>
+       <div>
+         <h3 class="small uppercase tracking-widest faint" style="margin:0 0 .6rem">Chapters</h3>

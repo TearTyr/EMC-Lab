@@ -7,7 +7,7 @@
    use the lecture's own configurations and were independently recomputed
    (docs/spec/verify-checks.mjs). Displayed totals are derived from
    BANK.length, never hand-maintained. k = 8.99×10⁹ N·m²/C² everywhere —
-   the lecture's value, computed AND printed (BUG_AUDIT DATA-01).
+   the lecture's value, computed AND printed.
    The bank is exactly the curated 16 (8 per chapter). */
 window.EMC_QUIZ = [
 

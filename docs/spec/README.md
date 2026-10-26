@@ -10,7 +10,7 @@ The lecture PDF was verified slide-by-slide against `brief-digest.md` BEFORE any
 further site change (see the verification log at the end of `brief-digest.md`,
 rendered figure slides in `slides/`). Outcome: every digest value and both
 "known lecture errors" confirmed; ONE site deviation found and fixed as
-BUG_AUDIT DATA-04 (the slide-21 worked example had quoted a ×10³-rescaled field
+an earlier review (the slide-21 worked example had quoted a ×10³-rescaled field
 strength; the lecture's real numbers are E = 2.0 N/C → 3.6×10⁻⁷ N / 4.8×10⁻⁷ N).
 
 Original status note, kept for history: the two spec PDFs were NOT provided at

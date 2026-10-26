@@ -56,9 +56,14 @@ console.log('ℹ  #4 and #10 are conceptual (no number to recompute) — reviewe
 
 /* --- wording that must not come back ----------------------------------- */
 const pages = ['index.html', 'quiz.html', 'topics/current.html', 'topics/fields.html'].map(f => [f, read(f)]);
-for (const bad of [/7\.55\s*×\s*10/, /centrifugal/i, /charge ledger/i, /magnet/i]) {
+for (const bad of [/7\.55\s*×\s*10/, /centrifugal/i, /charge ledger/i, /magnet/i, /Chapters? 3\b|Chapters 1 and 3/, /Chapter \d of 3\b|of 3 chapters/, /Twenty-four|\b24 questions|24-question/]) {
   const hit = pages.filter(([, t]) => bad.test(t)).map(([f]) => f);
   ok(`no ${bad} in pages`, !hit.length, hit.join(', '));
+}
+
+/* the same wrong values must not live in the scripts either (toasts, comments, readouts) */
+for (const f of fs.readdirSync(new URL('../js/', import.meta.url)).filter(n => n.endsWith('.js'))) {
+  ok(`no 7.55×10⁴ in js/${f}`, !/7\.55\s*(×|\\u00D7)\s*10|7\.55×10⁴/.test(read('js/' + f)));
 }
 
 console.log(failed ? `\nPHYSICS CHECK FAILED (${failed})` : '\nPHYSICS CHECK PASS');

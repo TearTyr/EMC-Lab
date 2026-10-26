@@ -5,7 +5,7 @@
    demand; Release mode rides the ghost along the field ("leaf in the wind",
    labelled as a flow view, not Newton's law). The Lecture-replica preset
    loads the ±4 µC y-axis example with the probe pre-parked at P, where the
-   readout reproduces E ≈ 7.55×10⁴ N/C (+y) from the live superposition.
+   readout reproduces E ≈ 7.56×10⁴ N/C (+y) from the live superposition.
    The old A/B potential integral is gone (beyond this lecture; archived). */
 (function () {
   const canvas = document.getElementById('sim-fieldpaint');
@@ -72,7 +72,7 @@
           id: 'fp-lecture',
           text: 'Measure the lecture\u2019s 75.6 kN/C at P',
           hint: 'Load the Lecture-replica preset — the probe is already parked at P. Or build it: ±4 µC 1.00 m apart, probe 0.60 m off the axis.',
-          won: 'That is the lecture answer: E(P) \u2248 7.55\u00D710\u2074 N/C along +y \u2014 measured by dragging, not memorised.',
+          won: 'That is the lecture answer: E(P) \u2248 7.56\u00D710\u2074 N/C along +y \u2014 measured by dragging, not memorised.',
           test: api => {
             const pr = api.objects.find(o => o.type === 'probe');
             if (!pr) return false;

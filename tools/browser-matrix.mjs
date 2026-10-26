@@ -90,6 +90,14 @@ for (const eng of ENGINES) {
     ok(`chapter ${route} mounts`, st.mounted && st.h1.includes(want), st.h1.slice(0, 40));
   }
 
+  /* --- removed routes must fall back to home, never show an old chapter --- */
+  for (const route of ['#/ch3', '#/magind']) {
+    await pg.goto(B + '/index.html' + route, { waitUntil: 'load' });
+    await pg.waitForTimeout(1300);
+    const st = await pg.evaluate(() => ({ topicHidden: document.getElementById('shell-topic').hidden, stale: /magnet|lorentz|faraday/i.test(document.body.innerText) }));
+    ok(`old route ${route} falls back to home`, st.topicHidden === true && st.stale === false);
+  }
+
   /* --- circuit builder: placing a part moves real readouts --- */
   await pg.evaluate(() => { location.hash = '#/ch1'; });
   await pg.waitForTimeout(1300);
@@ -132,6 +140,8 @@ for (const eng of ENGINES) {
   await pg.waitForTimeout(1500);
   const score = await pg.evaluate(() => document.getElementById('quiz-score').textContent.slice(0, 40));
   ok('quiz submits and scores 100%', /100%/.test(score), score.replace(/\s+/g, ' '));
+  const charts = await pg.evaluate(() => document.querySelectorAll('canvas').length);
+  ok('Chart.js canvas renders after submitting', charts > 0, String(charts));
 
   /* --- Detail toggle --- */
   const dt = await pg.evaluate(() => {

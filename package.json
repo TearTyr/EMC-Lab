@@ -3,17 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs",
+    "check": "node tools/check-links.mjs && node tools/check-detail-parity.mjs && node tools/check-scope.mjs && node tools/check-physics.mjs",
     "test": "node tools/smoke-test.mjs",
     "check:physics": "node tools/check-physics.mjs",
     "build:css": "tailwindcss -c tailwind.config.js -i css/input.css -o css/site.css --minify",
     "build:public": "node tools/build-public.mjs",
     "build": "bun run build:css && bun run build:public",
-    "font:scan": "node tools/add-font.mjs",
-    "perf": "node tools/perf-audit.mjs",
-    "perf:guard": "node tools/perf-measure.mjs guard",
     "test:shell": "node tools/shell-stress.mjs",
-    "shots": "node tools/screenshots.mjs",
     "test:interact": "node tools/interaction-test.mjs",
     "loader-verify": "node tools/loader-verify.mjs",
     "nav-verify": "node tools/nav-verify.mjs",
@@ -24,7 +20,8 @@
     "motion-verify": "node tools/motion-verify.mjs",
     "asset-verify": "node tools/asset-verify.mjs",
     "stability-stress": "node tools/stability-stress.mjs",
-    "verify:prod": "node tools/prod-verify.mjs"
+    "verify:prod": "node tools/prod-verify.mjs",
+    "test:browsers": "node tools/browser-matrix.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
