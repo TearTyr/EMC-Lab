@@ -18,7 +18,7 @@
 
   EMC.whenNear(canvas, init);
   function init() {
-    const { CONST, clamp, label, eng } = EMC;
+    const { CONST, clamp, label, eng, unit } = EMC;
     const e = CONST.E;
     const PINK = '#f8aebe', CYAN = '#a8d3e0', INK = '#17181c', EDGE = '#3a3d45';
 
@@ -57,12 +57,12 @@
 
     function readouts() {
       const qb = qBalloon();
-      if (el('bl-q')) el('bl-q').textContent = `${qb <= 0 ? '−' : '+'}${eng(Math.abs(qb), 3)}C`;
-      if (el('bl-h')) el('bl-h').textContent = `${qb <= 0 ? '+' : '−'}${eng(Math.abs(qb), 3)}C`;
+      if (el('bl-q')) el('bl-q').textContent = qb === 0 ? '0 C' : `${qb < 0 ? '−' : '+'}${unit(Math.abs(qb), 'C', 3)}`;   // unit(): "0 C", not "−0C"
+      if (el('bl-h')) el('bl-h').textContent = qb === 0 ? '0 C' : `${qb < 0 ? '+' : '−'}${unit(Math.abs(qb), 'C', 3)}`;
       if (el('bl-total')) el('bl-total').textContent = '0 C';
       if (el('bl-n')) el('bl-n').textContent = `${sci(state.n, 3)} electrons moved`;
       const sub = el('bl-sub');
-      if (sub) sub.innerHTML = `q = n·e = ${sci(state.n, 3)} × 1.602×10<sup>−19</sup> C = <b>${eng(Math.abs(qb), 3)} C</b> on the balloon, +the same on the hair`;
+      if (sub) sub.innerHTML = `q = n·e = ${sci(state.n, 3)} × 1.602×10<sup>−19</sup> C = <b>${unit(Math.abs(qb), 'C', 3)}</b> on the balloon, +the same on the hair`;
     }
 
     const wake = () => { if (stage) stage.setIdle(false); };
@@ -182,6 +182,18 @@
 
     const stage = new EMC.Stage(canvas, render, { animate: true, intro: 320 });
 
+    /* flying electrons hair -> balloon (cosmetic; shared by the drag and the Rub button) */
+    function spawnParts(count) {
+      if (state.parts.length >= (EMC.lowTier ? 8 : 22)) return;
+      const w = stage.w, h = stage.h;
+      for (let i = 0; i < count; i++) {
+        state.parts.push({
+          x0: w * (0.07 + Math.random() * 0.27), y0: h * (0.2 + Math.random() * 0.6),
+          t: 0, dur: 0.38 + Math.random() * 0.22, lift: 10 + Math.random() * 22
+        });
+      }
+    }
+
     stage.onPointer(p => {
       wake();
       const w = stage.w, h = stage.h;
@@ -197,15 +209,7 @@
         if (inHair && Math.abs(dx) > 0.5) {
           state.n = Math.min(9.99e15, state.n + Math.abs(dx) * state.rate / 100);
           readouts();
-          if (state.parts.length < (EMC.lowTier ? 8 : 22)) {
-            const cnt = Math.min(2, 1 + Math.floor(Math.abs(dx) / 8));
-            for (let i = 0; i < cnt; i++) {
-              state.parts.push({
-                x0: w * (0.07 + Math.random() * 0.27), y0: h * (0.2 + Math.random() * 0.6),
-                t: 0, dur: 0.38 + Math.random() * 0.22, lift: 10 + Math.random() * 22
-              });
-            }
-          }
+          spawnParts(Math.min(2, 1 + Math.floor(Math.abs(dx) / 8)));
         }
         /* a vigorous shake throws the paper bits off; a gentle drag carries them */
         if (Math.hypot(dx, dy) > 22) for (const bit of state.bits) bit.stuck = false;
@@ -216,6 +220,17 @@
 
     const rate = el('bl-rate');
     if (rate) stage.bindRange(rate, 'bl-ratev', v => { state.rate = v * 1e12; }, v => `${v.toFixed(0)}×10¹² e⁻ / stroke`);
+    /* Rubbing used to be drag-only. This is one 100 px stroke across the hair with
+       the same maths as a drag (state.rate is electrons per 100 px), so keyboard and
+       touch users can do the experiment too. The balloon is brought onto the hair. */
+    const rub = el('bl-rub');
+    if (rub) stage.listen(rub, 'click', () => {
+      state.bx = 0.28; state.by = 0.42;
+      state.n = Math.min(9.99e15, state.n + state.rate);
+      for (const bit of state.bits) bit.stuck = false;
+      spawnParts(5);
+      readouts(); wake(); stage.draw();
+    });
     const reset = el('bl-reset');
     if (reset) stage.listen(reset, 'click', () => {
       state.n = 0; state.parts.length = 0;

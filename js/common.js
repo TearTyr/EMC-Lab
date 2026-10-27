@@ -1073,28 +1073,73 @@ window.EMC = (function () {
           }
         });
       }
-      // Topics dropdown: click to toggle, close on outside click / Escape / pick
+      // Topics dropdown: click to toggle, close on outside click / Escape / pick /
+      // focus leaving it; arrow keys move between the entries.
       const dropBtn = document.getElementById('topicsBtn');
       const dropMenu = document.getElementById('topicsMenu');
       if (dropBtn && dropMenu) {
+        const drop = dropBtn.closest('.nav-drop') || dropMenu;
+        const items = () => Array.from(dropMenu.querySelectorAll('a'));
         const setOpen = open => {
           dropBtn.setAttribute('aria-expanded', String(open));
           dropMenu.classList.toggle('open', open);
         };
-        dropBtn.addEventListener('click', e => { e.stopPropagation(); setOpen(!dropMenu.classList.contains('open')); });
+        const isOpen = () => dropMenu.classList.contains('open');
+        dropBtn.addEventListener('click', e => { e.stopPropagation(); setOpen(!isOpen()); });
         document.addEventListener('click', e => { if (!e.target.closest('.nav-drop')) setOpen(false); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+        document.addEventListener('keydown', e => {
+          if (e.key !== 'Escape' || !isOpen()) return;
+          // focus inside the closing menu would be lost, so hand it back to the button
+          const hadFocus = drop.contains(document.activeElement);
+          setOpen(false);
+          if (hadFocus) dropBtn.focus();
+        });
         dropMenu.addEventListener('click', e => { if (e.target.closest('a')) setOpen(false); });
+        // Tabbing out of the open dropdown closes it (it used to stay open behind the page)
+        drop.addEventListener('focusout', e => {
+          if (isOpen() && e.relatedTarget && !drop.contains(e.relatedTarget)) setOpen(false);
+        });
+        drop.addEventListener('keydown', e => {
+          const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+          if (keys.indexOf(e.key) === -1) return;
+          const list = items();
+          if (!list.length) return;
+          if (!isOpen()) { if (e.key !== 'ArrowDown') return; setOpen(true); }
+          e.preventDefault();
+          const at = list.indexOf(document.activeElement);
+          let next = 0;
+          if (e.key === 'ArrowDown') next = at < 0 ? 0 : (at + 1) % list.length;
+          else if (e.key === 'ArrowUp') next = at <= 0 ? list.length - 1 : at - 1;
+          else if (e.key === 'End') next = list.length - 1;
+          list[next].focus();
+        });
       }
-      // Highlight the link for the current page (incl. dropdown entries).
-      const here = location.pathname.split('/').pop() || 'index.html';
-      document.querySelectorAll('.nav-link, .dd-link').forEach(a => {
-        const target = (a.getAttribute('href') || '').split('/').pop();
-        if (target === here) {
-          a.classList.add('active'); a.setAttribute('aria-current', 'page');
-          if (a.classList.contains('dd-link') && dropBtn) dropBtn.classList.add('active');
-        }
-      });
+      // Highlight the current page, incl. its dropdown entry. On the home page the
+      // shell swaps chapters in place (#/ch1, #/ch2), so the highlight follows the
+      // route instead of staying on "Home".
+      const fileOf = a => (a.getAttribute('href') || '').split('#')[0].split('/').pop();
+      const markCurrent = targetFile => {
+        document.querySelectorAll('.nav-link, .dd-link').forEach(a => {
+          const on = fileOf(a) !== '' && fileOf(a) === targetFile;
+          a.classList.toggle('active', on);
+          if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+        });
+        if (dropBtn) dropBtn.classList.toggle('active', !!document.querySelector('.dd-link.active'));
+      };
+      const pageFile = location.pathname.split('/').pop() || 'index.html';
+      const REG = window.EMC_REGISTRY;
+      const homeViewFile = view => {
+        const ch = view && view !== 'home' && REG && REG.chapter ? REG.chapter(view) : null;
+        return ch ? ch.path.split('/').pop() : 'index.html';
+      };
+      if (pageFile === 'index.html') {
+        const m = /^#\/([\w-]+)/.exec(location.hash || '');
+        const ch = m && REG && REG.resolve ? REG.resolve(m[1]) : null;
+        markCurrent(homeViewFile(ch ? ch.id : 'home'));
+        document.addEventListener('emc:view-shown', e => markCurrent(homeViewFile(e.detail && e.detail.view)));
+      } else {
+        markCurrent(pageFile);
+      }
     },
 
     initReveal() {
@@ -1172,6 +1217,7 @@ window.EMC = (function () {
           sync();
           document.dispatchEvent(new CustomEvent('emc:progress', { detail: Progress.read() }));
           UI.toast(nowDone ? 'Progress saved \u2014 topic marked complete' : 'Topic marked as not complete');
+          if (nowDone) document.dispatchEvent(new CustomEvent('emc:mascot', { detail: { kind: 'chapter-done' } }));
         });
         sync();
       });
@@ -1190,6 +1236,30 @@ window.EMC = (function () {
         host.hidden = false;
         host.innerHTML = '<strong>Note:</strong> this browser is blocking local storage, so progress will reset when you close the tab. Everything else works normally.';
       }
+    },
+
+    /* Theme: dark is the default and the identity; light is opt-in. Like Details it
+       only flips one attribute on <html> plus the persisted pref, so switching never
+       reloads, resets a quiz, or touches Details/progress. (The same attribute is
+       applied by an inline script in <head> before first paint.) */
+    initThemeToggle() {
+      const root = document.documentElement;
+      const btn = document.getElementById('themeToggle');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      const apply = theme => {
+        if (theme === 'light') root.dataset.theme = 'light'; else delete root.dataset.theme;
+        if (btn) btn.setAttribute('aria-pressed', String(theme === 'light'));
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#faf7ec' : '#17181c');
+      };
+      apply(Prefs.get('theme', 'dark') === 'light' ? 'light' : 'dark');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+        apply(next);
+        Prefs.set('theme', next);
+        UI.toast(next === 'light' ? 'Light theme' : 'Dark theme');
+        document.dispatchEvent(new CustomEvent('emc:theme', { detail: next }));
+      });
     },
 
     initYear() {
@@ -1523,6 +1593,7 @@ window.EMC = (function () {
     UI.initStorageNotice();
     UI.initYear();
     UI.initDetailToggle();
+    UI.initThemeToggle();
     UI.initAnalytics();
     UI.initPrefetch();
     UI.initPageTransitions();

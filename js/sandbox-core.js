@@ -403,7 +403,7 @@
         chargeGlyph(ctx, p.x, p.y, r, o.q, { pulse: o.wobble });
       }
       if (state.toggles.numbers && o.q && o.type !== 'test') {
-        label(ctx, `${o.q > 0 ? '+' : '−'}${eng(Math.abs(o.q), 2)}C`, p.x, p.y + r + 14,
+        label(ctx, `${o.q > 0 ? '+' : '−'}${unit(Math.abs(o.q), 'C', 2)}`, p.x, p.y + r + 14,
           { color: o.q > 0 ? '#fac0cd' : '#cfe9f2', size: 10.5 });
       }
       if (state.selected === o) {
@@ -555,7 +555,7 @@
       const net = gid('net');
       if (net) {
         const nq = netCharge();
-        net.textContent = `${nq < 0 ? '−' : '+'}${eng(Math.abs(nq), 2)}C`;
+        net.textContent = nq === 0 ? '0 C' : `${nq < 0 ? '−' : '+'}${unit(Math.abs(nq), 'C', 2)}`;
         net.className = 'stat-value ' + (nq > 0 ? 'hl-rose' : nq < 0 ? 'hl-cyan' : '');
       }
       const sel = gid('sel'), sub = gid('sub'), easy = gid('sel-easy');
@@ -565,7 +565,7 @@
           const f = fieldAtM(o.x, o.y);
           if (sel) sel.textContent = unit(f.mag, 'N/C', 3);
           if (easy) easy.textContent = f.mag > 1e-6 ? `field here: ${dirWord(f.ex, f.ey)}` : 'dead calm — field is zero here';
-          if (sub) sub.innerHTML = `E = Σ kqᵢ r̂ᵢ/rᵢ² = <b>${eng(f.mag, 3)} N/C</b> · F on a +1 nC ghost here = ${eng(f.mag * 1e-9, 2)} N`;
+          if (sub) sub.innerHTML = `E = Σ kqᵢ r̂ᵢ/rᵢ² = <b>${unit(f.mag, 'N/C', 3)}</b> · F on a +1 nC ghost here = ${unit(f.mag * 1e-9, 'N', 2)}`;
         } else {
           const F = forceOn(o);
           if (sel) sel.textContent = unit(F.mag, 'N', 3);
@@ -575,7 +575,7 @@
           if (sub) {
             const others = state.objects.filter(b => b !== o && b.q);
             sub.innerHTML = others.length
-              ? `F on selected = Σ k·|q·qᵢ|/rᵢ² over ${others.length} charge${others.length > 1 ? 's' : ''} = <b>${eng(F.mag, 3)} N</b> ${dirWord(F.fx, F.fy)}`
+              ? `F on selected = Σ k·|q·qᵢ|/rᵢ² over ${others.length} charge${others.length > 1 ? 's' : ''} = <b>${unit(F.mag, 'N', 3)}</b> ${dirWord(F.fx, F.fy)}`
               : 'add another charge — one charge alone feels no Coulomb force';
           }
         }
@@ -595,7 +595,7 @@
       const tally = gid('tally');
       if (tally) {
         const nq = netCharge();
-        tally.textContent = `Room total ${nq < 0 ? '−' : '+'}${eng(Math.abs(nq), 3)} C — it never changes, whatever you do`;
+        tally.textContent = `Room total ${nq < 0 ? '−' : '+'}${unit(Math.abs(nq), 'C', 3)} — it never changes, whatever you do`;
       }
       if (opts.readouts) opts.readouts(api);
     }
@@ -846,7 +846,7 @@
       sheet.className = 'sb-sheet';
       const title = document.createElement('b');
       title.textContent = o.type === 'ball' && !o.q ? 'Neutral metal ball'
-        : `${o.type} \u00B7 ${o.q >= 0 ? '+' : '\u2212'}${eng(Math.abs(o.q), 2)} C`;
+        : `${o.type} \u00B7 ${o.q >= 0 ? '+' : '\u2212'}${unit(Math.abs(o.q), 'C', 2)}`;
       sheet.appendChild(title);
       const mk = (txt, fn) => {
         const b = document.createElement('button');
@@ -953,11 +953,11 @@
           if (hov) {
             if (o) {
               const f = fieldAtM(o.x, o.y);
-              hov.textContent = `${o.type}${o.q ? ' ' + (o.q > 0 ? '+' : '\u2212') + eng(Math.abs(o.q), 2) + ' C' : ''} \u00B7 E here ${eng(f.mag, 2)} N/C`;
+              hov.textContent = `${o.type}${o.q ? ' ' + (o.q > 0 ? '+' : '\u2212') + unit(Math.abs(o.q), 'C', 2) : ''} \u00B7 E here ${unit(f.mag, 'N/C', 2)}`;
             } else {
               const m = toM(p.x, p.y);
               const f = fieldAtM(m.x, m.y);
-              hov.textContent = `E at cursor: ${eng(f.mag, 2)} N/C ${f.mag > 0 ? dirWord(f.ex, f.ey) : ''} \u00B7 F on +1 nC = ${eng(f.mag * 1e-9, 2)} N`;
+              hov.textContent = `E at cursor: ${unit(f.mag, 'N/C', 2)} ${f.mag > 0 ? dirWord(f.ex, f.ey) : ''} \u00B7 F on +1 nC = ${unit(f.mag * 1e-9, 'N', 2)}`;
             }
           }
         }
@@ -1024,6 +1024,95 @@
       stage.listen(canvas, 'touchend', endPinch);
       stage.listen(canvas, 'touchcancel', endPinch);
     }
+
+    /* -- keyboard access to the canvas ------------------------------------------
+       Selecting, moving, adding and removing charges used to be pointer-only. With
+       the canvas focused: [ and ] choose a charge, arrows move it (Shift = bigger
+       steps), + / - add one, Delete removes it, Esc deselects. A hidden live region
+       says what was chosen/changed. All of it goes through the same snapshot /
+       refresh path as the pointer, so Undo and the readouts behave identically. */
+    const KEY_STEP_M = 0.05, KEY_STEP_BIG_M = 0.25;
+    let lastNudge = 0;
+    const live = document.createElement('div');
+    live.setAttribute('role', 'status');
+    live.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap';
+    const keyHint = document.createElement('p');
+    keyHint.className = 'tiny faint';
+    keyHint.id = canvas.id + '-keys';
+    keyHint.textContent = 'Keyboard: focus the canvas, then [ and ] choose a charge, arrow keys move it (Shift for bigger steps), + or − adds one, Delete removes it, Esc deselects.';
+    const wrap = canvas.closest('.canvas-wrap');
+    if (wrap && wrap.parentNode && !document.getElementById(keyHint.id)) { wrap.parentNode.insertBefore(keyHint, wrap); wrap.appendChild(live); }
+    canvas.setAttribute('tabindex', '0');
+    canvas.setAttribute('aria-describedby', keyHint.id);
+    canvas.setAttribute('aria-keyshortcuts', '[ ] ArrowUp ArrowDown ArrowLeft ArrowRight + - Delete Escape');
+
+    function describe(o) {
+      const i = state.objects.indexOf(o) + 1;
+      const what = o.q ? `${o.q > 0 ? '+' : '\u2212'}${unit(Math.abs(o.q), 'C', 2)} ${o.type === 'pos' || o.type === 'neg' ? 'charge' : o.type}` : o.type;
+      return `${what} at x = ${o.x.toFixed(2)} m, y = ${o.y.toFixed(2)} m (${i} of ${state.objects.length})`;
+    }
+    const say = text => { live.textContent = ''; live.textContent = text; };
+
+    function keyAdd(sign) {
+      if (state.objects.length >= MAX_OBJ) { EMC.toast(`${MAX_OBJ} objects is the soft cap \u2014 erase one first`, 'warn'); return; }
+      snapshot();
+      // land beside the selection (or mid-canvas) so the new charge is visible and not on top of another
+      const at = state.selected || { x: WORLD_M / 2 - 0.2, y: worldH / 2 };
+      const o = makeObj(sign > 0 ? 'pos' : 'neg', sign * state.newQ,
+        clamp(at.x + (state.selected ? 0.25 : 0), 0.03, WORLD_M - 0.03), clamp(at.y, 0.03, worldH - 0.03));
+      state.objects.push(o);
+      state.selected = o;
+      refresh();
+      say(`Added ${describe(o)}`);
+    }
+
+    stage.listen(canvas, 'keydown', e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;           // Ctrl+Z etc. belong to the document handler
+      const list = state.objects;
+      let handled = true;
+      if (e.key === ']' || e.key === '[') {
+        if (!list.length) { say('No charges yet. Press plus or minus to add one.'); }
+        else {
+          const at = list.indexOf(state.selected);
+          const next = e.key === ']' ? (at + 1) % list.length : (at <= 0 ? list.length - 1 : at - 1);
+          state.selected = list[next];
+          refresh();
+          say(describe(state.selected));
+        }
+      } else if (e.key.indexOf('Arrow') === 0) {
+        const o = state.selected;
+        if (!o) { say('Nothing selected. Press ] to choose a charge.'); }
+        else {
+          const step = e.shiftKey ? KEY_STEP_BIG_M : KEY_STEP_M;
+          const now = performance.now();
+          if (now - lastNudge > 700) snapshot();                // one undo step per burst of nudges
+          lastNudge = now;
+          if (e.key === 'ArrowLeft') o.x -= step;
+          if (e.key === 'ArrowRight') o.x += step;
+          if (e.key === 'ArrowUp') o.y -= step;
+          if (e.key === 'ArrowDown') o.y += step;
+          o.x = clamp(o.x, 0.01, WORLD_M - 0.01); o.y = clamp(o.y, 0.01, worldH - 0.01);
+          o.vx = o.vy = 0;
+          refresh();
+          say(describe(o));
+        }
+      } else if (e.key === '+' || e.key === '=') { keyAdd(1); }
+      else if (e.key === '-' || e.key === '\u2212' || e.key === '_') { keyAdd(-1); }
+      else if (e.key === 'Delete' || e.key === 'Backspace') {
+        const o = state.selected;
+        if (!o) { say('Nothing selected to delete.'); }
+        else {
+          snapshot();
+          state.objects = state.objects.filter(x => x !== o);
+          state.selected = null;
+          refresh();
+          say(`Removed. ${state.objects.length} left.`);
+        }
+      } else if (e.key === 'Escape') {
+        if (state.selected) { state.selected = null; refresh(); say('Selection cleared.'); } else { handled = false; }
+      } else { handled = false; }
+      if (handled) e.preventDefault();
+    });
 
     /* -- keyboard: ctrl/cmd+Z undo (only while this panel is on screen) ---------- */
     stage.listen(document, 'keydown', e => {

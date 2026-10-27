@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -49,7 +50,7 @@ async function newPage(opts = {}) {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push('pageerror: ' + String(e).slice(0, 140)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await pg.addInitScript(skipIntroOnLoad);
   return { ctx, pg };
 }
 
@@ -77,7 +78,8 @@ const probe = pg => pg.evaluate(() => {
     dtLabel: (document.querySelector('.dt-state') || {}).textContent
   };
 });
-const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnetism' };
+/* the two active chapters (js/registry.js); the retired third chapter is gone */
+const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields' };
 
 /* ============ A. PART 3.2 navigation sequence ============================ */
 {
@@ -90,7 +92,7 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
     else if (via === 'dropdown') {
       await pg.click('#topicsBtn');
       await pg.waitForTimeout(120);
-      const file = { '#/ch1': 'current', '#/ch2': 'fields', '#/ch3': 'magind' }[id];
+      const file = { '#/ch1': 'current', '#/ch2': 'fields' }[id];
       await pg.click(`#topicsMenu a[href$="${file}.html"]`);
     } else if (via === 'card') {
       await pg.evaluate(() => { location.hash = '#/'; });
@@ -104,10 +106,10 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
     return st;
   };
 
-  /* 2-5: ch1 -> ch2 -> ch3 -> ch1 via dropdown */
-  for (const id of ['#/ch1', '#/ch2', '#/ch3', '#/ch1']) await goChapter(id, 'dropdown');
+  /* 2-5: ch1 -> ch2 -> ch1 -> ch2 -> ch1 via dropdown */
+  for (const id of ['#/ch1', '#/ch2', '#/ch1', '#/ch2', '#/ch1']) await goChapter(id, 'dropdown');
   /* 6: different order via home cards */
-  for (const id of ['#/ch1', '#/ch3', '#/ch2', '#/ch1']) await goChapter(id, 'card');
+  for (const id of ['#/ch2', '#/ch1', '#/ch2', '#/ch1']) await goChapter(id, 'card');
 
   /* 7: Details toggled between navigations */
   await pg.click('#detailToggle'); await pg.waitForTimeout(250);
@@ -131,24 +133,25 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
   await pg.click('[data-sb-preset="lecture-line"]');
   await pg.waitForTimeout(400);
   const simBefore = await pg.evaluate(() => document.getElementById('ar-count').textContent);
-  await goChapter('#/ch3', 'hash');
-  const CH2 = ['sim-static-room', 'toy-balloon', 'toy-ledger', 'sim-arena', 'toy-pinforce', 'toy-bohr', 'sim-fieldpaint', 'toy-dipole', 'toy-zerohunt'];
+  await goChapter('#/ch1', 'hash');
+  const CH2 = ['toy-balloon', 'sim-arena', 'toy-bohr', 'sim-fieldpaint'];
   const idsAfter = await pg.evaluate(() => window.EMC.debugStages().map(x => x.id));
   ok('A leaving ch2 after sim use tears its stages down (by identity)',
     idsAfter.every(id => !CH2.includes(id)) && simBefore === '3',
     `live stages now: ${idsAfter.join(',')}`);
-  /* ch3 sim interaction then leave */
-  await pg.evaluate(() => document.getElementById('sim-lorentz').scrollIntoView({ block: 'center' }));
+  /* ch1 sim interaction, then leave for ch2 */
+  await pg.evaluate(() => document.getElementById('sim-ohm').scrollIntoView({ block: 'center' }));
   await pg.waitForTimeout(700);
-  await pg.click('#lor-play'); await pg.waitForTimeout(500); await pg.click('#lor-play');
-  await goChapter('#/ch1', 'hash');
-  const CH3 = ['sim-lorentz', 'sim-induction', 'sim-induction-chart'];
+  await pg.click('[data-ohm-preset="12,4"]');
+  await pg.waitForTimeout(400);
+  await goChapter('#/ch2', 'hash');
+  const CH1 = ['sim-ohm', 'sim-circuit'];
   const idsBack = await pg.evaluate(() => window.EMC.debugStages().map(x => x.id));
-  ok('A leaving ch3 after sim use tears its stages down (by identity)',
-    idsBack.every(id => !CH3.includes(id)), `live stages now: ${idsBack.join(',')}`);
+  ok('A leaving ch1 after sim use tears its stages down (by identity)',
+    idsBack.every(id => !CH1.includes(id)), `live stages now: ${idsBack.join(',')}`);
 
   /* 9: rapid switching */
-  for (const id of ['#/ch2', '#/ch3', '#/ch1', '#/ch2', '#/ch1']) {
+  for (const id of ['#/ch1', '#/ch2', '#/ch1', '#/ch2', '#/ch1']) {
     await pg.evaluate(r => { location.hash = r; }, id);
     await pg.waitForTimeout(90);
   }
@@ -165,14 +168,14 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
   ok('A Forward returns', fwd.hash === '#/ch1' && fwd.h1.includes('Circuits'), fwd.hash);
 
   /* 12: direct URL + refresh */
-  await pg.goto(B + '/index.html#/ch3', { waitUntil: 'load' });
+  await pg.goto(B + '/index.html#/ch2', { waitUntil: 'load' });
   await pg.waitForTimeout(1100);
   const direct = await probe(pg);
-  ok('A direct hash URL mounts ch3', direct.hash === '#/ch3' && direct.h1.includes('Magnetism'), direct.hash);
+  ok('A direct hash URL mounts ch2', direct.hash === '#/ch2' && direct.h1.includes('Electric Fields'), direct.hash);
   await pg.reload({ waitUntil: 'load' });
   await pg.waitForTimeout(1100);
   const refreshed = await probe(pg);
-  ok('A refresh on a chapter route remounts correctly', refreshed.hash === '#/ch3' && refreshed.h1.includes('Magnetism') && !refreshed.overlayUp, JSON.stringify(refreshed).slice(0, 100));
+  ok('A refresh on a chapter route remounts correctly', refreshed.hash === '#/ch2' && refreshed.h1.includes('Electric Fields') && !refreshed.overlayUp, JSON.stringify(refreshed).slice(0, 100));
 
   /* 13: new tab (standalone pages remain the new-tab destination)
      RAM note (2026-10-24, phase 9d): the block-A context has done ~15
@@ -193,17 +196,17 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
 
   /* 10: mobile nav path (fresh context — see RAM note above) */
   const ctxC = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  await ctxC.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await ctxC.addInitScript(skipIntroOnLoad);
   pg = await ctxC.newPage();
   await pg.setViewportSize({ width: 360, height: 740 });
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(700);
   await pg.click('#navToggle'); await pg.waitForTimeout(250);
   if (await pg.isVisible('#topicsBtn')) { await pg.click('#topicsBtn'); await pg.waitForTimeout(250); }
-  await pg.click('#navMenu a[href$="magind.html"]');
+  await pg.click('#navMenu a[href$="fields.html"]');
   await pg.waitForTimeout(1000);
   const mob = await probe(pg);
-  ok('A mobile menu navigates to ch3', mob.hash === '#/ch3' && mob.h1.includes('Magnetism'), JSON.stringify(mob).slice(0, 100));
+  ok('A mobile menu navigates to ch2', mob.hash === '#/ch2' && mob.h1.includes('Electric Fields'), JSON.stringify(mob).slice(0, 100));
 
   /* in-page chapter links (pager inside mounted content) */
   await pg.setViewportSize({ width: 1280, height: 900 });
@@ -273,7 +276,7 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
 /* ============ C. PART 4.5 typography parity =============================== */
 {
   const { ctx, pg } = await newPage();
-  for (const url of ['/index.html', '/topics/fields.html', '/topics/current.html', '/topics/magind.html', '/quiz.html']) {
+  for (const url of ['/index.html', '/topics/fields.html', '/topics/current.html', '/quiz.html']) {
     await pg.goto(B + url, { waitUntil: 'load' });
     await pg.waitForTimeout(700);
     const pairs = await pg.evaluate(() => {

@@ -2,7 +2,7 @@
 /* ==========================================================================
    EMC Lab — asset verification (phase 8 §6 + §7A favicon).
    Run: node tools/asset-verify.mjs
-     per page (index, quiz, 3 chapters, desktop + one mobile pass):
+     per page (index, quiz, the 2 chapter pages, desktop + one mobile pass):
        1 every <img> request answers 200 and decodes (naturalWidth > 0);
        2 every <img> ships explicit width/height (zero-CLS contract);
        3 alt contract: informative images have real alt text; empty-alt
@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -72,7 +73,7 @@ async function auditPage(url, artCount, viewport) {
   const bad = [];
   pg.on('response', r => { const u = r.url(); if (r.status() >= 400 && /\.(png|ico|svg|jpg|webp|gif)/.test(u)) bad.push(u + ' ' + r.status()); });
   pg.on('requestfailed', r => { if (/\.(png|ico|svg|jpg|webp|gif)/.test(r.url())) bad.push(r.url() + ' FAILED'); });
-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await pg.addInitScript(skipIntroOnLoad);
   await pg.goto(B + '/' + url, { waitUntil: 'networkidle' });
   await pg.waitForTimeout(800);
   const res = await pg.evaluate(() => {
@@ -83,10 +84,11 @@ async function auditPage(url, artCount, viewport) {
       noDim: imgs.filter(im => !im.getAttribute('width') || !im.getAttribute('height')).map(im => im.src),
       noAlt: imgs.filter(im => !im.hasAttribute('alt')).map(im => im.src),
       /* alt="" IS the decorative contract; it only becomes a bug when the
-         image is the sole content of a control (the control loses its name) */
+         image is the sole content of a control (the control loses its name).
+         A control named by aria-label (the mascot button) keeps its name. */
       emptyAltNotHidden: imgs.filter(im => im.getAttribute('alt') === '' && (() => {
         const c = im.closest('a,button');
-        return !!c && !c.textContent.trim();
+        return !!c && !c.textContent.trim() && !(c.getAttribute('aria-label') || '').trim();
       })()).map(im => im.src),
       lazyAbove: imgs.filter(im => im.loading === 'lazy' && im.getBoundingClientRect().top < fold * 0.9 && im.getBoundingClientRect().bottom > 0).map(im => im.src),
       stretched: imgs.filter(im => {

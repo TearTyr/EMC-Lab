@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -52,7 +53,7 @@ async function newPage(opts = {}) {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await pg.addInitScript(skipIntroOnLoad);
   return { ctx, pg };
 }
 
@@ -86,7 +87,7 @@ async function newPage(opts = {}) {
 
 /* ---- 2. throttled network: overlay lifecycle within watchdog ----------- */
 {
-  /* NOTE: deliberately NOT newPage() here — its emc.intro.v1 preset is
+  /* NOTE: deliberately NOT newPage() here — its intro-bypass init script is
      meaningless on a chapter route and (empirically, 2026-10-26) interacts
      with boot timing in a way that suppresses the overlay paint this test
      exists to observe. Plain context + the observer init only. */

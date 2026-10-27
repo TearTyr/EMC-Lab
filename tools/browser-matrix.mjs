@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium, firefox } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -58,7 +59,7 @@ for (const eng of ENGINES) {
   const errors = [];
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const pg = await ctx.newPage();
-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await pg.addInitScript(skipIntroOnLoad);
   pg.on('pageerror', e => errors.push(String(e).slice(0, 120)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 120)); });
   const ok = (name, cond, extra = '') => {
