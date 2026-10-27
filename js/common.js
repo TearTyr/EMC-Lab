@@ -1536,9 +1536,17 @@ window.EMC = (function () {
     LOADER.start(hasTex ? ['fonts', 'equations', 'ui'] : ['fonts', 'ui']);
     /* Real signal: the webfonts. Optional by contract — if the promise never
        settles, the watchdog still releases the page. */
+    /* FLASH FIX: fonts are optional by contract, but this stage used to be
+       the only one still pending at the 150 ms gate on a slow connection, so
+       the overlay popped up OVER an already-painted page, then faded out
+       (the flash on load). Give the webfonts 100 ms to settle; after that
+       the page is usable (font-display: swap handles the rest) and the
+       overlay is never built. signal() is idempotent. */
+    const fontsDone = () => LOADER.signal('fonts');
     if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
-      document.fonts.ready.then(() => LOADER.signal('fonts'), () => LOADER.signal('fonts'));
-    } else LOADER.signal('fonts');
+      document.fonts.ready.then(fontsDone, fontsDone);
+      setTimeout(fontsDone, 100);
+    } else fontsDone();
     loadLicensedFont();
     /* Real signal: the above-the-fold equations. KaTeX missing is survivable
        (every [data-tex] carries hand-readable fallback text), so this signal
