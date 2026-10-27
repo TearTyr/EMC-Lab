@@ -150,7 +150,7 @@
   /* -- header & dropdown nav -------------------------------------------- */
   .site-header { position: sticky; top: 0; z-index: 60; background: var(--bg); border-bottom: 1.5px solid var(--line); }
   .nav-inner { display: flex; align-items: center; gap: 1rem; min-height: var(--header-h); }
-  .brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--text); font-family: theme('fontFamily.title'); font-weight: 700; }
+  .brand { padding-block: .45rem; display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--text); font-family: theme('fontFamily.title'); font-weight: 700; }
   .brand-mark { width: 34px; height: 34px; flex: none; }
   .brand-name { font-size: 1.05rem; line-height: 1.15; }
   .brand-name em { font-style: normal; color: var(--pk); }
@@ -685,7 +685,7 @@
 
   /* ---- flag-for-review button on each question card ----------------------- */
   .q-flag {
-    margin-left: auto; flex: none; width: 30px; height: 30px; border-radius: 10px;
+    margin-left: auto; flex: none; width: 36px; height: 36px; border-radius: 10px;
     display: grid; place-items: center; padding: 0; cursor: pointer;
     background: transparent; border: 1.5px solid var(--line); color: var(--text-faint);
     transition: transform .2s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, color .15s ease;
@@ -728,7 +728,7 @@
   .quiz-help summary {
     display: flex; align-items: center; gap: .45rem; width: max-content; cursor: pointer;
     font-family: theme('fontFamily.ui'); font-size: .85rem; font-weight: 700; color: var(--text-dim);
-    list-style: none; border-radius: var(--r-ctl);
+    list-style: none; border-radius: var(--r-ctl); min-height: 36px;   /* tappable: was 23 px tall */
   }
   .quiz-help summary::-webkit-details-marker { display: none; }
   .quiz-help summary::before {
@@ -820,7 +820,8 @@
   .footer-links a { color: var(--text-dim); text-decoration: none; font-size: .9rem; }
   .footer-links a:hover { color: var(--sk); text-decoration: underline; }
   .breadcrumb { display: flex; gap: .5rem; align-items: center; font-size: .82rem; color: var(--text-faint); flex-wrap: wrap; }
-  .breadcrumb a { color: var(--text-dim); text-decoration: none; }
+  /* the padding/negative-margin pair grows the tap area (the link was 22 px tall) without moving anything */
+  .breadcrumb a { color: var(--text-dim); text-decoration: none; display: inline-block; padding: .4rem .2rem; margin: -.4rem -.2rem; }
   .breadcrumb a:hover { color: var(--sk); }
   .pager { display: grid; gap: .8rem; grid-template-columns: 1fr; margin-top: 1.6rem; }
   .pager a { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; background: var(--panel); border: 1.5px solid var(--line); border-radius: var(--r-card); padding: 1rem 1.25rem; }
@@ -1087,6 +1088,11 @@
   @media print { .sim-plate { display: none !important; } }
 
   /* -- page-transition fallback: ONE class, main only --------------------- */
+  /* Not-yet-revealed [data-mx] blocks wait at opacity 0 with a tilt/scale (the
+     slam entrance), and those transforms stick out past the viewport, so the page
+     used to pan sideways by 2-38 px on Chapter 2 until every heading had scrolled
+     in. clip (unlike hidden) makes no scroll container, so sticky parts still work. */
+  .emc-main { overflow-x: clip; }
   html.vt-leaving .emc-main { opacity: 0; transition: opacity var(--vt-ms) var(--vt-ease); }
   @media (prefers-reduced-motion: reduce) { html.vt-leaving .emc-main { transition: none; } }
 
@@ -1177,6 +1183,7 @@
     font-family: theme('fontFamily.ui'); font-size: .72rem; font-weight: 700; color: var(--sk);
     background: none; border: 1.5px solid var(--sk-e); border-radius: 999px;
     padding: .12rem .6rem; cursor: pointer; margin-left: .35rem; vertical-align: middle;
+    min-height: 32px; min-width: 44px;   /* was 51x25 */
   }
   .q-hint-text { display: block; margin-top: .35rem; }
 }

@@ -371,13 +371,14 @@
               <input class="range ctl-range" type="range" id="bl-rate" min="1" max="9" step="1" value="2" aria-label="Electrons transferred per rub stroke, in units of 10 to the 12">
             </div>
             <div class="readouts mt-3">
-              <div class="stat"><span class="stat-label">Balloon</span><span class="stat-value hl-cyan" id="bl-q">−0 C</span></div>
-              <div class="stat"><span class="stat-label">Hair</span><span class="stat-value hl-rose" id="bl-h">+0 C</span></div>
+              <div class="stat"><span class="stat-label">Balloon</span><span class="stat-value hl-cyan" id="bl-q">0 C</span></div>
+              <div class="stat"><span class="stat-label">Hair</span><span class="stat-value hl-rose" id="bl-h">0 C</span></div>
               <div class="stat"><span class="stat-label">Balloon + hair</span><span class="stat-value hl-emerald" id="bl-total">0 C</span></div>
             </div>
             <p class="tiny faint" id="bl-n" role="status">0 electrons moved</p>
             <p class="sim-note mono sb-full" id="bl-sub" style="overflow-wrap:anywhere">q = n·e</p>
             <div class="btn-group mt-2">
+              <button class="btn btn-sm btn-primary" type="button" id="bl-rub">Rub one stroke</button>
               <button class="btn btn-sm" type="button" id="bl-reset">Discharge (reset)</button>
             </div>
             <p class="callout callout-key tiny" style="margin-top:.8rem">What you just discovered: rubbing only <b>moves</b> electrons — the two counters are always exact opposites. <a class="link" href="#charge-summary">Back to the summary</a></p>
@@ -611,7 +612,7 @@
             </div>
             <div class="readouts mt-3">
               <div class="stat"><span class="stat-label">Charges</span><span class="stat-value" id="ar-count">0</span></div>
-              <div class="stat"><span class="stat-label">Net charge</span><span class="stat-value" id="ar-net">+0 C</span></div>
+              <div class="stat"><span class="stat-label">Net charge</span><span class="stat-value" id="ar-net">0 C</span></div>
               <div class="stat"><span class="stat-label">Selected · |F net|</span><span class="stat-value hl-cyan sb-full" id="ar-sel">—</span><span class="stat-sub sb-easy" id="ar-sel-easy">select a charge to read its force</span></div>
             </div>
             <p class="sim-note mono sb-full" id="ar-sub" style="overflow-wrap:anywhere">Tap any charge: dashed green arrows are its individual pulls, the thick arrow is the vector sum.</p>

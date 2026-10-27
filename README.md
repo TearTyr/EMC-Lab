@@ -48,6 +48,16 @@ Serve the folder with any static server, for example `python3 -m http.server`, a
 `npm run ui-verify` covers the chapter dropdown, active-chapter highlight, Details toggle and the
 mascot helper. Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
 
+### Simulations: keyboard and touch
+
+Every Chapter 2 sandbox (the arena and the field painter share `js/sandbox-core.js`) is
+keyboard-operable: focus the canvas, then `[` / `]` choose a charge, the arrow keys move it
+(Shift for bigger steps), `+` / `−` add one, `Delete` removes it and `Esc` deselects; a hidden live
+region announces each change and Ctrl+Z undoes it like a pointer edit. The balloon has a
+**Rub one stroke** button (the same maths as a drag). Touch placement, pinch zoom and `touch-action: pan-y`
+are covered by `npm run sim-verify`; `npm run responsive-verify` checks all pages at the six
+required viewports. Readouts use `EMC.unit()` so units read "641 nC", "0 C" and "73.4 kN/C".
+
 ### Quiz difficulty
 
 The quiz keeps one 16-question bank (8 per chapter); modes only change what is in play.
