@@ -48,6 +48,17 @@ Serve the folder with any static server, for example `python3 -m http.server`, a
 `npm run ui-verify` covers the chapter dropdown, active-chapter highlight, Details toggle and the
 mascot helper. Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
 
+### Quiz difficulty
+
+The quiz keeps one 16-question bank (8 per chapter); modes only change what is in play.
+**Easy** is the 8 questions tagged `easy` (4 per chapter) in lecture order, with hints and
+instant marking. **Intermediate** (the default, and how the quiz always behaved) is all 16 with
+hints and your own marking/timer choice. **Hard** is all 16 shuffled, with no hints, exam marking
+and a locked 15-minute countdown that starts on the first answer and grades itself at 0:00.
+Each question's `difficulty` lives in `js/quiz-data.js`. Saved best score and attempts are one
+shared record across modes (a perfect Easy run counts toward the same best), and difficulty
+cannot be changed mid-attempt. `npm run quiz-verify` covers the modes, submit, retake and timer.
+
 ### Mascot helper
 
 The mascot in the top bar is its own button (`js/mascot.js`), separate from the home link. It opens

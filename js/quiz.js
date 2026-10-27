@@ -67,8 +67,43 @@
     streak: 0,             // live streak (instant mode)
     bestStreak: 0,         // longest consecutive-correct run (question order)
     totalTime: 0,          // seconds, frozen at submit
-    activeCard: null       // card nearest the viewport centre (keyboard target)
+    activeCard: null,      // card nearest the viewport centre (keyboard target)
+    difficulty: 'intermediate'   // key of MODES below
   };
+
+  /* Difficulty modes. Every mode draws from the SAME 16-question bank (nothing is
+     added or edited); a mode only changes which questions are in play, their
+     order, whether hints exist, the clock and the marking style.
+       Easy         the 8 'easy' questions (4 per chapter), lecture order, hints,
+                    instant marking, no clock
+       Intermediate everything, lecture order, hints; marking and timer are the
+                    student's choice (this is how the quiz always behaved)
+       Hard         everything, shuffled, NO hints, a locked 15-minute countdown
+                    (starts on the first answer) and exam marking only */
+  const MODES = {
+    easy:         { pick: q => q.difficulty === 'easy', shuffle: false, hints: true,  instant: true,  locked: false },
+    intermediate: { pick: () => true,                   shuffle: false, hints: true,  instant: false, locked: false },
+    hard:         { pick: () => true,                   shuffle: true,  hints: false, instant: false, locked: true }
+  };
+  const HARD_MINS = 15;
+  const DIFF_LABEL = { easy: 'Easy', intermediate: 'Intermediate', hard: 'Hard' };
+  /* whole class names on purpose: Tailwind scans this file and would purge a class
+     assembled at runtime from `q-level-${...}` */
+  const LEVEL_CLASS = { easy: 'q-level-easy', intermediate: 'q-level-intermediate', hard: 'q-level-hard' };
+  const shuffleInPlace = list => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  };
+  /* The questions in play for a mode, in that mode's order. */
+  const questionsFor = key => {
+    const cfg = MODES[key];
+    const list = BANK.filter(cfg.pick);
+    return cfg.shuffle ? shuffleInPlace(list) : list;
+  };
+
 
   const el = id => document.getElementById(id);
   const visible = () => S.order.filter(q => {
@@ -152,7 +187,7 @@
         <div style="min-width:0">
           <p class="q-text">${q.q}</p>
           <span class="tag ${topicClass} q-topic">${q.label}</span>
-          <span class="tag q-level${q.level === 'full' ? ' q-level-full' : ''}">${q.level === 'full' ? 'Full' : 'Easy'}</span>${q.hint ? `
+          <span class="tag q-level ${LEVEL_CLASS[q.difficulty]}">${DIFF_LABEL[q.difficulty]}</span>${q.hint && MODES[S.difficulty].hints ? `
           <button type="button" class="q-hint-btn" data-hint="${q.id}" aria-expanded="false" aria-controls="hint-${q.id}">hint</button>
           <span class="tiny faint q-hint-text" id="hint-${q.id}" hidden>${q.hint}</span>` : ''}
         </div>
@@ -191,6 +226,9 @@
     if (el('quiz-progress-fill')) el('quiz-progress-fill').style.width = pct.toFixed(1) + '%';
     if (el('quiz-progress-text')) el('quiz-progress-text').textContent = `${answered} of ${total} answered`;
     if (el('quiz-count')) el('quiz-count').textContent = String(list.length);   // label already says "Questions"
+    // the totals follow the mode (Easy plays 8, the others 16)
+    if (el('quiz-total')) el('quiz-total').textContent = String(total);
+    if (el('quiz-total-end')) el('quiz-total-end').textContent = String(total);
 
     // live score while in instant mode
     if (S.instant && el('quiz-live')) {
@@ -378,9 +416,10 @@
   }
   /* The Timer segment: Off / Practice / Challenge, persisted as a preference
      so the quiz opens the way the student last liked it. */
-  function applyTimerMode(mode, quiet) {
+  function applyTimerMode(mode, quiet, persist) {
     S.timerMode = mode === 'up' || mode === 'down' ? mode : 'off';
-    Prefs.set('quizTimerMode', S.timerMode);
+    // Hard overrides the clock WITHOUT overwriting the student's own preference
+    if (persist !== false) Prefs.set('quizTimerMode', S.timerMode);
     const mins = el('timer-mins');
     if (mins !== null && mins !== undefined) mins.hidden = S.timerMode !== 'down';
     if (S.submitted) return;
@@ -557,6 +596,7 @@
         marked: [...S.marked],
         flagged: [...S.flagged],
         order: S.order.map(q => q.id),
+        difficulty: S.difficulty,
         optOrder: [...S.optOrder],
         instant: S.instant,
         filter: S.filter,
@@ -620,10 +660,14 @@
     S.answers = answers;
     S.marked = new Map(Array.isArray(d.marked) ? d.marked.filter(m => Array.isArray(m)).map(m => [Number(m[0]), m[1] === true]) : []);
     S.flagged = new Set(Array.isArray(d.flagged) ? d.flagged.filter(x => typeof x === 'number') : []);
+    /* Sessions saved before difficulty modes have no field: they were the full
+       bank, i.e. Intermediate. */
+    applyDifficulty(MODES[d.difficulty] ? d.difficulty : 'intermediate', true);
     if (Array.isArray(d.order)) {
       const byId = new Map(BANK.map(q => [q.id, q]));
       const order = d.order.map(id => byId.get(id)).filter(q => q !== undefined);
-      if (order.length === BANK.length) S.order = order;
+      // keep the saved order (a shuffle, or Hard's draw) only if it is the same question set
+      if (order.length === S.order.length && order.every(q => MODES[S.difficulty].pick(q))) S.order = order;
     }
     // the saved display permutation keeps A/B/C/D labels matching the answers
     if (Array.isArray(d.optOrder)) {
@@ -639,7 +683,7 @@
     if ([10, 15, 20].indexOf(Number(d.timerMins)) >= 0) S.timerMins = Number(d.timerMins);
     syncMinsChips();
     syncSegQuiet(el('quiz-timer-mode'), d.timerMode === 'up' || d.timerMode === 'down' ? d.timerMode : 'off');
-    applyTimerMode(d.timerMode, true);
+    applyTimerMode(d.timerMode, true, MODES[S.difficulty].locked === false);
     if (d.clockOn === true && Number(d.baseMs) > 0) {
       // resume the ACTIVE-time clock where it left off; the time the page was
       // closed simply never happened (a stale challenge must not auto-grade)
@@ -985,6 +1029,99 @@
     showScore();
   }
 
+  /* Everything attempt-local goes back to a clean slate: answers, marks, flags,
+     the clock, the streak, charts and the score card. Saved progress (best score,
+     attempts, chapter ticks) lives in Progress and is deliberately NOT touched.
+     The question order is rebuilt for the current mode (Hard draws a fresh
+     shuffle); marking style and timer preference are the student's and stay. */
+  function resetAttempt() {
+    S.answers.clear(); S.marked.clear(); S.flagged.clear();
+    S.submitted = false; S.blankWarned = false; S.confirmAsk = false;
+    clearTimeout(confirmHandle);
+    S.t0 = 0; S.lastMark = 0; S.times.clear(); S.streak = 0; S.bestStreak = 0; S.totalTime = 0;
+    S.baseMs = 0; S.clockOn = false;
+    S.order = questionsFor(S.difficulty);
+    S.activeCard = null;
+    buildOptOrder();               // a fresh attempt gets a fresh shuffle
+    store.remove(SESSION_KEY);
+    dismissResume(false);
+    stopTick();
+    const elT = el('quiz-timer'); if (elT) { elT.hidden = true; elT.textContent = '0:00'; }
+    const ft = el('floatTimer');
+    if (ft) { ft.hidden = true; ft.classList.remove('show', 'min', 'dragging', 'warn'); ftPos = null; }
+    const minB = el('floatTimerMin');
+    if (minB) { minB.setAttribute('aria-pressed', 'false'); minB.setAttribute('aria-label', 'Minimize timer panel'); }
+    const hint = el('floatTimerHint'); if (hint) hint.textContent = 'starts on your first answer';
+    const elS = el('quiz-streak'); if (elS) elS.hidden = true;
+    S.filter = 'all'; syncFilterButtons();
+    activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
+    activeCharts = [];
+    // empty the card too: hidden is not clean, and it would keep stale canvases around
+    const box = el('quiz-score'); if (box) { box.hidden = true; box.innerHTML = ''; }
+    render();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (err) { /* ignore */ }
+  }
+
+  /* ---- difficulty -------------------------------------------------------- */
+  const diffGroup = el('quiz-difficulty');
+  const modeSeg = el('quiz-mode');
+  const timerSeg = el('quiz-timer-mode');
+  const minsGroup = el('timer-mins');
+
+  /* Hard fixes marking and the clock; the controls are disabled (not hidden) so
+     the student can see WHY, and a title says so. */
+  function lockControls(locked) {
+    const why = locked ? 'Fixed by Hard difficulty' : '';
+    const targets = [];
+    if (modeSeg) targets.push(modeSeg.querySelector('[data-value="instant"]'));
+    if (timerSeg) timerSeg.querySelectorAll('.seg-btn').forEach(b => targets.push(b));
+    if (minsGroup) minsGroup.querySelectorAll('button').forEach(b => targets.push(b));
+    targets.forEach(b => { if (b) { b.disabled = locked; if (locked) b.title = why; else b.removeAttribute('title'); } });
+  }
+
+  function describeMode() {
+    const n = S.order.length;
+    const note = {
+      easy: `${n} starter questions \u00B7 hints on \u00B7 marked as you go \u00B7 no clock`,
+      intermediate: `All ${n} questions \u00B7 hints on \u00B7 you choose the marking and timer`,
+      hard: `All ${n} questions, shuffled \u00B7 no hints \u00B7 ${HARD_MINS}-minute clock from your first answer \u00B7 marked at the end`
+    }[S.difficulty];
+    const hintEl = el('quiz-difficulty-hint');
+    if (hintEl) hintEl.textContent = note;
+  }
+
+  /* Put the quiz into a mode: question set/order, marking and clock. `quiet`
+     skips saving the choice as the student's preference (boot and resume). The
+     caller re-renders. Changing mode mid-attempt is refused upstream. */
+  function applyDifficulty(key, quiet) {
+    const mode = MODES[key] ? key : 'intermediate';
+    const cfg = MODES[mode];
+    const leavingHard = S.difficulty === 'hard' && mode !== 'hard';
+    S.difficulty = mode;
+    if (quiet !== true) Prefs.set('quizDifficulty', mode);
+    S.order = questionsFor(mode);
+    S.activeCard = null;
+    S.instant = cfg.instant;
+    syncSegQuiet(modeSeg, S.instant ? 'instant' : 'exam');
+    syncSegQuiet(diffGroup, mode);
+    lockControls(cfg.locked);
+    if (cfg.locked) {
+      S.timerMins = HARD_MINS;
+      syncMinsChips();
+      syncSegQuiet(timerSeg, 'down');
+      applyTimerMode('down', true, false);
+    } else if (leavingHard) {
+      // give the student back their own timer choice (never overwritten while locked)
+      const savedMins = Number(Prefs.get('quizTimerMins', 10));
+      S.timerMins = [10, 15, 20].indexOf(savedMins) >= 0 ? savedMins : 10;
+      syncMinsChips();
+      const savedMode = Prefs.get('quizTimerMode', 'off');
+      syncSegQuiet(timerSeg, savedMode === 'up' || savedMode === 'down' ? savedMode : 'off');
+      applyTimerMode(savedMode, true, false);
+    }
+    describeMode();
+  }
+
   function showScore() {
     const box = el('quiz-score');
     if (!box) return;
@@ -1048,6 +1185,7 @@
         <div>
           <div class="grade ${band.cls}">${pct}%</div>
           <div class="small muted mono">${right} / ${total} correct</div>
+          <div class="tiny faint">${DIFF_LABEL[S.difficulty]} mode</div>
         </div>
         ${cheer}
         <div class="score-bar">
@@ -1102,28 +1240,7 @@
     }
     const retake = el('quiz-retake');
     if (retake) retake.addEventListener('click', () => {
-      S.answers.clear(); S.marked.clear(); S.flagged.clear();
-      S.submitted = false; S.blankWarned = false; S.confirmAsk = false;
-      clearTimeout(confirmHandle);
-      S.t0 = 0; S.lastMark = 0; S.times.clear(); S.streak = 0; S.bestStreak = 0; S.totalTime = 0;
-      S.baseMs = 0; S.clockOn = false;
-      buildOptOrder();               // a fresh attempt gets a fresh shuffle
-      store.remove(SESSION_KEY);
-      dismissResume(false);
-      clearInterval(timerHandle); timerHandle = 0;
-      const elT = el('quiz-timer'); if (elT) { elT.hidden = true; elT.textContent = '0:00'; }
-      const ft = el('floatTimer');
-      if (ft) { ft.hidden = true; ft.classList.remove('show', 'min', 'dragging', 'warn'); ftPos = null; }
-      const minB = el('floatTimerMin');
-      if (minB) { minB.setAttribute('aria-pressed', 'false'); minB.setAttribute('aria-label', 'Minimize timer panel'); }
-      const hint = el('floatTimerHint'); if (hint) hint.textContent = 'starts on your first answer';
-      const elS = el('quiz-streak'); if (elS) elS.hidden = true;
-      S.filter = 'all'; syncFilterButtons();
-      activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
-      activeCharts = [];
-      box.hidden = true;
-      render();
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (err) { /* ignore */ }
+      resetAttempt();
       toast('Quiz reset \u2014 good luck!');
     });
 
@@ -1384,10 +1501,25 @@
   syncSegQuiet(timerGroup, savedMode === 'up' || savedMode === 'down' ? savedMode : 'off');
   applyTimerMode(savedMode, true);
 
+  if (diffGroup) EMC.bindSegment(diffGroup, v => {
+    if (v === S.difficulty) return;
+    // switching sets, order, hints and the clock, so it would silently drop work
+    if (quizInProgress()) {
+      syncSegQuiet(diffGroup, S.difficulty);
+      toast('Finish or retake the quiz before changing difficulty \u2014 it would drop your answers', 'warn');
+      return;
+    }
+    applyDifficulty(v);
+    if (S.submitted) resetAttempt(); else { S.filter = 'all'; syncFilterButtons(); render(); }
+    toast(`${DIFF_LABEL[v]}: ${S.order.length} questions`);
+  });
+  const savedDifficulty = Prefs.get('quizDifficulty', 'intermediate');
+  applyDifficulty(MODES[savedDifficulty] ? savedDifficulty : 'intermediate', true);
+
   const deepTopic = topicFromURL();
   if (deepTopic) {
     S.filter = deepTopic;
-    toast(`Filtered to ${TOPIC_NAMES[deepTopic]} \u2014 your score still covers all ${BANK.length} questions`);
+    toast(`Filtered to ${TOPIC_NAMES[deepTopic]} \u2014 your score still covers all ${S.order.length} questions`);
   }
 
   // a saved in-progress attempt OFFERS to resume - never a silent restore
@@ -1402,7 +1534,7 @@
       if (sum !== null && sum !== undefined) {
         const nA = saved.answers.size;
         const nF = Array.isArray(saved.d.flagged) ? saved.d.flagged.length : 0;
-        sum.textContent = `You had ${nA} of ${BANK.length} answered${nF ? ` and ${nF} flagged` : ''} \u2014 pick up where you left off?`;
+        sum.textContent = `You had ${nA} of ${Array.isArray(saved.d.order) ? saved.d.order.length : BANK.length} answered${nF ? ` and ${nF} flagged` : ''} \u2014 pick up where you left off?`;
       }
       wrap.hidden = false;
       resumePending = true;

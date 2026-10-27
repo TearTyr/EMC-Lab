@@ -437,8 +437,19 @@ console.log('\u2500'.repeat(66));
   for (const [t, n] of [['ch1', 8], ['ch2', 8]]) {
     eq(`chapter question counts — ${t}`, bank.filter(q => q.topic === t).length, n);
   }
-  ok('every question ships a hint and an Easy/Full level',
-    bank.every(q => q.hint && q.hint.length > 8 && (q.level === 'easy' || q.level === 'full')));
+  /* CONTRACT CHANGE (2026-10-27, quiz difficulty modes): the old two-value `level`
+     ('easy'|'full') became `difficulty` ('easy'|'intermediate'|'hard') — one field
+     feeding the card tag and Easy mode. Nothing else about the bank changed. */
+  ok('every question ships a hint and a difficulty (easy / intermediate / hard)',
+    bank.every(q => q.hint && q.hint.length > 8 && ['easy', 'intermediate', 'hard'].includes(q.difficulty)) &&
+    bank.every(q => q.level === undefined));
+  const easySet = bank.filter(q => q.difficulty === 'easy');
+  eq('Easy mode draws 8 questions from the bank', easySet.length, 8);
+  for (const t of ['ch1', 'ch2']) {
+    eq(`Easy mode is balanced: 4 questions from ${t}`, easySet.filter(q => q.topic === t).length, 4);
+  }
+  ok('Hard needs both chapters represented in the harder tiers (no chapter is only easy)',
+    ['ch1', 'ch2'].every(t => bank.some(q => q.topic === t && q.difficulty !== 'easy')));
 
   const answerAll = (pickWrong) => {
     doc.querySelectorAll('.q-card').forEach(card => {
@@ -530,7 +541,7 @@ console.log('\u2500'.repeat(66));
   eq('the ch1 filter shows the 8 circuits questions', doc.querySelectorAll('.q-card').length, 8);
   click(win, doc.querySelector('[data-quiz-filter="all"]'));
   eq('all filter restores 16', doc.querySelectorAll('.q-card').length, 16);
-  eq('every card carries an Easy/Full level tag', doc.querySelectorAll('.q-card .q-level').length, 16);
+  eq('every card carries a difficulty tag', doc.querySelectorAll('.q-card .q-level').length, 16);
   ok('every question ships a hint button', doc.querySelectorAll('.q-hint-btn').length === 16);
   const hintBtn = doc.querySelector('.q-hint-btn');
   click(win, hintBtn);

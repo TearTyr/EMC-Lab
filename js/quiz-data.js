@@ -1,7 +1,9 @@
 /* Quiz bank: 16 multiple-choice questions — exactly 8 per chapter — with
    worked explanations and hints.
-   Schema: { id, topic, label, level ('easy'|'full'), q, options[4], answer
-   (0-based), explain, hint }.
+   Schema: { id, topic, label, difficulty ('easy'|'intermediate'|'hard'), q,
+   options[4], answer (0-based), explain, hint }. `difficulty` drives the quiz's
+   Easy mode (the 'easy' questions: 4 per chapter) and each card's tag; Intermediate
+   and Hard use the whole bank (see MODES in js/quiz.js).
    Coverage: ch1 Circuits & Ohm's law 8 · ch2 Electric fields & Coulomb's law 8 Every ch2 question derives from a lecture
    item (docs/spec/brief-digest.md §1.2); the three worked-example questions
    use the lecture's own configurations and were independently recomputed
@@ -13,7 +15,7 @@ window.EMC_QUIZ = [
 
   /* ================= Chapter 1 — Circuits & Ohm's law ================= */
   {
-    id: 1, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'easy',
+    id: 1, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'easy',
     q: "A 12 V battery is connected across a 4 Ω resistor. The current is:",
     options: ["48 A",
               "3 A",
@@ -24,7 +26,7 @@ window.EMC_QUIZ = [
     hint: "I = V/R. Divide, don’t multiply."
   },
   {
-    id: 2, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'easy',
+    id: 2, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'easy',
     q: "Three resistors of 2 Ω, 3 Ω and 5 Ω are connected in SERIES. Their equivalent resistance is:",
     options: ["0.97 Ω",
               "10 Ω",
@@ -35,7 +37,7 @@ window.EMC_QUIZ = [
     hint: "Series = one path = resistances add up."
   },
   {
-    id: 3, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'full',
+    id: 3, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'intermediate',
     q: "A 6 Ω and a 3 Ω resistor are connected in PARALLEL. Their equivalent resistance is:",
     options: ["9 Ω",
               "4.5 Ω",
@@ -46,7 +48,7 @@ window.EMC_QUIZ = [
     hint: "Add the CONDUCTANCES (1/R), then invert."
   },
   {
-    id: 4, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'easy',
+    id: 4, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'easy',
     q: "In a series circuit containing several different resistors, which quantity is the SAME through every resistor?",
     options: ["the voltage across it",
               "the current through it",
@@ -57,7 +59,7 @@ window.EMC_QUIZ = [
     hint: "One path — can charge pile up anywhere?"
   },
   {
-    id: 5, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'full',
+    id: 5, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'intermediate',
     q: "A 10 Ω resistor carries a current of 2 A. The power it dissipates is:",
     options: ["5 W",
               "20 W",
@@ -68,7 +70,7 @@ window.EMC_QUIZ = [
     hint: "P = I²R — the current is SQUARED."
   },
   {
-    id: 6, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'full',
+    id: 6, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'hard',
     q: "A battery of EMF 12 V has an internal resistance of 1 Ω. Connected to an external 5 Ω resistor, its terminal voltage is:",
     options: ["12 V",
               "10 V",
@@ -79,7 +81,7 @@ window.EMC_QUIZ = [
     hint: "The loop resistance is R + r. Then V = ε − Ir."
   },
   {
-    id: 7, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'full',
+    id: 7, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'intermediate',
     q: "A 12 V supply feeds two series resistors: 8 Ω then 4 Ω. The voltage across the 4 Ω resistor is:",
     options: ["8 V",
               "6 V",
@@ -90,7 +92,7 @@ window.EMC_QUIZ = [
     hint: "Same current through both — V = IR each."
   },
   {
-    id: 8, topic: 'ch1', label: "Circuits & Ohm’s Law", level: 'easy',
+    id: 8, topic: 'ch1', label: "Circuits & Ohm’s Law", difficulty: 'easy',
     q: "A 2 kW electric heater runs for 3 hours at $0.15 per kWh. The running cost is:",
     options: ["$0.90",
               "$9.00",
@@ -103,7 +105,7 @@ window.EMC_QUIZ = [
 
   /* ============ Chapter 2 — Electric fields & Coulomb's law ============ */
   {
-    id: 9, topic: 'ch2', label: "Electric charge", level: 'full',
+    id: 9, topic: 'ch2', label: "Electric charge", difficulty: 'easy',
     q: "How many electrons carry a total charge of −1.00 C? (e = 1.602×10<sup>−19</sup> C)",
     options: ["1.60×10<sup>−19</sup>",
               "6.24×10<sup>−18</sup>",
@@ -114,7 +116,7 @@ window.EMC_QUIZ = [
     hint: "Divide the total by the charge of ONE electron — don’t multiply."
   },
   {
-    id: 10, topic: 'ch2', label: "Electric charge", level: 'easy',
+    id: 10, topic: 'ch2', label: "Electric charge", difficulty: 'easy',
     q: "A student writes: “Rubbing the balloon on my hair created negative charge on the balloon, so the total charge of balloon + hair increased.” What is wrong?",
     options: ["Balloons cannot be charged at all",
               "Hair cannot lose electrons",
@@ -125,7 +127,7 @@ window.EMC_QUIZ = [
     hint: "Try the balloon sandbox: can you make the total charge change?"
   },
   {
-    id: 11, topic: 'ch2', label: "Coulomb’s law", level: 'full',
+    id: 11, topic: 'ch2', label: "Coulomb’s law", difficulty: 'easy',
     q: "Charges of +1 C and −1 C are placed 1 km apart (lecture example). The force between them is:",
     options: ["8.99 N, attractive",
               "8.99×10<sup>6</sup> N, attractive",
@@ -136,7 +138,7 @@ window.EMC_QUIZ = [
     hint: "Convert km → m BEFORE squaring: r² = (10³)² = 10⁶."
   },
   {
-    id: 12, topic: 'ch2', label: "Coulomb’s law", level: 'full',
+    id: 12, topic: 'ch2', label: "Coulomb’s law", difficulty: 'hard',
     q: "Lecture line example: q₂ = −4.0 µC at x = 0, q₁ = +3.0 µC at x = 0.20 m, q₃ = −7.0 µC at x = 0.35 m. The net force on q₁ is:",
     options: ["2.70 N toward −x",
               "8.39 N toward +x",
@@ -147,7 +149,7 @@ window.EMC_QUIZ = [
     hint: "Compute each pull separately, give each a SIGN from its direction, then add."
   },
   {
-    id: 13, topic: 'ch2', label: "Coulomb’s law", level: 'full',
+    id: 13, topic: 'ch2', label: "Coulomb’s law", difficulty: 'hard',
     q: "Lecture 2-D example: q₁ = +4.0 µC at the origin; q₂ = −6.0 µC sits 0.15 m away, 73° above the +x axis; q₃ = −5.0 µC sits on the +x axis, 0.10 m away. The net force on q₁ is closest to:",
     options: ["18.0 N along +x",
               "9.6 N at 73° above +x",
@@ -158,7 +160,7 @@ window.EMC_QUIZ = [
     hint: "Split each pull into x and y, add the components, then rebuild the vector."
   },
   {
-    id: 14, topic: 'ch2', label: "Coulomb’s law", level: 'full',
+    id: 14, topic: 'ch2', label: "Coulomb’s law", difficulty: 'hard',
     q: "In the Bohr model of hydrogen (lecture example) the electron orbits at r = 5.29×10<sup>−11</sup> m. Its speed is closest to:",
     options: ["2.19×10<sup>3</sup> m/s",
               "5.11×10<sup>4</sup> m/s",
@@ -169,7 +171,7 @@ window.EMC_QUIZ = [
     hint: "Set ke²/r² = mₑv²/r, solve for v — and TAKE THE SQUARE ROOT. (4.79×10¹² is the pre-root value; 5.11×10⁴ uses the proton’s mass.)"
   },
   {
-    id: 15, topic: 'ch2', label: "Electric field", level: 'full',
+    id: 15, topic: 'ch2', label: "Electric field", difficulty: 'hard',
     q: "Lecture example: q₊ = +4.00 µC and q₋ = −4.00 µC sit symmetrically about the y-axis, each 0.700 m from point P, the lines from P to the charges making 31.0° with the x-axis. The net electric field at P is closest to:",
     options: ["73,388 N/C along +x",
               "75,595 N/C along +y (Eₓ = 0)",
@@ -180,7 +182,7 @@ window.EMC_QUIZ = [
     hint: "Equal distances mean equal magnitudes — symmetry kills one component entirely."
   },
   {
-    id: 16, topic: 'ch2', label: "Electric field", level: 'full',
+    id: 16, topic: 'ch2', label: "Electric field", difficulty: 'easy',
     q: "A charge q₀ = +18×10<sup>−8</sup> C sits in the lecture’s uniform spot field E = 2.0 N/C. The force on it is:",
     options: ["9.0×10<sup>−8</sup> N",
               "3.6×10<sup>−7</sup> N, along E",

@@ -217,6 +217,15 @@
 
           <div class="qopts-grid" id="qopts-fields">
             <div class="qopts-cell">
+              <span class="ctl-label">Difficulty</span>
+              <div class="seg" id="quiz-difficulty" role="group" aria-label="Difficulty">
+                <button class="seg-btn" type="button" data-value="easy" aria-pressed="false">Easy</button>
+                <button class="seg-btn" type="button" data-value="intermediate" aria-pressed="true">Intermediate</button>
+                <button class="seg-btn" type="button" data-value="hard" aria-pressed="false">Hard</button>
+              </div>
+              <p class="tiny faint qopts-hint" id="quiz-difficulty-hint" role="status"></p>
+            </div>
+            <div class="qopts-cell">
               <span class="ctl-label">Topic</span>
               <div class="btn-group" role="group" aria-label="Filter questions by topic">
                 <button class="btn btn-sm active" type="button" data-quiz-filter="all" aria-pressed="true">All</button>

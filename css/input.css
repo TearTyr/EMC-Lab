@@ -1167,8 +1167,12 @@
   .val-hit { color: var(--mi); }
 
   /* -- quiz: Easy/Full level tags + optional hints ---------------------------- */
+  /* Hard locks marking and the clock: show it, don't just ignore the click */
+  .seg-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .seg-btn:disabled:hover { background: transparent; color: inherit; }
   .q-level { opacity: .85; }
-  .q-level-full { background: var(--li-t); color: var(--li); border: 1.5px solid var(--li-e); }
+  .q-level-intermediate { background: var(--li-t); color: var(--li); border: 1.5px solid var(--li-e); }
+  .q-level-hard { background: var(--pk-t); color: var(--pk); border: 1.5px solid var(--pk-e); }
   .q-hint-btn {
     font-family: theme('fontFamily.ui'); font-size: .72rem; font-weight: 700; color: var(--sk);
     background: none; border: 1.5px solid var(--sk-e); border-radius: 999px;
