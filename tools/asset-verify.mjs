@@ -2,7 +2,7 @@
 /* ==========================================================================
    EMC Lab — asset verification (phase 8 §6 + §7A favicon).
    Run: node tools/asset-verify.mjs
-     per page (index, quiz, 3 chapters, desktop + one mobile pass):
+     per page (index, quiz, the 2 chapter pages, desktop + one mobile pass):
        1 every <img> request answers 200 and decodes (naturalWidth > 0);
        2 every <img> ships explicit width/height (zero-CLS contract);
        3 alt contract: informative images have real alt text; empty-alt

@@ -4,7 +4,8 @@
    Run: node tools/lecture-values.mjs
    Drives the live UI (presets, sliders, drags) and asserts every readout
    against the governing equation, tolerance <= 1% unless noted. Covers the
-   §1.2 lecture table plus the ch1/ch3 physics claims:
+   §1.2 lecture table plus the ch1 physics claims (the retired third chapter's
+   Lorentz/Faraday checks were removed with it):
      ch2  collinear superposition   net on q1 = 5.69 N (+x)   [arena preset]
      ch2  2-D superposition         22.7 N at ~24 deg          [arena preset]
      ch2  two-charge field          E1 = 73,388; net 75,595 N/C +y; Ex = 0
@@ -13,9 +14,6 @@
      ch1  Ohm's law                 I = V/R, P = VI on a preset; R<=0 and
                                     junk input never yield NaN/Infinity
      ch1  series + Kirchhoff        79/94 ohm defaults, V(bank)+V(bulb)=12 V
-     ch3  Lorentz motion            RK4 orbit matches r = mv/|q|B (<1%)
-     ch3  Faraday + Lenz            emf = -N dPhi/dt (sign + magnitude),
-                                    Lenz direction readout present
    Exits 1 on any failure.
    ========================================================================== */
 import http from 'node:http';
@@ -176,3 +174,10 @@ const txt = (pg, id) => pg.evaluate(i => (document.getElementById(i) || {}).text
     parseSI(await txt(pg, 'circ-I')) * 37, 12, 0.05);
   await ctx.close();
 }
+
+/* This footer was missing: without closing the server and browser the process never
+   exited, so the script hung forever, printed no verdict and could never fail a run. */
+console.log('page/console errors:', errors.length ? errors.slice(0, 6) : 'none');
+if (errors.length) fails += errors.length;
+console.log(fails === 0 ? 'LECTURE VALUES PASS' : fails + ' LECTURE VALUE FAILURES');
+await browser.close(); server.close(); process.exit(fails === 0 ? 0 : 1);

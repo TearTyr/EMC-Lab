@@ -13,7 +13,9 @@ import { dirname, join } from 'path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => readFileSync(join(ROOT, p), 'utf8');
-const names = ['charge', 'coulomb', 'field', 'current', 'magind'];
+/* The two active chapter pages (js/registry.js). The retired Magnetism page and the
+   old per-lesson stubs are gone; legacy ids still resolve as hash ROUTES (aliases). */
+const names = ['current', 'fields'];
 const files = {};
 /* Prod-shaped: the public build ships HASHED script filenames and the raw
    names 404, so the shell must read script URLs from the topic's own script
@@ -58,13 +60,15 @@ const ok = (n, c, x = '') => { if (!c) { fails++; console.log('FAIL', n, x); } e
 
 for (const reduce of [false, true]) {
   const { w, errs } = await boot(reduce);
-  w.location.hash = '#/current'; await tick(400);          // calm baseline
+  w.location.hash = '#/ch1'; await tick(400);              // calm baseline
   const base = w.EMC.stats();
   const baseChains = chains(w);
-  const seq = ['field', 'magind', 'charge', 'home'];
+  /* chapters, a legacy alias that now maps onto ch2 ('field'), a retired route that must fall
+     back home ('magind'), and home itself */
+  const seq = ['ch2', 'field', 'magind', 'home'];
   for (let i = 0; i < 50; i++) w.location.hash = seq[i % 4] === 'home' ? '#/' : '#/' + seq[i % 4];
   await tick(1200);
-  w.location.hash = '#/current'; await tick(600);
+  w.location.hash = '#/ch1'; await tick(600);
   const st = w.EMC.stats();
   const tag = reduce ? '[reduce] ' : '[motion] ';
   ok(tag + '50 switches: stages back to baseline', st.stages === base.stages, JSON.stringify(st) + ' vs ' + JSON.stringify(base));

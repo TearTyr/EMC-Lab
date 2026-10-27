@@ -45,8 +45,31 @@ Serve the folder with any static server, for example `python3 -m http.server`, a
 | `npm test` | Full runtime test of both chapters, the simulations, the quiz and progress |
 | `npm run test:browsers` | Core flows in Chrome, Firefox and Edge (needs those browsers installed) |
 
-`npm run ui-verify` covers the chapter dropdown, active-chapter highlight, Details toggle and the
-mascot helper. Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
+The browser-driven scripts need Playwright's Chromium (`npx playwright install chromium`) and run
+against a throw-away local server, so nothing has to be started first:
+
+| Command | What it checks |
+|---|---|
+| `npm run intro-verify` | Landing intro: plays every load, only Skip/Start/Escape end it, no click-through, reduced motion, cleanup, final layout at six viewports |
+| `npm run ui-verify` | Chapter dropdown, active-chapter highlight, Details toggle, mascot helper |
+| `npm run quiz-verify` | Difficulty modes, one grading pass from either Submit, retake, timer (incl. time-up), resume |
+| `npm run sim-verify` | Balloon rub/discharge, sandbox keyboard model, Clear/Undo, touch placement, loop and listener lifecycle |
+| `npm run responsive-verify` | Every page at 3440×1440, 1366×768, 1024×768, 768×1024, 390×844, 844×390: no sideways scroll, legible equations, 24 px targets |
+| `npm run theme-verify` | Dark default, light opt-in, persistence without a flash, charts, WCAG AA text contrast in both themes |
+| `npm run a11y-verify`, `nav-verify`, `loader-verify`, `asset-verify`, `motion-verify` | Keyboard flows, navigation matrix, boot loader, images/fonts, motion system |
+| `node tools/interaction-test.mjs`, `lecture-values.mjs`, `stability-stress.mjs`, `shell-stress.mjs` | Pointer interactions, lecture check values in the live UI, rapid chapter switching (browser and jsdom) |
+
+### Theme
+
+Dark (charcoal, candy pastels, the drawn mascot) is the default and the site's identity. The nav
+toggle opts into a light theme by setting `data-theme="light"` on `<html>`; the choice lives in the
+existing `emc.prefs.v1` record (`theme`) and an inline script in each page's `<head>` applies it
+before first paint. The OS colour-scheme preference is deliberately **not** followed, so nobody
+gets a different-looking site by surprise. Accent colours used as text/strokes read the `--*-ink`
+tokens (the pastels in dark, darker inks in light), and the few formerly hard-coded greys are
+tokens too. Simulation canvases and figure plates stay on their dark `--plate` in both themes
+because the sims draw with fixed light-on-dark colours. Chart.js reads its colours from the
+`--chart-*` tokens and redraws on the `emc:theme` event.
 
 ### Simulations: keyboard and touch
 
@@ -89,9 +112,9 @@ call `skipIntroOnLoad` from `tools/intro-bypass.mjs` to get past it.
 
 ## Browsers
 
-The core flows pass in Chromium 141 (the Chrome engine). Firefox and Edge are in the same
-`npm run test:browsers` script but have not been run yet: run it on a machine that has them and
-record the result here before submitting.
+The scripts above run in headless Chromium (the Chrome engine). Firefox and Edge are in the
+`npm run test:browsers` script but have not been run: run it on a machine that has them and record
+the result here before submitting. Safari and real phones have not been tested.
 
 ## Deploy
 
