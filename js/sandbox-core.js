@@ -297,7 +297,7 @@
             if (x < -40 || x > w + 40 || y < -40 || y > h + 40) break;
             ctx.lineTo(x, y);
             for (const other of state.objects) {
-              if (other === c || !other.q || Math.sign(other.q) === Math.sign(c.q)) continue;
+              if (other === c || !other.q || other.type === 'test' || Math.sign(other.q) === Math.sign(c.q)) continue;
               const o = toPx(other.x, other.y);
               if (Math.hypot(x - o.x, y - o.y) < objRadius(other, state.view.scale) + 2) { hit = true; break; }
             }
@@ -512,8 +512,26 @@
       if (state.toggles.release) stepPhysics(dt * (state.toggles.slowmo ? 0.25 : 1));
       for (const o of state.objects) if (o.wobble > 0) o.wobble = Math.max(0, o.wobble - 0.06);
       render(ctx, w, h);
+      /* PERF: a still scene must not be re-traced at 60 fps. Field lines and
+         the vector grid cost thousands of fieldAt() calls per frame, and with
+         several sandboxes on one chapter page that froze the tab. Once nothing
+         can change on its own, park the Stage's rAF chain; refresh() and the
+         pointer/wheel/touch paths wake it again on any interaction. */
+      if (stage && isSettled()) stage.setIdle(true);
     }, { animate: true, intro: opts.intro === undefined ? 480 : opts.intro });
     resetView();
+
+    /* Nothing moves on its own: no release-mode physics, no ghost leaf riding
+       the field, no wobble decay, no drag/pinch in progress, intro finished. */
+    const bornAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const introMs = opts.intro === undefined ? 480 : opts.intro;
+    function isSettled() {
+      const t = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      if (t - bornAt < introMs + 150) return false;
+      if (state.toggles.release || state.dragging || pinching) return false;
+      for (const o of state.objects) if (o.type === 'test' || o.wobble > 0) return false;
+      return true;
+    }
 
     /* -- readouts --------------------------------------------------------------- */
     function readouts() {
@@ -565,7 +583,7 @@
       }
       if (opts.readouts) opts.readouts(api);
     }
-    function refresh() { stage.draw(); readouts(); checkChallenges(); }
+    function refresh() { if (stage) stage.setIdle(false); stage.draw(); readouts(); checkChallenges(); }
 
     /* -- toolbar ----------------------------------------------------------------- */
     const TOOL_LABEL = {
