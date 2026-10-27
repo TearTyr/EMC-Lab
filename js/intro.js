@@ -62,6 +62,9 @@
 
   /* ---------------------------------------------------------------- engine */
   const BEAT0 = 3.5, BEAT = 0.88;   /* ~68 BPM estimated from the reference audio */
+  /* title letter timing: tight 55 ms stagger so the word reads as one snap */
+  const LETTER_START = 3.7, LETTER_GAP = .055, LETTER_DUR = .34;
+  const TITLE_LANDED = LETTER_START + 6 * LETTER_GAP + LETTER_DUR;   /* last of 7 letters */
   const IMG = {
     sp: 'img/mascot-face-sparkle.png',
     fo: 'img/mascot-face-focus.png',
@@ -70,8 +73,11 @@
   const q = sel => overlay.querySelector(sel);
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const seg = (t, a, d) => clamp((t - a) / d);
-  const back = x => { const c = 1.8, y = x - 1; return 1 + (c + 1) * y * y * y + c * y * y; };
-  const pop = (t, a, d = .35) => t < a ? 0 : back(seg(t, a, d));
+  /* c is the overshoot strength: 1.8 is a soft settle (mascot, shapes), ~3.4 peaks
+     near 1.3x for the punchy title/chip entrances. back(1) is exactly 1, so
+     every pop lands on its final value with no residue. */
+  const back = (x, c = 1.8) => { const y = x - 1; return 1 + (c + 1) * y * y * y + c * y * y; };
+  const pop = (t, a, d = .35, c = 1.8) => t < a ? 0 : back(seg(t, a, d), c);
   function put(el, s = 1, x = 0, y = 0, r = 0, o) {
     el.style.transform = `translate(-50%,-50%) translate(${x}cqw,${y}cqw) rotate(${r}deg) scale(${s})`;
     el.style.opacity = o == null ? (s > 0.01 ? 1 : 0) : o;
@@ -139,16 +145,24 @@
     const wave = t >= 8.8 ? Math.sin((t - 8.8) * 14) * 7 * Math.exp(-(t - 8.8) * 1.2) : 0;
     put(mk, pop(t, BEAT0, .5) * (1 + .035 * bp), 0, Math.sin(t * 2.2) * .8, wave);
     ghosts.forEach(({ s, r, i }) => put(s, 1, Math.sin(t * .6 + i) * 1.2, Math.cos(t * .5 + i * 2) * 1.5, r, .16 * seg(t, BEAT0, .8)));
+    /* Kinetic title: each letter drops in from above, spinning, with a hard
+       overshoot, then snaps home — the overshoot on scale AND drop makes it
+       land slightly past its slot before settling. Alternating spin direction
+       gives the stagger its bounce. Nothing idles afterwards: once a letter has
+       landed its transform is exactly the identity. */
     letters.forEach((e, i) => {
-      const p = pop(t, 3.7 + i * .07, .4), w = Math.sin(t * 3 + i * .7) * .7 * seg(t, 5.1, .6);
-      e.style.transform = `translateY(${(1 - p) * -6 + w}cqw) scale(${p})`;
+      const p = pop(t, LETTER_START + i * LETTER_GAP, LETTER_DUR, 3.4);
+      e.style.transform = `translateY(${(1 - p) * -9}cqw) rotate(${(1 - p) * (i % 2 ? 16 : -16)}deg) scale(${p})`;
       e.style.opacity = p > .01 ? 1 : 0;
     });
-    put(ttl, 1, 0, 0, 0, t >= 3.7 ? 1 : 0);
-    put(q('#sub'), pop(t, 4.5, .4));
+    /* one impact punch on the whole word when the last letter lands */
+    const punch = Math.sin(seg(t, TITLE_LANDED, .24) * Math.PI) * .05;
+    put(ttl, 1 + punch, 0, 0, 0, t >= LETTER_START ? 1 : 0);
+    put(q('#sub'), pop(t, 4.5, .4, 2.6));
+    /* chips pop on the beat with the same overshoot, then rest at a fixed tilt */
     chips.forEach((c, i) => {
-      const cp = pop(t, BEAT0 + BEAT * (3 + i), .35), on = cp > .9 ? 1 : 0;
-      c.style.transform = `translateY(${Math.sin(t * 2 + i * 1.3) * .4 * on}cqw) rotate(${[-3, 2, -2][i] + Math.sin(t * 1.6 + i) * on}deg) scale(${cp})`;
+      const cp = pop(t, BEAT0 + BEAT * (3 + i), .35, 2.6);
+      c.style.transform = `rotate(${[-3, 2, -2][i] * Math.min(cp, 1)}deg) scale(${cp})`;
       c.style.opacity = cp > .01 ? 1 : 0;
     });
 

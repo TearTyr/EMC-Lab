@@ -1232,12 +1232,24 @@
 #introOverlay .in-start { position: absolute; left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 3%);
   font: 700 15px theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
-  color: #17181c; cursor: pointer; background: #f6d36b; padding: 10px 26px;
+  color: #17181c; cursor: pointer; background: #f6d36b; padding: 10px 26px; white-space: nowrap;
   opacity: 0; pointer-events: none; visibility: hidden;   /* unfocusable till it pops */
   transition: none; }   /* the CTA wears .btn, whose transform transition would
   fight the engine's per-frame scale writes and smear the pop — the friend's
   button has no transition, so neither does this one */
 #introOverlay .in-start.on { pointer-events: auto; }
+/* Keep Start clear of the Skip button and the chip row. The engine only writes
+   the CTA's transform/opacity, so repositioning it here is safe.
+   Phone portrait: the centred CTA would sit on top of Skip, so lift it above
+   (tablets are wide enough that the two never meet). */
+@media (max-aspect-ratio: 4/5) and (max-width: 520px) {
+  #introOverlay .in-start { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
+}
+/* Short landscape: the stage is a square with free space on both sides and no
+   vertical room under the chips, so park Start in the right-hand margin. */
+@media (max-height: 520px) and (min-aspect-ratio: 3/2) {
+  #introOverlay .in-start { left: 85%; bottom: 40%; }
+}
 /* reduced motion: the engine draws one static end frame (frame(11)); make
    sure nothing on the overlay can animate or transition at all */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }

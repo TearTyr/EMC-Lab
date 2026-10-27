@@ -21,7 +21,10 @@
      9 a re-fired loader-done after completion never re-creates the overlay
     10 repeated loader-done during playback keeps one overlay + one listener set
     11 ?t=<s> dev freeze draws one still frame and Skip still works
-    12 zero console/page errors throughout
+    12 at 3440x1440, 1366x768, 1024x768, 768x1024, 390x844 and 844x390 the Start
+       CTA overlaps no chip/title/Skip/mascot and nothing leaves the viewport
+    13 once settled, title letters and chips do not drift (same boxes at 8 s / 9.5 s)
+    14 zero console/page errors throughout
    Exits 1 on any failure.
    ========================================================================== */
 import http from 'node:http';
@@ -310,6 +313,53 @@ for (const via of ['skip button', 'Escape']) {
   await pg.click('#introSkip');
   await waitGone(pg, 4000);
   ok('11 Skip still clears a frozen frame', true);
+  await ctx.close();
+}
+
+/* 12: final composition is clean at every required viewport */
+{
+  const browser2 = browser;
+  for (const [w, h] of [[3440, 1440], [1366, 768], [1024, 768], [768, 1024], [390, 844], [844, 390]]) {
+    const ctx = await browser2.newContext({ viewport: { width: w, height: h } });
+    const pg = await ctx.newPage();
+    watch(pg);
+    await pg.goto(B + '/index.html?t=11', { waitUntil: 'load' });
+    await waitPlaying(pg);
+    const r = await pg.evaluate(() => {
+      const box = e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+      const items = {
+        skip: box(document.getElementById('introSkip')), sub: box(document.getElementById('sub')),
+        ttl: box(document.getElementById('ttl')), mk: box(document.getElementById('mk'))
+      };
+      document.querySelectorAll('#introOverlay .chip').forEach((c, i) => { items['chip' + i] = box(c); });
+      const cta = box(document.querySelector('#introOverlay .in-start'));
+      const hit = (a, c) => a.l < c.r && a.r > c.l && a.t < c.b && a.b > c.t;
+      const overlaps = Object.keys(items).filter(k => hit(cta, items[k]));
+      const chips = Object.keys(items).filter(k => k.startsWith('chip'));
+      for (const k of chips) if (hit(items.skip, items[k])) overlaps.push('skip×' + k);
+      const outside = Object.entries({ ...items, cta })
+        .filter(([, v]) => v.l < -1 || v.t < -1 || v.r > innerWidth + 1 || v.b > innerHeight + 1).map(([k]) => k);
+      return { overlaps, outside };
+    });
+    ok(`12 ${w}x${h}: Start CTA overlaps nothing and all intro text stays on screen`,
+      r.overlaps.length === 0 && r.outside.length === 0, JSON.stringify(r));
+    await ctx.close();
+  }
+}
+
+/* 13: settled elements hold still (no idle wobble) */
+{
+  const { ctx, pg } = await ctxPage();
+  const settledBoxes = async t => {
+    await pg.goto(B + `/index.html?t=${t}`, { waitUntil: 'load' });
+    await waitPlaying(pg);
+    return pg.evaluate(() => [...document.querySelectorAll('#ttl span, #sub, #introOverlay .chip')]
+      .map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(n => Math.round(n * 10) / 10); }));
+  };
+  /* chips enter on beats at ~6.1 s and ~7.0 s, so sample after the last settles */
+  const early = await settledBoxes(8), late = await settledBoxes(9.5);
+  ok('13 title letters, subtitle and chips are identical at 8 s and 9.5 s (no drift)',
+    JSON.stringify(early) === JSON.stringify(late) && early.length >= 8, `${early.length} boxes`);
   await ctx.close();
 }
 
