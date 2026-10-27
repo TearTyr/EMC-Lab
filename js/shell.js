@@ -96,8 +96,15 @@
       '<a class="btn" href="#/">Back to home</a></div></div></div>';
   }
 
-  async function fetchMain(ch) {
-    if (mainCache.has(ch.id)) return mainCache.get(ch.id);
+  const mainInflight = new Map();  // chapter id -> pending fetchMainNet promise
+  function fetchMain(ch) {
+    if (mainCache.has(ch.id)) return Promise.resolve(mainCache.get(ch.id));
+    if (!mainInflight.has(ch.id)) {
+      mainInflight.set(ch.id, fetchMainNet(ch).finally(() => mainInflight.delete(ch.id)));
+    }
+    return mainInflight.get(ch.id);
+  }
+  async function fetchMainNet(ch) {
     const res = await fetch(ch.path, { credentials: 'omit' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
@@ -125,31 +132,45 @@
   /* Sim scripts: fetched once, re-run per mount. Each sim is an IIFE that
      looks its canvas up at run time and defers init through EMC.whenNear, so
      a fresh execution binds exactly the currently mounted canvases. */
+  async function loadScriptText(url) {
+    let txt = scriptCache.get(url);
+    if (txt !== undefined) return txt;
+    try {
+      const r = await fetch(url, { credentials: 'omit' });
+      txt = r.ok ? await r.text() : null;
+    } catch (err) { txt = null; }
+    /* A FAILED fetch is never cached: a transient hiccup (flaky wi-fi, an
+       offline blip, a 500 during a deploy) used to pin txt = '' for the
+       whole session, silently killing that chapter's sims on every later
+       mount. Skip it now; the next mount retries. */
+    if (txt !== null) scriptCache.set(url, txt);
+    return txt;
+  }
+
+  /* PERF: the scripts used to be downloaded one after another (a waterfall
+     that looked like a hang on the first visit to a chapter). Download them
+     all at once, then run them strictly in document order so shared engines
+     (sandbox-core.js) still execute before the sims that need them. */
   async function runSimScripts(ch, token) {
     const srcs = srcCache.get(ch.id) || [];
-    for (const url of srcs) {
-      if (token !== loadToken) return false;    // a newer switch owns the body
-      let txt = scriptCache.get(url);
-      if (txt === undefined) {
-        try {
-          const r = await fetch(url, { credentials: 'omit' });
-          txt = r.ok ? await r.text() : null;
-        } catch (err) { txt = null; }
-        /* A FAILED fetch is never cached: a transient hiccup (flaky wi-fi, an
-           offline blip, a 500 during a deploy) used to pin txt = '' for the
-           whole session, silently killing that chapter's sims on every later
-           mount. Skip it now; the next mount retries. */
-        if (txt === null) continue;
-        scriptCache.set(url, txt);
-      }
-      if (token !== loadToken) return false;
-      if (txt) {
-        const tag = document.createElement('script');
-        tag.textContent = txt;
-        body.appendChild(tag);
-      }
+    const texts = await Promise.all(srcs.map(loadScriptText));
+    if (token !== loadToken) return false;      // a newer switch owns the body
+    for (const txt of texts) {
+      if (!txt) continue;
+      const tag = document.createElement('script');
+      tag.textContent = txt;
+      body.appendChild(tag);
     }
     return token === loadToken;
+  }
+
+  /* Warm the caches before the reader asks: chapter HTML plus its sim
+     scripts. Failures are silent; activate() simply fetches again. */
+  function warm(ch) {
+    if (!ch) return;
+    fetchMain(ch)
+      .then(() => Promise.all((srcCache.get(ch.id) || []).map(loadScriptText)))
+      .catch(() => { /* offline or mid-deploy: nothing to warm */ });
   }
 
   function showHome(opts) {
@@ -167,8 +188,8 @@
   async function activate(id, opts) {
     const ch = byId(id);
     if (!ch) { showHome(opts); return; }
+    if (active === id) return;                  // before the bump: a repeat call must not cancel an in-flight load
     const token = ++loadToken;
-    if (active === id) return;
     teardownTopic();
     active = id;
     setSections(true);
@@ -180,6 +201,14 @@
       const html = await fetchMain(ch);
       if (token !== loadToken) return;          // a newer switch won the race
       body.innerHTML = html;
+      /* Start the entrance now. It used to be restarted after the sim scripts
+         finished, so the chapter appeared, snapped back to opacity 0 and
+         faded in again: the visible flash on chapter switches. */
+      if (!EMC.reducedMotion) {
+        topicSec.classList.remove('shell-enter');
+        void topicSec.offsetWidth;
+        topicSec.classList.add('shell-enter');
+      }
       // mounted content keeps working like the standalone page: reveal-gated
       // blocks get observed now, and bare relative chapter links (field.html)
       // are re-based into topics/ so they resolve (and same-page switch) here
@@ -194,15 +223,14 @@
         if (h.indexOf('../') === 0 || h.indexOf('topics/') === 0) return;
         a.setAttribute('href', 'topics/' + h);
       });
-      if (EMC.katexify) { try { EMC.katexify(body); } catch (err) { /* typeset later */ } }
+      /* Above-the-fold maths now; the rest in idle slices (a whole merged
+         chapter typeset synchronously blocked the main thread). */
+      if (EMC.katexify) {
+        try { EMC.katexify(body, true); if (EMC.katexifyRest) EMC.katexifyRest(); } catch (err) { /* typeset later */ }
+      }
       const mine = await runSimScripts(ch, token);
       if (!mine) return;
       EMC.resizeStagesIn(topicSec);             // size canvases now that we're visible
-      if (!EMC.reducedMotion) {
-        topicSec.classList.remove('shell-enter');
-        void topicSec.offsetWidth;
-        topicSec.classList.add('shell-enter');
-      }
       focusTitle();
       if (pendingAnchor) {
         const t = document.getElementById(pendingAnchor);
@@ -265,6 +293,25 @@
     pendingAnchor = anchor;
     location.hash = '#/' + ch.id;               // hashchange drives the switch
   }, { capture: true });
+
+  /* ---- prefetch: hover/focus/touch on a chapter link, then idle ----------- */
+  const warmFromEvent = e => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    const hashAt = href.indexOf('#');
+    warm(byPath(hashAt >= 0 ? href.slice(0, hashAt) : href));
+  };
+  ['pointerover', 'focusin', 'touchstart'].forEach(t =>
+    document.addEventListener(t, warmFromEvent, { capture: true, passive: true }));
+  const saveData = !!(navigator.connection && navigator.connection.saveData);
+  if (!saveData) {
+    window.addEventListener('load', () => {
+      const idle = cb => (typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(cb, { timeout: 4000 }) : setTimeout(cb, 1500));
+      idle(() => CHAPTERS.forEach(warm));
+    }, { once: true });
+  }
 
   /* ---- boot: honour a deep link ------------------------------------------ */
   const bootRoute = routeFromHash();
