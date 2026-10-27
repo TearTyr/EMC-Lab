@@ -1238,6 +1238,30 @@ window.EMC = (function () {
       }
     },
 
+    /* Theme: dark is the default and the identity; light is opt-in. Like Details it
+       only flips one attribute on <html> plus the persisted pref, so switching never
+       reloads, resets a quiz, or touches Details/progress. (The same attribute is
+       applied by an inline script in <head> before first paint.) */
+    initThemeToggle() {
+      const root = document.documentElement;
+      const btn = document.getElementById('themeToggle');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      const apply = theme => {
+        if (theme === 'light') root.dataset.theme = 'light'; else delete root.dataset.theme;
+        if (btn) btn.setAttribute('aria-pressed', String(theme === 'light'));
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#faf7ec' : '#17181c');
+      };
+      apply(Prefs.get('theme', 'dark') === 'light' ? 'light' : 'dark');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+        apply(next);
+        Prefs.set('theme', next);
+        UI.toast(next === 'light' ? 'Light theme' : 'Dark theme');
+        document.dispatchEvent(new CustomEvent('emc:theme', { detail: next }));
+      });
+    },
+
     initYear() {
       document.querySelectorAll('[data-year]').forEach(el => { el.textContent = String(new Date().getFullYear()); });
     },
@@ -1569,6 +1593,7 @@ window.EMC = (function () {
     UI.initStorageNotice();
     UI.initYear();
     UI.initDetailToggle();
+    UI.initThemeToggle();
     UI.initAnalytics();
     UI.initPrefetch();
     UI.initPageTransitions();

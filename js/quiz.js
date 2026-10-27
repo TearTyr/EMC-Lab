@@ -1273,6 +1273,7 @@
   }
   function flushPending() { const q = pendingChart.splice(0); q.forEach(fn => fn(chartLibState === 'ready' ? window.Chart : null)); }
 
+  let lastChartArgs = null;      // so a theme switch can redraw the charts in the new colours
   function renderScoreCharts(right, total, scored) {
     // tear down previous instances now; show CSS bars until the lib is ready
     activeCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
@@ -1282,6 +1283,7 @@
     if (!chartsHost) return;
     chartsHost.hidden = true;
     if (fallback) fallback.hidden = false;
+    lastChartArgs = [right, total, scored];
     withChart(C => { if (C) drawScoreCharts(C, right, total, scored); });
   }
 
@@ -1292,8 +1294,10 @@
     const fallback = el('quiz-fallback-bars');
     chartsHost.hidden = false;
     if (fallback) fallback.hidden = true;   // the charts supersede the bars
-    C.defaults.color = '#a9bad6';
-    C.defaults.borderColor = 'rgba(148,163,184,.14)';
+    // colours come from the theme tokens (css/input.css) so charts follow dark/light
+    const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    C.defaults.color = css('--chart-text');
+    C.defaults.borderColor = css('--chart-grid');
 
     // 1. doughnut: correct vs incorrect
     activeCharts.push(new C(el('chart-score'), {
@@ -1302,8 +1306,8 @@
         labels: ['Correct', 'Incorrect'],
         datasets: [{
           data: [right, total - right],
-          backgroundColor: ['#b5d777', '#f87171'],
-          borderColor: '#0c1526', borderWidth: 3, hoverOffset: 6
+          backgroundColor: [css('--chart-good'), css('--chart-bad')],
+          borderColor: css('--chart-ring'), borderWidth: 3, hoverOffset: 6
         }]
       },
       options: {
@@ -1325,7 +1329,7 @@
     });
     activeCharts.push(new C(el('chart-topics'), {
       type: 'bar',
-      data: { labels, datasets: [{ data: vals, backgroundColor: '#a8d3e0', borderRadius: 5, maxBarThickness: 18 }] },
+      data: { labels, datasets: [{ data: vals, backgroundColor: css('--chart-bar'), borderRadius: 5, maxBarThickness: 18 }] },
       options: {
         indexAxis: 'y', maintainAspectRatio: false,
         scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
@@ -1341,8 +1345,8 @@
         labels: hist.map((h, i) => '#' + (i + 1)),
         datasets: [{
           label: 'score %', data: hist.map(h => h.pct),
-          borderColor: '#f6d36b', backgroundColor: 'rgba(251,191,36,.16)',
-          fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: '#f6d36b'
+          borderColor: css('--chart-line'), backgroundColor: css('--chart-line') + '29',
+          fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: css('--chart-line')
         }]
       },
       options: {
@@ -1352,6 +1356,11 @@
       }
     }));
   }
+
+  document.addEventListener('emc:theme', () => {
+    const box = el('quiz-score');
+    if (lastChartArgs !== null && S.submitted && box !== null && box.hidden === false) renderScoreCharts(...lastChartArgs);
+  });
 
   /* ---- toolbar --------------------------------------------------------- */
   const TOPIC_IDS = EMC_REGISTRY.chapters.map(c => c.id);

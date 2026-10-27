@@ -8,6 +8,8 @@
   <script>/* Detail Mode pref applied before first paint (no flash of wrong level);
      storage failures fall back to the technical default. */
     try { var __p = JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}'); document.documentElement.dataset.detail = (__p.detail === 'off' ? 'off' : 'on'); } catch (e) { document.documentElement.dataset.detail = 'on'; }
+    /* Theme pref (dark default; light is opt-in) applied before first paint: no flash. */
+    try { if (JSON.parse(localStorage.getItem('emc.prefs.v1') || '{}').theme === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) { /* dark */ }
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
     /* Boot dead-man switch — part of the ONE loader lifecycle owned by js/common.js.
        If the engine never comes up (a script failed to load or threw during
@@ -140,6 +142,11 @@
             <a class="dd-link" href="fields.html"><b>2 · Electric Fields &amp; Coulomb’s Law</b><small>charge · Coulomb + superposition · E-field &amp; field lines</small></a>
           </div>
         </div>
+        <button class="nav-link theme-toggle" id="themeToggle" type="button" aria-pressed="false"
+                title="Switch between the dark and light theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/></svg>
+          <span>Light theme</span>
+        </button>
         <a class="nav-link nav-cta" href="../quiz.html">Take the quiz</a>
       </nav>
     </div>

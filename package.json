@@ -20,6 +20,7 @@
     "ui-verify": "node tools/ui-verify.mjs",
     "sim-verify": "node tools/sim-verify.mjs",
     "responsive-verify": "node tools/responsive-verify.mjs",
+    "theme-verify": "node tools/theme-verify.mjs",
     "motion-verify": "node tools/motion-verify.mjs",
     "asset-verify": "node tools/asset-verify.mjs",
     "stability-stress": "node tools/stability-stress.mjs",
