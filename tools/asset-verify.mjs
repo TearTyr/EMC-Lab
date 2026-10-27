@@ -84,10 +84,11 @@ async function auditPage(url, artCount, viewport) {
       noDim: imgs.filter(im => !im.getAttribute('width') || !im.getAttribute('height')).map(im => im.src),
       noAlt: imgs.filter(im => !im.hasAttribute('alt')).map(im => im.src),
       /* alt="" IS the decorative contract; it only becomes a bug when the
-         image is the sole content of a control (the control loses its name) */
+         image is the sole content of a control (the control loses its name).
+         A control named by aria-label (the mascot button) keeps its name. */
       emptyAltNotHidden: imgs.filter(im => im.getAttribute('alt') === '' && (() => {
         const c = im.closest('a,button');
-        return !!c && !c.textContent.trim();
+        return !!c && !c.textContent.trim() && !(c.getAttribute('aria-label') || '').trim();
       })()).map(im => im.src),
       lazyAbove: imgs.filter(im => im.loading === 'lazy' && im.getBoundingClientRect().top < fold * 0.9 && im.getBoundingClientRect().bottom > 0).map(im => im.src),
       stretched: imgs.filter(im => {

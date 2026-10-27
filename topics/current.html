@@ -110,10 +110,15 @@
 
   <header class="site-header">
     <div class="wrap nav-inner">
-      <a class="brand" href="../index.html" aria-label="EMC Lab — home">
-        <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
-        <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electricity</span></span>
-      </a>
+      <div class="brand-cluster">
+        <button class="mascot-btn" id="mascotBtn" type="button" aria-haspopup="dialog" aria-expanded="false"
+                aria-controls="mascotPanel" aria-label="Ask Denki-chan for help" title="Ask Denki-chan for help">
+          <img class="brand-mark" src="../img/mascot.png" width="34" height="34" alt="">
+        </button>
+        <a class="brand" href="../index.html" aria-label="EMC Lab — home">
+          <span class="brand-name">EMC<em>Lab</em><span class="brand-sub">Electricity</span></span>
+        </a>
+      </div>
       <button class="detail-toggle" id="detailToggle" type="button" aria-pressed="true"
               title="Details: full technical explanations (pressed) or simplified ones (not pressed)">
         <span class="dt-label" aria-hidden="true">Details</span>
@@ -569,6 +574,7 @@
   <script defer src="../vendor/katex/katex.min.js"></script>
   <script defer src="../js/registry.js"></script>
   <script defer src="../js/common.js"></script>
+  <script defer src="../js/mascot.js"></script>
   <script defer src="../js/motion.js"></script>
   <script defer src="../js/sim-ohm.js"></script>
   <script defer src="../js/sim-circuit.js"></script>

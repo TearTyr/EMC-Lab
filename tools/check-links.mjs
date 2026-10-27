@@ -44,7 +44,7 @@ const rel = p => relative(ROOT, p);
 
 /** ids injected into the DOM by scripts rather than written in the markup */
 const DYNAMIC_IDS = new Set([
-  'toastHost', 'quiz-retake', 'quiz-wrong',       // created by toasts / score-card buttons
+  'toastHost', 'mascotPanel', 'mascotSay', 'quiz-retake', 'quiz-wrong',       // created by toasts / score-card buttons
   'quiz-charts', 'quiz-fallback-bars',            // injected with the score card markup
   'chart-score', 'chart-topics', 'chart-history', // Chart.js canvases inside the score card
   'bootFatal', 'bootFatalRetry',                  // loader failure card, built at runtime

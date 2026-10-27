@@ -45,7 +45,17 @@ Serve the folder with any static server, for example `python3 -m http.server`, a
 | `npm test` | Full runtime test of both chapters, the simulations, the quiz and progress |
 | `npm run test:browsers` | Core flows in Chrome, Firefox and Edge (needs those browsers installed) |
 
-Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
+`npm run ui-verify` covers the chapter dropdown, active-chapter highlight, Details toggle and the
+mascot helper. Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
+
+### Mascot helper
+
+The mascot in the top bar is its own button (`js/mascot.js`), separate from the home link. It opens
+a small non-modal panel with a tip for the current page and shortcuts to the existing tools
+(Esc, an outside click or tabbing away closes it). Other scripts make it react by dispatching
+`emc:mascot` (`{ kind: 'quiz', pct }` or `{ kind: 'chapter-done' }`); it shows a short status
+bubble and never blocks input. New class names used only in `mascot.js` must stay listed in
+`tailwind.config.js` `content`, or Tailwind drops their styles.
 
 ### Landing intro
 

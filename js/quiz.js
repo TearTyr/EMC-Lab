@@ -956,6 +956,7 @@
     const pct = scored.length ? Math.round((right / scored.length) * 100) : 0;
     Progress.recordQuiz(pct);
     document.dispatchEvent(new CustomEvent('emc:progress', { detail: Progress.read() }));
+    document.dispatchEvent(new CustomEvent('emc:mascot', { detail: { kind: 'quiz', pct } }));
     showScore();
   }
 

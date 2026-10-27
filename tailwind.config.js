@@ -11,7 +11,7 @@
    shadowed by generated utilities (it is a TOP-LEVEL option — inside
    `content` it is invalid and triggers the purge/content warning).    */
 export default {
-  content: ['./*.html', './topics/*.html', './js/quiz.js'],
+  content: ['./*.html', './topics/*.html', './js/quiz.js', './js/mascot.js'],
   blocklist: ['container', 'collapse', 'resize', 'filter', 'transform',
               'table', 'ring', 'summary', 'content', 'order', 'grow', 'shrink',
               // '!btn' / '!card' were extracted out of a JS null-check
