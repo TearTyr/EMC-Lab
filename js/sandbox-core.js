@@ -287,6 +287,8 @@
           const a = offset + (i / nLines) * Math.PI * 2;
           let x = p.x + Math.cos(a) * startR, y = p.y + Math.sin(a) * startR;
           let hit = false;
+          const heads = [];                       // direction arrowheads along this line
+          let travelled = 0, nextHead = 46;
           ctx.beginPath(); ctx.moveTo(x, y);
           for (let s = 0; s < maxSteps; s++) {
             const m = toM(x, y);
@@ -294,6 +296,8 @@
             if (f.mag < 1e-9) break;
             const sgn = c.q > 0 ? 1 : -1;
             x += sgn * (f.ex / f.mag) * step; y += sgn * (f.ey / f.mag) * step;
+            travelled += step;
+            if (travelled >= nextHead) { heads.push([x, y, Math.atan2(f.ey, f.ex)]); nextHead += 88; }
             if (x < -40 || x > w + 40 || y < -40 || y > h + 40) break;
             ctx.lineTo(x, y);
             for (const other of state.objects) {
@@ -305,6 +309,13 @@
           }
           ctx.strokeStyle = c.q > 0 ? 'rgba(248,174,190,.7)' : 'rgba(168,211,224,.7)';
           ctx.stroke();
+          /* arrowheads point along E itself (toward −), whichever end the line was traced from */
+          ctx.fillStyle = c.q > 0 ? 'rgba(250,192,205,.95)' : 'rgba(207,233,242,.95)';
+          for (const hd of heads) {
+            ctx.save(); ctx.translate(hd[0], hd[1]); ctx.rotate(hd[2]);
+            ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-4, -3.2); ctx.lineTo(-4, 3.2); ctx.closePath(); ctx.fill();
+            ctx.restore();
+          }
         }
       }
       ctx.restore();
@@ -384,6 +395,11 @@
           ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.55, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
         }
       } else {
+        /* soft halo: a flat translucent disc sized by the charge, so strong sources read at a glance */
+        ctx.save();
+        ctx.fillStyle = o.q > 0 ? 'rgba(248,174,190,.13)' : 'rgba(168,211,224,.13)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, r * 1.85, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
         chargeGlyph(ctx, p.x, p.y, r, o.q, { pulse: o.wobble });
       }
       if (state.toggles.numbers && o.q && o.type !== 'test') {
