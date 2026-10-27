@@ -734,6 +734,20 @@
     }
     return best;
   }
+  /* The card whose centre is closest to the viewport centre, among those at
+     least partly on screen (null when none is). Runs on a key press only. */
+  function nearestCard() {
+    const mid = window.innerHeight / 2;
+    let best = null, bestDist = Infinity;
+    host.querySelectorAll('.q-card').forEach(c => {
+      const r = c.getBoundingClientRect();
+      if (r.bottom <= 0 || r.top >= window.innerHeight) return;
+      const d = Math.abs((r.top + r.bottom) / 2 - mid);
+      if (d < bestDist) { best = c; bestDist = d; }
+    });
+    return best;
+  }
+
   function initKeyboardAndFocus() {
     /* Programmatic jumps (nav chips, prev/next, the 'n' shortcut) own the
        active-card targeting: their smooth scroll crosses IO thresholds on the
@@ -767,16 +781,25 @@
       // skip link, nav, pager …), Enter belongs to the link. Hijacking it here
       // would both break keyboard navigation and fire an unintended submit.
       if (t && /INPUT|TEXTAREA|SELECT|SUMMARY|BUTTON|A/.test(t.tagName)) return;
-      const card = S.activeCard;
       // NB: explicit null checks here and below, never bang-negation. Tailwind
       // scans this file for class names, and a negated identifier reads as an
       // "important" utility candidate, which compiles a phantom variant of the
       // component class into css/site.css. tools/smoke-test.mjs guards this.
-      if (card === null || card === undefined) return;
+      /* The observer only picks a card once one is >=40% on screen, so right
+         after load (or when no card is that visible) there may be none yet.
+         Only the answer/flag keys need a card, so they ask for the nearest one;
+         N and Enter never did, and used to be blocked too — which locked a
+         keyboard-only user out completely. */
+      const needCard = () => {
+        if (S.activeCard === null || S.activeCard === undefined) S.activeCard = nearestCard();
+        return S.activeCard;
+      };
       const key = e.key.toLowerCase();
       const idx = '1234'.indexOf(e.key) >= 0 ? '1234'.indexOf(e.key)
         : 'abcd'.indexOf(key) >= 0 ? 'abcd'.indexOf(key) : -1;
       if (idx >= 0 && !S.submitted) {
+        const card = needCard();
+        if (card === null) return;
         const opt = card.querySelectorAll('.opt:not([disabled])')[idx];
         if (opt) { opt.click(); e.preventDefault(); }
       } else if (e.key === 'Enter' && !S.submitted) {
@@ -790,6 +813,8 @@
         if (blank) gotoQuestion(blank.id);
         e.preventDefault();
       } else if (key === 'f' && !S.submitted) {
+        const card = needCard();
+        if (card === null) return;
         toggleFlag(Number(card.dataset.qid));   // flag the question on screen
         e.preventDefault();
       }

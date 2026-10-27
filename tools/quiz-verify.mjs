@@ -214,10 +214,10 @@ async function page(opts = {}, url = '/quiz.html') {
   const { ctx, pg } = await page({}, '/quiz.html?topic=ch1');
   const cards = await pg.evaluate(() => document.querySelectorAll('.q-card').length);
   ok('?topic=ch1 deep link filters to the 8 circuits questions', cards === 8, String(cards));
-  await pg.click('[data-quiz-filter="ch3"]');
+  await pg.click('[data-quiz-filter="ch2"]');
   await pg.waitForTimeout(300);
   const url = await pg.evaluate(() => new URL(location.href).searchParams.get('topic'));
-  ok('changing the filter keeps ?topic= truthful', url === 'ch3', String(url));
+  ok('changing the filter keeps ?topic= truthful', url === 'ch2', String(url));
   await ctx.close();
 }
 
