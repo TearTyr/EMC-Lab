@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -72,7 +73,7 @@ async function auditPage(url, artCount, viewport) {
   const bad = [];
   pg.on('response', r => { const u = r.url(); if (r.status() >= 400 && /\.(png|ico|svg|jpg|webp|gif)/.test(u)) bad.push(u + ' ' + r.status()); });
   pg.on('requestfailed', r => { if (/\.(png|ico|svg|jpg|webp|gif)/.test(r.url())) bad.push(r.url() + ' FAILED'); });
-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await pg.addInitScript(skipIntroOnLoad);
   await pg.goto(B + '/' + url, { waitUntil: 'networkidle' });
   await pg.waitForTimeout(800);
   const res = await pg.evaluate(() => {

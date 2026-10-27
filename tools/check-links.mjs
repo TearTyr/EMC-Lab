@@ -49,11 +49,11 @@ const DYNAMIC_IDS = new Set([
   'chart-score', 'chart-topics', 'chart-history', // Chart.js canvases inside the score card
   'bootFatal', 'bootFatalRetry',                  // loader failure card, built at runtime
   // phase 9 (written justification): the intro overlay's markup lives ONLY in
-  // index.html by design (intro contract: one-shot per session on the landing
-  // page). js/intro.js null-guards it (`if (!overlay) return;`) and js/motion.js
+  // index.html by design (intro contract: plays on every bare landing-page
+  // load). js/intro.js null-guards it (`if (!overlay) return;`) and js/motion.js
   // probes it only to yield the screen to a playing intro, so on every other
   // page the reference is intentionally absent-at-runtime, not broken.
-  // Behaviour is covered by intro-verify (10/10) and motion-verify (8/8).
+  // Behaviour is covered by intro-verify and motion-verify (8/8).
   'introOverlay'
 ]);
 

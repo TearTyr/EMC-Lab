@@ -1169,11 +1169,12 @@
    Start at 10.3, flash out at 11.2. Sizing is container-query based (cqw on
    #st), so the composition scales as one unit on any viewport.
    Repo contracts kept: visibility hidden until .play (loader owns boot),
-   overlay pointer-events none with auto on skip/start, .done fade on finish,
+   overlay captures pointer events while .play (no click-through; the page is
+   also inert via JS), .done fade + pointer-events none on finish,
    reduced motion = static end frame, faces fetch only when playback starts. */
 #introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden;
   transition: opacity .5s; z-index: 90; visibility: hidden; pointer-events: none; }
-#introOverlay.play { visibility: visible; }
+#introOverlay.play { visibility: visible; pointer-events: auto; }
 #introOverlay.done { opacity: 0; pointer-events: none; }
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
@@ -1221,8 +1222,8 @@
   pointer-events: none; }
 /* skip + start keep the repo's classes/ids so the a11y and smoke contracts
    (first tab stop, visible skip, real CTA link) keep holding */
-/* bottom-right, not the friend's top-right: the top-right corner owns the
-   nav's quiz CTA, which must stay clickable through playback (contract) */
+/* bottom-right, not the friend's top-right: keeps the corner clear of the nav
+   bar's quiz CTA that sits behind the overlay */
 #introOverlay .intro-skip { pointer-events: auto; position: absolute; right: 14px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); font: 700 15px theme('fontFamily.sans');
   border: 3px solid #17181c; border-radius: 99px; color: #17181c; cursor: pointer;

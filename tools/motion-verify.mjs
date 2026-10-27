@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -54,7 +55,7 @@ async function ctxPage(opts = {}) {
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
   return { ctx, pg };
 }
-const noIntro = pg => pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+const noIntro = pg => pg.addInitScript(skipIntroOnLoad);
 
 /* 1: boot gate + reveal behaviour */
 {

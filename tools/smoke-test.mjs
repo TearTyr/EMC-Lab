@@ -1330,18 +1330,28 @@ console.log('\u2500'.repeat(66));
       .test(builtCss));
 }
 
-/* ---------------- the once-per-session intro (brief PART 6) --------------- */
+/* ---------------- the every-load landing intro (brief PART 6) ------------- */
 {
   console.log('\n[intro]');
   const src = readFileSync(join(ROOT, 'js/intro.js'), 'utf8');
   const css = readFileSync(join(ROOT, 'css/input.css'), 'utf8');
-  ok('intro plays once per session under its own key, never the progress keys',
-    /emc\.intro\.v1/.test(src) && !/emc\.progress/.test(src));
+  /* CONTRACT CHANGE (2026-10-27): the intro plays on every bare landing load.
+     The seen-flag (sessionStorage emc.intro.v1 + 7-day localStorage mirror +
+     in-memory flag) is gone; the source must not touch web storage at all. */
+  ok('intro has no seen-flag: no web storage, no memory flag, never the progress keys',
+    !/sessionStorage|localStorage|__emcIntroSeen|emc\.intro\.v1|hasPlayedThisSession|markAsPlayed/
+      .test(src.replace(/\/\*[\s\S]*?\*\//g, '')) &&
+    !/emc\.progress/.test(src));
   ok('intro waits for the single loader completion event', /emc:loader-done/.test(src));
-  ok('intro skips chapter routes, replays and a failed boot',
-    /location\.hash/.test(src) && /hasPlayedThisSession\(\)/.test(src) && /bootFatal/.test(src));
-  ok('intro overlay never locks the page (overlay pointer-events none, controls auto)',
+  ok('intro skips chapter routes and a failed boot',
+    /location\.hash/.test(src) && /bootFatal/.test(src));
+  ok('only Escape (plus the Skip/Start buttons) dismisses; no any-key / any-click dismissal',
+    /event\.key === 'Escape'/.test(src) && !/dismissForInteraction/.test(src) &&
+    !/addListener\(document, 'pointerdown'/.test(src) && /lockPage\(\)/.test(src) && /\.inert = true/.test(src));
+  ok('playing intro captures pointer events (no click-through); idle/finished overlay is inert',
     /#introOverlay \{[^}]*pointer-events: none/.test(css) &&
+    /#introOverlay\.play \{[^}]*pointer-events: auto/.test(css) &&
+    /#introOverlay\.done \{[^}]*pointer-events: none/.test(css) &&
     /\.intro-skip \{[^}]*pointer-events: auto/.test(css) &&
     /\.in-start\.on \{[^}]*pointer-events: auto/.test(css));   /* v8: base CTA is inert until it pops */
   /* CONTRACT CHANGE (2026-10-25, intro v7 explainer re-stage, user directive
@@ -1417,7 +1427,7 @@ console.log('\u2500'.repeat(66));
 
   const run1 = await loadPage('index.html');
   await frames(run1.win, 4);
-  ok('a fresh session plays the intro after boot',
+  ok('a bare landing load plays the intro after boot',
     run1.doc.getElementById('introOverlay') !== null &&
     run1.doc.getElementById('introOverlay').classList.contains('play'));
   /* phase 8 §7C: deterministic completion wait — poll for overlay removal
@@ -1452,14 +1462,22 @@ console.log('\u2500'.repeat(66));
   const st1 = run1.win.EMC_INTRO.state();
   ok('the intro removes itself and leaves zero timers/listeners',
     run1.doc.getElementById('introOverlay') === null && st1.timers === 0 && st1.listeners === 0 &&
-    run1.win.sessionStorage.getItem('emc.intro.v1') === '1', JSON.stringify(st1));
+    st1.inert === 0 && run1.doc.querySelectorAll('[inert]:not(#shell-topic)').length === 0 &&
+    run1.win.sessionStorage.length === 0 && run1.win.localStorage.length === 0, JSON.stringify(st1));
   ok('auto-end is deterministic inside the composition window (no fixed-sleep padding)',
     removedAt >= 12000 && removedAt <= 15000, `removed at ~${removedAt} ms`);
   run1.win.close();
 
+  /* a stale legacy flag from the old once-per-session contract must not suppress it */
   const run2 = await loadPage('index.html', {}, { session: { 'emc.intro.v1': '1' } });
-  await frames(run2.win, 2);
-  ok('a replayed session never sees the intro', run2.doc.getElementById('introOverlay') === null);
+  await frames(run2.win, 4);
+  ok('a revisit plays the intro again even with the legacy seen-flag in storage',
+    run2.doc.getElementById('introOverlay') !== null &&
+    run2.doc.getElementById('introOverlay').classList.contains('play'));
+  run2.win.EMC_INTRO.dismiss();
+  await new Promise(r => setTimeout(r, 900));
+  ok('Skip-equivalent dismissal removes the overlay and hands the page back',
+    run2.doc.getElementById('introOverlay') === null && run2.win.EMC_INTRO.state().inert === 0);
   run2.win.close();
 
   const run3 = await loadPage('index.html?#/ch2');   // hash rides the query slot: loadPage builds the jsdom URL from it

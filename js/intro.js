@@ -1,9 +1,13 @@
 /* EMC Lab intro controller + v8 "drop-in cut" engine.
-   The lifecycle half keeps every repo contract: once per session
-   (sessionStorage `emc.intro.v1`), never on chapter routes, cancelled by a
-   fatal boot, waits for the loader's single completion event, ANY
-   pointerdown/keydown dismisses, skip + Start stay clickable through it, and
-   the overlay is fully removed afterwards with zero timers/listeners left.
+   Lifecycle contract: the intro plays on EVERY full load or refresh of the
+   bare landing page (no seen-flag of any kind: no sessionStorage, no
+   localStorage, no in-memory flag). It never runs on chapter hash routes or
+   other pages, is cancelled by a fatal boot, and waits for the loader's single
+   completion event. Only the Skip button, the Start button or Escape end it
+   early; clicks and keys elsewhere do nothing. While it plays the rest of the
+   page is `inert` (no click-through, no focus behind the overlay); the page is
+   handed back the moment playback ends or is skipped, and the overlay is then
+   removed with zero timers/listeners left.
    The engine half is the friend's frame-accurate recreation of the reference
    edit (integrated 2026-10-25): one rAF timeline, BEAT0 3.5 s flash cut into
    the title card, BEAT 0.88 s (~68 BPM) pulse, mascot face swaps, ghost
@@ -15,13 +19,6 @@
   const overlay = document.getElementById('introOverlay');
   if (!overlay) return;
 
-  const SESSION_KEY = 'emc.intro.v1';
-  /* #7.11: sessionStorage is per-tab, so every new tab replayed the whole
-     intro. A 7-day localStorage mirror keeps it once-per-browser; the
-     session key stays as the fast path and the memory fallback survives
-     blocked storage. */
-  const LS_KEY = 'emc.intro.v1.ls';
-  const LS_TTL_MS = 7 * 24 * 3600 * 1000;
   const INTRO_MS = 12000;          // engine timeline length
   const REDUCED_MOTION_MS = 1200;
   const EXIT_BUFFER_MS = 700;      // .done fade (.5 s) + slack
@@ -47,18 +44,20 @@
   function schedule(callback, delay) { timers.push(setTimeout(callback, delay)); }
   function clearTimers() { for (const timer of timers) clearTimeout(timer); timers = []; }
 
-  function hasPlayedThisSession() {
-    try { if (sessionStorage.getItem(SESSION_KEY) === '1') return true; } catch { /* below */ }
-    try {
-      const v = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-      if (v && typeof v.t === 'number' && Date.now() - v.t < LS_TTL_MS) return true;
-    } catch { /* blocked or corrupt: fall through */ }
-    return window.__emcIntroSeen === true;
+  /* The intro owns the screen: `inert` makes everything else unclickable AND
+     unfocusable (Tab can't wander behind the overlay). We only un-inert what we
+     inerted, so a page that marks its own nodes inert is left alone. */
+  let inertedNodes = [];
+  function lockPage() {
+    for (const node of document.body.children) {
+      if (node === overlay || node.inert) continue;
+      node.inert = true;
+      inertedNodes.push(node);
+    }
   }
-  function markAsPlayed() {
-    window.__emcIntroSeen = true;
-    try { sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* memory fallback */ }
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ t: Date.now() })); } catch { /* memory fallback */ }
+  function unlockPage() {
+    for (const node of inertedNodes) node.inert = false;
+    inertedNodes = [];
   }
 
   /* ---------------------------------------------------------------- engine */
@@ -104,8 +103,8 @@
     return { e, p: (i * .173) % 1, v: .045 + (i % 5) * .012, w: i * 1.7 };
   });
 
-  /* faces cost zero bytes until playback is certain (replayed sessions and
-     chapter routes never fetch them). The ghost column shares the focus face,
+  /* faces cost zero bytes until playback is certain (chapter routes
+     never fetch them). The ghost column shares the focus face,
      so it rides the same single fetch (BUG: the first integration never set
      the ghosts' src at all — six empty <img> tags; fixed 2026-10-25). */
   function loadFaces() {
@@ -183,6 +182,7 @@
 
   function finish() {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    unlockPage();                   /* page is usable while the overlay fades */
     if (!overlay.classList.contains('done')) {
       overlay.classList.add('done');
       document.dispatchEvent(new CustomEvent('emc:intro-done'));
@@ -234,12 +234,12 @@
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     clearTimers();
     removeListeners();
+    unlockPage();
     overlay.remove();
   }
 
   function dismissIntro() {
     if (removed) return;
-    markAsPlayed();
     if (!playing) { removeIntro(); return; }
     playing = false;
     finish();                       /* .done fade, then removal below */
@@ -265,22 +265,19 @@
     if (reducedMotion) overlay.classList.add('rm');   /* static poster contract */
     overlay.classList.add('play');
 
-    function dismissForInteraction(event) {
-      if (event.type === 'keydown' && event.key === 'Tab') return;
-      const target = event.target;
-      /* Let skip and Start receive their own click before the overlay goes. */
-      if (target && target.closest && target.closest('.intro-skip, .in-start')) return;
-      dismissIntro();
+    /* Escape is the one documented keyboard shortcut (also announced on the
+       Skip button via aria-keyshortcuts). Every other key and click is ignored. */
+    function skipOnEscape(event) {
+      if (event.key === 'Escape') dismissIntro();
     }
 
-    addListener(document, 'pointerdown', dismissForInteraction, { capture: true, passive: true });
-    addListener(document, 'keydown', dismissForInteraction, { capture: true });
+    lockPage();
+    addListener(document, 'keydown', skipOnEscape);
     addListener(q('#introSkip'), 'click', dismissIntro);
     addListener(go, 'click', dismissIntro);       /* navigation proceeds; overlay fades */
     addListener(document, 'visibilitychange', onVis);
     addListener(window, 'resize', readMkw);
     addListener(document, 'emc:intro-done', () => {
-      markAsPlayed();
       schedule(removeIntro, EXIT_BUFFER_MS);
     });
 
@@ -296,8 +293,8 @@
     schedule(() => { if (!removed) removeIntro(); }, INTRO_MS + EXIT_BUFFER_MS + 600);
   }
 
-  /* Only show the intro on the home page, once per browser session. */
-  if (!isHomeRoute() || hasPlayedThisSession()) {
+  /* Only the bare landing page shows the intro, on every load. */
+  if (!isHomeRoute()) {
     removeIntro();
     return;
   }
@@ -317,7 +314,8 @@
         gone: removed,
         timers: timers.length,
         listeners: listeners.length,
-        rafs: raf ? 1 : 0
+        rafs: raf ? 1 : 0,
+        inert: inertedNodes.length
       };
     },
     dismiss: dismissIntro

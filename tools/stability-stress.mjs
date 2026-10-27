@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
+import { skipIntroOnLoad } from './intro-bypass.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const FILES = new Map();
@@ -49,7 +50,7 @@ async function newPage(opts = {}) {
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errors.push('pageerror: ' + String(e).slice(0, 140)));
   pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
-  await pg.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await pg.addInitScript(skipIntroOnLoad);
   return { ctx, pg };
 }
 
@@ -193,7 +194,7 @@ const WANT = { '#/ch1': 'Circuits', '#/ch2': 'Electric Fields', '#/ch3': 'Magnet
 
   /* 10: mobile nav path (fresh context — see RAM note above) */
   const ctxC = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  await ctxC.addInitScript(() => { try { sessionStorage.setItem('emc.intro.v1', '1'); } catch (e) {} });
+  await ctxC.addInitScript(skipIntroOnLoad);
   pg = await ctxC.newPage();
   await pg.setViewportSize({ width: 360, height: 740 });
   await pg.goto(B + '/index.html', { waitUntil: 'load' });

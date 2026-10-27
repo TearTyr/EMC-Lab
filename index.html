@@ -111,9 +111,10 @@
        timeline lives in js/intro.js (BEAT0 3.5 / BEAT 0.88 — the friend's own
        timing map); sizing is container-query based so the whole composition
        scales as one unit.
-       Repo contracts kept: hidden until .play, overlay pointer-events none
-       with auto on skip/start, once per session, chapter routes skip it,
-       reduced motion gets the static end frame, faces fetch only on play.
+       Repo contracts kept: hidden until .play, plays on EVERY bare landing
+       load (no seen-flag), captures pointer events while playing and makes the
+       page inert, only Skip / Start / Escape end it early, chapter routes skip
+       it, reduced motion gets the static end frame, faces fetch only on play.
        Dev tuning: index.html?t=5.5 freezes any frame. -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
     <div id="ghosts"></div>
@@ -139,7 +140,7 @@
       </div>
     </div>
     <div id="fl"></div>
-    <button class="intro-skip" id="introSkip" type="button">Skip intro &rarr;</button>
+    <button class="intro-skip" id="introSkip" type="button" aria-keyshortcuts="Escape" title="Skip intro (Esc)">Skip intro &rarr;</button>
     <a class="btn btn-primary in-start" id="go" href="topics/current.html">Start Learning</a>
   </div>
   <a class="skip-link" href="#main">Skip to main content</a>

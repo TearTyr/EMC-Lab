@@ -47,6 +47,15 @@ Serve the folder with any static server, for example `python3 -m http.server`, a
 
 Other verification scripts (`a11y-verify`, `nav-verify`, `quiz-verify`, …) are in `tools/`.
 
+### Landing intro
+
+The intro (`js/intro.js`) plays on every full load or refresh of the bare landing page
+(`/` or `index.html`). Nothing is stored to remember it, so repeat visits see it again.
+It never runs on chapter routes (`#/ch1`, `#/ch2`) or other pages. While it plays the rest of
+the page is inert; only the **Skip intro** button, the **Start** button (from ~10.3 s) or
+**Escape** end it early. `npm run intro-verify` tests this contract. Other browser scripts
+call `skipIntroOnLoad` from `tools/intro-bypass.mjs` to get past it.
+
 ## Browsers
 
 The core flows pass in Chromium 141 (the Chrome engine). Firefox and Edge are in the same
