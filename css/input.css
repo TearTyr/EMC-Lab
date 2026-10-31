@@ -290,20 +290,21 @@
     padding: .55rem 1.15rem; border-radius: 999px; cursor: pointer;
     font-family: theme('fontFamily.ui'); font-size: .92rem; font-weight: 700;
     text-decoration: none; border: 2px solid var(--edge);
-    background: var(--panel-2); color: var(--text); user-select: none;
+    background: var(--pk); border-color: var(--pk); color: #2b1418; user-select: none;
     -webkit-tap-highlight-color: transparent;
     /* slight overshoot on the transform gives the hover lift a soft spring;
        reduced-motion flattens every transition globally (see below) */
     transition: transform .22s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, box-shadow .22s ease;
   }
-  .btn:hover { border-color: var(--edge-strong); background: var(--hover); box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }
+  .btn:hover { border-color: #fbc6d1; background: #fbc6d1; box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }   /* lighter pink, no filters */
   .btn:active:not(:disabled) { transform: translateY(0) scale(.975); }   /* gentle press */
   .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
   .btn-primary { background: var(--ye); border-color: var(--ye); color: #161a02; }
   .btn-primary:hover { background: #f1ff77; border-color: #f1ff77; }   /* lighter token, no filters */
   .btn-amber { background: var(--pk); border-color: var(--pk); color: #2b1418; }
-  .btn-ghost { background: transparent; }
-  .btn-danger { background: transparent; border-color: var(--pk); color: var(--pk-ink); }
+  .btn-ghost { background: transparent; border-color: var(--pk); color: var(--pk-ink); }
+  .btn-ghost:hover { background: var(--pk-t); border-color: var(--pk); }
+  .btn-danger { background: transparent; border-color: var(--pk); color: var(--pk-ink); border-style: dashed; }
   .btn-danger:hover { background: var(--pk-t); }
   .btn-sm { padding: .35rem .8rem; font-size: .82rem; }
   .btn-block { width: 100%; }
@@ -1306,6 +1307,23 @@
 #introOverlay .chip { font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
   border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
 #introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; }
+/* v9 kinetic text (js/intro.js). Palette: white fill, ink outline, the site's
+   --pk pink for the offset shadow. Each word is three stacked copies; the two
+   `.tr` trail copies are fill-only (no stroke, no shadow) because they are
+   faint smears and the stroke/shadow is what makes text expensive to paint. */
+#introOverlay { contain: layout paint style; }
+#introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+#introOverlay .sr { position: absolute; left: 50%; top: 42%; width: 100vmin; height: 100vmin;
+  margin: -50vmin 0 0 -50vmin; border-radius: 50%; border: 2.6vmin solid rgba(255, 255, 255, .55);
+  opacity: 0; transform: scale(.06); }
+#introOverlay #kw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em;
+  font-style: italic; color: #fff; -webkit-text-stroke: 1cqw #17181c; paint-order: stroke fill;
+  text-shadow: -.5cqw .5cqw 0 var(--pk), -1cqw 1cqw 0 var(--pk), -1.4cqw 1.4cqw 0 #17181c;
+  white-space: nowrap; text-align: center; }
+#introOverlay .kw.tr { -webkit-text-stroke: 0; text-shadow: none; }
+#introOverlay.lite .kw { text-shadow: -1cqw 1cqw 0 var(--pk); }
+#introOverlay .spk { width: 1.6cqw; height: 1.6cqw; }
 #introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: contain; }
 #introOverlay #fl { position: absolute; inset: 0; background: #fff; opacity: 0;
@@ -1448,3 +1466,53 @@
   font-weight: 700; font-size: 1.05rem; line-height: 1; color: #33202b; pointer-events: none; }
 .ch-sym.on-dark { color: #fdf3f6; }
 .ch-art figcaption { margin-top: .45rem; }
+
+/* ==========================================================================
+   Title-card transitions (js/motion.js cover()/uncover()).
+   Every page / chapter boundary is a text-motion moment: the destination's
+   name slams in letter by letter (white fill, ink stroke, pink offset shadow
+   — the intro's lettering) over two slash bars, then whips out. Colours are
+   the site tokens only (--bg, --pk, --ye). transform/opacity only; the card
+   blocks clicks while it covers. Reduced motion never creates the card. */
+.tc { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
+  overflow: hidden; pointer-events: auto; contain: layout paint style; }
+.tc::before { content: ""; position: absolute; inset: 0; background: var(--bg);
+  opacity: 0; will-change: opacity; }
+.tc-bar { position: absolute; left: -10%; top: 50%; width: 120%; height: 18vmin;
+  margin-top: -9vmin; background: var(--pk); transform: translateX(-110%) rotate(-5deg);
+  will-change: transform; }
+.tc-bar2 { height: 3.2vmin; margin-top: 8vmin; background: var(--ye);
+  transform: translateX(110%) rotate(-5deg); }
+.tc-word { position: relative; display: flex; font-family: theme('fontFamily.title');
+  font-weight: 800; font-style: italic; font-size: clamp(3.2rem, 17vmin, 11rem);
+  line-height: 1; letter-spacing: .04em; color: #fff; -webkit-text-stroke: .08em #17181c;
+  paint-order: stroke fill; text-shadow: -.05em .05em 0 var(--pk), -.1em .1em 0 #17181c;
+  white-space: nowrap; }
+.tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
+  transform: translateY(-.5em) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
+/* cover */
+.tc.on::before { animation: tc-bg .16s ease-out forwards; }
+.tc.on .tc-bar { animation: tc-bar-in .24s cubic-bezier(.2,.9,.25,1) forwards; }
+.tc.on .tc-bar2 { animation: tc-bar2-in .26s cubic-bezier(.2,.9,.25,1) .04s forwards; }
+.tc.on .tc-word span { animation: tc-slam .26s cubic-bezier(.2,1.4,.4,1) calc(var(--i) * 36ms + 60ms) forwards; }
+/* held: the arriving page starts already covered (no animation) */
+.tc.hold::before { opacity: 1; }
+.tc.hold .tc-bar { transform: translateX(0) rotate(-5deg); }
+.tc.hold .tc-bar2 { transform: translateX(0) rotate(-5deg); }
+.tc.hold .tc-word span { opacity: 1; transform: none; }
+/* reveal: letters whip up and away, bars sweep off, the page shows through */
+.tc.out { pointer-events: none; }
+.tc.out::before { opacity: 1; animation: tc-bg-out .26s ease-in .1s forwards; }
+.tc.out .tc-bar { transform: translateX(0) rotate(-5deg); animation: tc-bar-out .28s cubic-bezier(.6,0,.8,.4) .06s forwards; }
+.tc.out .tc-bar2 { transform: translateX(0) rotate(-5deg); animation: tc-bar2-out .28s cubic-bezier(.6,0,.8,.4) forwards; }
+.tc.out .tc-word span { opacity: 1; transform: none; animation: tc-whip .22s cubic-bezier(.5,0,.9,.4) calc(var(--i) * 22ms) forwards; }
+@keyframes tc-bg { to { opacity: 1; } }
+@keyframes tc-bg-out { to { opacity: 0; } }
+@keyframes tc-bar-in { to { transform: translateX(0) rotate(-5deg); } }
+@keyframes tc-bar2-in { to { transform: translateX(0) rotate(-5deg); } }
+@keyframes tc-bar-out { to { transform: translateX(120%) rotate(-5deg); } }
+@keyframes tc-bar2-out { to { transform: translateX(-120%) rotate(-5deg); } }
+@keyframes tc-slam { to { opacity: 1; transform: none; } }
+@keyframes tc-whip { to { opacity: 0; transform: translateY(-.6em) rotate(8deg) scale(.7); } }
+@media (prefers-reduced-motion: reduce) { .tc { display: none; } }
+html.mx-paused .tc * { animation-play-state: paused; }
