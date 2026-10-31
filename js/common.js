@@ -1492,9 +1492,24 @@ window.EMC = (function () {
      thread is idle, so it can never block a running canvas animation (a single
      monolithic pass measured ~80 ms of jitter right after load). */
   let texQueue = null, texPumping = false;
+  /* Background work (below-the-fold maths, chapter prefetch) must not run while
+     the intro or landing sequence is on screen: it was the source of the 150-200 ms
+     stalls that froze and then jumped the wall-clock timeline. Runs cb right away
+     when neither is active; a failsafe means the work can never be lost. */
+  function afterIntro(cb) {
+    const ev = document.documentElement.classList.contains('landing-pending') ? 'emc:landing-done'
+      : document.getElementById('introOverlay') ? 'emc:intro-gone' : null;
+    if (!ev) { cb(); return; }
+    let timer = 0;
+    const go = () => { clearTimeout(timer); document.removeEventListener(ev, go); cb(); };
+    document.addEventListener(ev, go);
+    timer = setTimeout(go, 40000);
+  }
+
   function katexifyRest() {
     if (!window.katex) return;
-    texQueue = [...document.querySelectorAll('[data-tex]:not([data-tex-done])')];
+    /* a closed Formula sheet costs nothing: it is typeset when first opened */
+    texQueue = [...document.querySelectorAll('[data-tex]:not([data-tex-done])')].filter(e => !e.closest('details.formula-sheet:not([open])'));
     if (!texQueue.length) return;
     if (texPumping) return;
     texPumping = true;
@@ -1641,9 +1656,9 @@ window.EMC = (function () {
     const idle = cb => (typeof window.requestIdleCallback === 'function'
       ? window.requestIdleCallback(cb, { timeout: 1500 })
       : setTimeout(cb, 400));
-    window.addEventListener('load', () => idle(() => {
+    window.addEventListener('load', () => afterIntro(() => idle(() => {
       katexifyRest();                 // below-the-fold maths: background work, never gates the loader
-    }));
+    })));
     // Let individual pages react to progress changes (home dashboard).
     document.dispatchEvent(new CustomEvent('emc:ready', { detail: Progress.read() }));
     /* Real signal: critical UI is bound (nav, Detail toggle, dashboard,
@@ -1656,7 +1671,7 @@ window.EMC = (function () {
     CONST, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, damp,
     eng, unit, fixed, setText, throttle,
-    Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, loadLicensedFont, whenNear,
+    Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, afterIntro, loadLicensedFont, whenNear,
     typeScale: () => canvasTypeScale,
     stats() {
       let rafs = 0;

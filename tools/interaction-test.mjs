@@ -10,13 +10,14 @@
    (a readout, a slider value, a class) - never just "no exception".
    Exits 1 on any failure, console/page error or missing asset.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 let chromium;
 try { chromium = (await import('playwright')).chromium; }
 catch { console.error('playwright not found - npm i playwright && npx playwright install chromium'); process.exit(2); }

@@ -25,6 +25,7 @@
      7 zero page/console errors throughout
    Exits 1 on any failure.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,7 +33,7 @@ import { resolve, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { chromium } from 'playwright';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(ROOT, 'public');
 
 if (!fs.existsSync(path.join(PUB, 'index.html'))) {

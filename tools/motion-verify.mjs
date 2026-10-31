@@ -15,6 +15,7 @@
      8 flash interrupted mid-dip by navigation still cleans up.
    Exits 1 on any failure.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +23,7 @@ import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
 import { skipIntroOnLoad } from './intro-bypass.mjs';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
@@ -87,17 +88,15 @@ const noIntro = pg => pg.addInitScript(skipIntroOnLoad);
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await pg.waitForTimeout(1200);                       // boot guard window
   await pg.click('a[data-topic-link="ch1"]');
-  const seen = await pg.waitForSelector('.mx-flash', { timeout: 1500 }).then(() => true).catch(() => false);
+  /* a route change is a kinetic title card (js/motion.js cover/uncover); the plain flash dip is only the fallback */
+  const seen = await pg.waitForSelector('.tc', { timeout: 1500 }).then(() => true).catch(() => false);
   const mid = seen ? await pg.evaluate(() => {
-    const f = document.querySelector('.mx-flash');
-    const cs = getComputedStyle(f);
-    const under = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
-    return { pe: cs.pointerEvents, under: under ? !f.contains(under) : true, n: document.querySelectorAll('.mx-flash').length };
+    const c = document.querySelector('.tc');
+    return { aria: c.getAttribute('aria-hidden'), word: c.querySelector('.tc-word').textContent, n: document.querySelectorAll('.tc').length };
   }) : null;
-  await pg.waitForFunction(() => !document.querySelector('.mx-flash'), null, { timeout: 1500 });
-  const goneAt = true;
-  ok('2 route change dips exactly one flash, pointer-transparent, self-removing',
-    seen && mid && mid.pe === 'none' && mid.under && mid.n === 1 && goneAt, JSON.stringify(mid));
+  await pg.waitForFunction(() => !document.querySelector('.tc'), null, { timeout: 3000 });
+  ok('2 route change shows exactly one title card (aria-hidden, destination name) and removes itself',
+    seen && mid && mid.aria === 'true' && /CIRCUITS/i.test(mid.word) && mid.n === 1, JSON.stringify(mid));
   await pg.waitForTimeout(500);
   const scanned = await pg.evaluate(() => {
     const h = document.querySelector('#shell-topic [data-mx]');

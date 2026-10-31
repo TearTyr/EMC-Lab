@@ -646,7 +646,7 @@ console.log('\u2500'.repeat(66));
   ok('the bottom submit sits after the question list',
     (doc.getElementById('quiz-list').compareDocumentPosition(submitBtns[1]) & win.Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
   ok('submit() is guarded against double grading',
-    /function submit\(\) \{\n    if \(S\.submitted\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+    /function submit\(\) \{\r?\n    if \(S\.submitted\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
 
   // Enter-key submission needs a real IntersectionObserver (active card), so it
   // is covered by the Chromium harness; here we assert the guard stays wired.
@@ -1375,13 +1375,13 @@ console.log('\u2500'.repeat(66));
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
     /class="btn btn-primary in-start"[^>]*href="topics\/current\.html"/.test(idx));
-  ok('hero keeps the supplied mascot art; intro ships the three new faces with explicit dimensions (no CLS)',
+  /* CONTRACT CHANGE (2026-10-31): the intro keeps ONE mascot face (no switching), so only the sparkle face ships. */
+  ok('hero keeps the supplied mascot art; intro ships its one face with explicit dimensions (no CLS)',
     /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img id="sp" width="409" height="415" alt="">/.test(idx) &&
-    /<img id="fo" width="409" height="415" alt="">/.test(idx) &&
-    /<img id="hp" width="409" height="415" alt="">/.test(idx) &&
-    /mascot-face-sparkle\.png/.test(src) && /mascot-face-focus\.png/.test(src) &&
-    /mascot-face-happy\.png/.test(src));
+    !/<img id="fo"/.test(idx) && !/<img id="hp"/.test(idx) &&
+    /mascot-face-sparkle\.png/.test(src) && !/mascot-face-focus\.png/.test(src) &&
+    !/mascot-face-happy\.png/.test(src));
   /* CONTRACT CHANGE (2026-10-25, intro v8 "drop-in cut", user directive:
      "remove our old intro and integrate this" — the friend's frame-accurate
      recreation replaces the v7 explainer outright. Assertions re-pointed from
@@ -1395,7 +1395,7 @@ console.log('\u2500'.repeat(66));
      .in-start kills the inherited .btn transform transition. Tokens below
      re-pointed accordingly; no assertion deleted or weakened. */
   ok('v8 grammar: beat clock, container-query stage, shape-face cast in the engine',
-    /const BEAT0 = 3\.5, BEAT = 0\.88/.test(src) &&
+    /const BEAT0 = 3\.5, BEAT = \.604/.test(src) &&   /* v10: beat measured from the reference audio */
     /#introOverlay #st \{[^}]*container-type: size/.test(css) &&
     /#introOverlay #mk \{ width: var\(--mk\)/.test(css) &&
     /#introOverlay \.tri \{[^}]*box-shadow: inset 2cqw/.test(css) &&
@@ -1403,18 +1403,22 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \.ear \{/.test(css) &&
     /* the v4 1:6 whole-video cut is gone for good */
     !/in-cola|in-skit|in-insert|in-insetspin|in-endcard/.test(css));
-  ok('v8 story beats: countdown, flash cut at BEAT0, face swaps, Start at 10.3, flash out 11.2',
-    /const face = t < 4\.5 \? 'sp' : t < 8\.8 \? 'fo' : 'hp';/.test(src) &&
-    /fl\.style\.opacity = Math\.max\(f1, f2\)/.test(src) &&
-    /go\.style\.visibility = t >= 10\.3/.test(src) &&
-    /f2 = seg\(t, 11\.2, \.8\)/.test(src) &&
-    /reducedMotion\) \{ frame\(11\); return; \}/.test(src));
-  ok('v8 fidelity fixes pinned: ghost column fetches the focus face; CTA pops without the .btn transition',
-    /for \(const g of ghosts\) g\.s\.src = IMG\.fo;/.test(src) &&
+  /* CONTRACT CHANGE (v10 "kinetic text", 2026-10-31): the test/ rework replaces the v8 timeline: six phrase
+     groups on the 0.604 s beat grid, a face per group, Start at TT + 1.4 s (~15 s), mascot jump at TE, end at
+     TE + 1 (~16.6 s). Tokens re-pointed, nothing deleted. */
+  ok('v10 story beats: countdown, flash cut at BEAT0, face per phrase group, Start at TT+1.4, static end frame',
+    /IMG = \{ sp: 'img\/mascot-face-sparkle\.png' \}/.test(src) &&
+    /S\(fl, 'opacity', clamp\(1 - Math\.abs\(t - \(BEAT0 \+ \.02\)\) \/ \.18\)/.test(src) &&
+    /S\(go, 'visibility', on \? 'visible' : 'hidden'\)/.test(src) &&
+    /const gp = pop\(t, TT \+ 1\.4, \.4\)/.test(src) &&
+    /reducedMotion\) \{ e\.frame\(e\.TT \+ 2\); return; \}/.test(src));
+  /* CONTRACT CHANGE (2026-10-31): the ghost mascots were removed so the intro stays on the one mascot. */
+  ok('the intro has no ghost mascots; CTA pops without the .btn transition',
+    !/ghosts/.test(src) && !idx.includes('id="ghosts"') &&
     /#introOverlay \.in-start \{[^}]*transition: none/.test(css));
   ok('v8 spacing is container-relative (cqw gap on the chip row, cqw stage units)',
     /#introOverlay #row \{[^}]*gap: 2cqw/.test(css) &&
-    /--mk: 34cqw; --tt: 18cqw/.test(css));
+    /--mk: 22cqw; --tt: 18cqw/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     /* CONTRACT CHANGE (2026-10-25, cleanup): mascot-sparkle only ever renders as
@@ -1422,11 +1426,10 @@ console.log('\u2500'.repeat(66));
        "real artwork, not a placeholder" intent keeps a >20 K floor on the hero
        mark and a >4 K floor on the cheer icon. */
     statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 4000);
-  ok('v8 title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips, ghosts)',
+  ok('title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips)',
     /#introOverlay \{[^}]*background: #fcefaa/.test(css) &&
-    /#introOverlay \.dot \{[^}]*background: #a8d3e0/.test(css) &&
-    /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css) &&
-    /#introOverlay \.gh \{[^}]*object-fit: contain/.test(css));
+    /#introOverlay \.dot \{[^}]*background: var\(--sk\)/.test(css) &&
+    /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css));
   const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
   ok('built stylesheet carries the phase-8 motion system + intro whip (minified)',
     /@keyframes mx-flash\{/.test(siteCss) && /@keyframes mx-rise\{/.test(siteCss) &&
@@ -1466,7 +1469,7 @@ console.log('\u2500'.repeat(66));
   }
   const tEnd0 = tPlay;
   let removedAt = -1;
-  while (Date.now() - tEnd0 < 17600) {
+  while (Date.now() - tEnd0 < 20500) {
     if (!run1.doc.getElementById('introOverlay')) { removedAt = Date.now() - tEnd0; break; }
     await new Promise(r => setTimeout(r, 50));
   }
@@ -1476,7 +1479,7 @@ console.log('\u2500'.repeat(66));
     st1.inert === 0 && run1.doc.querySelectorAll('[inert]:not(#shell-topic)').length === 0 &&
     run1.win.sessionStorage.length === 0 && run1.win.localStorage.length === 0, JSON.stringify(st1));
   ok('auto-end is deterministic inside the composition window (no fixed-sleep padding)',
-    removedAt >= 12000 && removedAt <= 15000, `removed at ~${removedAt} ms`);
+    removedAt >= 16000 && removedAt <= 19500, `removed at ~${removedAt} ms`);
   run1.win.close();
 
   /* a stale legacy flag from the old once-per-session contract must not suppress it */

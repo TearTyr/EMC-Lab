@@ -2,13 +2,14 @@
    EMC Lab — single styling source (Tailwind pipeline)
    File: css/input.css   ->   compiled to css/site.css by `bun run build:css`
 
-   Architecture (cascade layers, no specificity wars):
-     @layer base       tokens, font stacks, element resets  (lowest priority)
-     @layer components sticker cards / plates / controls   (middle)
-     @layer utilities  Tailwind's own utilities              (highest)
-   Because layers cascade base < components < utilities, ANY utility class
-   in the markup (mt-2, gap-4, font-bold...) always wins over a component or
-   element rule of equal-or-lower specificity - no !important, no :where().
+   Architecture: Tailwind's @layer directives are source-ORDER buckets, not native
+   cascade layers (the compiled css/site.css has no @layer). Output order is
+     base       tokens, font stacks, element resets
+     components sticker cards / plates / controls
+     utilities  Tailwind's own utilities (mt-2, gap-4, font-bold...)
+     then everything below the last @layer block: mascot, intro, motion, title
+     cards and landing. Those late rules come AFTER the utilities on purpose.
+   !important is reserved for reduced-motion, print, [hidden] and motion resets.
 
    Type system — ONE family site-wide: G8321 by Coji Morishita (SIL OFL 1.1),
    committed woff2, declared in css/fonts.css:
@@ -174,12 +175,11 @@
     font-size: .74rem; font-weight: 700; letter-spacing: .22em;
     text-transform: uppercase; color: var(--pk-ink);
   }
-  .eyebrow-amber, .eyebrow-violet { color: var(--pk-ink); }
-  .accent-cyan, .accent-sky    { color: var(--sk-ink); }
+  .eyebrow-amber { color: var(--pk-ink); }
+  .accent-cyan { color: var(--sk-ink); }
   .accent-amber                { color: var(--ye-ink); }
   .accent-rose                 { color: var(--pk-ink); }
   .accent-emerald              { color: var(--mi-ink); }
-  .accent-violet               { color: var(--li-ink); }
   a.link { text-decoration: underline; text-underline-offset: 3px; }
 
   /* -- header & dropdown nav -------------------------------------------- */
@@ -301,13 +301,11 @@
   .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
   .btn-primary { background: var(--ye); border-color: var(--ye); color: #161a02; }
   .btn-primary:hover { background: #f1ff77; border-color: #f1ff77; }   /* lighter token, no filters */
-  .btn-amber { background: var(--pk); border-color: var(--pk); color: #2b1418; }
   .btn-ghost { background: transparent; border-color: var(--pk); color: var(--pk-ink); }
   .btn-ghost:hover { background: var(--pk-t); border-color: var(--pk); }
   .btn-danger { background: transparent; border-color: var(--pk); color: var(--pk-ink); border-style: dashed; }
   .btn-danger:hover { background: var(--pk-t); }
   .btn-sm { padding: .35rem .8rem; font-size: .82rem; }
-  .btn-block { width: 100%; }
   .btn-group { display: inline-flex; flex-wrap: wrap; gap: .5rem; }
   .seg { display: inline-flex; background: var(--panel-2); border: 2px solid var(--line); border-radius: 999px; padding: 3px; gap: 3px; flex-wrap: wrap; }
   .seg-btn {
@@ -329,11 +327,10 @@
     color: var(--c, var(--text-faint)); border: 1.5px solid var(--ce, var(--line));
     background: var(--ct, var(--panel-2));
   }
-  .tag-cyan,    .accent-c,    .hl-cyan,    .callout-key   { --c: var(--sk-ink); --ct: var(--sk-t); --ce: var(--sk-e); }
+  .tag-cyan, .hl-cyan, .callout-key { --c: var(--sk-ink); --ct: var(--sk-t); --ce: var(--sk-e); }
   .tag-amber,   .hl-amber,   .callout-warn  { --c: var(--ye-ink); --ct: var(--ye-t); --ce: var(--ye-e); }
-  .tag-rose,    .hl-rose,    .callout-trap  { --c: var(--pk-ink); --ct: var(--pk-t); --ce: var(--pk-e); }
-  .tag-emerald, .hl-emerald, .callout-real  { --c: var(--mi-ink); --ct: var(--mi-t); --ce: var(--mi-e); }
-  .tag-violet,  .hl-violet                  { --c: var(--li-ink); --ct: var(--li-t); --ce: var(--li-e); }
+  .tag-rose, .hl-rose { --c: var(--pk-ink); --ct: var(--pk-t); --ce: var(--pk-e); }
+  .tag-emerald, .hl-emerald { --c: var(--mi-ink); --ct: var(--mi-t); --ce: var(--mi-e); }
 
   /* -- cards & panels ---------------------------------------------------- */
   .card {
@@ -402,16 +399,6 @@
   .panel[data-sim-pending] .panel-title .dot { animation: bootpulse 1.2s ease-in-out infinite; }
   @keyframes bootpulse { 50% { opacity: .3; } }
   /* circuit-builder palette: draggable component chips */
-  .circ-palette { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; padding: .5rem .2rem .7rem; }
-  .chip-drag { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
-  .chip-drag:active { cursor: grabbing; }
-  .chip-drag.chip-off { opacity: .55; border-style: dashed; }
-  .circ-drag-ghost {
-    position: fixed; z-index: 300; pointer-events: none;
-    font-family: theme('fontFamily.ui'); font-size: .78rem; font-weight: 700;
-    color: #101116; background: #f6d36b; border-radius: .5rem; padding: .3rem .7rem;
-    box-shadow: 0 6px 18px -8px #000;
-  }
   .sim-canvas { display: block; width: 100%; height: 380px; touch-action: pan-y; cursor: crosshair; background: var(--plate); border-bottom: 1.5px solid var(--line); }
   .sim-canvas.dragging { touch-action: none; }   /* set only while a canvas drag owns the pointer */
   .sim-canvas.tall { height: 440px; }
@@ -449,16 +436,12 @@
   .stat-value.hl-amber   { color: var(--ye-ink); }
   .stat-value.hl-emerald { color: var(--mi-ink); }
   .stat-value.hl-rose    { color: var(--pk-ink); }
-  .stat-value.hl-violet  { color: var(--li-ink); }
   .stat-sub { display: block; font-size: .72rem; color: var(--text-faint); }
   .sim-note { font-size: .86rem; line-height: 1.65; color: var(--text-dim); background: var(--sk-t); border-left: 3px solid var(--sk); padding: .7rem .95rem; border-radius: 0 6px 6px 0; }
   .legend { display: flex; flex-wrap: wrap; gap: .55rem 1.1rem; font-size: .78rem; color: var(--text-dim); padding: .65rem 1.2rem; border-top: 1.5px solid var(--line); background: var(--bg-soft); }
   .legend span { display: inline-flex; align-items: center; gap: .35rem; }
   .swatch { width: 11px; height: 11px; border-radius: 4px; display: inline-block; flex: none; }
   .row-list { display: grid; gap: .5rem; }
-  .row-item { display: grid; grid-template-columns: auto 1fr auto; gap: .7rem; align-items: center; background: var(--panel-2); border: 1.5px solid var(--line-soft); border-radius: var(--r-ctl); padding: .6rem .8rem; transition: border-color .15s ease, background .15s ease; }
-  .row-item:hover { border-color: var(--edge); background: var(--hover); }
-  .row-item.selected { border-color: var(--sk); background: var(--sk-t); }
   /* rebuilt circuit builder tuning rows (docs/spec/r1-r2-ground-up-plan.md §4) */
   .circ-row { display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem;
     border: 1.5px solid var(--line-soft); border-radius: var(--r-mid); background: var(--panel-2); }
@@ -466,7 +449,6 @@
   .circ-row-val { min-width: 4.5rem; text-align: center; font-size: .85rem; }
   .circ-row .btn { padding: .2rem .65rem; }
   .circ-row .btn.armed, [data-circ-part].armed { border-color: var(--ye); color: var(--ye-ink); }
-  .row-chip { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-family: theme('fontFamily.mono'); font-weight: 700; font-size: .78rem; background: var(--input-bg); border: 1.5px solid var(--line); color: var(--ye-ink); }
   .table-scroll { overflow-x: auto; border: 1.5px solid var(--line); border-radius: var(--r-mid); }
   table.data { width: 100%; border-collapse: collapse; font-size: .86rem; }
   table.data th, table.data td { padding: .55rem .8rem; text-align: left; border-bottom: 1px solid var(--line-soft); }
@@ -524,9 +506,7 @@
   /* ---- micro-interactions: short, transform/opacity-only, and all of them
      neutered by the global prefers-reduced-motion kill switch below ---- */
   .nav-link, .dd-link { transition: color .16s ease, background-color .16s ease; }
-  .ring-fg { transition: stroke-dashoffset .6s ease; }
   details.dig[open] .dig-body { animation: digIn .24s ease; }
-  @keyframes digIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
   /* the skip link's destination takes focus programmatically; a page-sized
      focus ring would be noise, the scrolled-to content is the visible cue */
   #main:focus { outline: none; }
@@ -868,8 +848,6 @@
   .pager .ttl { color: var(--text); font-weight: 700; }
   .pager .next { text-align: right; }
   .challenge { border-top: 1.5px solid var(--line); background: var(--bg-soft); }
-  .challenge .q-prompt { font-family: theme('fontFamily.ui'); font-weight: 700; font-size: .93rem; color: var(--text); }
-  .is-hidden { display: none !important; }
 
   @keyframes burst { 0% { opacity: .9; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.06); } }
 
@@ -891,7 +869,7 @@
     .topic-card:active, .card-hover:active { transform: scale(.975); }
     .opt, .seg-btn, .topic-card, .card-hover { transition: transform .12s ease; }
   }
-  .topic-card { transition: transform .18s ease; }   /* transform only: rule 1 */
+  .topic-card {  }   /* transform only: rule 1 */
   /* mounted topic sections arrive with a soft fade + 8px rise (320ms) */
   @keyframes shellIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   .shell-enter { animation: shellIn .32s ease both; }
@@ -1150,11 +1128,6 @@
     background: var(--panel-2); border: 1.5px solid var(--line-soft); border-radius: 999px;
     padding: .28rem .7rem; min-height: 32px;
   }
-  .sb-tally {
-    font-family: theme('fontFamily.ui'); font-weight: 700; color: var(--mi-ink);
-    background: var(--mi-t); border: 1.5px solid var(--mi-e); border-radius: var(--r-ctl);
-    padding: .45rem .7rem; margin-top: .7rem;
-  }
 
   /* -- Easy/Full inside sandboxes rides the site-wide Details toggle ------- */
   html[data-detail="off"] .sb-full { display: none; }
@@ -1180,32 +1153,10 @@
   @media (prefers-reduced-motion: reduce) { .sb-star { transition: none; } .sb-star.got { transform: none; } }
 
   /* -- Charge Ledger -------------------------------------------------------- */
-  .lg-totalwrap { display: grid; justify-items: center; gap: .1rem; margin-bottom: .8rem; }
-  .lg-total { font-family: theme('fontFamily.ui'); font-weight: 100; font-size: 2.6rem; color: var(--mi-ink); line-height: 1.1; }
-  .lg-tray { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
-  .lg-ball {
-    display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%;
-    border: 2.5px solid var(--edge); color: #17181c; cursor: pointer;
-    font-family: theme('fontFamily.ui'); transition: transform .15s ease;
-  }
-  .lg-ball b { font-size: 1.05rem; }
-  .lg-ball span { font-size: .68rem; font-weight: 700; }
-  .lg-ball.picked { transform: scale(1.12); border-color: var(--sk); }
   @media (prefers-reduced-motion: reduce) {
-    .lg-ball { transition: none; }
-    .lg-ball.picked { transform: none; }
   }
 
   /* -- Zero-Field Hunt chip: flat colour steps + words, never hue alone ----- */
-  .zh-chip {
-    display: inline-block; margin-top: .6rem; font-family: theme('fontFamily.ui'); font-weight: 700;
-    font-size: .82rem; border-radius: 999px; padding: .35rem .85rem;
-    border: 1.5px solid var(--line); color: var(--text-dim); background: var(--panel-2);
-  }
-  .zh-cold { color: var(--sk-ink); border-color: var(--sk-e); background: var(--sk-t); }
-  .zh-cool { color: var(--li-ink); border-color: var(--li-e); background: var(--li-t); }
-  .zh-warm { color: var(--ye-ink); border-color: var(--ye-e); background: var(--ye-t); }
-  .zh-zero { color: var(--mi-ink); border-color: var(--mi-e); background: var(--mi-t); }
 
   /* -- Bohr Tuner lecture-radius highlight ---------------------------------- */
   .val-hit { color: var(--mi-ink); }
@@ -1248,90 +1199,104 @@
 @keyframes cheer-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .mascot-cheer { animation: none; } }
 
-/* ---- intro v8 "drop-in cut" (friend's recreation, integrated 2026-10-25) --
-   Replaces the v7 explainer outright (user directive: "remove our old intro
-   and integrate this"). rAF timeline (~12 s, BEAT0 3.5 / BEAT 0.88 ≈68 BPM —
-   the friend's own timing map, restored verbatim 2026-10-25): scene A
-   shape-face countdown (ears/eyes pop, 3-2-1 at 2.05–3.13, G/O), white flash
-   cut at 3.5 into scene B title card — mascot with per-act face swaps
-   (sparkle <4.5 → focus <8.8 → happy), ghost mascots, letter-popped "EMC Lab"
-   title at 3.7, sub chip at 4.5, feature chips on beats 3–4, drifting +/−
-   charges from 4.3, orbiting electrons from 5.1, burst ring on the beat —
-   Start at 10.3, flash out at 11.2. Sizing is container-query based (cqw on
-   #st), so the composition scales as one unit on any viewport.
-   Repo contracts kept: visibility hidden until .play (loader owns boot),
-   overlay captures pointer events while .play (no click-through; the page is
-   also inert via JS), .done fade + pointer-events none on finish,
-   reduced motion = static end frame, faces fetch only when playback starts. */
-#introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden;
+/* ---- intro (js/intro.js, ported from the hand-tuned test/emc-intro-final.html) ----
+   Plays on every bare home load: shape-face countdown, then the title card where
+   the mascot changes face on every beat and six phrases fly in word by word.
+   Sizing is container-query based (cqw on #st), so the composition scales as one
+   unit on any viewport. The flight of every word is written by the engine as
+   transform/opacity; this block only holds the resting look.
+   Repo contracts kept: visibility hidden until .play (loader owns boot), overlay
+   captures pointer events while .play (the page is also inert via JS), .done
+   fade + pointer-events none on finish, reduced motion = static end frame,
+   images fetch only when playback starts. */
+#introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden; contain: layout paint style;
   transition: opacity .5s; z-index: 90; visibility: hidden; pointer-events: none; }
 #introOverlay.play { visibility: visible; pointer-events: auto; }
 #introOverlay.done { opacity: 0; pointer-events: none; }
+#introOverlay.lift { will-change: transform; }
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
   transform: translate(-50%, -50%); container-type: size;
   --mk: 34cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
 @media (max-aspect-ratio: 4/5) {
   #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
-    --mk: 38cqw; --tt: 20cqw; --sb: 4cqw; --cf: 3.6cqw; }
-  #introOverlay .chip em { display: none; }
+    --mk: 38cqw; --tt: 17cqw; --sb: 4cqw; --cf: 3.6cqw; }
 }
-#introOverlay #row { position: absolute; left: 50%; top: 86%;
-  transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
-#introOverlay .chip { opacity: 0; }
-#introOverlay #ghosts, #introOverlay #px { position: absolute; inset: 0;
-  overflow: hidden; pointer-events: none; }
-#introOverlay .pt { font-weight: 800; font-family: theme('fontFamily.sans'); }
-#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%;
-  border: .7cqw solid #f6d36b; }
-#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
-  border: .45cqw solid #17181c; }
 #introOverlay .a { position: absolute; transform: translate(-50%, -50%); opacity: 0; }
+#introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+/* the rings are drawn into one small canvas (js/intro.js drawBg) and scaled up here */
+#introOverlay #bg { position: absolute; inset: -6%; width: 112%; height: 112%; display: block; }
+
+/* scene A: the shape face and the 3-2-1-GO */
 #introOverlay .tri { width: 7cqw; height: 15cqw; border-radius: 50%;
-  box-shadow: inset 2cqw 0 0 0 #a8d3e0; }          /* crescent, not triangle */
-#introOverlay #t2 { box-shadow: inset -2cqw 0 0 0 #a8d3e0; }
+  box-shadow: inset 2cqw 0 0 0 var(--sk); }          /* crescent, not triangle */
+#introOverlay #t2 { box-shadow: inset -2cqw 0 0 0 var(--sk); }
 #introOverlay .dot { width: 5cqw; height: 5cqw; border-radius: 50%;
-  background: #a8d3e0; display: grid; place-items: center;
+  background: var(--sk); display: grid; place-items: center;
   font: 800 7cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
 #introOverlay .dot.go { background: none; }
-#introOverlay .ear { width: 6.5cqw; height: 8cqw; background: #a8d3e0;
+#introOverlay .ear { width: 6.5cqw; height: 8cqw; background: var(--sk);
   border-radius: 55% 55% 12% 12%/85% 85% 12% 12%; transform-origin: 50% 90%; }
 #introOverlay .dig { font: 800 9cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
+
+/* scene B: mascot (three faces, cross-faded per beat), ring, electrons */
 #introOverlay #mk { width: var(--mk); height: var(--mk); z-index: 2; }
+#introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%; border: .7cqw solid #f6d36b; }
+#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%; border: .45cqw solid #17181c; }
+/* faint mascots drifting behind, and the + / - charges rising: both loop on the compositor */
+#introOverlay #ghosts, #introOverlay #px { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+#introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; transform: translate(-50%, -50%) rotate(var(--r)); transition: opacity .8s; }
+#introOverlay.sb .gh { animation: gh-drift 11s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.7s); }
+#introOverlay.cut .gh { opacity: .16; }
+@keyframes gh-drift {
+  from { transform: translate(-50%, -50%) translate(-1.2vmin, -1.5vmin) rotate(var(--r)); }
+  to { transform: translate(-50%, -50%) translate(1.2vmin, 1.5vmin) rotate(var(--r)); } }
+#introOverlay #px { opacity: 0; transition: opacity .8s; }
+#introOverlay.chg #px { opacity: 1; }
+#introOverlay .pt { position: absolute; bottom: -6vh; font-weight: 800; opacity: 0; }
+#introOverlay.sb .pt { will-change: transform; animation: pt-rise var(--dur) linear var(--dl) infinite; }
+#introOverlay.lite .pt:nth-child(n+6) { display: none; }
+@keyframes pt-rise { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 12% { opacity: .5; } 88% { opacity: .5; }
+  100% { opacity: 0; transform: translateY(-112vh) rotate(420deg); } }
+
+/* title card */
 #introOverlay #ttl { font: 800 var(--tt)/1 theme('fontFamily.sans'); color: #f4eefc;
   -webkit-text-stroke: 2.2cqw #17181c; paint-order: stroke fill; white-space: nowrap; }
 #introOverlay #ttl span { display: inline-block; }
 #introOverlay #sub { font: 700 var(--sb) theme('fontFamily.sans'); background: #fff;
   color: #17181c; border: .5cqw solid #17181c; border-radius: 99cqw;
   padding: .9cqw 3cqw; white-space: nowrap; }
-#introOverlay .chip { font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
+#introOverlay #row { position: absolute; left: 50%; top: 81.5%;
+  transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
+#introOverlay .chip { opacity: 0; font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
   border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
-#introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; }
-/* v9 kinetic text (js/intro.js). Palette: white fill, ink outline, the site's
-   --pk pink for the offset shadow. Each word is three stacked copies; the two
-   `.tr` trail copies are fill-only (no stroke, no shadow) because they are
-   faint smears and the stroke/shadow is what makes text expensive to paint. */
-#introOverlay { contain: layout paint style; }
-#introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
-#introOverlay .sr { position: absolute; left: 50%; top: 42%; width: 100vmin; height: 100vmin;
-  margin: -50vmin 0 0 -50vmin; border-radius: 50%; border: 2.6vmin solid rgba(255, 255, 255, .55);
-  opacity: 0; transform: scale(.06); }
+
+/* the flying lettering: white fill, dark outline, pink then dark stacked shadow.
+   Only the phrase on screen (.kg.on) is in the render tree; #kw.meas shows all of
+   them for the one-off measuring pass. */
 #introOverlay #kw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em;
-  font-style: italic; color: #fff; -webkit-text-stroke: 1cqw #17181c; paint-order: stroke fill;
-  text-shadow: -.5cqw .5cqw 0 var(--pk), -1cqw 1cqw 0 var(--pk), -1.4cqw 1.4cqw 0 #17181c;
+#introOverlay .kg { display: none; position: absolute; inset: 0; }
+#introOverlay .kg.on, #introOverlay #kw.meas .kg { display: block; }
+#introOverlay .kg.on .kw.m { will-change: transform; }
+#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em; font-style: italic;
+  color: #fff; -webkit-text-stroke: 1cqw #17181c; paint-order: stroke fill;
+  text-shadow: -.5cqw .5cqw 0 #e8507a, -1cqw 1cqw 0 #e8507a, -1.4cqw 1.4cqw 0 #17181c;
   white-space: nowrap; text-align: center; }
-#introOverlay .kw.tr { -webkit-text-stroke: 0; text-shadow: none; }
-#introOverlay.lite .kw { text-shadow: -1cqw 1cqw 0 var(--pk); }
-#introOverlay .spk { width: 1.6cqw; height: 1.6cqw; }
-#introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: contain; }
-#introOverlay #fl { position: absolute; inset: 0; background: #fff; opacity: 0;
-  pointer-events: none; }
+#introOverlay .kw sup, #introOverlay .kw sub { font-size: .55em; line-height: 0; font-style: italic; }
+/* G8321 has no fraction bar or arrow glyph: both are drawn in the same lettering */
+#introOverlay .fb { display: block; width: 3.4em; height: .15em; margin: .12em 0; border-radius: .08em; background: #fff;
+  box-shadow: 0 0 0 .035em #17181c, -.035em .035em 0 .035em #e8507a, -.07em .07em 0 .035em #e8507a, -.105em .105em 0 .035em #17181c; }
+#introOverlay .ar { display: inline-block; width: 1.6em; height: .8em; vertical-align: -.1em; overflow: visible; fill: none;
+  stroke-linecap: round; stroke-linejoin: round; font-style: normal; }
+#introOverlay .ar .s3 { stroke: #17181c; stroke-width: 13; transform: translate(-3px, 3px); }
+#introOverlay .ar .s2 { stroke: #e8507a; stroke-width: 9; transform: translate(-1.5px, 1.5px); }
+#introOverlay .ar .s1 { stroke: #fff; stroke-width: 5; }
+#introOverlay .spk { width: 1.6cqw; height: 1.6cqw; z-index: 7; }
+
 /* skip + start keep the repo's classes/ids so the a11y and smoke contracts
-   (first tab stop, visible skip, real CTA link) keep holding */
-/* bottom-right, not the friend's top-right: keeps the corner clear of the nav
-   bar's quiz CTA that sits behind the overlay */
+   (first tab stop, visible skip, real CTA link) keep holding. Skip sits
+   bottom-right: the top-right corner is the nav's quiz CTA behind the overlay. */
 #introOverlay .intro-skip { pointer-events: auto; position: absolute; right: 14px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); font: 700 15px theme('fontFamily.sans');
   border: 3px solid #17181c; border-radius: 99px; color: #17181c; cursor: pointer;
@@ -1339,17 +1304,13 @@
 #introOverlay .intro-skip:focus-visible { outline: 3px solid #d92b4b; outline-offset: 2px; }
 #introOverlay .in-start { position: absolute; left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 3%);
-  font: 700 15px theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
-  color: #17181c; cursor: pointer; background: #f6d36b; padding: 10px 26px; white-space: nowrap;
+  font: 700 clamp(16px, 2.6vmin, 21px) theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
+  color: #2b1418; cursor: pointer; background: var(--pk); padding: .6em 1.6em; white-space: nowrap;
   opacity: 0; pointer-events: none; visibility: hidden;   /* unfocusable till it pops */
   transition: none; }   /* the CTA wears .btn, whose transform transition would
-  fight the engine's per-frame scale writes and smear the pop — the friend's
-  button has no transition, so neither does this one */
+  fight the engine's per-frame scale writes and smear the pop */
 #introOverlay .in-start.on { pointer-events: auto; }
-/* Keep Start clear of the Skip button and the chip row. The engine only writes
-   the CTA's transform/opacity, so repositioning it here is safe.
-   Phone portrait: the centred CTA would sit on top of Skip, so lift it above
-   (tablets are wide enough that the two never meet). */
+/* Phone portrait: the centred CTA would sit on top of Skip, so lift it above */
 @media (max-aspect-ratio: 4/5) and (max-width: 520px) {
   #introOverlay .in-start { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
 }
@@ -1358,8 +1319,7 @@
 @media (max-height: 520px) and (min-aspect-ratio: 3/2) {
   #introOverlay .in-start { left: 85%; bottom: 40%; }
 }
-/* reduced motion: the engine draws one static end frame (frame(11)); make
-   sure nothing on the overlay can animate or transition at all */
+/* reduced motion: the engine draws one static end frame; nothing may animate */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
 
 /* ==========================================================================
@@ -1401,7 +1361,6 @@
 
 /* menus/dialogs pop from their anchor (name-plate chip behaviour) */
 #topicsMenu.open { animation: mx-pop var(--mx-pop) cubic-bezier(.2,1.3,.3,1) both; transform-origin: top center; }
-.mx-toast-in { animation: mx-pop var(--mx-pop) cubic-bezier(.2,1.3,.3,1) both; }
 
 /* rotateY spin loop for framed inset art (footage skit insets) */
 .mx-spin { animation: mx-spin 8s ease-in-out infinite; }
@@ -1451,7 +1410,7 @@
 @media (prefers-reduced-motion: reduce) {
   [data-mx], [data-mx]:not(.mx-in) { opacity: 1 !important; transform: none !important; animation: none !important; }
   [data-mx="lines"] > *, [data-mx="corner"] > * { animation: none !important; opacity: 1 !important; transform: none !important; }
-  .mx-flash, .mx-whip, .mx-spin, #topicsMenu.open, .mx-toast-in { animation: none !important; }
+  .mx-flash, .mx-whip, .mx-spin, #topicsMenu.open { animation: none !important; }
   .fbadge, .opt.wrong::after { animation: none !important; }
 }
 
@@ -1464,15 +1423,15 @@
 .ch-art-frame img { display: block; width: 100%; height: auto; border-radius: 8px; }
 .ch-sym { position: absolute; transform: translate(-50%, -50%); font-family: theme('fontFamily.title');
   font-weight: 700; font-size: 1.05rem; line-height: 1; color: #33202b; pointer-events: none; }
-.ch-sym.on-dark { color: #fdf3f6; }
 .ch-art figcaption { margin-top: .45rem; }
 
 /* ==========================================================================
    Title-card transitions (js/motion.js cover()/uncover()).
    Every page / chapter boundary is a text-motion moment: the destination's
-   name slams in letter by letter (white fill, ink stroke, pink offset shadow
-   — the intro's lettering) over two slash bars, then whips out. Colours are
-   the site tokens only (--bg, --pk, --ye). transform/opacity only; the card
+   name slams in letter by letter in the intro's lettering (G8321 Bold, white
+   fill, coral edge, stepped #e8507a extrusion) over a pink and a yellow slash
+   bar, then whips out. Bars use the site tokens (--bg, --pk, --ye); the
+   lettering coral is the intro-only #e8507a. transform/opacity only; the card
    blocks clicks while it covers. Reduced motion never creates the card. */
 .tc { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
   overflow: hidden; pointer-events: auto; contain: layout paint style; }
@@ -1483,10 +1442,10 @@
   will-change: transform; }
 .tc-bar2 { height: 3.2vmin; margin-top: 8vmin; background: var(--ye);
   transform: translateX(110%) rotate(-5deg); }
-.tc-word { position: relative; display: flex; font-family: theme('fontFamily.title');
-  font-weight: 800; font-style: italic; font-size: clamp(3.2rem, 17vmin, 11rem);
-  line-height: 1; letter-spacing: .04em; color: #fff; -webkit-text-stroke: .08em #17181c;
-  paint-order: stroke fill; text-shadow: -.05em .05em 0 var(--pk), -.1em .1em 0 #17181c;
+.tc-word { position: relative; display: flex; font-family: theme('fontFamily.title'); font-weight: 700;
+  font-size: clamp(3.2rem, 15vmin, 10rem); line-height: 1; letter-spacing: .01em; color: #fff;
+  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;   /* the intro's lettering */
+  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a;
   white-space: nowrap; }
 .tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
   transform: translateY(-.5em) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
@@ -1516,3 +1475,123 @@
 @keyframes tc-whip { to { opacity: 0; transform: translateY(-.6em) rotate(8deg) scale(.7); } }
 @media (prefers-reduced-motion: reduce) { .tc { display: none; } }
 html.mx-paused .tc * { animation-play-state: paused; }
+
+/* ==========================================================================
+   Minimal landing page + landing sequence (js/landing.js).
+   Full-viewport hero: mascot, display title, one tagline, two buttons, one
+   meta line. After the intro's mascot jumps out the page shows ONLY the
+   background; the hero mascot then drops to the middle of the screen, rises
+   to its slot and the text slams in. `html.landing-pending` is set by a
+   tiny inline <head> script on bare-home loads only (never with reduced
+   motion or without JS), and landing.js always clears it (failsafes). */
+.hero-full { min-height: calc(100vh - var(--header-h)); min-height: calc(100svh - var(--header-h));
+  display: grid; align-items: center; padding-block: 1.5rem; }
+.hero-full .h-hero { font-size: clamp(3.2rem, 13vw, 7.2rem); line-height: 1; margin: .2rem 0 0;
+  color: var(--text); text-shadow: -.035em .035em 0 var(--pk), -.07em .07em 0 var(--pk-e); }
+.hero-tag { margin: 0; font-size: clamp(1.05rem, 2.6vw, 1.4rem); color: var(--text-dim); }
+.hero-meta { margin: .3rem 0 0; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.hero-meta span { color: var(--pk-ink); font-weight: 700; }
+.sandbox-row { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin: 1.4rem 0 0; padding: 0; }
+.sandbox-row a { display: inline-block; padding: .3rem .85rem; border: 1.5px solid var(--line); border-radius: 999px;
+  font-size: .85rem; color: var(--text-dim); text-decoration: none; transition: border-color .15s ease, color .15s ease; }
+.sandbox-row a:hover { border-color: var(--pk); color: var(--pk-ink); }
+.formula-sheet > summary { cursor: pointer; font-family: theme('fontFamily.ui'); font-weight: 700; color: var(--text-dim); padding: .4rem 0; }
+.formula-sheet[open] > summary { color: var(--pk-ink); margin-bottom: .6rem; }
+.eq-item { padding: .55rem .95rem; }
+
+/* section titles reveal word by word (js/motion.js splits [data-mx="words"]) */
+.mx-js [data-mx="words"]:not(.mx-in) .mx-w { opacity: 0; transform: translateY(.7em) rotate(5deg) scale(.9); }
+[data-mx="words"].mx-in .mx-w { display: inline-block; animation: mx-word .34s cubic-bezier(.2,1.3,.3,1) both; animation-delay: calc(var(--w) * 70ms); }
+.mx-w { display: inline-block; }
+@keyframes mx-word { from { opacity: 0; transform: translateY(.7em) rotate(5deg) scale(.9); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mx-w, [data-mx="words"].mx-in .mx-w { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
+
+/* ---- landing sequence ---- */
+html.landing-pending .site-header,
+html.landing-pending #shell-home > :not(.hero),
+html.lp-rest #shell-home > :not(.hero),
+html.landing-pending .site-footer,
+html.lp-rest .site-footer,
+html.landing-pending .hero .lp-line { visibility: hidden; }
+html.landing-pending .hero-mascot { opacity: 0 !important; animation: none !important; }
+/* the page's own mascot drops to the middle of the screen, squashing on impact */
+html.lp-land .hero-mascot { opacity: 1 !important; }
+/* shadow, shockwave and sparks at the impact point (js/landing.js) */
+.lp-fx { position: fixed; left: 50%; width: 0; height: 0; z-index: 40; pointer-events: none; }
+.lp-shadow { position: absolute; left: -6rem; top: -.7rem; width: 12rem; height: 1.4rem; border-radius: 50%;
+  background: rgb(0 0 0 / .45); transform: scale(.15); opacity: 0; animation: lp-shadow .5s cubic-bezier(.5, 0, .9, .6) both; }
+.lp-fx.off .lp-shadow { animation: lp-shadow-off .3s ease-out both; }
+.lp-ring { position: absolute; left: -8rem; top: -2rem; width: 16rem; height: 4rem; border-radius: 50%;
+  border: .35rem solid var(--pk); opacity: 0; transform: scale(.2); }
+.lp-fx.hit .lp-ring { animation: lp-ring .6s cubic-bezier(.2, .8, .3, 1) both; }
+.lp-spark { position: absolute; left: -.3rem; top: -.3rem; width: .6rem; height: .6rem; border-radius: 50%;
+  background: var(--pk); opacity: 0; }
+.lp-spark:nth-child(even) { background: var(--ye); }
+.lp-fx.hit .lp-spark { animation: lp-spark .55s cubic-bezier(.15, .7, .3, 1) both; }
+@keyframes lp-shadow { to { opacity: 1; transform: scale(1); } }
+@keyframes lp-shadow-off { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.4); } }
+@keyframes lp-ring { 0% { opacity: .95; transform: scale(.2); } 100% { opacity: 0; transform: scale(1.7); } }
+@keyframes lp-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateX(2rem) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(10rem) scale(.2); } }
+/* the reveal: text slams in line by line, the title letter by letter, the nav drops down */
+html.lp-reveal .hero .lp-line:not(h1) { animation: lp-in .5s cubic-bezier(.2, 1.2, .3, 1) both; animation-delay: calc(var(--i, 0) * 110ms + 380ms); }
+html.lp-reveal .lp-ch { display: inline-block; animation: lp-slam .34s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--j, 0) * 55ms); }
+html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) .5s both; }
+@keyframes lp-in { from { opacity: 0; transform: translateY(1.2rem) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes lp-slam { from { opacity: 0; transform: translateY(-.5em) rotate(-10deg) scale(1.8); } to { opacity: 1; transform: none; } }
+@keyframes lp-nav { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  html.landing-pending .site-header, html.landing-pending #shell-home > :not(.hero), html.landing-pending .site-footer,
+  html.landing-pending .hero .lp-line { visibility: visible; }
+  html.landing-pending .hero-mascot { opacity: 1 !important; }
+  .lp-fx { display: none; }
+}
+
+/* ---- home page: hero scroll cue + the live examples ---- */
+.hero-full .hero-mascot { height: clamp(140px, 30vh, 240px); }
+.scroll-cue { display: inline-flex; flex-direction: column; align-items: center; gap: .3rem; margin-top: .6rem;
+  color: var(--text-faint); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; min-height: 44px; }
+.scroll-cue:hover { color: var(--pk-ink); }
+.scroll-cue i { width: .75rem; height: .75rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg); animation: cue-bob 1.6s ease-in-out infinite; }
+@keyframes cue-bob { 0%, 100% { transform: translateY(-3px) rotate(45deg); } 50% { transform: translateY(4px) rotate(45deg); } }
+.demo { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: center; }
+.demo-copy .h-sec { margin: 0 0 .4rem; }
+.demo-ctl { display: block; margin-top: 1.1rem; font-size: .92rem; color: var(--text-dim); }
+.demo-ctl > span { display: flex; justify-content: space-between; margin-bottom: .35rem; }
+.demo-ctl output { color: var(--pk-ink); font-weight: 700; }
+.demo-stage { display: grid; justify-items: center; gap: 1.2rem; padding: 1.6rem; border: 1.5px solid var(--line-soft);
+  border-radius: var(--r-card); background: var(--plate); }
+.demo-read { display: flex; gap: 2.2rem; margin: 0; }
+.demo-read dt { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: #9a988e; }
+.demo-read dd { margin: 0; font-size: 1.5rem; font-weight: 700; color: #edebe3; }
+.bulb { width: 9rem; height: auto; overflow: visible; }
+.bulb-glow { fill: var(--ye); opacity: 0; transform-origin: 60px 58px; transition: opacity .18s ease, transform .18s ease; }
+.bulb-glass { fill: none; stroke: #b9b7ae; stroke-width: 4; }
+.bulb-fil { fill: none; stroke: var(--pk); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.bulb-base { fill: #b9b7ae; }
+.cl { display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 26rem; min-height: 9rem; align-items: center; overflow: hidden; }
+.cl-side { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; transition: transform .18s ease; }
+.cl-right { justify-content: flex-start; }
+.cl-q { flex: none; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; font-size: 1.7rem; color: #17181c; }
+.cl-p { background: var(--pk); } .cl-m { background: var(--sk); }
+.cl-arrow { display: block; width: 5rem; height: .4rem; border-radius: .4rem; background: var(--ye); transform-origin: 0 50%; transition: transform .18s ease; }
+.cl-right .cl-arrow { transform-origin: 100% 50%; }
+.demo-q { margin: .7rem 0 .9rem; font-size: 1.05rem; }
+.demo-opts { display: grid; gap: .5rem; margin-bottom: .7rem; }
+.formula-sheet .table-scroll { margin-top: .4rem; }
+@media (min-width: 860px) {
+  .demo { grid-template-columns: 1fr 1fr; gap: 3rem; min-height: 72vh; }
+  .demo-flip .demo-copy { order: 2; }
+  .demo-opts { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .hero-meta { font-size: .74rem; letter-spacing: .05em; white-space: nowrap; }
+  .eq-strip { display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue i { animation: none; }
+  .bulb-glow, .cl-side, .cl-arrow { transition: none; }
+}
