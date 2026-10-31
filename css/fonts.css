@@ -30,15 +30,3 @@
   font-style: normal;
   font-display: swap;
 }
-
-/* Display face for the intro lettering, the page-transition title cards and the
-   home title ONLY: Noto Serif JP at weight 900 (SIL OFL 1.1, see
-   OFL-NotoSerifJP.txt), subset to Latin / digits / symbols (~9 KB;
-   tools/subset-display-font.py rebuilds it). Everything else stays G8321. */
-@font-face {
-  font-family: 'EMC Display';
-  src: url('../vendor/fonts/emc-display-900.woff2') format('woff2');
-  font-weight: 900;
-  font-style: normal;
-  font-display: block;      /* lettering is drawn once: never paint it in a fallback face */
-}

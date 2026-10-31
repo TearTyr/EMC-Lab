@@ -1221,18 +1221,17 @@
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
   transform: translate(-50%, -50%); container-type: size;
-  --mk: 44cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
+  --mk: 30cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
 @media (max-aspect-ratio: 4/5) {
   #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
-    --mk: 48cqw; --tt: 20cqw; --sb: 4cqw; --cf: 3.6cqw; }
+    --mk: 34cqw; --tt: 16.5cqw; --sb: 4cqw; --cf: 3.6cqw; }
   #introOverlay .chip em { display: none; }
 }
-#introOverlay #row { position: absolute; left: 50%; top: 86%;
+#introOverlay #row { position: absolute; left: 50%; top: 80%;
   transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
 #introOverlay .chip { opacity: 0; }
-#introOverlay #ghosts, #introOverlay #px { position: absolute; inset: 0;
-  overflow: hidden; pointer-events: none; }
-#introOverlay .pt { font-weight: 800; font-family: theme('fontFamily.sans'); }
+#introOverlay #px { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
+#introOverlay.jump #px, #introOverlay.sb.cut #px { opacity: 1; }
 #introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%;
   border: .7cqw solid #f6d36b; }
 #introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
@@ -1249,41 +1248,77 @@
   border-radius: 55% 55% 12% 12%/85% 85% 12% 12%; transform-origin: 50% 90%; }
 #introOverlay .dig { font: 800 9cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
 #introOverlay #mk { width: var(--mk); height: var(--mk); z-index: 2; }
-#introOverlay #ttl { font: 800 var(--tt)/1 theme('fontFamily.sans'); color: #f4eefc;
-  -webkit-text-stroke: 2.2cqw #17181c; paint-order: stroke fill; white-space: nowrap; }
-#introOverlay #ttl span { display: inline-block; }
+#introOverlay #ttl { font: 700 var(--tt)/1 theme('fontFamily.sans'); color: #fff; white-space: nowrap;
+  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;
+  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a; }
+#introOverlay #ttl span { display: inline-block; opacity: 0; }
+#introOverlay #ttl span.on { opacity: 1; animation: ch-slam .3s cubic-bezier(.2, 1.5, .4, 1) both; }
+#introOverlay #ttl.out span.on { animation: ttl-out .32s cubic-bezier(.5, 0, .9, .4) both; }
+#introOverlay #ttl span:nth-child(2) { animation-delay: 30ms !important; } #introOverlay #ttl span:nth-child(3) { animation-delay: 60ms !important; }
+#introOverlay #ttl span:nth-child(5) { animation-delay: 90ms !important; } #introOverlay #ttl span:nth-child(6) { animation-delay: 120ms !important; }
+#introOverlay #ttl span:nth-child(7) { animation-delay: 150ms !important; }
+@keyframes ttl-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-1.5em) scale(.8, 1.3); } }
 #introOverlay #sub { font: 700 var(--sb) theme('fontFamily.sans'); background: #fff;
   color: #17181c; border: .5cqw solid #17181c; border-radius: 99cqw;
   padding: .9cqw 3cqw; white-space: nowrap; }
 #introOverlay .chip { font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
   border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
-#introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; }
-/* v10 kinetic lettering (js/intro.js + js/kinetic.js). Every word is a canvas
-   sprite drawn once (heavy serif, white fill, coral edge + extrusion), so there
-   is no per-frame text-stroke/text-shadow cost. */
+/* Intro lettering (js/intro.js + js/kinetic.js): the site's own rounded G8321 Bold,
+   live text, white fill, thin pink edge, solid #e8507a shadow. Each phrase is one
+   centred block, laid out once; only its characters animate, on the compositor. */
 #introOverlay { contain: layout paint style; }
 #introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
-/* rings and burst loop on the compositor: a busy main thread cannot freeze them */
-#introOverlay .sr { position: absolute; left: 50%; top: 42%; width: 60vmin; height: 60vmin;
-  margin: -30vmin 0 0 -30vmin; border-radius: 50%; border: 1.5vmin solid rgba(255, 255, 255, .55);
-  opacity: 0; transform: scale(.1); }
-#introOverlay.sb .sr { will-change: transform, opacity; animation: sr-grow 1.333s linear infinite;
-  animation-delay: calc(var(--n) * -.333s); }
-#introOverlay.lite .sr { display: none; }
-@keyframes sr-grow { 0% { opacity: 0; transform: scale(.1); } 50% { opacity: .9; } 100% { opacity: 0; transform: scale(2.6); } }
-#introOverlay #kw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-#introOverlay .kc { display: block; pointer-events: none; max-width: none; }
-/* scene 2: pink burst (conic rays) behind the mascot and the phrases */
-#introOverlay #burst { left: 50%; top: 40%; width: 220cqw; height: 220cqw; z-index: 0;
-  background: repeating-conic-gradient(from 0deg, #e8507a 0 7deg, var(--pk) 7deg 14deg);
-  display: none; opacity: 1; transition: none; }
-#introOverlay #burst.on { display: block; will-change: transform; animation: burst-spin 25.7s linear infinite; }
-@keyframes burst-spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-/* scene 3: torn red paper under OHM'S LAW */
-#introOverlay #paper { left: 50%; top: 52%; width: 92cqw; height: 52cqw; z-index: 1;
-  background: #e8507a; opacity: 0; transform: translate(-50%, -50%) scale(.01); }
+/* rings and burst share one small canvas (js/intro.js drawBg), scaled up here */
+#introOverlay #bg { position: absolute; inset: -6%; width: 112%; height: 112%; display: block; }
+#introOverlay #kw { position: absolute; left: 0; right: 0; top: 49%; bottom: 5%; z-index: 5;
+  display: grid; place-items: center; pointer-events: none; contain: layout style;
+  font: 700 min(12.5vmin, 9.4vw)/1.16 theme('fontFamily.sans'); color: #fff; }
+#introOverlay .eq { grid-area: 1 / 1; visibility: hidden; text-align: center; white-space: nowrap; }
+#introOverlay .eq-l { display: block; letter-spacing: .01em; word-spacing: -.08em; }
+#introOverlay .kw-word { display: inline-block; }
+#introOverlay .ch { position: relative; display: inline-block; opacity: 0;
+  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;
+  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a; }
+#introOverlay .ch.sb { font-size: .56em; vertical-align: -.26em; }
+#introOverlay .ks { display: inline-block; height: .76em; width: auto; vertical-align: -.02em; overflow: visible; }
+#introOverlay .ks path { fill: none; stroke-width: 19; stroke-linecap: round; stroke-linejoin: round; }
+#introOverlay .ks-f { stroke: #fff; } #introOverlay .ks-s { stroke: #e8507a; }
+#introOverlay .ch.on { opacity: 1; animation: ch-slam .17s cubic-bezier(.2, 1.5, .4, 1) both; }
+#introOverlay .ch.on.lead { animation: ch-lead .2s cubic-bezier(.16, 1.2, .3, 1) both; }
+/* tiny sparkle off every landing, a typewriter caret on the newest character */
+#introOverlay .ch.on::before { content: ""; position: absolute; left: 50%; top: 42%; width: .08em; height: .08em;
+  border-radius: 50%; background: #fff; pointer-events: none; opacity: 0;
+  box-shadow: .34em -.3em 0 #fff, -.36em -.26em 0 #f58fa6, .4em .22em 0 #f58fa6, -.34em .3em 0 #fff;
+  animation: ch-spark .34s ease-out both; }
+#introOverlay.lite .ch.on::before { display: none; }
+#introOverlay .ch.cur::after { content: ""; position: absolute; right: -.11em; top: .14em; bottom: .14em; width: .07em;
+  border-radius: .1em; background: #e8507a; }
+#introOverlay .eq.out .ch { animation: ch-out .2s cubic-bezier(.5, 0, .9, .4) calc(var(--i) * 12ms) both; }
+@keyframes ch-slam { 0% { opacity: 0; transform: translateY(-.34em) rotate(-7deg) scale(1.65); } 55% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+@keyframes ch-lead { 0% { opacity: 0; transform: rotate(-9deg) scale(3.4); } 40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+@keyframes ch-spark { 0% { opacity: 1; transform: scale(.3); } 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes ch-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.6em) rotate(6deg) scale(.82); } }
+/* scene 3: torn red paper under OHM'S LAW / CIRCUIT BUILDER */
+#introOverlay #paper { left: 50%; top: 50%; width: min(96vw, 118vmin); height: 34vmin; background: #e8507a;
+  opacity: 0; transform: translate(-50%, -50%) scale(.01); }
 #introOverlay .sl { width: 170cqw; height: 13cqw; background: #fff; border: .8cqw solid #e8507a; z-index: 6; }
-#introOverlay .spk { width: 1.6cqw; height: 1.6cqw; }
+/* the drifting + and - charges */
+#introOverlay .pt { position: absolute; bottom: -6vh; opacity: 0; will-change: transform; }
+#introOverlay.sb .pt { animation: pt-rise var(--dur) linear var(--dl) infinite; }
+#introOverlay.lite .pt:nth-child(n+6) { display: none; }
+@keyframes pt-rise { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 12% { opacity: .5; } 88% { opacity: .5; }
+  100% { opacity: 0; transform: translateY(-112vh) rotate(420deg); } }
+/* the end: speed lines under the jump, then the overlay lifts with a soft edge */
+#introOverlay #jl { position: absolute; left: 50%; top: 42%; width: 30cqw; height: 22cqw; margin-left: -15cqw;
+  display: flex; justify-content: space-between; pointer-events: none; }
+#introOverlay #jl i { width: .7cqw; height: 100%; border-radius: 1cqw; background: #e8507a; opacity: 0; transform: scaleY(.1); transform-origin: 50% 0; }
+#introOverlay #jl i:nth-child(even) { background: #fff; margin-top: 4cqw; }
+#introOverlay.jump #jl i { animation: jl-go .42s ease-out both; animation-delay: calc(var(--j, 0) * 24ms); }
+#introOverlay #jl i:nth-child(2) { --j: 2; } #introOverlay #jl i:nth-child(3) { --j: 1; }
+#introOverlay #jl i:nth-child(4) { --j: 3; } #introOverlay #jl i:nth-child(5) { --j: 2; }
+@keyframes jl-go { 0% { opacity: 0; transform: scaleY(.1); } 30% { opacity: 1; transform: scaleY(1); } 100% { opacity: 0; transform: translateY(14cqw) scaleY(.2); } }
+#introOverlay { transition: opacity .5s, border-radius .28s ease-out; }
+#introOverlay.lift { border-radius: 0 0 50% 50% / 0 0 16vh 16vh; will-change: transform; }
 #introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: contain; }
 #introOverlay #fl { position: absolute; inset: 0; background: #fff; opacity: 0;
@@ -1299,8 +1334,8 @@
 #introOverlay .intro-skip:focus-visible { outline: 3px solid #d92b4b; outline-offset: 2px; }
 #introOverlay .in-start { position: absolute; left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 3%);
-  font: 700 15px theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
-  color: #17181c; cursor: pointer; background: #f6d36b; padding: 10px 26px; white-space: nowrap;
+  font: 700 clamp(16px, 2.6vmin, 21px) theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
+  color: #2b1418; cursor: pointer; background: var(--pk); padding: .6em 1.6em; white-space: nowrap;
   opacity: 0; pointer-events: none; visibility: hidden;   /* unfocusable till it pops */
   transition: none; }   /* the CTA wears .btn, whose transform transition would
   fight the engine's per-frame scale writes and smear the pop — the friend's
@@ -1428,7 +1463,7 @@
 /* ==========================================================================
    Title-card transitions (js/motion.js cover()/uncover()).
    Every page / chapter boundary is a text-motion moment: the destination's
-   name slams in letter by letter in the intro's lettering (EMC Display, white
+   name slams in letter by letter in the intro's lettering (G8321 Bold, white
    fill, coral edge, stepped #e8507a extrusion) over a pink and a yellow slash
    bar, then whips out. Bars use the site tokens (--bg, --pk, --ye); the
    lettering coral is the intro-only #e8507a. transform/opacity only; the card
@@ -1442,12 +1477,10 @@
   will-change: transform; }
 .tc-bar2 { height: 3.2vmin; margin-top: 8vmin; background: var(--ye);
   transform: translateX(110%) rotate(-5deg); }
-.tc-word { position: relative; display: flex; font-family: 'EMC Display', theme('fontFamily.title');
-  font-weight: 900; font-style: normal; font-synthesis: none; font-size: clamp(3.4rem, 18vmin, 12rem);
-  line-height: 1; letter-spacing: .02em; color: #fff; -webkit-text-stroke: .02em #f58fa6; paint-order: stroke fill;
-  /* the intro's lettering: white fill, coral edge, stepped extrusion */
-  text-shadow: -.012em .012em 0 #e8507a, -.024em .024em 0 #e8507a, -.036em .036em 0 #e8507a, -.048em .048em 0 #e8507a,
-    -.06em .06em 0 #e8507a, -.072em .072em 0 #e8507a;
+.tc-word { position: relative; display: flex; font-family: theme('fontFamily.title'); font-weight: 700;
+  font-size: clamp(3.2rem, 15vmin, 10rem); line-height: 1; letter-spacing: .01em; color: #fff;
+  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;   /* the intro's lettering */
+  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a;
   white-space: nowrap; }
 .tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
   transform: translateY(-.5em) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
@@ -1486,8 +1519,6 @@ html.mx-paused .tc * { animation-play-state: paused; }
    to its slot and the text slams in. `html.landing-pending` is set by a
    tiny inline <head> script on bare-home loads only (never with reduced
    motion or without JS), and landing.js always clears it (failsafes). */
-.h-display { font-family: 'EMC Display', theme('fontFamily.title'); font-weight: 900; font-style: normal;
-  letter-spacing: .01em; font-synthesis: none; }
 .hero-full { min-height: calc(100vh - var(--header-h)); min-height: calc(100svh - var(--header-h));
   display: grid; align-items: center; padding-block: 1.5rem; }
 .hero-full .h-hero { font-size: clamp(3.2rem, 13vw, 7.2rem); line-height: 1; margin: .2rem 0 0;

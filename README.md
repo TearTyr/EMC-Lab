@@ -110,7 +110,7 @@ the page is inert; only the **Skip intro** button, the **Start** button (from ~1
 **Escape** end it early. `npm run intro-verify` tests this contract. Other browser scripts
 call `skipIntroOnLoad` from `tools/intro-bypass.mjs` to get past it.
 
-The intro is the ~16.6 s Override-style "kinetic text" cut (v10): word sprites drawn once by `js/kinetic.js` in the `EMC Display` face, then the landing sequence in `js/landing.js` (the page's mascot drops to the middle and the text slams in) and title-card page transitions in `js/motion.js`. How it works, the performance rules and the presets are in `docs/reference/animation-reference.md`.
+The intro is the ~17 s Override-style "kinetic text" cut (v11): whole equations type on in the site's own G8321 Bold (`js/kinetic.js` splits the text), then the landing sequence in `js/landing.js` (the page's mascot drops to the middle and the text slams in) and title-card page transitions in `js/motion.js`. How it works, the performance rules and the presets are in `docs/reference/animation-reference.md`.
 
 ## Browsers
 

@@ -10,22 +10,27 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
 | Title-card transitions | `js/motion.js` (`cover`/`uncover`/`coverThenGo`), `.tc*` CSS | page and chapter changes show the destination's name |
 | Motion presets | `js/motion.js`, `[data-mx]` CSS, `--mx-*` tokens | scroll / route reveals |
 
-## Intro (v10)
-- **Lettering:** every word is a canvas sprite drawn once by `EMC_KINETIC.sprite()`
-  (Noto Serif JP Black subset `vendor/fonts/emc-display-900.woff2`, white fill, coral
-  edge, stepped extrusion, rough edges). `R_1` draws a subscript 1. Rebuild the font
-  with `python tools/subset-display-font.py <NotoSerifJP[wght].ttf>`.
-- **Timeline:** 0 – 3.5 s countdown, then six phrase groups on a 0.604 s beat grid
-  (`BEAT0 = 3.5`, ~99 BPM), title at `TT`, mascot jump at `TE = TT + 2`, end at `TE + 1`
-  (~16.6 s). `?t=<s>` freezes one frame for tuning.
-- **Motion grammar:** text motion is sampled at 30 fps ("twos"); entrances are `slam`
-  (oversized, cropped, ~4 frames), `type` (glyph by glyph), `whip`, `drop`, `arc`,
-  `rise`, `spin`, `flip`, `slice`, `wipe`, `elastic`, `pop`. Slash bars cut between
-  phrases; backgrounds go yellow rings → pink burst → torn red paper.
-- **Performance rules:** all style writes go through the `S()` cache; nothing queries or
-  measures the DOM inside the frame loop; hidden tokens are `display:none`; `will-change`
-  only on live words; faces are decoded before the first swap; lite mode (no sparks,
-  rings, extra particles) starts for low-tier devices and when frames stay slow.
+## Intro (v11)
+- **Lettering:** the site's own G8321 Bold as live text: white fill, thin pink edge, solid
+  `#e8507a` shadow. `EMC_KINETIC.split()` cuts a line into character spans (`R_1` draws a
+  small digit, `Σ` is a drawn glyph because G8321 has no Σ) and keeps the real text in
+  `aria-label`.
+- **Timeline:** 0 – 3.5 s countdown, then six phrases on a 0.151 s grid (`BEAT0 = 3.5`,
+  `BEAT = 0.604`, ~99 BPM), title at `TT` (~13.6 s), mascot jump at `TE = TT + 2.4`, end at
+  `TE + 1.1` (~17 s). `?t=<s>` freezes one frame for tuning.
+- **Motion grammar:** each phrase is one whole equation, laid out in place under the
+  mascot; characters type on with a small slam, a caret and a sparkle; the first
+  character is oversized; the phrase holds, then its characters whip away. Backgrounds go
+  yellow rings → pink burst → torn paper, with a slash bar where the scene changes.
+- **Ending:** crouch, stretch jump with speed lines, title letters whip up after the mascot,
+  then the overlay lifts by transform with a soft curved edge.
+- **Performance rules:** Characters, charges and exits are CSS animations on the compositor.
+  Rings and the burst share one small canvas, because scaled ring layers and a rotating
+  full-screen gradient dropped Firefox to single-digit frame rates. Every phrase
+  is laid out once. Lettering is never transformed at rest, which keeps it sharp; the camera
+  moves only the mascot and background. Layers are prepared before they are needed. The
+  clock starts after the first frame has painted. Background work waits for `EMC.afterIntro`.
+  The engine closure is dropped with the overlay. Lite mode covers slow devices.
 - **Contract:** plays on every bare home load, stores nothing, Skip / Esc / Start end it,
   the rest of the page is `inert` while it plays, zero timers/listeners afterwards
   (`tools/intro-verify.mjs`).

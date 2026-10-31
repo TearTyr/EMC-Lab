@@ -1411,13 +1411,14 @@ console.log('\u2500'.repeat(66));
     /S\(fl, 'opacity', clamp\(1 - Math\.abs\(t - \(BEAT0 \+ \.02\)\) \/ \.18\)/.test(src) &&
     /S\(go, 'visibility', on \? 'visible' : 'hidden'\)/.test(src) &&
     /const gp = pop\(t, TT \+ 1\.4, \.4\)/.test(src) &&
-    /reducedMotion\) \{ frame\(TT \+ 2\); return; \}/.test(src));
-  ok('v8 fidelity fixes pinned: ghost column fetches the focus face; CTA pops without the .btn transition',
-    /for \(const g of ghosts\) g\.s\.src = IMG\.fo;/.test(src) &&
+    /reducedMotion\) \{ e\.frame\(e\.TT \+ 2\); return; \}/.test(src));
+  /* CONTRACT CHANGE (2026-10-31): the ghost mascots were removed so the intro stays on the one mascot. */
+  ok('the intro has no ghost mascots; CTA pops without the .btn transition',
+    !/ghosts/.test(src) && !idx.includes('id="ghosts"') &&
     /#introOverlay \.in-start \{[^}]*transition: none/.test(css));
   ok('v8 spacing is container-relative (cqw gap on the chip row, cqw stage units)',
     /#introOverlay #row \{[^}]*gap: 2cqw/.test(css) &&
-    /--mk: 44cqw; --tt: 18cqw/.test(css));
+    /--mk: 30cqw; --tt: 18cqw/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     /* CONTRACT CHANGE (2026-10-25, cleanup): mascot-sparkle only ever renders as
@@ -1425,11 +1426,10 @@ console.log('\u2500'.repeat(66));
        "real artwork, not a placeholder" intent keeps a >20 K floor on the hero
        mark and a >4 K floor on the cheer icon. */
     statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 4000);
-  ok('v8 title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips, ghosts)',
+  ok('title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips)',
     /#introOverlay \{[^}]*background: #fcefaa/.test(css) &&
     /#introOverlay \.dot \{[^}]*background: var\(--sk\)/.test(css) &&
-    /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css) &&
-    /#introOverlay \.gh \{[^}]*object-fit: contain/.test(css));
+    /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css));
   const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
   ok('built stylesheet carries the phase-8 motion system + intro whip (minified)',
     /@keyframes mx-flash\{/.test(siteCss) && /@keyframes mx-rise\{/.test(siteCss) &&

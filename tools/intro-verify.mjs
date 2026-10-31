@@ -143,7 +143,7 @@ const introKeys = pg => pg.evaluate(() => {
   /* CTA appears at ~15.0 s of playback (TT + 1.4 s, after the six phrases) */
   await pg.waitForFunction(() => document.querySelector('#introOverlay .in-start.on'), null, { timeout: 20000 });
   const ctaAt = (Date.now() - playStart) / 1000;
-  ok('1 Start CTA appears at the intended time (~15.0 s)', ctaAt > 14.2 && ctaAt < 16.4, ctaAt.toFixed(2) + ' s');
+  ok('1 Start CTA appears at the intended time (~15.0 s)', ctaAt > 14.2 && ctaAt < 16.2, ctaAt.toFixed(2) + ' s');
 
   await waitGone(pg);
   const endedAt = Date.now() - playStart;
@@ -354,15 +354,15 @@ for (const via of ['skip button', 'Escape']) {
   const settledBoxes = async t => {
     await pg.goto(B + `/index.html?t=${t}`, { waitUntil: 'load' });
     await waitPlaying(pg);
+    await pg.waitForTimeout(600);        /* the frozen frame's letter slams finish on the compositor */
     return pg.evaluate(() => [...document.querySelectorAll('#ttl span, #sub, #introOverlay .chip')]
       .map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(n => Math.round(n * 10) / 10); }));
   };
-  /* v10: the title card holds for ~0.6 s before the mascot jumps (TE = 15.6 s); the letters and chips only
-     breathe (<= ~0.8 cqw), they never drift, so compare with a small tolerance instead of exact equality */
+  /* v11: once landed the title, subtitle and chips are completely still until the mascot jumps */
   const early = await settledBoxes(15.3), late = await settledBoxes(15.5);
   const drift = Math.max(...early.map((b, i) => Math.max(...b.map((n, j) => Math.abs(n - (late[i] || b)[j])))));
   ok('13 title letters, subtitle and chips hold still while the title card is up (no drift)',
-    early.length >= 8 && early.length === late.length && drift < 14, `${early.length} boxes, max shift ${drift.toFixed(1)} px`);
+    early.length >= 8 && early.length === late.length && drift < .5, `${early.length} boxes, max shift ${drift.toFixed(1)} px`);
   await ctx.close();
 }
 

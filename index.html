@@ -67,7 +67,6 @@
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/g8321-700.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/g8321-400.woff2" crossorigin>
-  <link rel="preload" as="font" type="font/woff2" href="vendor/fonts/emc-display-900.woff2" crossorigin>
   <!-- KaTeX: the LaTeX formatter for every equation on the page -->
   <link rel="stylesheet" href="vendor/katex/katex.min.css">
   <style>@media (min-width: 901px){.nav-drop-menu{position:absolute;visibility:hidden;opacity:0}.nav-drop-menu.open{visibility:visible;opacity:1}}</style>
@@ -109,26 +108,17 @@
 </head>
 
 <body class="emc">
-  <!-- Opening composition v8 "drop-in cut": the friend's frame-accurate
-       recreation of the reference edit (shape-face countdown → flash cut →
-       title card with mascot face swaps, ghost mascots, orbiting electrons,
-       drifting charges, beat pulse → Start), integrated 2026-10-25. The rAF
-       timeline lives in js/intro.js (BEAT0 3.5 / BEAT 0.88 — the friend's own
-       timing map); sizing is container-query based so the whole composition
-       scales as one unit.
-       Repo contracts kept: hidden until .play, plays on EVERY bare landing
-       load (no seen-flag), captures pointer events while playing and makes the
-       page inert, only Skip / Start / Escape end it early, chapter routes skip
-       it, reduced motion gets the static end frame, faces fetch only on play.
+  <!-- Opening composition: shape-face countdown, flash cut, mascot with six
+       typed equations, title card, jump-out (timeline in js/intro.js, characters
+       split by js/kinetic.js). Repo contracts kept: hidden until .play, plays on
+       EVERY bare landing load (no seen-flag), the page is inert while it plays,
+       only Skip / Start / Escape end it early, chapter routes skip it, reduced
+       motion gets the static end frame, faces fetch only on play.
        Dev tuning: index.html?t=5.5 freezes any frame. -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
-    <div id="sw"></div>
-    <div id="ghosts"></div>
+    <div id="sw"><canvas id="bg" role="img" aria-label="Animated background" aria-hidden="true"></canvas></div>
     <div id="px"></div>
     <div id="st">
-      <i class="a" id="burst"></i>
-      <i class="a" id="paper"></i>
-      <div id="kw"></div>
       <i class="a sl" id="slash" style="left:50%;top:50%"></i>
       <div id="A">
         <i class="a tri" id="t1" style="left:29%;top:47%"></i>
@@ -143,12 +133,14 @@
         <i class="a" id="rg" style="left:50%;top:30%"></i>
         <b class="a el" style="left:50%;top:30%;background:#a8d3e0"></b><b class="a el" style="left:50%;top:30%;background:#f8aebe"></b><b class="a el" style="left:50%;top:30%;background:#b5d777"></b>
         <div class="a" id="ttl" style="left:50%;top:57%"></div>
-        <div class="a" id="sub" style="left:50%;top:72%">Interactive Electricity Tutorial</div>
+        <div class="a" id="sub" style="left:50%;top:70%">Interactive Electricity Tutorial</div>
+        <div id="jl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
         <div id="row"><div class="chip" style="background:#a8d3e0">Circuit Builder</div>
           <div class="chip" style="background:#f8aebe">Ohm’s Law</div>
         </div>
       </div>
     </div>
+    <div id="kw"><i class="a" id="paper"></i></div>
     <div id="fl"></div>
     <button class="intro-skip" id="introSkip" type="button" aria-keyshortcuts="Escape" title="Skip intro (Esc)">Skip intro &rarr;</button>
     <a class="btn btn-primary in-start" id="go" href="topics/current.html">Start Learning</a>
@@ -216,7 +208,7 @@
       <div class="wrap hero-stack">
         <img class="mascot hero-mascot reveal" src="img/mascot.png" width="355" height="360"
              alt="Denki-chan, the EMC Lab mascot — a round cream creature with a lightning bolt">
-        <h1 class="h-hero h-display lp-line" id="heroTitle">EMC Lab</h1>
+        <h1 class="h-hero lp-line" id="heroTitle">EMC Lab</h1>
         <p class="hero-tag lp-line">Electricity, by playing.</p>
         <div class="btn-row lp-line">
           <a class="btn btn-primary" href="topics/current.html">Start Chapter 1</a>
@@ -228,7 +220,7 @@
 
     <section class="section wrap" id="chapters">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4 reveal">
-        <h2 class="h-sec h-display" style="margin:0" data-mx="words">Chapters</h2>
+        <h2 class="h-sec" style="margin:0" data-mx="words">Chapters</h2>
         <span class="tag tag-cyan" id="dashTopicsChip">0 of 2 chapters studied</span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-mx="corner">
@@ -316,7 +308,7 @@
       <div class="card reveal">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div style="flex:1 1 320px">
-            <h2 class="h-sec h-display" style="margin:0" data-mx="words">Test yourself</h2>
+            <h2 class="h-sec" style="margin:0" data-mx="words">Test yourself</h2>
             <p class="muted small" style="margin:.3rem 0 0"><span id="quizCountWord">Sixteen</span> questions, eight per chapter.</p>
           </div>
           <a class="btn btn-primary" href="quiz.html">Open the quiz →</a>
