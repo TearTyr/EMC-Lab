@@ -1414,6 +1414,19 @@ window.EMC = (function () {
         if (url.pathname === location.pathname) return;               // same page: let the browser handle it
         if (EMC.reducedMotion) return;                                // instant navigation
         e.preventDefault();
+        /* kinetic title card (js/motion.js) when it is loaded; the plain 200 ms
+           fade stays as the fallback so navigation never depends on it */
+        const M = window.EMC_MOTION;
+        if (M && M.coverThenGo) {
+          const p = url.pathname.toLowerCase();
+          const label = /quiz/.test(p) ? 'Quiz'
+            : /current/.test(p) ? 'Circuits'
+            : /fields|charge|coulomb|field/.test(p) ? 'Fields'
+            : /(index\.html|\/)$/.test(p) ? 'Home'
+            : ((a.textContent || '').trim().slice(0, 12) || 'EMC Lab');
+          M.coverThenGo(label, () => { location.assign(url.href); });
+          return;
+        }
         document.documentElement.classList.add('vt-leaving');
         setTimeout(() => { location.assign(url.href); }, 200);
       });

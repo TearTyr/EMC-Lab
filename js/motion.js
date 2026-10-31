@@ -102,9 +102,80 @@
     setTimeout(off, 400);                                  // failsafe cleanup
   }
 
+  /* ---- title-card transitions (kinetic text) ------------------------------
+     Every boundary is a text-motion moment: the destination's name slams in
+     letter by letter over a pink slash bar (the intro's vocabulary), the page
+     swaps underneath, then the letters whip out. Transform/opacity only,
+     the real text lives in aria-label while the letters are aria-hidden, and
+     reduced motion skips it entirely (callers fall back to an instant swap).
+     Cross-page: cover() runs on the leaving page, a one-shot sessionStorage
+     marker lets the arriving page start covered and reveal itself. */
+  const TC_KEY = 'emc.tc';
+  const COVER_MS = 380, OUT_MS = 420, TC_FAILSAFE = 2500;
+  let card = null, tcOutTimer = 0, tcSafety = 0;
+
+  function tcBuild(label) {
+    const el = document.createElement('div');
+    el.className = 'tc';
+    el.setAttribute('aria-hidden', 'true');
+    const bar = document.createElement('i'); bar.className = 'tc-bar';
+    const bar2 = document.createElement('i'); bar2.className = 'tc-bar tc-bar2';
+    const word = document.createElement('b'); word.className = 'tc-word';
+    [...label].forEach((c, i) => {
+      const s = document.createElement('span');
+      s.textContent = c === ' ' ? ' ' : c;
+      s.style.setProperty('--i', i);
+      word.appendChild(s);
+    });
+    el.append(bar, bar2, word);
+    return el;
+  }
+  function tcClear() {
+    clearTimeout(tcOutTimer); clearTimeout(tcSafety);
+    if (card) { card.remove(); card = null; }
+  }
+  /* returns a promise that resolves when the page is fully covered */
+  function cover(label, held) {
+    if (!ok()) return Promise.resolve(false);
+    tcClear();
+    card = tcBuild(String(label || 'EMC Lab').toUpperCase().slice(0, 14));
+    card.classList.add(held ? 'hold' : 'on');
+    document.body.appendChild(card);
+    tcSafety = setTimeout(tcClear, TC_FAILSAFE);   // a stuck card can never outlive a failed load
+    return new Promise(res => setTimeout(() => res(true), held ? 0 : COVER_MS));
+  }
+  function uncover() {
+    if (!card) return;
+    const c = card;
+    clearTimeout(tcSafety);
+    c.classList.remove('on', 'hold');
+    c.classList.add('out');
+    tcOutTimer = setTimeout(() => { if (card === c) tcClear(); }, OUT_MS + 60);
+  }
+  /* leaving to another document: remember where we are going */
+  function coverThenGo(label, go) {
+    if (!ok()) { go(); return; }
+    try { sessionStorage.setItem(TC_KEY, String(label)); } catch (e) { /* blocked storage: no arrival cover */ }
+    cover(label).then(go);
+  }
+  /* arriving from a title card: start covered, reveal once the page has painted */
+  function arrive() {
+    let label = null;
+    try { label = sessionStorage.getItem(TC_KEY); sessionStorage.removeItem(TC_KEY); } catch (e) { /* ignore */ }
+    if (!label || !ok()) return;
+    cover(label, true);
+    const out = () => requestAnimationFrame(() => requestAnimationFrame(uncover));
+    if (document.readyState === 'complete') out(); else window.addEventListener('load', out, { once: true });
+  }
+  window.addEventListener('pageshow', e => { if (e.persisted) tcClear(); });   // bfcache restore
+
   /* ---- route/view changes ------------------------------------------------ */
+  document.addEventListener('emc:view-leaving', e => {
+    if (document.getElementById('introOverlay') || performance.now() < bootGuard) return;
+    cover(e.detail && e.detail.label);
+  });
   document.addEventListener('emc:view-shown', e => {
-    flash();
+    if (card) uncover(); else flash();
     const view = (e.detail && e.detail.root) || document;
     scan(view);
   });
@@ -115,9 +186,10 @@
   vis();
 
   window.EMC_MOTION = {
-    scan, flash, whip, ok,
-    state() { return { flashing, io: !!io, paused: html.classList.contains('mx-paused') }; }
+    scan, flash, whip, ok, cover, uncover, coverThenGo,
+    state() { return { flashing, io: !!io, paused: html.classList.contains('mx-paused'), card: !!card }; }
   };
+  arrive();
 
   /* first paint: reveal what is already on screen */
   if (document.readyState === 'loading') {

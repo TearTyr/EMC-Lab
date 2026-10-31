@@ -176,6 +176,7 @@
   function showHome(opts) {
     const token = ++loadToken;
     if (active === 'home' && !(opts && opts.force)) return;
+    document.dispatchEvent(new CustomEvent('emc:view-leaving', { detail: { view: 'home', label: 'Home' } }));
     teardownTopic();
     active = 'home';
     setSections(false);
@@ -190,6 +191,7 @@
     if (!ch) { showHome(opts); return; }
     if (active === id) return;                  // before the bump: a repeat call must not cancel an in-flight load
     const token = ++loadToken;
+    document.dispatchEvent(new CustomEvent('emc:view-leaving', { detail: { view: id, label: ch.short } }));
     teardownTopic();
     active = id;
     setSections(true);
@@ -241,6 +243,7 @@
     } catch (err) {
       if (token !== loadToken) return;
       body.innerHTML = failCard(ch);
+      if (window.EMC_MOTION && window.EMC_MOTION.uncover) window.EMC_MOTION.uncover();   // never leave a title card over an error
       /* Retry re-runs this chapter's activation: clear `active` so the guard in
          activate() does not short-circuit, drop the cached main (the fetch that
          failed may have poisoned nothing, but a stale miss must not stick) and

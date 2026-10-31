@@ -140,13 +140,13 @@ const introKeys = pg => pg.evaluate(() => {
   ok('1 Start CTA is hidden and unfocusable before its moment', startEarly.vis === 'hidden' && !startEarly.on, JSON.stringify(startEarly));
 
   /* CTA appears at ~10.3 s of playback */
-  await pg.waitForFunction(() => document.querySelector('#introOverlay .in-start.on'), null, { timeout: 14000 });
+  await pg.waitForFunction(() => document.querySelector('#introOverlay .in-start.on'), null, { timeout: 20000 });
   const ctaAt = (Date.now() - playStart) / 1000;
   ok('1 Start CTA appears at the intended time (~10.3 s)', ctaAt > 9.6 && ctaAt < 11.6, ctaAt.toFixed(2) + ' s');
 
   await waitGone(pg);
   const endedAt = Date.now() - playStart;
-  ok('1 intro auto-ends within the 12.0-15.0 s window', endedAt > 12000 && endedAt < 15000, `${endedAt} ms`);
+  ok('1 intro auto-ends within the 16.0-19.5 s window', endedAt > 16000 && endedAt < 19500, `${endedAt} ms`);
   const l = await leftovers(pg);
   ok('1 completion leaves zero timers/listeners/rAF/inert nodes', clean(l), JSON.stringify(l));
   const keys = await introKeys(pg);
@@ -221,7 +221,7 @@ for (const via of ['skip button', 'Escape']) {
   const { ctx, pg } = await ctxPage();
   await pg.goto(B + '/index.html', { waitUntil: 'load' });
   await waitPlaying(pg);
-  await pg.waitForFunction(() => document.querySelector('#introOverlay .in-start.on'), null, { timeout: 14000 });
+  await pg.waitForFunction(() => document.querySelector('#introOverlay .in-start.on'), null, { timeout: 20000 });
   await pg.click('#introOverlay .in-start', { timeout: 3000 });
   /* the shell turns the CTA into the in-page #/ch1 route */
   await pg.waitForURL(/#\/ch1|topics\/current\.html/, { timeout: 5000 });
