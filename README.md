@@ -106,9 +106,11 @@ bubble and never blocks input. New class names used only in `mascot.js` must sta
 The intro (`js/intro.js`) plays on every full load or refresh of the bare landing page
 (`/` or `index.html`). Nothing is stored to remember it, so repeat visits see it again.
 It never runs on chapter routes (`#/ch1`, `#/ch2`) or other pages. While it plays the rest of
-the page is inert; only the **Skip intro** button, the **Start** button (from ~10.3 s) or
+the page is inert; only the **Skip intro** button, the **Start** button (from ~15 s) or
 **Escape** end it early. `npm run intro-verify` tests this contract. Other browser scripts
 call `skipIntroOnLoad` from `tools/intro-bypass.mjs` to get past it.
+
+The intro is the ~16.6 s Override-style "kinetic text" cut (v10): word sprites drawn once by `js/kinetic.js` in the `EMC Display` face, then the landing sequence in `js/landing.js` (the page's mascot drops to the middle and the text slams in) and title-card page transitions in `js/motion.js`. How it works, the performance rules and the presets are in `docs/reference/animation-reference.md`.
 
 ## Browsers
 

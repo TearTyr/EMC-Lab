@@ -1472,9 +1472,10 @@
 /* ==========================================================================
    Title-card transitions (js/motion.js cover()/uncover()).
    Every page / chapter boundary is a text-motion moment: the destination's
-   name slams in letter by letter (white fill, ink stroke, pink offset shadow
-   — the intro's lettering) over two slash bars, then whips out. Colours are
-   the site tokens only (--bg, --pk, --ye). transform/opacity only; the card
+   name slams in letter by letter in the intro's lettering (EMC Display, white
+   fill, coral edge, stepped #e8507a extrusion) over a pink and a yellow slash
+   bar, then whips out. Bars use the site tokens (--bg, --pk, --ye); the
+   lettering coral is the intro-only #e8507a. transform/opacity only; the card
    blocks clicks while it covers. Reduced motion never creates the card. */
 .tc { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
   overflow: hidden; pointer-events: auto; contain: layout paint style; }
@@ -1485,10 +1486,12 @@
   will-change: transform; }
 .tc-bar2 { height: 3.2vmin; margin-top: 8vmin; background: var(--ye);
   transform: translateX(110%) rotate(-5deg); }
-.tc-word { position: relative; display: flex; font-family: theme('fontFamily.title');
-  font-weight: 800; font-style: italic; font-size: clamp(3.2rem, 17vmin, 11rem);
-  line-height: 1; letter-spacing: .04em; color: #fff; -webkit-text-stroke: .08em #17181c;
-  paint-order: stroke fill; text-shadow: -.05em .05em 0 var(--pk), -.1em .1em 0 #17181c;
+.tc-word { position: relative; display: flex; font-family: 'EMC Display', theme('fontFamily.title');
+  font-weight: 900; font-style: normal; font-synthesis: none; font-size: clamp(3.4rem, 18vmin, 12rem);
+  line-height: 1; letter-spacing: .02em; color: #fff; -webkit-text-stroke: .02em #f58fa6; paint-order: stroke fill;
+  /* the intro's lettering: white fill, coral edge, stepped extrusion */
+  text-shadow: -.012em .012em 0 #e8507a, -.024em .024em 0 #e8507a, -.036em .036em 0 #e8507a, -.048em .048em 0 #e8507a,
+    -.06em .06em 0 #e8507a, -.072em .072em 0 #e8507a;
   white-space: nowrap; }
 .tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
   transform: translateY(-.5em) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
