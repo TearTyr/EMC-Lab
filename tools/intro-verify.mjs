@@ -23,7 +23,7 @@
     11 ?t=<s> dev freeze draws one still frame and Skip still works
     12 at 3440x1440, 1366x768, 1024x768, 768x1024, 390x844 and 844x390 the Start
        CTA overlaps no chip/title/Skip/mascot and nothing leaves the viewport
-    13 once settled, title letters and chips do not drift (boxes within a few px at 15.3 s / 15.5 s)
+    13 once settled, title letters and chips do not drift (boxes within a few px at 15.7 s / 15.95 s)
     14 zero console/page errors throughout
    Exits 1 on any failure.
    ========================================================================== */
@@ -359,7 +359,7 @@ for (const via of ['skip button', 'Escape']) {
       .map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(n => Math.round(n * 10) / 10); }));
   };
   /* v11: once landed the title, subtitle and chips are completely still until the mascot jumps */
-  const early = await settledBoxes(15.3), late = await settledBoxes(15.5);
+  const early = await settledBoxes(15.7), late = await settledBoxes(15.95);
   const drift = Math.max(...early.map((b, i) => Math.max(...b.map((n, j) => Math.abs(n - (late[i] || b)[j])))));
   ok('13 title letters, subtitle and chips hold still while the title card is up (no drift)',
     early.length >= 8 && early.length === late.length && drift < .5, `${early.length} boxes, max shift ${drift.toFixed(1)} px`);

@@ -18,13 +18,16 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
 - **Timeline:** 0 – 3.5 s countdown, then six phrases on a 0.151 s grid (`BEAT0 = 3.5`,
   `BEAT = 0.604`, ~99 BPM), title at `TT` (~13.6 s), mascot jump at `TE = TT + 2.4`, end at
   `TE + 1.1` (~17 s). `?t=<s>` freezes one frame for tuning.
-- **Motion grammar:** each phrase is one whole equation, laid out in place under the
-  mascot; characters type on with a small slam, a caret and a sparkle; the first
-  character is oversized; the phrase holds, then its characters whip away. Backgrounds go
-  yellow rings → pink burst → torn paper, with a slash bar where the scene changes.
+- **Motion grammar:** each phrase is one whole equation laid out in place under the mascot and
+  written like a typewriter: its pieces fly in one after another with the original entrance
+  moves (`slam`, `whip`, `drop`, `spin`, `flip`, `slice`, `wipe`, `arc`, `rise`, `elastic`, `pop`,
+  with the smear along the direction of travel, sampled at 30 fps "twos"), and line 2 only starts
+  once line 1 has landed. A landed piece has no transform at all, so it is sharp; a small sparkle
+  marks each landing. One mascot face throughout. Backgrounds go yellow rings → pink burst → torn
+  paper, with a slash bar where the scene changes.
 - **Ending:** crouch, stretch jump with speed lines, title letters whip up after the mascot,
   then the overlay lifts by transform with a soft curved edge.
-- **Performance rules:** Characters, charges and exits are CSS animations on the compositor.
+- **Performance rules:** Only pieces that are in flight are written each frame; charges and exits are CSS animations on the compositor.
   Rings and the burst share one small canvas, because scaled ring layers and a rotating
   full-screen gradient dropped Firefox to single-digit frame rates. Every phrase
   is laid out once. Lettering is never transformed at rest, which keeps it sharp; the camera

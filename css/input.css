@@ -1221,10 +1221,10 @@
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
   transform: translate(-50%, -50%); container-type: size;
-  --mk: 30cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
+  --mk: 22cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
 @media (max-aspect-ratio: 4/5) {
   #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
-    --mk: 34cqw; --tt: 16.5cqw; --sb: 4cqw; --cf: 3.6cqw; }
+    --mk: 28cqw; --tt: 16.5cqw; --sb: 4cqw; --cf: 3.6cqw; }
   #introOverlay .chip em { display: none; }
 }
 #introOverlay #row { position: absolute; left: 50%; top: 80%;
@@ -1273,29 +1273,26 @@
 #introOverlay #kw { position: absolute; left: 0; right: 0; top: 49%; bottom: 5%; z-index: 5;
   display: grid; place-items: center; pointer-events: none; contain: layout style;
   font: 700 min(12.5vmin, 9.4vw)/1.16 theme('fontFamily.sans'); color: #fff; }
-#introOverlay .eq { grid-area: 1 / 1; visibility: hidden; text-align: center; white-space: nowrap; }
-#introOverlay .eq-l { display: block; letter-spacing: .01em; word-spacing: -.08em; }
+#introOverlay .eq { grid-area: 1 / 1; visibility: hidden; display: flex; flex-direction: column; align-items: center; }
+#introOverlay .eq-l { display: flex; justify-content: center; gap: .26em; white-space: nowrap; }
 #introOverlay .kw-word { display: inline-block; }
-#introOverlay .ch { position: relative; display: inline-block; opacity: 0;
+/* one piece of an equation: hidden until its turn, then flown in by the engine; at rest it has no transform (sharp) */
+#introOverlay .tk { position: relative; display: inline-block; opacity: 0; }
+#introOverlay .tk.a2 { position: absolute; margin: 0; pointer-events: none; }
+#introOverlay .ch { position: relative; display: inline-block;
   -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;
   text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a; }
 #introOverlay .ch.sb { font-size: .56em; vertical-align: -.26em; }
 #introOverlay .ks { display: inline-block; height: .76em; width: auto; vertical-align: -.02em; overflow: visible; }
 #introOverlay .ks path { fill: none; stroke-width: 19; stroke-linecap: round; stroke-linejoin: round; }
 #introOverlay .ks-f { stroke: #fff; } #introOverlay .ks-s { stroke: #e8507a; }
-#introOverlay .ch.on { opacity: 1; animation: ch-slam .17s cubic-bezier(.2, 1.5, .4, 1) both; }
-#introOverlay .ch.on.lead { animation: ch-lead .2s cubic-bezier(.16, 1.2, .3, 1) both; }
-/* tiny sparkle off every landing, a typewriter caret on the newest character */
-#introOverlay .ch.on::before { content: ""; position: absolute; left: 50%; top: 42%; width: .08em; height: .08em;
+/* a small sparkle when a piece lands */
+#introOverlay .tk.hit::after { content: ""; position: absolute; left: 50%; top: 42%; width: .08em; height: .08em;
   border-radius: 50%; background: #fff; pointer-events: none; opacity: 0;
   box-shadow: .34em -.3em 0 #fff, -.36em -.26em 0 #f58fa6, .4em .22em 0 #f58fa6, -.34em .3em 0 #fff;
   animation: ch-spark .34s ease-out both; }
-#introOverlay.lite .ch.on::before { display: none; }
-#introOverlay .ch.cur::after { content: ""; position: absolute; right: -.11em; top: .14em; bottom: .14em; width: .07em;
-  border-radius: .1em; background: #e8507a; }
-#introOverlay .eq.out .ch { animation: ch-out .2s cubic-bezier(.5, 0, .9, .4) calc(var(--i) * 12ms) both; }
-@keyframes ch-slam { 0% { opacity: 0; transform: translateY(-.34em) rotate(-7deg) scale(1.65); } 55% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-@keyframes ch-lead { 0% { opacity: 0; transform: rotate(-9deg) scale(3.4); } 40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+#introOverlay.lite .tk.hit::after { display: none; }
+#introOverlay .eq.out .tk { animation: ch-out .22s cubic-bezier(.5, 0, .9, .4) calc(var(--i) * 14ms) both; }
 @keyframes ch-spark { 0% { opacity: 1; transform: scale(.3); } 100% { opacity: 0; transform: scale(1.5); } }
 @keyframes ch-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.6em) rotate(6deg) scale(.82); } }
 /* scene 3: torn red paper under OHM'S LAW / CIRCUIT BUILDER */

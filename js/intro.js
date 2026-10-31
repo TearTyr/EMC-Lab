@@ -10,10 +10,13 @@
    removed with zero timers/listeners left.
    The engine half: one rAF timeline that only SCHEDULES (flash cut at BEAT0 3.5 s,
    BEAT 0.604 s ~99 BPM measured from the reference track). Six phrases, each one
-   whole equation in one centred line under the mascot, type on in place character
-   by character; backgrounds swap yellow rings -> pink burst -> torn paper; title,
-   chips, orbiting electrons; the mascot crouches and jumps out, the title whips
-   after it and the overlay lifts away.
+   whole equation laid out in one centred line under the mascot and written like a
+   typewriter: the pieces of line 1 fly in one after another with the original
+   entrance moves (slam, whip, drop, spin, flip, slice, wipe, arc, rise, elastic,
+   pop, with the smear), and line 2 starts only once line 1 has landed. One mascot
+   face throughout. Backgrounds swap yellow rings -> pink burst -> torn paper;
+   title, chips, orbiting electrons; the mascot crouches and jumps out, the title
+   whips after it and the overlay lifts away.
    Reduced motion draws the static end frame; faces are fetched only when playback
    actually starts; ?t=<s> freezes a frame for tuning (dev).
    PERFORMANCE: characters, charges and exits are CSS animations on the compositor,
@@ -70,11 +73,7 @@
 
   /* ---------------------------------------------------------------- engine */
   const BEAT0 = 3.5, BEAT = .604;     /* ~99.4 BPM, measured from the reference audio */
-  const IMG = {
-    sp: 'img/mascot-face-sparkle.png',
-    fo: 'img/mascot-face-focus.png',
-    hp: 'img/mascot-face-happy.png'
-  };
+  const IMG = { sp: 'img/mascot-face-sparkle.png' };   /* one face for the whole intro: no switching */
   const go = q('#go');
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const seg = (t, a, d) => clamp((t - a) / d);
@@ -99,8 +98,6 @@
     const paper = q('#paper'), slash = q('#slash');
     const bgC = q('#bg'), bgX = bgC.getContext ? bgC.getContext('2d') : null;
     const t1 = q('#t1'), t2 = q('#t2'), d1 = q('#d1'), d2 = q('#d2'), e1 = q('#e1'), e2 = q('#e2'), dg = q('#dg');
-    const faces = { sp: q('#sp'), fo: q('#fo'), hp: q('#hp') };
-    const FC = ['sp', 'fo', 'hp'];
     const letters = [..."EMC Lab"].map(c => {
       const e = document.createElement('span');
       e.textContent = c === ' ' ? ' ' : c;
@@ -130,48 +127,104 @@
       q('#px').appendChild(e);
     });
 
-    /* ---- the phrases: each one is a whole equation that types on in place ---- */
+    /* ---- the phrases ---------------------------------------------------------
+       Each phrase is ONE whole equation, laid out in place under the mascot. It is
+       written like a typewriter: the pieces of line 1 fly in one after another with
+       the original entrance moves (slam, whip, drop, spin, flip, slice, wipe, arc,
+       rise, elastic, pop), and line 2 only starts once line 1 has landed. */
     const G0 = BEAT0 + (2.712 - 3);          /* beat grid origin measured from the reference */
-    const HOLD = .5, EXIT = .22, Q16 = BEAT / 4;
-    const sn = a => G0 + Math.ceil((a - G0) / Q16 - 1e-6) * Q16;
+    const HOLD = .5, EXIT = .24, LAND = .36, Q16 = BEAT / 4;
+    const sn = a => G0 + Math.round((a - G0) / Q16) * Q16;
+    const bz = (a, b, c, d) => {
+      const f = (t, p, q_) => 3 * (1 - t) * (1 - t) * t * p + 3 * (1 - t) * t * t * q_ + t * t * t;
+      return x => {
+        x = clamp(x); let t = x;
+        for (let i = 0; i < 8; i++) {
+          const dx = f(t, a, c) - x, ds = 3 * (1 - t) * (1 - t) * a + 6 * (1 - t) * t * (c - a) + 3 * t * t * (1 - c);
+          if (Math.abs(ds) < 1e-5) break;
+          t -= dx / ds;
+        }
+        return f(clamp(t), b, d);
+      };
+    };
+    const ez = bz(.3, .6, .15, 1), wh = bz(.2, .9, .2, 1.12);
+    const bq = (a, c, e, k) => (1 - k) * (1 - k) * a + 2 * (1 - k) * k * c + k * k * e;
+    const bo = x => { x = clamp(x); return 1 - Math.pow(1 - x, 2.5) * Math.cos(x * Math.PI * 1.5); };
     const P = [
-      { l: ['V = IR'], step: Q16, bg: 'ring', cam: [-2, -1, -1.2, 1.04] },
-      { l: ['I = V/R'], step: Q16, bg: 'ring', cam: [2.5, 1, 1, 1.02] },
-      { l: ['P = VI'], step: Q16, bg: 'burst', cam: [-1.5, -1.5, -1.2, 1.05] },
-      { l: ['R = R_1 + R_2'], step: Q16, bg: 'burst', cam: [2, .8, 1.2, 1.03] },
-      { l: ['ΣV = 0', 'ΣI = 0'], step: Q16 * .75, bg: 'burst', cam: [-2.5, -.8, -1, 1.045] },
-      { l: ["OHM'S LAW", 'CIRCUIT BUILDER'], step: Q16 / 2, bg: 'paper', cam: [0, -1, .8, 1.05] }
+      { bg: 'ring', cam: [-2, -1, -1.2, 1.04], L: [[['V', 'slam', .3], ['=', 'whip', .5], ['IR', 'drop', .6]]] },
+      { bg: 'ring', cam: [2.5, 1, 1, 1.02], L: [[['I', 'spin', .55], ['=', 'flip', .5], ['V', 'slice', .55], ['/R', 'wipe', .45]]] },
+      { bg: 'burst', cam: [-1.5, -1.5, -1.2, 1.05], L: [[['P', 'arc', .5], ['=', 'elastic', .5], ['VI', 'pop', .45]], [['watts', 'rise', .5]]] },
+      { bg: 'burst', cam: [2, .8, 1.2, 1.03], L: [[['R', 'pop', .5], ['=', 'arc', .5], ['R_1', 'whip', .5], ['+', 'spin', .55], ['R_2', 'flip', .5]]] },
+      { bg: 'burst', cam: [-2.5, -.8, -1, 1.045], L: [[['ΣV', 'slice', .55], ['=', 'wipe', .5], ['0', 'drop', .5]], [['ΣI', 'elastic', .5], ['=', 'rise', .5], ['0', 'whip', .5]]] },
+      { bg: 'paper', cam: [0, -1, .8, 1.05], L: [[["OHM'S", 'wipe', .5], ['LAW', 'elastic', .5]], [['CIRCUIT', 'rise', .55], ['BUILDER', 'whip', .5]]] }
     ];
-    let cur = sn(BEAT0);
+    let cur = sn(BEAT0), nTok = 0;
     for (const p of P) {
       p.el = document.createElement('div');
       p.el.className = 'eq';
-      p.ch = [];
-      for (const line of p.l) {
+      p.tok = [];
+      let t = cur, last = cur;
+      for (const line of p.L) {
         const l = document.createElement('div');
         l.className = 'eq-l';
         p.el.appendChild(l);
-        p.ch.push(...window.EMC_KINETIC.split(l, line));
+        for (const [text, m, d] of line) {
+          const el = document.createElement('span');
+          el.className = 'tk';
+          el.style.setProperty('--i', nTok);
+          window.EMC_KINETIC.split(el, text);
+          l.appendChild(el);
+          const o = { el, a: null, m, d, t0: sn(t), sg: nTok % 2 ? -1 : 1, n: [...text].length, on: false, done: false };
+          if (m === 'slice') { o.a = el.cloneNode(true); o.a.setAttribute('aria-hidden', 'true'); o.a.classList.add('a2'); l.appendChild(o.a); }
+          p.tok.push(o); nTok++;
+          last = o.t0;
+          t += Q16;                                   /* the next piece of the line follows one step later */
+        }
+        t = last + LAND + .06;                        /* the next LINE starts only after this one has landed */
       }
       kwHost.appendChild(p.el);
-      p.ch[0].classList.add('lead');
       p.t0 = cur;
-      p.ex = cur + p.ch.length * p.step + HOLD;
+      p.ex = last + LAND + HOLD;
       p.t1 = p.ex + EXIT;
-      p.n = 0;
-      cur = sn(p.t1 + .03);
+      p.out = false;
+      cur = sn(p.t1 - .06);
     }
     const TT = cur;              /* the title lands once the last phrase has cleared */
     const TE = TT + 2.4;         /* crouch + jump (leaves Start readable and still for over a second) */
     const LIFT = TE + .35, END = TE + 1.1;
     const CAMK = [{ t: BEAT0, c: [0, 0, 0, 1] }, ...P.map(p => ({ t: (p.t0 + p.ex) / 2, c: p.cam })), { t: TT + .9, c: [0, 0, 0, 1] }];
+    let ux = 10, uy = 7;        /* 1% of the screen in px, set in fit() */
+
+    /* entrance offsets are relative to the piece's resting place (x in % of width, y in % of height) */
+    function raw(o, u) {
+      if (u < 0) return null;
+      const m = o.m, pd = m === 'pop' ? .12 : 0, tt = clamp((u - pd) / (o.d * 1.1 || 1)), k = ez(tt), sg = o.sg;
+      let x = 0, y = 0, sc = 1, rot = 0, sx = 1, cl = '';
+      if (m === 'slam') { const z = 1 - Math.pow(1 - clamp(u / .13), 3); sc = 1 + 3.2 * (1 - z); rot = sg * 14 * (1 - z); }
+      else if (m === 'drop') { y = -62 * (1 - bo(tt)); rot = sg * 8 * (1 - k); }
+      else if (m === 'whip') { x = sg * 74 * (1 - wh(tt)); rot = sg * 6 * (1 - k); }
+      else if (m === 'wipe') { x = -14 * (1 - k); cl = `inset(-30% ${((1 - k) * 125 - 15).toFixed(1)}% -30% -15%)`; }
+      else if (m === 'elastic') { sc = 1 - Math.exp(-7 * tt) * Math.cos(tt * 10); rot = sg * 18 * (1 - k); }
+      else if (m === 'spin') { x = bq(sg * 46, sg * 26, 0, k); y = bq(-40, -12, 0, k); sc = .15 + .85 * k; rot = sg * 360 * (1 - k); }
+      else if (m === 'flip') { x = bq(sg * 50, sg * 18, 0, k); y = bq(0, -10, 0, k); sx = Math.abs(Math.cos((1 - k) * Math.PI)); rot = sg * 8 * (1 - k); }
+      else if (m === 'arc') { x = bq(sg * 62, sg * 38, 0, k); y = bq(-58, -14, 0, k); sc = 1 + .25 * (1 - k); rot = sg * 20 * (1 - k); }
+      else if (m === 'rise') { x = bq(sg * 8, -sg * 22, 0, k); y = bq(60, 22, 0, k); sc = 1 + .25 * (1 - k); rot = sg * 20 * (1 - k); }
+      else { sc = u < pd ? 1.3 * pop(u, 0, pd) : 1.3 - .3 * k; rot = sg * 20 * (1 - k); }   /* pop */
+      return [x, y, sc, rot, sx, cl];
+    }
 
     /* widest line of every phrase fits the screen; measured once, never in the frame loop */
     function fit() {
+      ux = innerWidth / 100; uy = innerHeight / 100;
       const base = parseFloat(getComputedStyle(kwHost).fontSize) || 40, room = innerWidth * .92;
       for (const p of P) p.el.style.fontSize = '';
       const widths = P.map(p => Math.max(...[...p.el.children].map(l => l.scrollWidth)));
       P.forEach((p, i) => { if (widths[i] > room) p.el.style.fontSize = Math.floor(base * room / widths[i]) + 'px'; });
+      /* the second half of a sliced piece sits exactly on the first */
+      for (const p of P) for (const o of p.tok) if (o.a) {
+        o.a.style.left = o.el.offsetLeft + 'px'; o.a.style.top = o.el.offsetTop + 'px';
+        o.a.style.width = o.el.offsetWidth + 'px'; o.a.style.height = o.el.offsetHeight + 'px';
+      }
       /* one small shared background canvas (under 2 MB), scaled up by css */
       bgC.width = Math.min(960, innerWidth);
       bgC.height = Math.round(bgC.width * innerHeight / innerWidth);
@@ -234,7 +287,9 @@
     }
 
     let active = -1;
+    const REST = { transform: 'none', clipPath: 'none' };
     function drawText(t) {
+      const tk = Math.floor(t * 30) / 30;               /* motion runs on 30 fps "twos" like the reference */
       let a = -1;
       for (let i = 0; i < P.length; i++) if (t >= P[i].t0 && t < P[i].t1) a = i;
       if (a !== active) {
@@ -243,12 +298,31 @@
         if (a >= 0) S(P[a].el, 'visibility', 'visible');
       }
       if (a < 0) return;
-      const p = P[a], n = Math.min(p.ch.length, Math.floor((t - p.t0) / p.step) + 1);
-      if (n !== p.n) {
-        for (let i = p.n; i < n; i++) p.ch[i].classList.add('on');
-        if (p.n) p.ch[p.n - 1].classList.remove('cur');
-        if (n < p.ch.length) p.ch[n - 1].classList.add('cur');
-        p.n = n;
+      const p = P[a];
+      for (const o of p.tok) {
+        if (o.done || tk < o.t0) continue;
+        if (!o.on) { o.on = true; S(o.el, 'opacity', '1'); S(o.el, 'willChange', 'transform, opacity'); if (o.a) { S(o.a, 'opacity', '1'); S(o.a, 'willChange', 'transform'); } }
+        const u = tk - o.t0, r = raw(o, u);
+        if (u >= o.d * 1.1 + .12) {                      /* landed: back to exactly the resting place, scale 1, crisp */
+          S(o.el, 'transform', 'none'); S(o.el, 'clipPath', 'none'); S(o.el, 'willChange', 'auto');
+          if (o.a) { S(o.a, 'opacity', '0'); S(o.a, 'willChange', 'auto'); }
+          flag(o.el, 'hit', true);
+          o.done = true; continue;
+        }
+        if (o.m === 'slice') {                           /* two halves slide together, then it is ONE whole word */
+          const k = ez(clamp(u / (o.d * 1.1))), off = 1 - k, ld = off < .015;
+          S(o.el, 'clipPath', ld ? 'none' : 'polygon(-15% -30%,115% -30%,115% 42%,-15% 62%)');
+          S(o.a, 'clipPath', 'polygon(-15% 66%,115% 46%,115% 130%,-15% 130%)');
+          S(o.a, 'opacity', ld ? '0' : '1');
+          S(o.el, 'transform', `translate(${(-30 * off * ux).toFixed(1)}px,${(-16 * off * uy).toFixed(1)}px) scale(${(1 + .15 * off).toFixed(3)})`);
+          S(o.a, 'transform', `translate(${(30 * off * ux).toFixed(1)}px,${(16 * off * uy).toFixed(1)}px) scale(${(1 + .15 * off).toFixed(3)})`);
+          continue;
+        }
+        /* stretch along the direction of travel = the reference's smear */
+        const r2 = raw(o, u - .034) || r, vx = (r[0] - r2[0]) * ux, vy = (r[1] - r2[1]) * uy;
+        const sp = Math.hypot(vx, vy) / .034 / ux, va = Math.atan2(vy, vx), st = 1 + clamp(sp / 380, 0, 1.2);
+        S(o.el, 'transform', `translate(${(r[0] * ux).toFixed(1)}px,${(r[1] * uy).toFixed(1)}px) rotate(${va.toFixed(3)}rad) scale(${st.toFixed(3)},${(1 / (1 + (st - 1) * .35)).toFixed(3)}) rotate(${(-va).toFixed(3)}rad) rotate(${r[3].toFixed(2)}deg) scale(${(r[2] * r[4]).toFixed(3)},${r[2].toFixed(3)})`);
+        S(o.el, 'clipPath', r[5] || 'none');
       }
       const out = t >= p.ex;
       if (p.out !== out) { p.out = out; p.el.classList.toggle('out', out); }
@@ -294,9 +368,6 @@
         const bp = Math.exp(-7 * ((((t - G0) % BEAT) + BEAT) % BEAT) / BEAT);
         let gi = -1;
         for (let i = 0; i < P.length; i++) if (P[i].t0 <= t) gi = i;
-        /* new face per phrase; the last one cycles through all and lands on the happy face */
-        const face = t >= TT ? 'hp' : gi < 0 ? 'sp' : gi === P.length - 1 ? FC[Math.floor((t - P[gi].t0) / .1) % 3] : FC[gi % 3];
-        for (const id of FC) S(faces[id], 'visibility', id === face ? 'visible' : 'hidden');
         const wave = t >= TT ? Math.sin((t - TT) * 14) * 7 * Math.exp(-(t - TT) * 1.2) : 0;
         const pu = gi < 0 ? 0 : Math.exp(-14 * (t - P[gi].t0)), pre = t < TT ? 1 : 0;
         const s0 = pop(t, BEAT0, .5) * (1 + .12 * pu * pre), cr = seg(t, TE, .18), jp = seg(t, TE + .18, .5);
@@ -368,9 +439,9 @@
     /* faces cost zero bytes until playback is certain (chapter routes never fetch
        them). They are DECODED before the first swap so no frame pays for it. */
     function loadFaces() {
-      for (const id of FC) { faces[id].decoding = 'async'; faces[id].src = IMG[id]; }
-      if (!faces.sp.decode) return;
-      FC.forEach(id => { faces[id].decode().catch(() => {}); });
+      const f = q('#sp');
+      f.decoding = 'async'; f.src = IMG.sp;
+      if (f.decode) f.decode().catch(() => {});
     }
 
     return { frame, fit, readMkw, loadFaces, setLite, TT, TE, END };

@@ -1375,13 +1375,13 @@ console.log('\u2500'.repeat(66));
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
     /class="btn btn-primary in-start"[^>]*href="topics\/current\.html"/.test(idx));
-  ok('hero keeps the supplied mascot art; intro ships the three new faces with explicit dimensions (no CLS)',
+  /* CONTRACT CHANGE (2026-10-31): the intro keeps ONE mascot face (no switching), so only the sparkle face ships. */
+  ok('hero keeps the supplied mascot art; intro ships its one face with explicit dimensions (no CLS)',
     /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img id="sp" width="409" height="415" alt="">/.test(idx) &&
-    /<img id="fo" width="409" height="415" alt="">/.test(idx) &&
-    /<img id="hp" width="409" height="415" alt="">/.test(idx) &&
-    /mascot-face-sparkle\.png/.test(src) && /mascot-face-focus\.png/.test(src) &&
-    /mascot-face-happy\.png/.test(src));
+    !/<img id="fo"/.test(idx) && !/<img id="hp"/.test(idx) &&
+    /mascot-face-sparkle\.png/.test(src) && !/mascot-face-focus\.png/.test(src) &&
+    !/mascot-face-happy\.png/.test(src));
   /* CONTRACT CHANGE (2026-10-25, intro v8 "drop-in cut", user directive:
      "remove our old intro and integrate this" — the friend's frame-accurate
      recreation replaces the v7 explainer outright. Assertions re-pointed from
@@ -1407,7 +1407,7 @@ console.log('\u2500'.repeat(66));
      groups on the 0.604 s beat grid, a face per group, Start at TT + 1.4 s (~15 s), mascot jump at TE, end at
      TE + 1 (~16.6 s). Tokens re-pointed, nothing deleted. */
   ok('v10 story beats: countdown, flash cut at BEAT0, face per phrase group, Start at TT+1.4, static end frame',
-    /const face = t >= TT \? 'hp' : gi < 0 \? 'sp'/.test(src) &&
+    /IMG = \{ sp: 'img\/mascot-face-sparkle\.png' \}/.test(src) &&
     /S\(fl, 'opacity', clamp\(1 - Math\.abs\(t - \(BEAT0 \+ \.02\)\) \/ \.18\)/.test(src) &&
     /S\(go, 'visibility', on \? 'visible' : 'hidden'\)/.test(src) &&
     /const gp = pop\(t, TT \+ 1\.4, \.4\)/.test(src) &&
@@ -1418,7 +1418,7 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \.in-start \{[^}]*transition: none/.test(css));
   ok('v8 spacing is container-relative (cqw gap on the chip row, cqw stage units)',
     /#introOverlay #row \{[^}]*gap: 2cqw/.test(css) &&
-    /--mk: 30cqw; --tt: 18cqw/.test(css));
+    /--mk: 22cqw; --tt: 18cqw/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     /* CONTRACT CHANGE (2026-10-25, cleanup): mascot-sparkle only ever renders as
