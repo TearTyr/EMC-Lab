@@ -20,22 +20,24 @@
   const lines = [...document.querySelectorAll('.hero .lp-line')];
   let timers = [];
   let done = false;
+  let lpY = 0, stale = true;
   const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
 
   function clear() {
     done = true;
-    html.classList.remove('landing-pending', 'lp-land');
-    if (mascot) { mascot.style.transform = ''; mascot.style.transition = ''; }
+    html.classList.remove('landing-pending', 'lp-land', 'lp-reveal', 'lp-rest');
+    if (mascot) mascot.style.transform = '';
     document.querySelectorAll('.lp-ring').forEach(r => r.remove());
     timers.forEach(clearTimeout); timers = [];
     document.removeEventListener('emc:intro-land', onLand);
+    removeEventListener('resize', markStale);
+    document.dispatchEvent(new CustomEvent('emc:landing-done'));
   }
 
   /* instant: no animation (the intro never played, or the sequence failed) */
   function instant() {
     if (done) return;
     clear();
-    html.classList.remove('lp-reveal');
   }
 
   /* split the display title into per-letter spans once (the real text stays readable for assistive tech) */
@@ -53,36 +55,31 @@
     });
   }
 
-  /* distance from the mascot's resting slot to the middle of the viewport */
+  /* Distance from the mascot's resting slot to the middle of the viewport. Read
+     while the intro covers the page (never during the sequence) and set on the
+     mascot itself: a custom property on <html> restyled the whole document. */
   function measure() {
     if (!mascot) return 0;
-    const had = mascot.style.transform;
-    mascot.style.transform = 'none';
     const r = mascot.getBoundingClientRect();
-    mascot.style.transform = had;
-    const y = innerHeight / 2 - (r.top + r.height / 2);
-    html.style.setProperty('--lp-y', y.toFixed(1) + 'px');
-    return y;
+    lpY = innerHeight / 2 - (r.top + r.height / 2);
+    mascot.style.setProperty('--lp-y', lpY.toFixed(1) + 'px');
+    stale = false;
+    return lpY;
   }
+  function markStale() { stale = true; }
 
   function reveal() {
     if (done) return;
     splitTitle();
     lines.forEach((el, i) => el.style.setProperty('--i', i));
-    /* hold the mascot at the middle with an inline transform, drop the gate, then let it ride up to its slot */
-    const y = measure();
-    if (mascot) {
-      mascot.style.transform = `translateY(${y}px)`;
-      html.classList.remove('lp-land');
-      html.classList.add('lp-reveal');
-      html.classList.remove('landing-pending');
-      void mascot.offsetWidth;
-      mascot.style.transition = 'transform .8s cubic-bezier(.2,.9,.25,1.12)';
-      mascot.style.transform = 'translateY(0px)';
-    } else {
-      html.classList.add('lp-reveal');
-      html.classList.remove('landing-pending');
+    /* the rest of the page (all below the fold) stays hidden one beat longer so the hero reveal only restyles the hero */
+    html.classList.add('lp-reveal', 'lp-rest');
+    html.classList.remove('lp-land', 'landing-pending');
+    if (mascot && mascot.animate) {
+      mascot.animate([{ transform: `translateY(${lpY}px)` }, { transform: 'translateY(0)' }],
+        { duration: 800, easing: 'cubic-bezier(.2,.9,.25,1.12)' });
     }
+    later(() => html.classList.remove('lp-rest'), 900);
     later(() => { clear(); }, 1800);          /* sequence over: back to the page's own idle float */
   }
 
@@ -91,7 +88,7 @@
     document.removeEventListener('emc:intro-land', onLand);
     const played = !(e && e.detail && e.detail.played === false);
     if (!played || !mascot || (window.EMC && window.EMC.reducedMotion)) { instant(); return; }
-    measure();
+    if (stale) measure();
     html.classList.add('lp-land');
     const ring = document.createElement('i');
     ring.className = 'lp-ring';
@@ -102,6 +99,8 @@
   }
 
   document.addEventListener('emc:intro-land', onLand);
+  addEventListener('resize', markStale);
+  if (document.readyState === 'complete') measure(); else addEventListener('load', measure, { once: true });
 
   /* the intro was already removed before we loaded (non-home route, bypass, fatal boot): no sequence */
   if (!document.getElementById('introOverlay')) instant();

@@ -61,7 +61,7 @@
   <link rel="icon" href="img/mascot.png" type="image/png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <!-- Landing sequence gate: on a bare home load (no hash route, no reduced motion, no ?t= freeze) the hero text and nav stay hidden until the intro hands the page back (js/landing.js always clears this, with failsafes). Never set without JS. -->
-  <script>(function(){var d=document.documentElement,h=location.hash;if((!h||h==='#/')&&!/[?&]t=/.test(location.search)&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('landing-pending')}})();</script>
+  <script>(function(){var d=document.documentElement,h=location.hash;if((!h||h==='#/')&&!/[?&]t=/.test(location.search)&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('landing-pending');setTimeout(function(){d.classList.remove('landing-pending')},45000)}})();</script>
   <link rel="stylesheet" href="css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
   <link rel="stylesheet" href="css/fonts.css">

@@ -144,10 +144,11 @@
     return { e, p: (i * .173) % 1, v: .045 + (i % 5) * .012, w: i * 1.7 };
   });
   /* expanding rings (the MAD's swirl): static geometry, transform/opacity only */
-  const RINGS = 5;
-  const rings = Array.from({ length: RINGS }, () => {
+  const RINGS = 4;
+  const rings = Array.from({ length: RINGS }, (_, i) => {
     const e = document.createElement('i');
     e.className = 'sr';
+    e.style.setProperty('--n', i);
     sw.appendChild(e);
     return e;
   });
@@ -200,7 +201,7 @@
     cur = sn(g.t1 - .22);
   });
   const TT = cur;            /* the title slams in once the last phrase has eased out */
-  const TE = TT + 2.0;       /* mascot crouch + jump */
+  const TE = TT + 2.6;       /* mascot crouch + jump (leaves Start readable and still for over a second) */
   const END = TE + 1;        /* engine timeline length (s) */
   const CAMK = [{ t: BEAT0, c: [0, 0, 0, 1] }, ...G.map(g => ({ t: (g.t0 + g.ex) / 2, c: g.cam })), { t: TT + .9, c: [0, 0, 0, 1] }];
 
@@ -360,7 +361,6 @@
     lite = true;
     overlay.classList.add('lite');
     sparks.forEach(e => S(e, 'opacity', '0'));
-    rings.forEach(e => S(e, 'opacity', '0'));
   }
 
   const hideTok = o => {
@@ -379,7 +379,10 @@
     const tk = Math.floor(t * 30) / 30;          /* text/background motion runs on 30 fps "twos" like the reference */
     /* scene A: shape-face countdown */
     const inA = t < BEAT0 + .02, inB = t >= BEAT0;
-    S(A, 'display', inA ? '' : 'none'); S(B, 'display', inB ? '' : 'none');
+    /* visibility, not display: scene B is laid out once at the start instead of
+       on the first frame of the cut (that first layout was a visible hitch) */
+    S(A, 'visibility', inA ? 'visible' : 'hidden'); S(B, 'visibility', inB ? 'visible' : 'hidden');
+    if (overlay._b !== inB) { overlay._b = inB; overlay.classList.toggle('sb', inB); }
     if (inA) {
       put(t1, pop(t, .3)); put(t2, pop(t, .5));
       put(d1, pop(t, .7)); put(d2, pop(t, .9));
@@ -416,7 +419,7 @@
       const mY = -2 * bp + 1.5 * cr * (1 - jp) - Math.pow(jp, 2.2) * (HSC * .3 + 34);   /* beat bob + crouch + jump out the top */
       S(mk, 'transform', `translate(-50%,-50%) translate(0cqw,${mY.toFixed(2)}cqw) rotate(${wave.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`);
       S(mk, 'opacity', s0 > .01 ? '1' : '0');
-      S(overlay, 'clipPath', t >= TE + .2 ? `inset(0 0 ${(wipeE(seg(t, TE + .2, .75)) * 100).toFixed(2)}% 0)` : 'none');   /* background lifts away upward after the mascot */
+      S(overlay, 'transform', t >= TE + .2 ? `translateY(${(-wipeE(seg(t, TE + .2, .75)) * 100).toFixed(2)}%)` : 'none');   /* background lifts away upward after the mascot (transform: no full-screen repaint) */
       const gO = .16 * seg(t, BEAT0, .8);
       ghosts.forEach(({ s, r, i }) => put(s, 1, Math.sin(t * .6 + i) * 1.2, Math.cos(t * .5 + i * 2) * 1.5, r, gO));
       letters.forEach((e, i) => {
@@ -434,13 +437,6 @@
 
       /* rings, camera, background drift */
       S(sw, 'opacity', (.9 * seg(t, BEAT0, .3) * (1 - .6 * seg(t, TT, .5))).toFixed(3));
-      if (!lite) {
-        for (let i = 0; i < RINGS; i++) {
-          const p = ((t * .75 + i / RINGS) % 1);
-          S(rings[i], 'transform', `scale(${(.06 + p * 1.5).toFixed(3)})`);
-          S(rings[i], 'opacity', (Math.sin(p * Math.PI) * .9).toFixed(3));
-        }
-      }
       if (t >= TE + .95) land();   /* once the background has wiped clean the page's own mascot drops in (js/landing.js) */
       let cc = [0, 0, 0, 1];
       { let i = 0; while (i < CAMK.length - 2 && t >= CAMK[i + 1].t) i++;
@@ -469,8 +465,7 @@
 
       /* scene backgrounds: yellow rings -> pink burst -> torn red paper */
       const bO = gi >= 2 && gi <= 4 ? 1 : 0, pO = gi === 5 && t < TT ? 1 : 0;
-      S(burst, 'opacity', bO ? '1' : '0');
-      S(burst, 'transform', `translate(-50%,-50%) rotate(${(tk * 14).toFixed(2)}deg)`);
+      if (burst._on !== bO) { burst._on = bO; burst.classList.toggle('on', !!bO); }   /* spins on the compositor (css) */
       S(paper, 'opacity', pO ? '1' : '0');
       S(paper, 'transform', `translate(-50%,-50%) rotate(${(-2 + Math.sin(tk * 2) * .6).toFixed(2)}deg) scale(${(pO ? Math.max(.01, pop(tk, G[5].t0, .3)) : 0.01).toFixed(3)})`);
 
@@ -607,6 +602,7 @@
     if (removed) return;
     land();                         /* an intro that never played (skipped / bypassed) still hands the page back */
     removed = true;
+    document.dispatchEvent(new CustomEvent('emc:intro-gone'));
     playing = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     if (fitRaf) { cancelAnimationFrame(fitRaf); fitRaf = 0; }

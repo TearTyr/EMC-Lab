@@ -1427,7 +1427,7 @@ console.log('\u2500'.repeat(66));
     statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 4000);
   ok('v8 title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips, ghosts)',
     /#introOverlay \{[^}]*background: #fcefaa/.test(css) &&
-    /#introOverlay \.dot \{[^}]*background: #a8d3e0/.test(css) &&
+    /#introOverlay \.dot \{[^}]*background: var\(--sk\)/.test(css) &&
     /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css) &&
     /#introOverlay \.gh \{[^}]*object-fit: contain/.test(css));
   const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
