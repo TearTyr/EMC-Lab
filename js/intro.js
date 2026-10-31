@@ -28,8 +28,8 @@
      touched again until they are live;
    - no getComputedStyle / querySelector inside the frame loop (all refs and
      the --mk token are read once);
-   - the full-viewport repeating-radial-gradient the prototype rewrote every
-     frame is five pre-painted rings that only animate transform + opacity;
+   - the full-viewport ring background the prototype re-painted every frame
+     is five pre-built rings that only animate transform + opacity;
    - will-change is set only on the tokens that are on screen;
    - the faces are decoded before the first swap so no decode hitch;
    - an adaptive "lite" mode (no smear trails/sparks/rings, lighter text
@@ -367,11 +367,11 @@
     for (const n of [o.e, o.a]) if (n) { S(n, 'opacity', '0'); S(n, 'display', 'none'); S(n, 'willChange', 'auto'); }
   };
 
-  let landed = false;
+  let landed = false, started = false;
   function land() {
     if (landed) return;
     landed = true;
-    document.dispatchEvent(new CustomEvent('emc:intro-land'));
+    document.dispatchEvent(new CustomEvent('emc:intro-land', { detail: { played: started } }));   /* played=false: skipped/bypassed before the first frame -> no landing sequence */
   }
 
   const spUsed = new Uint8Array(36);
@@ -583,7 +583,7 @@
       if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) setLite();
       if (window.EMC && window.EMC.reducedMotion) { frame(TT + 2); return; }  /* static end frame */
       t0 = performance.now(); tShift = 0; pauseStart = 0; lastNow = 0;
-      landed = false;
+      landed = false; started = true;
       raf = requestAnimationFrame(step);
     });
   }

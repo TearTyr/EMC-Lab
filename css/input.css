@@ -1518,3 +1518,70 @@
 @keyframes tc-whip { to { opacity: 0; transform: translateY(-.6em) rotate(8deg) scale(.7); } }
 @media (prefers-reduced-motion: reduce) { .tc { display: none; } }
 html.mx-paused .tc * { animation-play-state: paused; }
+
+/* ==========================================================================
+   Minimal landing page + landing sequence (js/landing.js).
+   Full-viewport hero: mascot, display title, one tagline, two buttons, one
+   meta line. After the intro's mascot jumps out the page shows ONLY the
+   background; the hero mascot then drops to the middle of the screen, rises
+   to its slot and the text slams in. `html.landing-pending` is set by a
+   tiny inline <head> script on bare-home loads only (never with reduced
+   motion or without JS), and landing.js always clears it (failsafes). */
+.h-display { font-family: 'EMC Display', theme('fontFamily.title'); font-weight: 900; font-style: normal;
+  letter-spacing: .01em; font-synthesis: none; }
+.hero-full { min-height: calc(100vh - var(--header-h)); min-height: calc(100svh - var(--header-h));
+  display: grid; align-items: center; padding-block: 1.5rem; }
+.hero-full .h-hero { font-size: clamp(3.2rem, 13vw, 7.2rem); line-height: 1; margin: .2rem 0 0;
+  color: var(--text); text-shadow: -.035em .035em 0 var(--pk), -.07em .07em 0 var(--pk-e); }
+.hero-tag { margin: 0; font-size: clamp(1.05rem, 2.6vw, 1.4rem); color: var(--text-dim); }
+.hero-meta { margin: .3rem 0 0; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.hero-meta span { color: var(--pk-ink); font-weight: 700; }
+.sandbox-row { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin: 1.4rem 0 0; padding: 0; }
+.sandbox-row a { display: inline-block; padding: .3rem .85rem; border: 1.5px solid var(--line); border-radius: 999px;
+  font-size: .85rem; color: var(--text-dim); text-decoration: none; transition: border-color .15s ease, color .15s ease; }
+.sandbox-row a:hover { border-color: var(--pk); color: var(--pk-ink); }
+.formula-sheet > summary { cursor: pointer; font-family: theme('fontFamily.ui'); font-weight: 700; color: var(--text-dim); padding: .4rem 0; }
+.formula-sheet[open] > summary { color: var(--pk-ink); margin-bottom: .6rem; }
+.eq-item { padding: .55rem .95rem; }
+
+/* section titles reveal word by word (js/motion.js splits [data-mx="words"]) */
+.mx-js [data-mx="words"]:not(.mx-in) .mx-w { opacity: 0; transform: translateY(.7em) rotate(5deg) scale(.9); }
+[data-mx="words"].mx-in .mx-w { display: inline-block; animation: mx-word .34s cubic-bezier(.2,1.3,.3,1) both; animation-delay: calc(var(--w) * 70ms); }
+.mx-w { display: inline-block; }
+@keyframes mx-word { from { opacity: 0; transform: translateY(.7em) rotate(5deg) scale(.9); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mx-w, [data-mx="words"].mx-in .mx-w { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
+
+/* ---- landing sequence ---- */
+html.landing-pending .site-header,
+html.landing-pending #shell-home > :not(.hero),
+html.landing-pending .site-footer,
+html.landing-pending .hero .lp-line { visibility: hidden; }
+html.landing-pending .hero-mascot { opacity: 0 !important; animation: none !important; }
+/* the page's own mascot drops to the middle of the screen, squashing on impact */
+html.lp-land .hero-mascot { opacity: 1 !important; animation: lp-drop .95s linear both !important;
+  transform: translateY(var(--lp-y, 0px)); }
+@keyframes lp-drop {
+  0%   { transform: translateY(calc(var(--lp-y, 0px) - 115vh)) scale(.92, 1.1); animation-timing-function: cubic-bezier(.45, 0, .9, .55); }
+  62%  { transform: translateY(var(--lp-y, 0px)) scale(1.1, .88); animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+  80%  { transform: translateY(calc(var(--lp-y, 0px) - 3%)) scale(.97, 1.04); animation-timing-function: ease-in-out; }
+  100% { transform: translateY(var(--lp-y, 0px)); }
+}
+.lp-ring { position: fixed; left: 50%; width: 14rem; height: 14rem; margin: -7rem 0 0 -7rem; border-radius: 50%;
+  border: .7rem solid var(--pk); opacity: 0; pointer-events: none; z-index: 40; transform: scale(.2); }
+.lp-ring.go { animation: lp-ring .7s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes lp-ring { 0% { opacity: .9; transform: scale(.2); } 100% { opacity: 0; transform: scale(1.8); } }
+/* the reveal: text slams in line by line, the title letter by letter, the nav drops down */
+html.lp-reveal .hero .lp-line:not(h1) { animation: lp-in .5s cubic-bezier(.2, 1.2, .3, 1) both; animation-delay: calc(var(--i, 0) * 110ms + 380ms); }
+html.lp-reveal .lp-ch { display: inline-block; animation: lp-slam .34s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--j, 0) * 55ms); }
+html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) .5s both; }
+@keyframes lp-in { from { opacity: 0; transform: translateY(1.2rem) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes lp-slam { from { opacity: 0; transform: translateY(-.5em) rotate(-10deg) scale(1.8); } to { opacity: 1; transform: none; } }
+@keyframes lp-nav { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  html.landing-pending .site-header, html.landing-pending #shell-home > :not(.hero), html.landing-pending .site-footer,
+  html.landing-pending .hero .lp-line { visibility: visible; }
+  html.landing-pending .hero-mascot { opacity: 1 !important; }
+  .lp-ring { display: none; }
+}
