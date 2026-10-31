@@ -1199,44 +1199,35 @@
 @keyframes cheer-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .mascot-cheer { animation: none; } }
 
-/* ---- intro v8 "drop-in cut" (friend's recreation, integrated 2026-10-25) --
-   Replaces the v7 explainer outright (user directive: "remove our old intro
-   and integrate this"). rAF timeline (~12 s, BEAT0 3.5 / BEAT 0.88 ≈68 BPM —
-   the friend's own timing map, restored verbatim 2026-10-25): scene A
-   shape-face countdown (ears/eyes pop, 3-2-1 at 2.05–3.13, G/O), white flash
-   cut at 3.5 into scene B title card — mascot with per-act face swaps
-   (sparkle <4.5 → focus <8.8 → happy), ghost mascots, letter-popped "EMC Lab"
-   title at 3.7, sub chip at 4.5, feature chips on beats 3–4, drifting +/−
-   charges from 4.3, orbiting electrons from 5.1, burst ring on the beat —
-   Start at 10.3, flash out at 11.2. Sizing is container-query based (cqw on
-   #st), so the composition scales as one unit on any viewport.
-   Repo contracts kept: visibility hidden until .play (loader owns boot),
-   overlay captures pointer events while .play (no click-through; the page is
-   also inert via JS), .done fade + pointer-events none on finish,
-   reduced motion = static end frame, faces fetch only when playback starts. */
-#introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden;
+/* ---- intro (js/intro.js, ported from the hand-tuned test/emc-intro-final.html) ----
+   Plays on every bare home load: shape-face countdown, then the title card where
+   the mascot changes face on every beat and six phrases fly in word by word.
+   Sizing is container-query based (cqw on #st), so the composition scales as one
+   unit on any viewport. The flight of every word is written by the engine as
+   transform/opacity; this block only holds the resting look.
+   Repo contracts kept: visibility hidden until .play (loader owns boot), overlay
+   captures pointer events while .play (the page is also inert via JS), .done
+   fade + pointer-events none on finish, reduced motion = static end frame,
+   images fetch only when playback starts. */
+#introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden; contain: layout paint style;
   transition: opacity .5s; z-index: 90; visibility: hidden; pointer-events: none; }
 #introOverlay.play { visibility: visible; pointer-events: auto; }
 #introOverlay.done { opacity: 0; pointer-events: none; }
+#introOverlay.lift { will-change: transform; }
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
   transform: translate(-50%, -50%); container-type: size;
-  --mk: 22cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
+  --mk: 34cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
 @media (max-aspect-ratio: 4/5) {
   #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
-    --mk: 28cqw; --tt: 16.5cqw; --sb: 4cqw; --cf: 3.6cqw; }
-  #introOverlay .chip em { display: none; }
+    --mk: 38cqw; --tt: 17cqw; --sb: 4cqw; --cf: 3.6cqw; }
 }
-#introOverlay #row { position: absolute; left: 50%; top: 80%;
-  transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
-#introOverlay .chip { opacity: 0; }
-#introOverlay #px { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
-#introOverlay.jump #px, #introOverlay.sb.cut #px { opacity: 1; }
-#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%;
-  border: .7cqw solid #f6d36b; }
-#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%;
-  border: .45cqw solid #17181c; }
 #introOverlay .a { position: absolute; transform: translate(-50%, -50%); opacity: 0; }
+#introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+/* the rings are drawn into one small canvas (js/intro.js drawBg) and scaled up here */
+#introOverlay #bg { position: absolute; inset: -6%; width: 112%; height: 112%; display: block; }
+
+/* scene A: the shape face and the 3-2-1-GO */
 #introOverlay .tri { width: 7cqw; height: 15cqw; border-radius: 50%;
   box-shadow: inset 2cqw 0 0 0 var(--sk); }          /* crescent, not triangle */
 #introOverlay #t2 { box-shadow: inset -2cqw 0 0 0 var(--sk); }
@@ -1247,83 +1238,65 @@
 #introOverlay .ear { width: 6.5cqw; height: 8cqw; background: var(--sk);
   border-radius: 55% 55% 12% 12%/85% 85% 12% 12%; transform-origin: 50% 90%; }
 #introOverlay .dig { font: 800 9cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
+
+/* scene B: mascot (three faces, cross-faded per beat), ring, electrons */
 #introOverlay #mk { width: var(--mk); height: var(--mk); z-index: 2; }
-#introOverlay #ttl { font: 700 var(--tt)/1 theme('fontFamily.sans'); color: #fff; white-space: nowrap;
-  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;
-  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a; }
-#introOverlay #ttl span { display: inline-block; opacity: 0; }
-#introOverlay #ttl span.on { opacity: 1; animation: ch-slam .3s cubic-bezier(.2, 1.5, .4, 1) both; }
-#introOverlay #ttl.out span.on { animation: ttl-out .32s cubic-bezier(.5, 0, .9, .4) both; }
-#introOverlay #ttl span:nth-child(2) { animation-delay: 30ms !important; } #introOverlay #ttl span:nth-child(3) { animation-delay: 60ms !important; }
-#introOverlay #ttl span:nth-child(5) { animation-delay: 90ms !important; } #introOverlay #ttl span:nth-child(6) { animation-delay: 120ms !important; }
-#introOverlay #ttl span:nth-child(7) { animation-delay: 150ms !important; }
-@keyframes ttl-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-1.5em) scale(.8, 1.3); } }
-#introOverlay #sub { font: 700 var(--sb) theme('fontFamily.sans'); background: #fff;
-  color: #17181c; border: .5cqw solid #17181c; border-radius: 99cqw;
-  padding: .9cqw 3cqw; white-space: nowrap; }
-#introOverlay .chip { font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
-  border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
-/* Intro lettering (js/intro.js + js/kinetic.js): the site's own rounded G8321 Bold,
-   live text, white fill, thin pink edge, solid #e8507a shadow. Each phrase is one
-   centred block, laid out once; only its characters animate, on the compositor. */
-#introOverlay { contain: layout paint style; }
-#introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
-/* rings and burst share one small canvas (js/intro.js drawBg), scaled up here */
-#introOverlay #bg { position: absolute; inset: -6%; width: 112%; height: 112%; display: block; }
-#introOverlay #kw { position: absolute; left: 0; right: 0; top: 49%; bottom: 5%; z-index: 5;
-  display: grid; place-items: center; pointer-events: none; contain: layout style;
-  font: 700 min(12.5vmin, 9.4vw)/1.16 theme('fontFamily.sans'); color: #fff; }
-#introOverlay .eq { grid-area: 1 / 1; visibility: hidden; display: flex; flex-direction: column; align-items: center; }
-#introOverlay .eq-l { display: flex; justify-content: center; gap: .26em; white-space: nowrap; }
-#introOverlay .kw-word { display: inline-block; }
-/* one piece of an equation: hidden until its turn, then flown in by the engine; at rest it has no transform (sharp) */
-#introOverlay .tk { position: relative; display: inline-block; opacity: 0; }
-#introOverlay .tk.a2 { position: absolute; margin: 0; pointer-events: none; }
-#introOverlay .ch { position: relative; display: inline-block;
-  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;
-  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a; }
-#introOverlay .ch.sb { font-size: .56em; vertical-align: -.26em; }
-#introOverlay .ks { display: inline-block; height: .76em; width: auto; vertical-align: -.02em; overflow: visible; }
-#introOverlay .ks path { fill: none; stroke-width: 19; stroke-linecap: round; stroke-linejoin: round; }
-#introOverlay .ks-f { stroke: #fff; } #introOverlay .ks-s { stroke: #e8507a; }
-/* a small sparkle when a piece lands */
-#introOverlay .tk.hit::after { content: ""; position: absolute; left: 50%; top: 42%; width: .08em; height: .08em;
-  border-radius: 50%; background: #fff; pointer-events: none; opacity: 0;
-  box-shadow: .34em -.3em 0 #fff, -.36em -.26em 0 #f58fa6, .4em .22em 0 #f58fa6, -.34em .3em 0 #fff;
-  animation: ch-spark .34s ease-out both; }
-#introOverlay.lite .tk.hit::after { display: none; }
-#introOverlay .eq.out .tk { animation: ch-out .22s cubic-bezier(.5, 0, .9, .4) calc(var(--i) * 14ms) both; }
-@keyframes ch-spark { 0% { opacity: 1; transform: scale(.3); } 100% { opacity: 0; transform: scale(1.5); } }
-@keyframes ch-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-.6em) rotate(6deg) scale(.82); } }
-/* scene 3: torn red paper under OHM'S LAW / CIRCUIT BUILDER */
-#introOverlay #paper { left: 50%; top: 50%; width: min(96vw, 118vmin); height: 34vmin; background: #e8507a;
-  opacity: 0; transform: translate(-50%, -50%) scale(.01); }
-#introOverlay .sl { width: 170cqw; height: 13cqw; background: #fff; border: .8cqw solid #e8507a; z-index: 6; }
-/* the drifting + and - charges */
-#introOverlay .pt { position: absolute; bottom: -6vh; opacity: 0; will-change: transform; }
-#introOverlay.sb .pt { animation: pt-rise var(--dur) linear var(--dl) infinite; }
+#introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%; border: .7cqw solid #f6d36b; }
+#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%; border: .45cqw solid #17181c; }
+/* faint mascots drifting behind, and the + / - charges rising: both loop on the compositor */
+#introOverlay #ghosts, #introOverlay #px { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+#introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; transform: translate(-50%, -50%) rotate(var(--r)); transition: opacity .8s; }
+#introOverlay.sb .gh { animation: gh-drift 11s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.7s); }
+#introOverlay.cut .gh { opacity: .16; }
+@keyframes gh-drift {
+  from { transform: translate(-50%, -50%) translate(-1.2vmin, -1.5vmin) rotate(var(--r)); }
+  to { transform: translate(-50%, -50%) translate(1.2vmin, 1.5vmin) rotate(var(--r)); } }
+#introOverlay #px { opacity: 0; transition: opacity .8s; }
+#introOverlay.chg #px { opacity: 1; }
+#introOverlay .pt { position: absolute; bottom: -6vh; font-weight: 800; opacity: 0; }
+#introOverlay.sb .pt { will-change: transform; animation: pt-rise var(--dur) linear var(--dl) infinite; }
 #introOverlay.lite .pt:nth-child(n+6) { display: none; }
 @keyframes pt-rise { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 12% { opacity: .5; } 88% { opacity: .5; }
   100% { opacity: 0; transform: translateY(-112vh) rotate(420deg); } }
-/* the end: speed lines under the jump, then the overlay lifts with a soft edge */
-#introOverlay #jl { position: absolute; left: 50%; top: 42%; width: 30cqw; height: 22cqw; margin-left: -15cqw;
-  display: flex; justify-content: space-between; pointer-events: none; }
-#introOverlay #jl i { width: .7cqw; height: 100%; border-radius: 1cqw; background: #e8507a; opacity: 0; transform: scaleY(.1); transform-origin: 50% 0; }
-#introOverlay #jl i:nth-child(even) { background: #fff; margin-top: 4cqw; }
-#introOverlay.jump #jl i { animation: jl-go .42s ease-out both; animation-delay: calc(var(--j, 0) * 24ms); }
-#introOverlay #jl i:nth-child(2) { --j: 2; } #introOverlay #jl i:nth-child(3) { --j: 1; }
-#introOverlay #jl i:nth-child(4) { --j: 3; } #introOverlay #jl i:nth-child(5) { --j: 2; }
-@keyframes jl-go { 0% { opacity: 0; transform: scaleY(.1); } 30% { opacity: 1; transform: scaleY(1); } 100% { opacity: 0; transform: translateY(14cqw) scaleY(.2); } }
-#introOverlay { transition: opacity .5s, border-radius .28s ease-out; }
-#introOverlay.lift { border-radius: 0 0 50% 50% / 0 0 16vh 16vh; will-change: transform; }
-#introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: contain; }
-#introOverlay #fl { position: absolute; inset: 0; background: #fff; opacity: 0;
-  pointer-events: none; }
+
+/* title card */
+#introOverlay #ttl { font: 800 var(--tt)/1 theme('fontFamily.sans'); color: #f4eefc;
+  -webkit-text-stroke: 2.2cqw #17181c; paint-order: stroke fill; white-space: nowrap; }
+#introOverlay #ttl span { display: inline-block; }
+#introOverlay #sub { font: 700 var(--sb) theme('fontFamily.sans'); background: #fff;
+  color: #17181c; border: .5cqw solid #17181c; border-radius: 99cqw;
+  padding: .9cqw 3cqw; white-space: nowrap; }
+#introOverlay #row { position: absolute; left: 50%; top: 81.5%;
+  transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
+#introOverlay .chip { opacity: 0; font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
+  border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
+
+/* the flying lettering: white fill, dark outline, pink then dark stacked shadow.
+   Only the phrase on screen (.kg.on) is in the render tree; #kw.meas shows all of
+   them for the one-off measuring pass. */
+#introOverlay #kw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+#introOverlay .kg { display: none; position: absolute; inset: 0; }
+#introOverlay .kg.on, #introOverlay #kw.meas .kg { display: block; }
+#introOverlay .kg.on .kw.m { will-change: transform; }
+#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em; font-style: italic;
+  color: #fff; -webkit-text-stroke: 1cqw #17181c; paint-order: stroke fill;
+  text-shadow: -.5cqw .5cqw 0 #e8507a, -1cqw 1cqw 0 #e8507a, -1.4cqw 1.4cqw 0 #17181c;
+  white-space: nowrap; text-align: center; }
+#introOverlay .kw sup, #introOverlay .kw sub { font-size: .55em; line-height: 0; font-style: italic; }
+/* G8321 has no fraction bar or arrow glyph: both are drawn in the same lettering */
+#introOverlay .fb { display: block; width: 3.4em; height: .15em; margin: .12em 0; border-radius: .08em; background: #fff;
+  box-shadow: 0 0 0 .035em #17181c, -.035em .035em 0 .035em #e8507a, -.07em .07em 0 .035em #e8507a, -.105em .105em 0 .035em #17181c; }
+#introOverlay .ar { display: inline-block; width: 1.6em; height: .8em; vertical-align: -.1em; overflow: visible; fill: none;
+  stroke-linecap: round; stroke-linejoin: round; font-style: normal; }
+#introOverlay .ar .s3 { stroke: #17181c; stroke-width: 13; transform: translate(-3px, 3px); }
+#introOverlay .ar .s2 { stroke: #e8507a; stroke-width: 9; transform: translate(-1.5px, 1.5px); }
+#introOverlay .ar .s1 { stroke: #fff; stroke-width: 5; }
+#introOverlay .spk { width: 1.6cqw; height: 1.6cqw; z-index: 7; }
+
 /* skip + start keep the repo's classes/ids so the a11y and smoke contracts
-   (first tab stop, visible skip, real CTA link) keep holding */
-/* bottom-right, not the friend's top-right: keeps the corner clear of the nav
-   bar's quiz CTA that sits behind the overlay */
+   (first tab stop, visible skip, real CTA link) keep holding. Skip sits
+   bottom-right: the top-right corner is the nav's quiz CTA behind the overlay. */
 #introOverlay .intro-skip { pointer-events: auto; position: absolute; right: 14px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); font: 700 15px theme('fontFamily.sans');
   border: 3px solid #17181c; border-radius: 99px; color: #17181c; cursor: pointer;
@@ -1335,13 +1308,9 @@
   color: #2b1418; cursor: pointer; background: var(--pk); padding: .6em 1.6em; white-space: nowrap;
   opacity: 0; pointer-events: none; visibility: hidden;   /* unfocusable till it pops */
   transition: none; }   /* the CTA wears .btn, whose transform transition would
-  fight the engine's per-frame scale writes and smear the pop — the friend's
-  button has no transition, so neither does this one */
+  fight the engine's per-frame scale writes and smear the pop */
 #introOverlay .in-start.on { pointer-events: auto; }
-/* Keep Start clear of the Skip button and the chip row. The engine only writes
-   the CTA's transform/opacity, so repositioning it here is safe.
-   Phone portrait: the centred CTA would sit on top of Skip, so lift it above
-   (tablets are wide enough that the two never meet). */
+/* Phone portrait: the centred CTA would sit on top of Skip, so lift it above */
 @media (max-aspect-ratio: 4/5) and (max-width: 520px) {
   #introOverlay .in-start { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
 }
@@ -1350,8 +1319,7 @@
 @media (max-height: 520px) and (min-aspect-ratio: 3/2) {
   #introOverlay .in-start { left: 85%; bottom: 40%; }
 }
-/* reduced motion: the engine draws one static end frame (frame(11)); make
-   sure nothing on the overlay can animate or transition at all */
+/* reduced motion: the engine draws one static end frame; nothing may animate */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
 
 /* ==========================================================================
@@ -1549,18 +1517,24 @@ html.lp-rest .site-footer,
 html.landing-pending .hero .lp-line { visibility: hidden; }
 html.landing-pending .hero-mascot { opacity: 0 !important; animation: none !important; }
 /* the page's own mascot drops to the middle of the screen, squashing on impact */
-html.lp-land .hero-mascot { opacity: 1 !important; animation: lp-drop .95s linear both !important;
-  transform: translateY(var(--lp-y, 0px)); }
-@keyframes lp-drop {
-  0%   { transform: translateY(calc(var(--lp-y, 0px) - 115vh)) scale(.92, 1.1); animation-timing-function: cubic-bezier(.45, 0, .9, .55); }
-  62%  { transform: translateY(var(--lp-y, 0px)) scale(1.1, .88); animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
-  80%  { transform: translateY(calc(var(--lp-y, 0px) - 3%)) scale(.97, 1.04); animation-timing-function: ease-in-out; }
-  100% { transform: translateY(var(--lp-y, 0px)); }
-}
-.lp-ring { position: fixed; left: 50%; width: 14rem; height: 14rem; margin: -7rem 0 0 -7rem; border-radius: 50%;
-  border: .7rem solid var(--pk); opacity: 0; pointer-events: none; z-index: 40; transform: scale(.2); }
-.lp-ring.go { animation: lp-ring .7s cubic-bezier(.2, .8, .3, 1) both; }
-@keyframes lp-ring { 0% { opacity: .9; transform: scale(.2); } 100% { opacity: 0; transform: scale(1.8); } }
+html.lp-land .hero-mascot { opacity: 1 !important; }
+/* shadow, shockwave and sparks at the impact point (js/landing.js) */
+.lp-fx { position: fixed; left: 50%; width: 0; height: 0; z-index: 40; pointer-events: none; }
+.lp-shadow { position: absolute; left: -6rem; top: -.7rem; width: 12rem; height: 1.4rem; border-radius: 50%;
+  background: rgb(0 0 0 / .45); transform: scale(.15); opacity: 0; animation: lp-shadow .5s cubic-bezier(.5, 0, .9, .6) both; }
+.lp-fx.off .lp-shadow { animation: lp-shadow-off .3s ease-out both; }
+.lp-ring { position: absolute; left: -8rem; top: -2rem; width: 16rem; height: 4rem; border-radius: 50%;
+  border: .35rem solid var(--pk); opacity: 0; transform: scale(.2); }
+.lp-fx.hit .lp-ring { animation: lp-ring .6s cubic-bezier(.2, .8, .3, 1) both; }
+.lp-spark { position: absolute; left: -.3rem; top: -.3rem; width: .6rem; height: .6rem; border-radius: 50%;
+  background: var(--pk); opacity: 0; }
+.lp-spark:nth-child(even) { background: var(--ye); }
+.lp-fx.hit .lp-spark { animation: lp-spark .55s cubic-bezier(.15, .7, .3, 1) both; }
+@keyframes lp-shadow { to { opacity: 1; transform: scale(1); } }
+@keyframes lp-shadow-off { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.4); } }
+@keyframes lp-ring { 0% { opacity: .95; transform: scale(.2); } 100% { opacity: 0; transform: scale(1.7); } }
+@keyframes lp-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateX(2rem) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(10rem) scale(.2); } }
 /* the reveal: text slams in line by line, the title letter by letter, the nav drops down */
 html.lp-reveal .hero .lp-line:not(h1) { animation: lp-in .5s cubic-bezier(.2, 1.2, .3, 1) both; animation-delay: calc(var(--i, 0) * 110ms + 380ms); }
 html.lp-reveal .lp-ch { display: inline-block; animation: lp-slam .34s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--j, 0) * 55ms); }
@@ -1572,5 +1546,52 @@ html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) 
   html.landing-pending .site-header, html.landing-pending #shell-home > :not(.hero), html.landing-pending .site-footer,
   html.landing-pending .hero .lp-line { visibility: visible; }
   html.landing-pending .hero-mascot { opacity: 1 !important; }
-  .lp-ring { display: none; }
+  .lp-fx { display: none; }
+}
+
+/* ---- home page: hero scroll cue + the live examples ---- */
+.hero-full .hero-mascot { height: clamp(140px, 30vh, 240px); }
+.scroll-cue { display: inline-flex; flex-direction: column; align-items: center; gap: .3rem; margin-top: .6rem;
+  color: var(--text-faint); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; min-height: 44px; }
+.scroll-cue:hover { color: var(--pk-ink); }
+.scroll-cue i { width: .75rem; height: .75rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg); animation: cue-bob 1.6s ease-in-out infinite; }
+@keyframes cue-bob { 0%, 100% { transform: translateY(-3px) rotate(45deg); } 50% { transform: translateY(4px) rotate(45deg); } }
+.demo { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: center; }
+.demo-copy .h-sec { margin: 0 0 .4rem; }
+.demo-ctl { display: block; margin-top: 1.1rem; font-size: .92rem; color: var(--text-dim); }
+.demo-ctl > span { display: flex; justify-content: space-between; margin-bottom: .35rem; }
+.demo-ctl output { color: var(--pk-ink); font-weight: 700; }
+.demo-stage { display: grid; justify-items: center; gap: 1.2rem; padding: 1.6rem; border: 1.5px solid var(--line-soft);
+  border-radius: var(--r-card); background: var(--plate); }
+.demo-read { display: flex; gap: 2.2rem; margin: 0; }
+.demo-read dt { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: #9a988e; }
+.demo-read dd { margin: 0; font-size: 1.5rem; font-weight: 700; color: #edebe3; }
+.bulb { width: 9rem; height: auto; overflow: visible; }
+.bulb-glow { fill: var(--ye); opacity: 0; transform-origin: 60px 58px; transition: opacity .18s ease, transform .18s ease; }
+.bulb-glass { fill: none; stroke: #b9b7ae; stroke-width: 4; }
+.bulb-fil { fill: none; stroke: var(--pk); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.bulb-base { fill: #b9b7ae; }
+.cl { display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 26rem; min-height: 9rem; align-items: center; overflow: hidden; }
+.cl-side { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; transition: transform .18s ease; }
+.cl-right { justify-content: flex-start; }
+.cl-q { flex: none; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; font-size: 1.7rem; color: #17181c; }
+.cl-p { background: var(--pk); } .cl-m { background: var(--sk); }
+.cl-arrow { display: block; width: 5rem; height: .4rem; border-radius: .4rem; background: var(--ye); transform-origin: 0 50%; transition: transform .18s ease; }
+.cl-right .cl-arrow { transform-origin: 100% 50%; }
+.demo-q { margin: .7rem 0 .9rem; font-size: 1.05rem; }
+.demo-opts { display: grid; gap: .5rem; margin-bottom: .7rem; }
+.formula-sheet .table-scroll { margin-top: .4rem; }
+@media (min-width: 860px) {
+  .demo { grid-template-columns: 1fr 1fr; gap: 3rem; min-height: 72vh; }
+  .demo-flip .demo-copy { order: 2; }
+  .demo-opts { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .hero-meta { font-size: .74rem; letter-spacing: .05em; white-space: nowrap; }
+  .eq-strip { display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue i { animation: none; }
+  .bulb-glow, .cl-side, .cl-arrow { transition: none; }
 }

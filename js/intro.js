@@ -1,4 +1,4 @@
-/* EMC Lab intro controller + v10 "kinetic text" engine (Override-style lettering).
+/* EMC Lab intro controller + engine (MAD / "Override"-style kinetic lettering).
    Lifecycle contract: the intro plays on EVERY full load or refresh of the
    bare landing page (no seen-flag of any kind: no sessionStorage, no
    localStorage, no in-memory flag). It never runs on chapter hash routes or
@@ -8,23 +8,24 @@
    page is `inert` (no click-through, no focus behind the overlay); the page is
    handed back the moment playback ends or is skipped, and the overlay is then
    removed with zero timers/listeners left.
-   The engine half: one rAF timeline that only SCHEDULES (flash cut at BEAT0 3.5 s,
-   BEAT 0.604 s ~99 BPM measured from the reference track). Six phrases, each one
-   whole equation laid out in one centred line under the mascot and written like a
-   typewriter: the pieces of line 1 fly in one after another with the original
-   entrance moves (slam, whip, drop, spin, flip, slice, wipe, arc, rise, elastic,
-   pop, with the smear), and line 2 starts only once line 1 has landed. One mascot
-   face throughout. Backgrounds swap yellow rings -> pink burst -> torn paper;
-   title, chips, orbiting electrons; the mascot crouches and jumps out, the title
-   whips after it and the overlay lifts away.
+   The engine half (a port of the hand-tuned test/emc-intro-final.html): one rAF
+   timeline that only SCHEDULES. Scene A is the shape-face countdown (ears, eyes,
+   3-2-1-GO on the 99 BPM grid, BEAT 0.604 s measured from the reference track).
+   Scene B is the title card: the mascot changes expression on every beat while
+   six phrases (charge, Coulomb, field, Circuit Builder, Ohm's Law) fly in word by
+   word with eleven entrance moves, smear trails and landing sparks, under a slow
+   camera dolly; then the title, chips and Start, a crouch and jump, and the
+   overlay lifts away.
    Reduced motion draws the static end frame; faces are fetched only when playback
    actually starts; ?t=<s> freezes a frame for tuning (dev).
-   PERFORMANCE: characters, charges and exits are CSS animations on the compositor,
-   rings and the burst share one small canvas; every word is laid
-   out once and only toggled; the lettering is never transformed at rest, so it
-   stays sharp; style writes go through a per-element cache; nothing queries or
-   measures the DOM in the frame loop; the engine closure is dropped with the
-   overlay. Low-tier devices and sustained slow frames switch to a lite mode. */
+   PERFORMANCE: only the phrase on screen is in the render tree (the others are
+   display:none), words are laid out once and then only transformed on their own
+   layers, trails exist only while a word is travelling, the rings are one small
+   canvas at 30 fps, the charges loop on the compositor, the overlay lifts by
+   transform, every style write goes through a per-element cache, nothing queries
+   or measures the DOM in the frame loop, and the engine closure is dropped with
+   the overlay. Low-tier devices and sustained slow frames switch to a lite mode
+   (no trails or sparks, text on twos, rings at 15 fps). */
 (function () {
   const overlay = document.getElementById('introOverlay');
   if (!overlay) return;
@@ -72,8 +73,8 @@
   }
 
   /* ---------------------------------------------------------------- engine */
-  const BEAT0 = 3.5, BEAT = .604;     /* ~99.4 BPM, measured from the reference audio */
-  const IMG = { sp: 'img/mascot-face-sparkle.png' };   /* one face for the whole intro: no switching */
+  const BEAT0 = 2.608, BEAT = .604;     /* ~99.4 BPM, measured from the reference audio */
+  const IMG = { sp: 'img/mascot-face-sparkle.png', fo: 'img/mascot-face-focus.png', hp: 'img/mascot-face-happy.png' };
   const go = q('#go');
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const seg = (t, a, d) => clamp((t - a) / d);
@@ -89,15 +90,36 @@
     S(el, 'transform', `translate(-50%,-50%) translate(${x.toFixed(2)}cqw,${y.toFixed(2)}cqw) rotate(${r.toFixed(2)}deg) scale(${s.toFixed(3)})`);
     S(el, 'opacity', String(o == null ? (s > 0.01 ? 1 : 0) : +(+o).toFixed(3)));
   }
+  function flag(el, name, on) {
+    const k = '_' + name;
+    if (el[k] !== on) { el[k] = on; el.classList.toggle(name, on); }
+  }
+  const bz = (a, b, c, d) => {
+    const f = (t, p, q_) => 3 * (1 - t) * (1 - t) * t * p + 3 * (1 - t) * t * t * q_ + t * t * t;
+    return x => {
+      x = clamp(x); let t = x;
+      for (let i = 0; i < 8; i++) {
+        const dx = f(t, a, c) - x, ds = 3 * (1 - t) * (1 - t) * a + 6 * (1 - t) * t * (c - a) + 3 * t * t * (1 - c);
+        if (Math.abs(ds) < 1e-5) break;
+        t -= dx / ds;
+      }
+      return f(clamp(t), b, d);
+    };
+  };
+  const ez = bz(.3, .6, .15, 1), wh = bz(.2, .9, .2, 1.12), drift = bz(.4, 0, .2, 1), wipeE = bz(.5, 0, .2, 1);
+  const bq = (a, c, e, k) => (1 - k) * (1 - k) * a + 2 * (1 - k) * k * c + k * k * e;
+  const bo = x => { x = clamp(x); return 1 - Math.pow(1 - x, 2.5) * Math.cos(x * Math.PI * 1.5); };   /* one soft settle instead of a hard bounce */
 
   /* The engine lives in one closure so that everything it holds (nodes, phrase
      tables, images) is released as soon as the overlay is removed. */
   function makeEngine() {
-    const A = q('#A'), B = q('#B'), fl = q('#fl'), mk = q('#mk'), ttl = q('#ttl');
+    const A = q('#A'), B = q('#B'), mk = q('#mk'), ttl = q('#ttl');
     const stg = q('#st'), sw = q('#sw'), kwHost = q('#kw'), subEl = q('#sub'), rg = q('#rg');
-    const paper = q('#paper'), slash = q('#slash');
     const bgC = q('#bg'), bgX = bgC.getContext ? bgC.getContext('2d') : null;
-    const t1 = q('#t1'), t2 = q('#t2'), d1 = q('#d1'), d2 = q('#d2'), e1 = q('#e1'), e2 = q('#e2'), dg = q('#dg');
+    const AP = { t1: [29, 47], t2: [71, 47], d1: [40, 47], d2: [60, 47], e1: [36, 32], e2: [64, 32], dg: [50, 56] };
+    const sh = {};
+    for (const id in AP) sh[id] = q('#' + id);
+    const faces = ['sp', 'fo', 'hp'].map(id => q('#' + id));
     const letters = [..."EMC Lab"].map(c => {
       const e = document.createElement('span');
       e.textContent = c === ' ' ? ' ' : c;
@@ -107,174 +129,207 @@
     const chips = [...overlay.querySelectorAll('.chip')];
     const els = [...overlay.querySelectorAll('.el')];
 
-    /* torn paper edge, generated once */
-    {
-      const pp = [], N = 18;
-      const j = (i, a) => Math.abs((Math.sin(i * 12.9898 + a * 78.233) * 43758.5453) % 1);
-      for (let i = 0; i <= N; i++) pp.push(`${(i / N * 100).toFixed(1)}% ${(1.5 + j(i, 1) * 4).toFixed(1)}%`);
-      for (let i = 0; i <= 8; i++) pp.push(`${(100 - j(i, 2) * 2.5).toFixed(1)}% ${(8 + i / 8 * 84).toFixed(1)}%`);
-      for (let i = N; i >= 0; i--) pp.push(`${(i / N * 100).toFixed(1)}% ${(98.5 - j(i, 3) * 4).toFixed(1)}%`);
-      for (let i = 8; i >= 0; i--) pp.push(`${(j(i, 4) * 2.5).toFixed(1)}% ${(8 + i / 8 * 84).toFixed(1)}%`);
-      paper.style.clipPath = `polygon(${pp.join(',')})`;
-    }
+    /* ---- the phrases (content from the PHYSICS 2 LEC01 slides + the two tools) ----
+       Each group is a phrase window; each line [xf, gf = where it sits on screen, r = tilt,
+       s = size in cqw] holds tokens [html, start (s), entrance move, strength]. Tokens are
+       laid out once by fit() and only toggled/moved afterwards. */
+    const FB = '<i class="fb"></i>', AR = '<svg class="ar" viewBox="0 0 52 26" aria-hidden="true"><path class="s3" d="M5 13H45M34 3l11 10-11 10"/><path class="s2" d="M5 13H45M34 3l11 10-11 10"/><path class="s1" d="M5 13H45M34 3l11 10-11 10"/></svg>';
+    const G = [
+      { cam: [-2, -1, -1.2, 1.04], dr: [-1, 2, -1], L: [
+        { xf: .3, gf: .3, r: -6, s: 34, toks: [['e', 0, 'slam', 0], ['=', .151, 'whip', .5]] },
+        { xf: .55, gf: .72, r: 4, s: 24, toks: [['-1.602x10<sup>-19</sup>', .453, 'rise', .5], ['C', .604, 'drop', .5]] }] },
+      { cam: [2.5, 1, 1, 1.02], dr: [-1, -1, -1], L: [
+        { xf: .3, gf: .3, r: -5, s: 26, toks: [['LIKE', 0, 'spin', .55], ['REPEL', .302, 'flip', .5]] },
+        { xf: .7, gf: .72, r: 5, s: 26, toks: [['UNLIKE', .604, 'wipe', .5], ['ATTRACT', .906, 'slice', .55]] }] },
+      { cam: [-1.5, -1.5, -1.2, 1.05], dr: [0, 2, 1], L: [
+        { xf: .22, gf: .5, r: -4, s: 20, toks: [['F', 0, 'pop', .5], ['=', .151, 'arc', .5], ['k', .302, 'elastic', .5]] },
+        { xf: .7, gf: .5, r: 2, s: 18, v: 1, gp: .02, toks: [['|q<sub>1</sub>||q<sub>2</sub>|', .453, 'drop', .5], [FB, .604, 'wipe', .4], ['r<sup>2</sup>', .755, 'rise', .5]] }] },
+      { cam: [-2.5, -.8, -1, 1.045], dr: [0, 2, 0], L: [
+        { xf: .2, gf: .5, r: -4, s: 26, toks: [['E', 0, 'slam', 0], ['=', .151, 'arc', .5]] },
+        { xf: .55, gf: .5, r: 2, s: 22, v: 1, gp: .02, toks: [['F', .302, 'elastic', .5], [FB, .453, 'wipe', .4], ['|q<sub>0</sub>|', .604, 'spin', .55]] },
+        { xf: .88, gf: .5, r: -3, s: 16, toks: [['N/C', .906, 'rise', .5]] }] },
+      { cam: [0, -1, .8, 1.05], dr: [0, 1, 1], L: [
+        { xf: .5, gf: .3, r: -4, s: 22, toks: [['CIRCUIT', 0, 'wipe', .5], ['BUILDER', .151, 'elastic', .5]] },
+        { xf: .5, gf: .64, r: 3, s: 15, toks: [['DRAG', .453, 'rise', .5], ['&', .604, 'spin', .5], ['DROP', .755, 'whip', .5]] }] },
+      { cam: [-1.5, .8, -.8, 1.05], dr: [0, 1, -1], L: [
+        { xf: .5, gf: .2, r: -3, s: 26, toks: [["OHM'S", 0, 'drop', .5], ['LAW', .151, 'flip', .5]] },
+        { xf: .5, gf: .46, r: 3, s: 26, toks: [['CALCULATOR', .453, 'slice', .55]] },
+        { xf: .5, gf: .78, r: -3, s: 15, toks: [['CHANGE R, V', .906, 'arc', .5], [AR, 1.057, 'elastic', .5], ['SEE I', 1.208, 'pop', .45]] }] }
+    ];
 
-    /* drifting charges loop on the compositor (css), nothing per frame */
-    Array.from({ length: 10 }, (_, i) => {
+    const HOLD = .35, EXIT = .28, LAND = .42, Q16 = BEAT / 4, G0 = .5 + 2.712;   /* G0: beat grid measured from the reference audio */
+    const sn = a => G0 + Math.round((a - G0) / Q16) * Q16;                       /* word landings snap to the beat grid */
+    let cur = BEAT0;
+    const kws = [], LN = [];
+    for (const g of G) {
+      g.t0 = cur; g.k = []; g.on = false; let last = 0;
+      g.c = document.createElement('div'); g.c.className = 'kg';
+      kwHost.appendChild(g.c);
+      for (const L of g.L) {
+        L.g = g; L.k = []; LN.push(L);
+        for (const [html, tm, m, d] of L.toks) {
+          const t0 = sn(g.t0 + tm);
+          last = Math.max(last, t0 + LAND);
+          /* e = the word, a/b = its two smear trails; a sliced word uses a as its second half */
+          const mkEl = () => { const e = document.createElement('div'); e.className = 'a kw'; e.style.left = '50%'; e.style.top = '50%'; e.innerHTML = html; g.c.appendChild(e); return e; };
+          const e = mkEl(), a = mkEl(), b = m === 'slice' ? null : mkEl();
+          e.classList.add('m'); a.setAttribute('aria-hidden', 'true'); if (b) b.setAttribute('aria-hidden', 'true');
+          const o = { e, a, b, g, L, t0, x: 0, y: 0, r: L.r, k: kws.length, m, d, S: [0, 0], C: [0, 0], sz: L.s, w: 0, h: 0, u: 0 };
+          L.k.push(o); g.k.push(o); kws.push(o);
+        }
+      }
+      g.ex = last + HOLD;
+      g.t1 = g.ex + EXIT + .18;
+      cur = sn(g.t1 - .34);
+    }
+    const TT = cur;                 /* the title slams in once the last phrase has eased out */
+    const TE = TT + 2.4;            /* crouch + jump (Start stays readable and still for over a second) */
+    const LIFT = TE + .2, END = TE + 1.05;
+    /* camera keyframes: a slow dolly/pan/roll that never stops */
+    const CAMK = [{ t: BEAT0, c: [0, 0, 0, 1] }, ...G.map(g => ({ t: (g.t0 + g.ex) / 2, c: g.cam })), { t: TT + .9, c: [0, 0, 0, 1] }];
+
+    /* little sparks burst off every landing (36 shared squares) */
+    const pt = Array.from({ length: 36 }, (_, i) => {
+      const e = document.createElement('i');
+      e.className = 'a spk'; e.style.cssText = 'left:50%;top:50%;background:' + (i % 2 ? '#fff' : '#e8507a');
+      stg.appendChild(e);
+      return e;
+    });
+    /* drifting + and - charges loop on the compositor (css), nothing per frame */
+    for (let i = 0; i < 10; i++) {
       const e = document.createElement('b');
       e.className = 'pt';
-      e.textContent = i % 2 ? '+' : '−';
+      e.textContent = i % 2 ? '+' : '-';
       e.style.cssText = `left:${(i * 37 + 11) % 97 + 1}%;color:${['#f8aebe', '#a8d3e0', '#b5d777'][i % 3]};font-size:${2.4 + (i % 4) * .7}vmin;--dur:${9 + (i % 5) * 2}s;--dl:-${(i * 1.9).toFixed(1)}s`;
       q('#px').appendChild(e);
-    });
-
-    /* ---- the phrases ---------------------------------------------------------
-       Each phrase is ONE whole equation, laid out in place under the mascot. It is
-       written like a typewriter: the pieces of line 1 fly in one after another with
-       the original entrance moves (slam, whip, drop, spin, flip, slice, wipe, arc,
-       rise, elastic, pop), and line 2 only starts once line 1 has landed. */
-    const G0 = BEAT0 + (2.712 - 3);          /* beat grid origin measured from the reference */
-    const HOLD = .5, EXIT = .24, LAND = .36, Q16 = BEAT / 4;
-    const sn = a => G0 + Math.round((a - G0) / Q16) * Q16;
-    const bz = (a, b, c, d) => {
-      const f = (t, p, q_) => 3 * (1 - t) * (1 - t) * t * p + 3 * (1 - t) * t * t * q_ + t * t * t;
-      return x => {
-        x = clamp(x); let t = x;
-        for (let i = 0; i < 8; i++) {
-          const dx = f(t, a, c) - x, ds = 3 * (1 - t) * (1 - t) * a + 6 * (1 - t) * t * (c - a) + 3 * t * t * (1 - c);
-          if (Math.abs(ds) < 1e-5) break;
-          t -= dx / ds;
-        }
-        return f(clamp(t), b, d);
-      };
-    };
-    const ez = bz(.3, .6, .15, 1), wh = bz(.2, .9, .2, 1.12);
-    const bq = (a, c, e, k) => (1 - k) * (1 - k) * a + 2 * (1 - k) * k * c + k * k * e;
-    const bo = x => { x = clamp(x); return 1 - Math.pow(1 - x, 2.5) * Math.cos(x * Math.PI * 1.5); };
-    const P = [
-      { bg: 'ring', cam: [-2, -1, -1.2, 1.04], L: [[['V', 'slam', .3], ['=', 'whip', .5], ['IR', 'drop', .6]]] },
-      { bg: 'ring', cam: [2.5, 1, 1, 1.02], L: [[['I', 'spin', .55], ['=', 'flip', .5], ['V', 'slice', .55], ['/R', 'wipe', .45]]] },
-      { bg: 'burst', cam: [-1.5, -1.5, -1.2, 1.05], L: [[['P', 'arc', .5], ['=', 'elastic', .5], ['VI', 'pop', .45]], [['watts', 'rise', .5]]] },
-      { bg: 'burst', cam: [2, .8, 1.2, 1.03], L: [[['R', 'pop', .5], ['=', 'arc', .5], ['R_1', 'whip', .5], ['+', 'spin', .55], ['R_2', 'flip', .5]]] },
-      { bg: 'burst', cam: [-2.5, -.8, -1, 1.045], L: [[['ΣV', 'slice', .55], ['=', 'wipe', .5], ['0', 'drop', .5]], [['ΣI', 'elastic', .5], ['=', 'rise', .5], ['0', 'whip', .5]]] },
-      { bg: 'paper', cam: [0, -1, .8, 1.05], L: [[["OHM'S", 'wipe', .5], ['LAW', 'elastic', .5]], [['CIRCUIT', 'rise', .55], ['BUILDER', 'whip', .5]]] }
-    ];
-    let cur = sn(BEAT0), nTok = 0;
-    for (const p of P) {
-      p.el = document.createElement('div');
-      p.el.className = 'eq';
-      p.tok = [];
-      let t = cur, last = cur;
-      for (const line of p.L) {
-        const l = document.createElement('div');
-        l.className = 'eq-l';
-        p.el.appendChild(l);
-        for (const [text, m, d] of line) {
-          const el = document.createElement('span');
-          el.className = 'tk';
-          el.style.setProperty('--i', nTok);
-          window.EMC_KINETIC.split(el, text);
-          l.appendChild(el);
-          const o = { el, a: null, m, d, t0: sn(t), sg: nTok % 2 ? -1 : 1, n: [...text].length, on: false, done: false };
-          if (m === 'slice') { o.a = el.cloneNode(true); o.a.setAttribute('aria-hidden', 'true'); o.a.classList.add('a2'); l.appendChild(o.a); }
-          p.tok.push(o); nTok++;
-          last = o.t0;
-          t += Q16;                                   /* the next piece of the line follows one step later */
-        }
-        t = last + LAND + .06;                        /* the next LINE starts only after this one has landed */
-      }
-      kwHost.appendChild(p.el);
-      p.t0 = cur;
-      p.ex = last + LAND + HOLD;
-      p.t1 = p.ex + EXIT;
-      p.out = false;
-      cur = sn(p.t1 - .06);
     }
-    const TT = cur;              /* the title lands once the last phrase has cleared */
-    const TE = TT + 2.4;         /* crouch + jump (leaves Start readable and still for over a second) */
-    const LIFT = TE + .35, END = TE + 1.1;
-    const CAMK = [{ t: BEAT0, c: [0, 0, 0, 1] }, ...P.map(p => ({ t: (p.t0 + p.ex) / 2, c: p.cam })), { t: TT + .9, c: [0, 0, 0, 1] }];
-    let ux = 10, uy = 7;        /* 1% of the screen in px, set in fit() */
 
-    /* entrance offsets are relative to the piece's resting place (x in % of width, y in % of height) */
-    function raw(o, u) {
+    /* entrances: eleven distinct moves, tuned soft (small overshoot, no rattling bounce) */
+    function raw(o, t) {
+      const u = t - o.t0;
       if (u < 0) return null;
-      const m = o.m, pd = m === 'pop' ? .12 : 0, tt = clamp((u - pd) / (o.d * 1.1 || 1)), k = ez(tt), sg = o.sg;
-      let x = 0, y = 0, sc = 1, rot = 0, sx = 1, cl = '';
-      if (m === 'slam') { const z = 1 - Math.pow(1 - clamp(u / .13), 3); sc = 1 + 3.2 * (1 - z); rot = sg * 14 * (1 - z); }
-      else if (m === 'drop') { y = -62 * (1 - bo(tt)); rot = sg * 8 * (1 - k); }
-      else if (m === 'whip') { x = sg * 74 * (1 - wh(tt)); rot = sg * 6 * (1 - k); }
-      else if (m === 'wipe') { x = -14 * (1 - k); cl = `inset(-30% ${((1 - k) * 125 - 15).toFixed(1)}% -30% -15%)`; }
-      else if (m === 'elastic') { sc = 1 - Math.exp(-7 * tt) * Math.cos(tt * 10); rot = sg * 18 * (1 - k); }
-      else if (m === 'spin') { x = bq(sg * 46, sg * 26, 0, k); y = bq(-40, -12, 0, k); sc = .15 + .85 * k; rot = sg * 360 * (1 - k); }
-      else if (m === 'flip') { x = bq(sg * 50, sg * 18, 0, k); y = bq(0, -10, 0, k); sx = Math.abs(Math.cos((1 - k) * Math.PI)); rot = sg * 8 * (1 - k); }
-      else if (m === 'arc') { x = bq(sg * 62, sg * 38, 0, k); y = bq(-58, -14, 0, k); sc = 1 + .25 * (1 - k); rot = sg * 20 * (1 - k); }
-      else if (m === 'rise') { x = bq(sg * 8, -sg * 22, 0, k); y = bq(60, 22, 0, k); sc = 1 + .25 * (1 - k); rot = sg * 20 * (1 - k); }
-      else { sc = u < pd ? 1.3 * pop(u, 0, pd) : 1.3 - .3 * k; rot = sg * 20 * (1 - k); }   /* pop */
+      const m = o.m, pd = m === 'pop' ? .12 : 0, tt = clamp((u - pd) / (o.d * 1.25 || 1)), k = ez(tt), sg = o.x < 0 ? -1 : 1;
+      let x = o.x, y = o.y, sc = 1, rot = o.r, sx = 1, cl = '';
+      if (m === 'slam') { const z = 1 - Math.pow(1 - clamp(u / .28), 3); sc = 1 + 1.8 * (1 - z); rot = o.r + sg * 12 * (1 - z); }
+      else if (m === 'drop') { y = o.S[1] + (o.y - o.S[1]) * bo(tt); rot = o.r + sg * 8 * (1 - k); }
+      else if (m === 'whip') { x = o.S[0] + (o.x - o.S[0]) * wh(tt); rot = o.r + sg * 6 * (1 - k); }
+      else if (m === 'wipe') { x = o.S[0] + (o.x - o.S[0]) * k; y = o.y + 2 * (1 - k); cl = `inset(-30% ${((1 - k) * 125 - 15).toFixed(1)}% -30% -15%)`; }
+      else if (m === 'elastic') { sc = 1 - Math.exp(-7 * tt) * Math.cos(tt * 10); rot = o.r + sg * 18 * (1 - k); }
+      else if (m === 'spin') { x = bq(o.S[0], o.C[0], o.x, k); y = bq(o.S[1], o.C[1], o.y, k); sc = .15 + .85 * k; rot = o.r + sg * 360 * (1 - k); }
+      else if (m === 'flip') { x = bq(o.S[0], o.C[0], o.x, k); sx = Math.abs(Math.cos((1 - k) * Math.PI)); rot = o.r + sg * 8 * (1 - k); }
+      else { x = bq(o.S[0], o.C[0], o.x, k); y = bq(o.S[1], o.C[1], o.y, k); sc = m === 'pop' ? (u < pd ? 1.3 * pop(u, 0, pd) : 1.3 - .3 * k) : 1 + .25 * (1 - k); rot = o.r + sg * 20 * (1 - k); }
       return [x, y, sc, rot, sx, cl];
     }
 
-    /* widest line of every phrase fits the screen; measured once, never in the frame loop */
+    /* ---- layout: measured once per run/resize, never in the frame loop ---- */
+    let Wc = 100, Hs = 100, HSC = 100;
+    function lay(L) {
+      const ks = L.k, gp = ks[0].sz * (L.gp != null ? L.gp : L.v ? .1 : .26);
+      let tot = 0, mh = 0;
+      ks.forEach(o => { tot += L.v ? o.h : o.w; mh = Math.max(mh, L.v ? o.w : o.h); });
+      tot += gp * (ks.length - 1);
+      let c = -tot / 2;
+      ks.forEach(o => { const sp = L.v ? o.h : o.w; o.u = c + sp / 2; c += sp + gp; });
+      const a = Math.abs(L.r) * Math.PI / 180, w = L.v ? mh : tot, h = L.v ? tot : mh;
+      L.ew = w * Math.cos(a) + h * Math.sin(a); L.eh = w * Math.sin(a) + h * Math.cos(a);
+    }
+    function shr(L, f) {
+      L.k.forEach(o => { o.sz *= f; o.w *= f; o.h *= f; for (const n of [o.e, o.a, o.b]) if (n) n.style.setProperty('--s', o.sz + 'cqw'); });
+      lay(L);
+    }
+    const c2 = (x, a, b) => Math.max(a, Math.min(b, x));
     function fit() {
-      ux = innerWidth / 100; uy = innerHeight / 100;
-      const base = parseFloat(getComputedStyle(kwHost).fontSize) || 40, room = innerWidth * .92;
-      for (const p of P) p.el.style.fontSize = '';
-      const widths = P.map(p => Math.max(...[...p.el.children].map(l => l.scrollWidth)));
-      P.forEach((p, i) => { if (widths[i] > room) p.el.style.fontSize = Math.floor(base * room / widths[i]) + 'px'; });
-      /* the second half of a sliced piece sits exactly on the first */
-      for (const p of P) for (const o of p.tok) if (o.a) {
-        o.a.style.left = o.el.offsetLeft + 'px'; o.a.style.top = o.el.offsetTop + 'px';
-        o.a.style.width = o.el.offsetWidth + 'px'; o.a.style.height = o.el.offsetHeight + 'px';
-      }
-      /* one small shared background canvas (under 2 MB), scaled up by css */
-      bgC.width = Math.min(960, innerWidth);
+      kwHost.classList.add('meas');                       /* groups are display:none until their turn; show them for the measuring */
+      const W = stg.offsetWidth / 100 || 1;
+      Hs = (stg.offsetHeight / W) || 100; HSC = Hs;
+      Wc = Math.max(100, (innerWidth || stg.offsetWidth) / (stg.offsetWidth || 1) * 100);
+      const bs = 1 + Math.min(.35, (Wc - 100) / 220);     /* text may use the full width of a wide screen */
+      LN.forEach(L => {
+        L.k.forEach(o => {
+          o.sz = L.s * bs;
+          for (const n of [o.e, o.a, o.b]) if (n) n.style.setProperty('--s', o.sz + 'cqw');
+          o.w = o.e.offsetWidth / W; o.h = o.e.offsetHeight / W;
+        });
+        lay(L);
+        const f = Math.min(1, (Wc - 20) / L.ew, (Hs - 18) / L.eh);
+        if (f < 1) shr(L, f);
+        const mx = Math.max(0, Wc / 2 - 10 - L.ew / 2), my = Math.max(0, Hs / 2 - 9 - L.eh / 2);
+        L.x = c2((L.xf - .5) * Wc, -mx, mx); L.y = c2((L.gf - .5) * Hs * .9, -my, my);
+      });
+      kwHost.classList.remove('meas');
+      G.forEach(g => {
+        const ls = g.L;
+        for (let pass = 0; pass < 8; pass++) {            /* keep lines in a group clear of each other; if still crowded shrink a little */
+          for (let it = 0; it < 16; it++) {
+            let mv = false;
+            for (let i = 0; i < ls.length; i++) for (let j = i + 1; j < ls.length; j++) {
+              const a = ls[i], b = ls[j], dx = b.x - a.x, dy = b.y - a.y, ox = (a.ew + b.ew) / 2 + 4 - Math.abs(dx), oy = (a.eh + b.eh) / 2 + 4 - Math.abs(dy);
+              if (ox > 0 && oy > 0) {
+                mv = true;
+                if (oy < ox) { const s = dy < 0 ? -1 : 1; a.y -= s * oy / 2; b.y += s * oy / 2; }
+                else { const s = dx < 0 ? -1 : 1; a.x -= s * ox / 2; b.x += s * ox / 2; }
+              }
+            }
+            ls.forEach(L => {
+              const mx = Math.max(0, Wc / 2 - 10 - L.ew / 2), my = Math.max(0, Hs / 2 - 9 - L.eh / 2);
+              L.x = c2(L.x, -mx, mx); L.y = c2(L.y, -my, my);
+            });
+            if (!mv) break;
+          }
+          let cr = false;
+          for (let i = 0; i < ls.length; i++) for (let j = i + 1; j < ls.length; j++)
+            if ((ls[i].ew + ls[j].ew) / 2 + 4 > Math.abs(ls[i].x - ls[j].x) && (ls[i].eh + ls[j].eh) / 2 + 4 > Math.abs(ls[i].y - ls[j].y)) cr = true;
+          if (!cr) break;
+          ls.forEach(L => shr(L, .92));
+        }
+      });
+      LN.forEach(L => {
+        const a = L.r * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+        L.k.forEach(o => {
+          o.x = L.x + (L.v ? -o.u * sa : o.u * ca); o.y = L.y + (L.v ? o.u * ca : o.u * sa);
+          const sg = o.x < 0 ? -1 : 1, Hh = Hs / 2, m = o.m;
+          if (m === 'rise') { o.S = [o.x * .5, Hh + 16]; o.C = [(o.S[0] + o.x) / 2 - sg * 26, (o.S[1] + o.y) / 2]; }
+          else if (m === 'arc') { o.S = [sg * (Wc / 2 + 8), -Hh - 14]; o.C = [(o.S[0] + o.x) / 2 - sg * 22, (o.S[1] + o.y) / 2 + 8]; }
+          else if (m === 'drop') o.S = [o.x, -Hh - 14];
+          else if (m === 'whip') o.S = [sg * (Wc / 2 + 22), o.y];
+          else if (m === 'wipe') o.S = [o.x - 30, o.y];
+          else if (m === 'flip') { o.S = [sg * (Wc / 2 + 2), o.y]; o.C = [(o.S[0] + o.x) / 2, o.y - 8]; }
+          else o.S = [0, 0], o.C = [o.x / 2, o.y / 2 - 10];
+        });
+      });
+      /* one small shared background canvas, scaled up by css */
+      bgC.width = Math.min(640, innerWidth);
       bgC.height = Math.round(bgC.width * innerHeight / innerWidth);
       bgStep = -1;
-      if (lastT >= 0) drawBg(lastT, bgKind);      /* resizing a canvas clears it */
+      if (lastT >= 0) frame(lastT);                        /* resizing a canvas clears it; positions changed too */
     }
 
-    /* Rings and the pink burst are drawn into that one canvas at 30 fps. Scaled
-       ring layers and a rotating full-screen gradient were cheap in Chrome but
-       dropped Firefox to single-digit frame rates; this costs the same everywhere. */
-    let bgStep = -1, bgKind = 'ring', lastT = -1;
-    function drawBg(t, kind) {
+    /* Expanding concentric rings, drawn into one small canvas at 30 fps. A
+       full-screen css ring pattern repainted every frame dropped Firefox to single digits. */
+    let bgStep = -1, lastT = -1;
+    function drawBg(t) {
       if (!bgX) return;
-      const k = Math.floor(t * 30);
-      lastT = t;
-      if (k === bgStep && kind === bgKind) return;
-      bgStep = k; bgKind = kind;
-      const w = bgC.width, h = bgC.height, cx = w / 2, cy = h * .3, R = Math.hypot(Math.max(cx, w - cx), h - cy) * 1.08;
+      const k = Math.floor(t * (liteMode ? 15 : 30));
+      if (k === bgStep) return;
+      bgStep = k;
+      const w = bgC.width, h = bgC.height, vm = Math.min(w, h) / 100;
+      const cx = w * (.5 + .02 * Math.sin(t * 1.3)), cy = h * (.42 + .02 * Math.cos(t * 1.1));
+      const R = Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy)) / vm, po = (t * 6) % 8;
       bgX.clearRect(0, 0, w, h);
-      if (kind === 'burst') {
-        bgX.fillStyle = '#f8aebe';
-        bgX.fillRect(0, 0, w, h);
-        bgX.fillStyle = '#e8507a';
-        bgX.beginPath();
-        const N = 26, a0 = liteMode ? 0 : t * .244;
-        for (let i = 0; i < N; i++) {
-          const a = a0 + i * 2 * Math.PI / N, b = a + Math.PI / N;
-          bgX.moveTo(cx, cy);
-          bgX.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
-          bgX.lineTo(cx + Math.cos(b) * R, cy + Math.sin(b) * R);
-          bgX.closePath();
-        }
-        bgX.fill();
-      } else if (!liteMode) {
-        bgX.strokeStyle = '#fff';
-        const unit = Math.min(w, h);
-        for (let i = 0; i < 4; i++) {
-          const p = (t * .75 + i / 4) % 1;
-          bgX.globalAlpha = Math.sin(p * Math.PI) * .55;
-          bgX.lineWidth = unit * (.012 + p * .05);
-          bgX.beginPath();
-          bgX.arc(cx, cy, Math.max(1, p * R * .92), 0, 6.2832);
-          bgX.stroke();
-        }
-        bgX.globalAlpha = 1;
+      bgX.strokeStyle = 'rgba(255,255,255,.42)';
+      bgX.lineWidth = 2.6 * vm;
+      bgX.beginPath();
+      for (let r = po - 8; r < R; r += 8) {                 /* a white band [r, r + 2.6) every 8 vmin, moving outward */
+        const rm = (r + 1.3) * vm;
+        if (rm <= 0) continue;
+        bgX.moveTo(cx + rm, cy);
+        bgX.arc(cx, cy, rm, 0, 6.2832);
       }
+      bgX.stroke();
     }
 
     /* --mk in cqw units, read once per run/resize (not per frame) */
-    let mkw = 30;
+    let mkw = 34;
     const readMkw = () => {
       const v = parseFloat(getComputedStyle(stg).getPropertyValue('--mk'));
       if (v) mkw = v;
@@ -286,136 +341,143 @@
       overlay.classList.add('lite');
     }
 
-    let active = -1;
-    const REST = { transform: 'none', clipPath: 'none' };
+    const TR = [[0, 1], [.03, .4], [.06, .2]];             /* [delay, opacity] of the word and its two smear trails */
+    function drawTok(o, t, tt, dp) {
+      const g = o.g;
+      if (tt < o.t0) { S(o.e, 'opacity', '0'); S(o.a, 'opacity', '0'); if (o.b) S(o.b, 'opacity', '0'); return; }
+      /* held, then a smooth ease-out */
+      const eu = seg(tt, g.ex + (o.k % 6) * .03, EXIT), ee = 1 - Math.pow(1 - eu, 3), sgn = o.x < 0 ? -1 : 1;
+      const exx = sgn * 16 * ee, exy = -13 * ee, exs = 1 - .14 * ee, exa = 1 - ee;
+      if (o.m === 'slice') {                               /* two halves slide together, then it is ONE whole word */
+        const k = ez(clamp((tt - o.t0) / (o.d * 1.25))), off = 1 - k, ld = off < .015;
+        S(o.e, 'clipPath', ld ? 'none' : 'polygon(-15% -30%,115% -30%,115% 42%,-15% 62%)');
+        S(o.a, 'clipPath', 'polygon(-15% 66%,115% 46%,115% 130%,-15% 130%)');
+        const hv = [[o.e, -70, -26, 1], [o.a, 70, 26, ld ? 0 : 1]];
+        for (const [el, dx, dy, vis] of hv) {
+          S(el, 'transform', `translate(-50%,-50%) translate(${(o.x + dx * off + g.dr[0] * dp + exx).toFixed(2)}cqw,${(o.y + dy * off + g.dr[1] * dp + exy).toFixed(2)}cqw) rotate(${(o.r + g.dr[2] * dp).toFixed(2)}deg) scale(${((1 + .15 * off) * exs).toFixed(3)})`);
+          S(el, 'opacity', (vis * exa).toFixed(3));
+        }
+        return;
+      }
+      const moving = tt < o.t0 + o.d * 1.25 + .2;
+      for (let j = 0; j < 3; j++) {
+        const el = j === 0 ? o.e : j === 1 ? o.a : o.b, dl = TR[j][0];
+        if (j && (liteMode || !moving)) { S(el, 'opacity', '0'); S(el, 'willChange', 'auto'); continue; }
+        const r = raw(o, tt - dl);
+        if (!r) { S(el, 'opacity', '0'); continue; }
+        const r2 = raw(o, tt - dl - .016) || r, vx = r[0] - r2[0], vy = r[1] - r2[1], sp = Math.hypot(vx, vy) / .016, va = Math.atan2(vy, vx), st = 1 + clamp(sp / 450, 0, 1.4);
+        if (dl && sp < 80) { S(el, 'opacity', '0'); continue; }
+        if (j) S(el, 'willChange', 'transform');
+        const x = r[0] + g.dr[0] * dp + exx, y = r[1] + g.dr[1] * dp + Math.sin(t * 3 + o.k) * .25 + exy, rot = r[3] + g.dr[2] * dp + Math.sin(t * 2.3 + o.k) * .8;
+        S(el, 'transform', `translate(-50%,-50%) translate(${x.toFixed(2)}cqw,${y.toFixed(2)}cqw) rotate(${va.toFixed(3)}rad) scale(${st.toFixed(3)},${(1 / (1 + (st - 1) * .35)).toFixed(3)}) rotate(${(-va).toFixed(3)}rad) rotate(${rot.toFixed(2)}deg) scale(${(r[2] * r[4] * exs).toFixed(3)},${(r[2] * exs).toFixed(3)})`);
+        S(el, 'clipPath', r[5] || 'none');
+        S(el, 'opacity', (TR[j][1] * exa).toFixed(3));
+      }
+    }
+
     function drawText(t) {
-      const tk = Math.floor(t * 30) / 30;               /* motion runs on 30 fps "twos" like the reference */
-      let a = -1;
-      for (let i = 0; i < P.length; i++) if (t >= P[i].t0 && t < P[i].t1) a = i;
-      if (a !== active) {
-        if (active >= 0) S(P[active].el, 'visibility', 'hidden');
-        active = a;
-        if (a >= 0) S(P[a].el, 'visibility', 'visible');
-      }
-      if (a < 0) return;
-      const p = P[a];
-      for (const o of p.tok) {
-        if (o.done || tk < o.t0) continue;
-        if (!o.on) { o.on = true; S(o.el, 'opacity', '1'); S(o.el, 'willChange', 'transform, opacity'); if (o.a) { S(o.a, 'opacity', '1'); S(o.a, 'willChange', 'transform'); } }
-        const u = tk - o.t0, r = raw(o, u);
-        if (u >= o.d * 1.1 + .12) {                      /* landed: back to exactly the resting place, scale 1, crisp */
-          S(o.el, 'transform', 'none'); S(o.el, 'clipPath', 'none'); S(o.el, 'willChange', 'auto');
-          if (o.a) { S(o.a, 'opacity', '0'); S(o.a, 'willChange', 'auto'); }
-          flag(o.el, 'hit', true);
-          o.done = true; continue;
+      const tt = liteMode ? Math.floor(t * 30) / 30 : t;   /* lite mode moves the text on twos, like the reference */
+      for (let i = 0; i < pt.length; i++) S(pt[i], 'opacity', '0');
+      for (const g of G) {
+        const on = t >= g.t0 - .4 && t < g.t1;
+        if (g.on !== on) { g.on = on; g.c.classList.toggle('on', on); }
+        if (!on) continue;
+        const dp = drift(clamp((tt - g.t0) / (g.ex - g.t0)));
+        for (const o of g.k) {
+          drawTok(o, t, tt, dp);
+          if (liteMode || o.m === 'wipe' || o.m === 'slice') continue;
+          const u = (tt - o.t0) / .4;
+          if (u < 0 || u >= 1) continue;
+          const sl = (o.k % 6) * 6, k = ez(u);
+          for (let j = 0; j < 6; j++) {
+            const a = j * Math.PI / 3 + o.k * .9, dd = (7 + o.sz * .25) * k;
+            put(pt[sl + j], (1 - u) * (1 + .6 * (j % 2)), o.x + Math.cos(a) * dd, o.y + Math.sin(a) * dd, 45 + j * 30, .9 * (1 - u));
+          }
         }
-        if (o.m === 'slice') {                           /* two halves slide together, then it is ONE whole word */
-          const k = ez(clamp(u / (o.d * 1.1))), off = 1 - k, ld = off < .015;
-          S(o.el, 'clipPath', ld ? 'none' : 'polygon(-15% -30%,115% -30%,115% 42%,-15% 62%)');
-          S(o.a, 'clipPath', 'polygon(-15% 66%,115% 46%,115% 130%,-15% 130%)');
-          S(o.a, 'opacity', ld ? '0' : '1');
-          S(o.el, 'transform', `translate(${(-30 * off * ux).toFixed(1)}px,${(-16 * off * uy).toFixed(1)}px) scale(${(1 + .15 * off).toFixed(3)})`);
-          S(o.a, 'transform', `translate(${(30 * off * ux).toFixed(1)}px,${(16 * off * uy).toFixed(1)}px) scale(${(1 + .15 * off).toFixed(3)})`);
-          continue;
-        }
-        /* stretch along the direction of travel = the reference's smear */
-        const r2 = raw(o, u - .034) || r, vx = (r[0] - r2[0]) * ux, vy = (r[1] - r2[1]) * uy;
-        const sp = Math.hypot(vx, vy) / .034 / ux, va = Math.atan2(vy, vx), st = 1 + clamp(sp / 380, 0, 1.2);
-        S(o.el, 'transform', `translate(${(r[0] * ux).toFixed(1)}px,${(r[1] * uy).toFixed(1)}px) rotate(${va.toFixed(3)}rad) scale(${st.toFixed(3)},${(1 / (1 + (st - 1) * .35)).toFixed(3)}) rotate(${(-va).toFixed(3)}rad) rotate(${r[3].toFixed(2)}deg) scale(${(r[2] * r[4]).toFixed(3)},${r[2].toFixed(3)})`);
-        S(o.el, 'clipPath', r[5] || 'none');
       }
-      const out = t >= p.ex;
-      if (p.out !== out) { p.out = out; p.el.classList.toggle('out', out); }
     }
 
-    function flag(el, name, on) {
-      const k = '_' + name;
-      if (el[k] !== on) { el[k] = on; el.classList.toggle(name, on); }
-    }
-
+    let fcur = 0, fprev = 0, fts = 0;
     function frame(t) {
-      /* scene A: shape-face countdown */
-      const inA = t < BEAT0 + .02, inB = t >= BEAT0;
-      /* visibility, not display: scene B is laid out once at the start instead of
-         on the first frame of the cut (that first layout was a visible hitch) */
+      lastT = t;
+      /* scene A: shape-face countdown. visibility, not display: scene B is laid out
+         once at the start instead of on the first frame of the cut (that was a hitch) */
+      const inA = t < BEAT0 + .02, inB = t >= BEAT0 - .15;
       S(A, 'visibility', inA ? 'visible' : 'hidden'); S(B, 'visibility', inB ? 'visible' : 'hidden');
-      /* compositor layers are built half a second early, while nothing shows yet, so the cut itself costs nothing */
+      /* compositor layers are built half a second early, while nothing shows yet */
       flag(overlay, 'sb', t >= BEAT0 - .6);
       flag(overlay, 'cut', inB);
+      flag(overlay, 'chg', t >= 4.3);
       if (inA) {
-        put(t1, pop(t, .3)); put(t2, pop(t, .5));
-        put(d1, pop(t, .7)); put(d2, pop(t, .9));
-        const ep = pop(t, 1.1, .45);
-        const ew = t > 1.55 ? Math.sin((t - 1.55) * 15) * 11 * Math.exp(-(t - 1.55) * 2.6) : 0;
-        const eo = t >= 1.1 ? 1 : 0;
-        put(e1, 1, 0, (1 - ep) * -18, -14 + ew, eo);
-        put(e2, 1, 0, (1 - ep) * -18, 14 - ew, eo);
-        const k = clamp(Math.floor((t - 2.05) / .36), 0, 2), off = t < 2.05 || t >= 3.13;
-        const dgt = off ? '' : String(3 - k);
+        const mp = 1 - Math.pow(1 - seg(t, 2.306, .3), 3);   /* the face shapes fly into the mascot's spot instead of flashing away */
+        const pf = (id, s, x = 0, y = 0, r = 0, o) => { const p = AP[id]; put(sh[id], s * (1 - mp), x + (50 - p[0]) * mp, y + (30 - p[1]) * (HSC / 100) * mp, r + mp * 40, o); };
+        pf('t1', pop(t, .192, .3)); pf('t2', pop(t, .192, .3));
+        pf('d1', pop(t, .343, .3)); pf('d2', pop(t, .343, .3));
+        const ep = pop(t, .494, .4), ew = t > .85 ? Math.sin((t - .85) * 15) * 11 * Math.exp(-(t - .85) * 2.6) : 0, eo = t >= .494 ? 1 : 0;
+        pf('e1', 1, 0, (1 - ep) * -18, -14 + ew, eo);
+        pf('e2', 1, 0, (1 - ep) * -18, 14 - ew, eo);
+        const k = clamp(Math.floor((t - 1.4) / .302), 0, 2), off = t < 1.4 || t >= 2.306;
+        const dgt = off ? '' : String(3 - k), dg = sh.dg;
         if (dg._t !== dgt) { dg._t = dgt; dg.textContent = dgt; }
-        put(dg, off ? 0 : pop(t, 2.05 + k * .36, .25));
-        const g = t >= 3.13;
+        pf('dg', off ? 0 : pop(t, 1.4 + k * .302, .22));
+        const g = t >= 2.306, d1 = sh.d1, d2 = sh.d2;
         if (d1._g !== g) {
           d1._g = g;
           d1.className = 'a dot' + (g ? ' go' : ''); d2.className = d1.className;
           d1.textContent = g ? 'G' : ''; d2.textContent = g ? 'O' : '';
-          d1._c = {}; d2._c = {};      /* className reset keeps inline styles; drop the cache so they re-apply */
         }
       }
 
       /* scene B: mascot, phrases, title */
       if (inB) {
-        const bp = Math.exp(-7 * ((((t - G0) % BEAT) + BEAT) % BEAT) / BEAT);
+        const ph = (((t - G0) % BEAT) + BEAT) % BEAT, bp = t >= BEAT0 ? Math.exp(-7 * ph / BEAT) : 0;
         let gi = -1;
-        for (let i = 0; i < P.length; i++) if (P[i].t0 <= t) gi = i;
+        for (let i = 0; i < G.length; i++) if (G[i].t0 <= t) gi = i;
+        /* the mascot's expression changes ON EVERY BEAT; the last phrase cycles twice as fast and lands on ^w^ */
+        const bn = Math.floor((t - G0) / BEAT);
+        const face = t >= TT ? 2 : gi < 0 ? 0 : gi === G.length - 1 ? Math.floor((t - G0) / (BEAT / 2)) % 3 : ((bn % 3) + 3) % 3;
+        if (face !== fcur) { fprev = fcur; fcur = face; fts = t; }
+        faces.forEach((n, i) => {                         /* faces cross-fade instead of swapping */
+          const w = i === fcur ? seg(t, fts, .06) : i === fprev ? 1 - seg(t, fts, .06) : 0;
+          S(n, 'opacity', w.toFixed(2));
+        });
         const wave = t >= TT ? Math.sin((t - TT) * 14) * 7 * Math.exp(-(t - TT) * 1.2) : 0;
-        const pu = gi < 0 ? 0 : Math.exp(-14 * (t - P[gi].t0)), pre = t < TT ? 1 : 0;
-        const s0 = pop(t, BEAT0, .5) * (1 + .12 * pu * pre), cr = seg(t, TE, .18), jp = seg(t, TE + .18, .5);
-        const sy = s0 * (1 + .04 * bp * pre) * (1 - .24 * cr) * (1 + .34 * jp), sx = s0 * (1 - .025 * bp * pre) * (1 + .16 * cr) * (1 - .16 * jp);
-        const mY = -2 * bp * pre + 2.4 * cr * (1 - jp) - Math.pow(jp, 2.2) * 120;   /* beat bob + crouch + jump out the top */
+        const pu = gi < 0 ? 0 : Math.exp(-14 * ph), pre = t < TT ? 1 : 0, s0 = pop(t, BEAT0 - .15, .5) * (1 + .15 * pu * pre), cr = seg(t, TE, .18), jp = seg(t, TE + .18, .62);
+        const sy = s0 * (1 + .04 * bp) * (1 - .2 * cr) * (1 + .25 * jp), sx = s0 * (1 - .025 * bp) * (1 + .12 * cr) * (1 - .1 * jp);
+        const mY = -2 * bp + 1.5 * cr * (1 - jp) - Math.pow(jp, 2.2) * (HSC * .3 + 34);   /* beat bob + crouch + jump out the top */
         S(mk, 'transform', `translate(-50%,-50%) translate(0cqw,${mY.toFixed(2)}cqw) rotate(${wave.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`);
         S(mk, 'opacity', s0 > .01 ? '1' : '0');
-        flag(overlay, 'jump', t >= TE + .18);
-        flag(overlay, 'lift', t >= LIFT);
-        /* the page mascot's background shows through as the overlay lifts away: transform only */
-        S(overlay, 'transform', t >= LIFT ? `translateY(${(-wipeE(seg(t, LIFT, .7)) * 114).toFixed(2)}%)` : 'none');
 
-        letters.forEach((e, i) => flag(e, 'on', t >= TT + i * .07));
-        flag(ttl, 'out', t >= TE + .22);
+        /* the background lifts away upward after the mascot (transform only, no clipping) */
+        if (t >= LIFT) { flag(overlay, 'lift', true); S(overlay, 'transform', `translateY(${(-wipeE(seg(t, LIFT, .75)) * 101).toFixed(2)}%)`); }
+        else S(overlay, 'transform', 'none');
+
+        letters.forEach((e, i) => {
+          const p = pop(t, TT + i * .07, .4), w = Math.sin(t * 3 + i * .7) * .7 * seg(t, TT + .6, .6);
+          S(e, 'transform', `translateY(${((1 - p) * -6 + w).toFixed(2)}cqw) scale(${p.toFixed(3)})`);
+          S(e, 'opacity', p > .01 ? '1' : '0');
+        });
         put(ttl, 1, 0, 0, 0, t >= TT ? 1 : 0);
-        const leave = seg(t, TE + .3, .22);
-        put(subEl, pop(t, TT + .7, .4), 0, -leave * 6, 0, t >= TT + .7 ? 1 - leave : 0);
+        put(subEl, pop(t, TT + .7, .4));
         chips.forEach((c, i) => {
-          const cp = pop(t, TT + .9 + i * .3, .35);
-          S(c, 'transform', `rotate(${[-3, 2, -2][i]}deg) scale(${cp.toFixed(3)})`);
-          S(c, 'opacity', cp > .01 ? (1 - leave).toFixed(3) : '0');
+          const cp = pop(t, TT + .9 + i * .3, .35), on = cp > .9 ? 1 : 0;
+          S(c, 'transform', `translateY(${(Math.sin(t * 2 + i * 1.3) * .4 * on).toFixed(2)}cqw) rotate(${([-3, 2][i] + Math.sin(t * 1.6 + i) * on).toFixed(2)}deg) scale(${cp.toFixed(3)})`);
+          S(c, 'opacity', cp > .01 ? '1' : '0');
         });
 
-        /* backgrounds: yellow rings -> pink burst -> torn paper */
-        const bg = gi >= 0 && t < TT ? P[gi].bg : 'ring';
-        S(sw, 'opacity', (bg === 'burst' ? 1 : .9 * seg(t, BEAT0, .3) * (1 - .6 * seg(t, TT, .5))).toFixed(3));
-        drawBg(t, bg === 'burst' ? 'burst' : 'ring');
-        const pO = bg === 'paper';
-        S(paper, 'opacity', pO ? '1' : '0');
-        S(paper, 'transform', `translate(-50%,-50%) rotate(-1.5deg) scale(${(pO ? Math.max(.01, pop(t, P[5].t0, .3)) : .01).toFixed(3)})`);
-
-        /* slash-bar cut only where the scene changes */
-        let sli = -1;
-        for (const i of [2, 5]) if (t >= P[i].t0 && t < P[i].t0 + .26) sli = i;
-        if (sli < 0) S(slash, 'opacity', '0');
-        else { const u = (t - P[sli].t0) / .26, d = sli === 2 ? 1 : -1; put(slash, 1, d * (-150 + 300 * (1 - Math.pow(1 - u, 3))), sli === 2 ? -6 : 4, d * -6, 1); }
-
+        /* rings behind everything, drifting the other way from the camera for depth */
+        S(sw, 'opacity', (.9 * seg(t, BEAT0 - .25, .45) * (1 - .6 * seg(t, TT, .5))).toFixed(3));
+        drawBg(t);
         let cc = [0, 0, 0, 1];
         { let i = 0; while (i < CAMK.length - 2 && t >= CAMK[i + 1].t) i++;
           const a = CAMK[i], b = CAMK[i + 1], u = clamp((t - a.t) / (b.t - a.t)), s3 = u * u * (3 - 2 * u);
           cc = a.c.map((v, j) => v + (b.c[j] - v) * s3); }
-        /* the camera moves the mascot and background only: the lettering stays still and sharp */
         S(stg, 'transform', `translate(-50%,-50%) translate(${cc[0].toFixed(3)}%,${cc[1].toFixed(3)}%) rotate(${cc[2].toFixed(3)}deg) scale(${cc[3].toFixed(4)})`);
         S(sw, 'transform', `translate(${(-cc[0] * 1.3).toFixed(3)}%,${(-cc[1] * 1.3).toFixed(3)}%) scale(${(1 + (cc[3] - 1) * .5).toFixed(4)})`);
 
         drawText(t);
 
-        if (t >= TE + .95) land();   /* the background has lifted: the page's own mascot drops in (js/landing.js) */
+        if (t >= TE + .9) land();   /* the background has lifted: the page's own mascot drops in (js/landing.js) */
         els.forEach((e, i) => {
           const a = t * 1.7 + i * 2.094, z = Math.sin(a), pp = pop(t, TT + .4 + i * .15, .4) * (1 - seg(t, TE, .15));
           S(e, 'zIndex', z > 0 ? '3' : '1');
@@ -425,13 +487,12 @@
         put(rg, .4 + rq * 1.8, 0, 0, 0, t >= rs && rq < 1 ? (1 - rq) * .8 : 0);
       }
 
-      /* flashes + buttons */
-      S(fl, 'opacity', clamp(1 - Math.abs(t - (BEAT0 + .02)) / .18).toFixed(3));
+      /* buttons: Start pops after the title, goes away as the mascot crouches */
       const gp = pop(t, TT + 1.4, .4), on = t >= TT + 1.4 && t < TE + .3;
       S(go, 'opacity', gp > .01 && t < TE + .3 ? '1' : '0');
       S(go, 'transform', `translateX(-50%) scale(${gp.toFixed(3)})`);
       /* visibility (not just pointer-events) so the CTA is unfocusable until it
-         pops — keeps introSkip the first tab stop (a11y gate A0) */
+         pops, which keeps introSkip the first tab stop (a11y gate A0) */
       S(go, 'visibility', on ? 'visible' : 'hidden');
       if (go._on !== on) { go._on = on; go.classList.toggle('on', on); }
     }
@@ -439,18 +500,16 @@
     /* faces cost zero bytes until playback is certain (chapter routes never fetch
        them). They are DECODED before the first swap so no frame pays for it. */
     function loadFaces() {
-      const f = q('#sp');
-      f.decoding = 'async'; f.src = IMG.sp;
-      if (f.decode) f.decode().catch(() => {});
+      for (const f of faces) {
+        if (f.src) continue;
+        f.decoding = 'async'; f.src = IMG[f.id];
+        if (f.decode) f.decode().catch(() => {});
+      }
+      overlay.querySelectorAll('.gh').forEach(g => { if (!g.src) g.src = IMG.fo; });   /* same url: no second download */
     }
 
     return { frame, fit, readMkw, loadFaces, setLite, TT, TE, END };
   }
-
-  const wipeE = (() => {
-    const f = (t, p, q_) => 3 * (1 - t) * (1 - t) * t * p + 3 * (1 - t) * t * t * q_ + t * t * t;
-    return x => { x = clamp(x); let t = x; for (let i = 0; i < 8; i++) { const dx = f(t, .5, .2) - x, ds = 3 * (1 - t) * (1 - t) * .5 + 6 * (1 - t) * t * (.2 - .5) + 3 * t * t * (1 - .2); if (Math.abs(ds) < 1e-5) break; t -= dx / ds; } return f(clamp(t), 0, 1); };
-  })();
 
   let E = null;                    /* the running engine; dropped when the overlay goes */
   let liteMode = false, duration = 0;
@@ -496,13 +555,13 @@
     E.frame(t);
     raf = requestAnimationFrame(step);
   }
-  const whenReady = () => (window.EMC_KINETIC ? window.EMC_KINETIC.ready() : Promise.resolve());
+  const whenReady = () => (window.EMC_KINETIC ? window.EMC_KINETIC.ready() : (document.fonts && document.fonts.ready) || Promise.resolve());
   function run() {
     if (raf) cancelAnimationFrame(raf);
     overlay.classList.remove('done');
     /* the lettering font is preloaded, so this wait is a few ms at most */
     whenReady().then(() => {
-      if (removed || !overlay.isConnected || !window.EMC_KINETIC) return;
+      if (removed || !overlay.isConnected) return;
       const e = engine();
       e.loadFaces(); e.readMkw(); e.fit();
       if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) e.setLite();
@@ -597,7 +656,7 @@
 
     /* dev tuning freeze: ?t=5.5 draws one frame, no clock, no auto-dismiss */
     const freeze = new URLSearchParams(location.search).get('t');
-    if (freeze !== null) { whenReady().then(() => { if (removed || !overlay.isConnected || !window.EMC_KINETIC) return; const e = engine(); e.loadFaces(); e.readMkw(); e.fit(); e.frame(+freeze); }); return; }
+    if (freeze !== null) { whenReady().then(() => { if (removed || !overlay.isConnected) return; const e = engine(); e.loadFaces(); e.readMkw(); e.fit(); e.frame(+freeze); }); return; }
 
     run();
     /* reduced motion: the static end frame is the whole show — clear fast */

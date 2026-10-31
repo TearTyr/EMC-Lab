@@ -1508,7 +1508,8 @@ window.EMC = (function () {
 
   function katexifyRest() {
     if (!window.katex) return;
-    texQueue = [...document.querySelectorAll('[data-tex]:not([data-tex-done])')];
+    /* a closed Formula sheet costs nothing: it is typeset when first opened */
+    texQueue = [...document.querySelectorAll('[data-tex]:not([data-tex-done])')].filter(e => !e.closest('details.formula-sheet:not([open])'));
     if (!texQueue.length) return;
     if (texPumping) return;
     texPumping = true;

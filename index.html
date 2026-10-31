@@ -108,18 +108,21 @@
 </head>
 
 <body class="emc">
-  <!-- Opening composition: shape-face countdown, flash cut, mascot with six
-       typed equations, title card, jump-out (timeline in js/intro.js, characters
-       split by js/kinetic.js). Repo contracts kept: hidden until .play, plays on
-       EVERY bare landing load (no seen-flag), the page is inert while it plays,
-       only Skip / Start / Escape end it early, chapter routes skip it, reduced
-       motion gets the static end frame, faces fetch only on play.
+  <!-- Opening composition (timeline in js/intro.js, ported from test/emc-intro-final.html):
+       shape-face countdown, then the title card where the mascot changes face on
+       every beat while six phrases fly in. Repo contracts kept: hidden until .play,
+       plays on EVERY bare landing load (no seen-flag), the page is inert while it
+       plays, only Skip / Start / Escape end it early, chapter routes skip it,
+       reduced motion gets the static end frame, images fetch only on play.
        Dev tuning: index.html?t=5.5 freezes any frame. -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
     <div id="sw"><canvas id="bg" role="img" aria-label="Animated background" aria-hidden="true"></canvas></div>
-    <div id="px"></div>
+    <div id="ghosts" aria-hidden="true">
+      <img class="a gh" alt="" width="409" height="415" style="left:7%;top:20%;--r:-12deg;--i:0"><img class="a gh" alt="" width="409" height="415" style="left:17%;top:68%;--r:9deg;--i:1"><img class="a gh" alt="" width="409" height="415" style="left:93%;top:22%;--r:12deg;--i:2"><img class="a gh" alt="" width="409" height="415" style="left:84%;top:72%;--r:-8deg;--i:3"><img class="a gh" alt="" width="409" height="415" style="left:50%;top:6%;--r:0deg;--i:4"><img class="a gh" alt="" width="409" height="415" style="left:4%;top:88%;--r:6deg;--i:5">
+    </div>
+    <div id="px" aria-hidden="true"></div>
     <div id="st">
-      <i class="a sl" id="slash" style="left:50%;top:50%"></i>
+      <div id="kw" aria-hidden="true"></div>
       <div id="A">
         <i class="a tri" id="t1" style="left:29%;top:47%"></i>
         <i class="a tri" id="t2" style="left:71%;top:47%"></i>
@@ -129,19 +132,16 @@
         <b class="a dig" id="dg" style="left:50%;top:56%"></b>
       </div>
       <div id="B">
-        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:30%"><img id="sp" width="409" height="415" alt=""></div>
+        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:30%"><img id="sp" width="409" height="415" alt=""><img id="fo" width="409" height="415" alt=""><img id="hp" width="409" height="415" alt=""></div>
         <i class="a" id="rg" style="left:50%;top:30%"></i>
         <b class="a el" style="left:50%;top:30%;background:#a8d3e0"></b><b class="a el" style="left:50%;top:30%;background:#f8aebe"></b><b class="a el" style="left:50%;top:30%;background:#b5d777"></b>
         <div class="a" id="ttl" style="left:50%;top:57%"></div>
-        <div class="a" id="sub" style="left:50%;top:70%">Interactive Electricity Tutorial</div>
-        <div id="jl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="a" id="sub" style="left:50%;top:70%">Electric Forces, Fields &amp; Circuits</div>
         <div id="row"><div class="chip" style="background:#a8d3e0">Circuit Builder</div>
-          <div class="chip" style="background:#f8aebe">Ohm’s Law</div>
+          <div class="chip" style="background:#f8aebe">Ohm's Law Calculator</div>
         </div>
       </div>
     </div>
-    <div id="kw"><i class="a" id="paper"></i></div>
-    <div id="fl"></div>
     <button class="intro-skip" id="introSkip" type="button" aria-keyshortcuts="Escape" title="Skip intro (Esc)">Skip intro &rarr;</button>
     <a class="btn btn-primary in-start" id="go" href="topics/current.html">Start Learning</a>
   </div>
@@ -215,6 +215,62 @@
           <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
         </div>
         <p class="hero-meta lp-line"><span id="statChapters">2</span> chapters · <span id="statSims">6</span> sandboxes · <span id="statQuestions">16</span> questions</p>
+        <a class="scroll-cue lp-line" href="#try-ohm"><span>Try it</span><i aria-hidden="true"></i></a>
+      </div>
+    </section>
+
+    <section class="section wrap demo" id="try-ohm">
+      <div class="demo-copy reveal">
+        <h2 class="h-sec" data-mx="words">Turn the dial, watch the bulb</h2>
+        <p class="muted">Ohm’s law, live: <span data-tex="I = V/R">I = V/R</span>, <span data-tex="P = VI">P = VI</span>.</p>
+        <label class="demo-ctl"><span>Voltage <output id="dOhmVv">12 V</output></span>
+          <input class="range" type="range" id="dOhmV" min="0" max="24" step="1" value="12" aria-label="Voltage in volts"></label>
+        <label class="demo-ctl"><span>Resistance <output id="dOhmRv">6 Ω</output></span>
+          <input class="range" type="range" id="dOhmR" min="1" max="40" step="1" value="6" aria-label="Resistance in ohms"></label>
+      </div>
+      <div class="demo-stage reveal">
+        <svg class="bulb" viewBox="0 0 120 160" aria-hidden="true">
+          <circle class="bulb-glow" id="dOhmGlow" cx="60" cy="58" r="58"/>
+          <path class="bulb-glass" d="M60 14a44 44 0 0 0-26 79c5 4 8 9 8 15v6h36v-6c0-6 3-11 8-15A44 44 0 0 0 60 14z"/>
+          <path class="bulb-fil" d="M46 68l7-16 7 16 7-16 7 16"/>
+          <rect class="bulb-base" x="44" y="118" width="32" height="20" rx="5"/>
+        </svg>
+        <dl class="demo-read">
+          <div><dt>Current</dt><dd id="dOhmI">2.00 A</dd></div>
+          <div><dt>Power</dt><dd id="dOhmP">24.0 W</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section wrap demo demo-flip" id="try-coulomb">
+      <div class="demo-copy reveal">
+        <h2 class="h-sec" data-mx="words">Pull two charges apart</h2>
+        <p class="muted">Double the distance and the force drops to a quarter.</p>
+        <label class="demo-ctl"><span>Distance <output id="dCoulRv">1.0 km</output></span>
+          <input class="range" type="range" id="dCoulR" min="0.5" max="3" step="0.1" value="1" aria-label="Distance in kilometres"></label>
+      </div>
+      <div class="demo-stage reveal">
+        <div class="cl" aria-hidden="true">
+          <div class="cl-side" id="dCoulL"><b class="cl-q cl-p">+</b><i class="cl-arrow" id="dCoulAL"></i></div>
+          <div class="cl-side cl-right" id="dCoulRt"><i class="cl-arrow" id="dCoulAR"></i><b class="cl-q cl-m">−</b></div>
+        </div>
+        <dl class="demo-read">
+          <div><dt>Charges</dt><dd>+1 C, −1 C</dd></div>
+          <div><dt>Force</dt><dd id="dCoulF">8,990 N</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section wrap" id="try-quiz">
+      <div class="card reveal">
+        <h2 class="h-sec" style="margin:0" data-mx="words">Try one question</h2>
+        <p class="demo-q" id="dQuizQ"></p>
+        <div class="demo-opts" id="dQuizOpts"></div>
+        <p class="muted small" id="dQuizFb" role="status" aria-live="polite"></p>
+        <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+          <p class="muted small" style="margin:0"><span id="quizCountWord">Sixteen</span> questions, eight per chapter.</p>
+          <a class="btn btn-primary" href="quiz.html">Open the quiz →</a>
+        </div>
       </div>
     </section>
 
@@ -300,18 +356,6 @@
               <p class="tiny faint" style="margin-top:.8rem">Scoring 70% or more in the quiz also ticks both chapters for you.</p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section wrap">
-      <div class="card reveal">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div style="flex:1 1 320px">
-            <h2 class="h-sec" style="margin:0" data-mx="words">Test yourself</h2>
-            <p class="muted small" style="margin:.3rem 0 0"><span id="quizCountWord">Sixteen</span> questions, eight per chapter.</p>
-          </div>
-          <a class="btn btn-primary" href="quiz.html">Open the quiz →</a>
         </div>
       </div>
     </section>

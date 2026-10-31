@@ -49,6 +49,72 @@
     fill('quizCountFooter', quizCount);
   }
 
+  /* ------------------------------------------------- home-page live examples */
+  /* Small DOM demos computed from the real equations (no canvas, no loop): they
+     only run when a slider moves. */
+  (function ohmDemo() {
+    const V = document.getElementById('dOhmV'), R = document.getElementById('dOhmR');
+    if (!V || !R) return;
+    const glow = document.getElementById('dOhmGlow');
+    const update = () => {
+      const v = +V.value, r = +R.value, i = v / r, p = v * i;
+      fill('dOhmVv', `${v} V`);
+      fill('dOhmRv', `${r} Ω`);
+      fill('dOhmI', EMC.unit(i, 'A'));
+      fill('dOhmP', EMC.unit(p, 'W'));
+      const b = clamp(Math.sqrt(p / 144), 0, 1);       // full glow at the top of the range (24 V, 4 Ω)
+      glow.style.opacity = b.toFixed(3);
+      glow.style.transform = `scale(${(.72 + b * .5).toFixed(3)})`;
+    };
+    V.addEventListener('input', update); R.addEventListener('input', update);
+    update();
+  })();
+
+  (function coulombDemo() {
+    const R = document.getElementById('dCoulR');
+    if (!R) return;
+    const L = document.getElementById('dCoulL'), Rt = document.getElementById('dCoulRt');
+    const AL = document.getElementById('dCoulAL'), AR = document.getElementById('dCoulAR');
+    const update = () => {
+      const km = +R.value, m = km * 1000, F = EMC.CONST.K * 1 * 1 / (m * m);       // ±1 C: the lecture's own example
+      fill('dCoulRv', `${km.toFixed(1)} km`);
+      fill('dCoulF', `${Math.round(F).toLocaleString('en-US')} N`);
+      const gap = (km - 1) * 16;                                                  // % of each side's width
+      L.style.transform = `translateX(${(-gap).toFixed(1)}%)`;
+      Rt.style.transform = `translateX(${gap.toFixed(1)}%)`;
+      const a = clamp(Math.sqrt(F / 35960), .08, 1).toFixed(3);                    // both forces are equal and point inward
+      AL.style.transform = `scaleX(${a})`;
+      AR.style.transform = `scaleX(${a})`;
+    };
+    R.addEventListener('input', update);
+    update();
+  })();
+
+  (function sampleQuestion() {
+    const qEl = document.getElementById('dQuizQ'), box = document.getElementById('dQuizOpts');
+    const fb = document.getElementById('dQuizFb');
+    const bank = window.EMC_QUIZ;
+    if (!qEl || !box || !Array.isArray(bank)) return;
+    const q = bank.find(x => x.topic === 'ch1' && x.difficulty === 'easy');
+    if (!q) return;
+    qEl.innerHTML = q.q;
+    const btns = q.options.map((o, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'opt';
+      b.innerHTML = `<span class="key">${'ABCD'[i]}</span><span>${o}</span>`;
+      b.addEventListener('click', () => {
+        btns.forEach((x, j) => { x.disabled = true; if (j === q.answer) x.classList.add('correct'); });
+        if (i !== q.answer) b.classList.add('wrong');
+        fb.innerHTML = `<b>${i === q.answer ? 'Correct.' : 'Not quite.'}</b> ${q.explain}`;
+      });
+      box.appendChild(b);
+      return b;
+    });
+  })();
+
+  const sheet = document.querySelector('details.formula-sheet');
+  if (sheet) sheet.addEventListener('toggle', () => { if (sheet.open && EMC.katexifyRest) EMC.katexifyRest(); });
+
   /* ---------------------------------------------------------- dashboard */
   const ring = document.getElementById('ringFg');
   const RING_R = 58, RING_C = 2 * Math.PI * RING_R;
