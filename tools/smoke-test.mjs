@@ -646,7 +646,7 @@ console.log('\u2500'.repeat(66));
   ok('the bottom submit sits after the question list',
     (doc.getElementById('quiz-list').compareDocumentPosition(submitBtns[1]) & win.Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
   ok('submit() is guarded against double grading',
-    /function submit\(\) \{\n    if \(S\.submitted\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
+    /function submit\(\) \{\r?\n    if \(S\.submitted\) return;/.test(readFileSync(join(ROOT, 'js/quiz.js'), 'utf8')));
 
   // Enter-key submission needs a real IntersectionObserver (active card), so it
   // is covered by the Chromium harness; here we assert the guard stays wired.
@@ -1395,7 +1395,7 @@ console.log('\u2500'.repeat(66));
      .in-start kills the inherited .btn transform transition. Tokens below
      re-pointed accordingly; no assertion deleted or weakened. */
   ok('v8 grammar: beat clock, container-query stage, shape-face cast in the engine',
-    /const BEAT0 = 3\.5, BEAT = 0\.88/.test(src) &&
+    /const BEAT0 = 3\.5, BEAT = \.604/.test(src) &&   /* v10: beat measured from the reference audio */
     /#introOverlay #st \{[^}]*container-type: size/.test(css) &&
     /#introOverlay #mk \{ width: var\(--mk\)/.test(css) &&
     /#introOverlay \.tri \{[^}]*box-shadow: inset 2cqw/.test(css) &&
@@ -1403,18 +1403,21 @@ console.log('\u2500'.repeat(66));
     /#introOverlay \.ear \{/.test(css) &&
     /* the v4 1:6 whole-video cut is gone for good */
     !/in-cola|in-skit|in-insert|in-insetspin|in-endcard/.test(css));
-  ok('v8 story beats: countdown, flash cut at BEAT0, face swaps, Start at 10.3, flash out 11.2',
-    /const face = t < 4\.5 \? 'sp' : t < 8\.8 \? 'fo' : 'hp';/.test(src) &&
-    /fl\.style\.opacity = Math\.max\(f1, f2\)/.test(src) &&
-    /go\.style\.visibility = t >= 10\.3/.test(src) &&
-    /f2 = seg\(t, 11\.2, \.8\)/.test(src) &&
-    /reducedMotion\) \{ frame\(11\); return; \}/.test(src));
+  /* CONTRACT CHANGE (v10 "kinetic text", 2026-10-31): the test/ rework replaces the v8 timeline: six phrase
+     groups on the 0.604 s beat grid, a face per group, Start at TT + 1.4 s (~15 s), mascot jump at TE, end at
+     TE + 1 (~16.6 s). Tokens re-pointed, nothing deleted. */
+  ok('v10 story beats: countdown, flash cut at BEAT0, face per phrase group, Start at TT+1.4, static end frame',
+    /const face = t >= TT \? 'hp' : gi < 0 \? 'sp'/.test(src) &&
+    /S\(fl, 'opacity', clamp\(1 - Math\.abs\(t - \(BEAT0 \+ \.02\)\) \/ \.18\)/.test(src) &&
+    /S\(go, 'visibility', on \? 'visible' : 'hidden'\)/.test(src) &&
+    /const gp = pop\(t, TT \+ 1\.4, \.4\)/.test(src) &&
+    /reducedMotion\) \{ frame\(TT \+ 2\); return; \}/.test(src));
   ok('v8 fidelity fixes pinned: ghost column fetches the focus face; CTA pops without the .btn transition',
     /for \(const g of ghosts\) g\.s\.src = IMG\.fo;/.test(src) &&
     /#introOverlay \.in-start \{[^}]*transition: none/.test(css));
   ok('v8 spacing is container-relative (cqw gap on the chip row, cqw stage units)',
     /#introOverlay #row \{[^}]*gap: 2cqw/.test(css) &&
-    /--mk: 34cqw; --tt: 18cqw/.test(css));
+    /--mk: 44cqw; --tt: 18cqw/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     /* CONTRACT CHANGE (2026-10-25, cleanup): mascot-sparkle only ever renders as
@@ -1466,7 +1469,7 @@ console.log('\u2500'.repeat(66));
   }
   const tEnd0 = tPlay;
   let removedAt = -1;
-  while (Date.now() - tEnd0 < 17600) {
+  while (Date.now() - tEnd0 < 20500) {
     if (!run1.doc.getElementById('introOverlay')) { removedAt = Date.now() - tEnd0; break; }
     await new Promise(r => setTimeout(r, 50));
   }
@@ -1476,7 +1479,7 @@ console.log('\u2500'.repeat(66));
     st1.inert === 0 && run1.doc.querySelectorAll('[inert]:not(#shell-topic)').length === 0 &&
     run1.win.sessionStorage.length === 0 && run1.win.localStorage.length === 0, JSON.stringify(st1));
   ok('auto-end is deterministic inside the composition window (no fixed-sleep padding)',
-    removedAt >= 12000 && removedAt <= 15000, `removed at ~${removedAt} ms`);
+    removedAt >= 16000 && removedAt <= 19500, `removed at ~${removedAt} ms`);
   run1.win.close();
 
   /* a stale legacy flag from the old once-per-session contract must not suppress it */

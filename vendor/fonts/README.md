@@ -11,6 +11,12 @@ GitHub Pages:
 | `g8321-400.woff2` | **G8321 Regular** | body copy, prose, labels — the site default | SIL OFL 1.1 — © Coji Morishita |
 | `g8321-700.woff2` | **G8321 Bold** | headings, brand, buttons, nav, micro-labels | SIL OFL 1.1 — © Coji Morishita |
 
+Plus one display-only face: `emc-display-900.woff2` is **Noto Serif JP Black**
+(SIL OFL 1.1, `OFL-NotoSerifJP.txt`) subset to Latin, digits and symbols (~9 KB;
+rebuild with `python tools/subset-display-font.py`). It is used ONLY for the
+intro lettering, the page-transition title cards and the home title, as
+`'EMC Display'`; everything else stays G8321.
+
 Titles (`fontFamily.title`) additionally lead with `fot-yuruka-std` — see the
 optional licensed slot below. On machines without it, titles render G8321 Bold:
 same family as the body, fully consistent everywhere.

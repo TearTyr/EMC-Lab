@@ -1,4 +1,4 @@
-/* EMC Lab intro controller + v9 "kinetic text" engine.
+/* EMC Lab intro controller + v10 "kinetic text" engine (Override-style lettering).
    Lifecycle contract: the intro plays on EVERY full load or refresh of the
    bare landing page (no seen-flag of any kind: no sessionStorage, no
    localStorage, no in-memory flag). It never runs on chapter hash routes or
@@ -16,6 +16,12 @@
    orbiting electrons and the mascot jumping out. Reduced motion draws the
    static end frame; faces are fetched only when playback actually starts;
    ?t=<s> freezes a frame for tuning (dev).
+   LETTERING (v10): every word is a sprite drawn once by js/kinetic.js (heavy
+   serif, white fill, coral edge + stepped extrusion, rough edges) and then only
+   moved; text motion runs on 30 fps "twos" like the reference; the first slam
+   arrives oversized and cropped; long words type on glyph by glyph; scenes
+   swap yellow rings -> pink burst -> torn red paper; slash bars cut between
+   phrases.
    PERFORMANCE (why this is not a straight copy of the prototype):
    - every style write goes through a per-element cache (S), so a value that
      did not change costs nothing; hidden tokens are display:none and are not
@@ -100,6 +106,17 @@
   /* all refs read once */
   const A = q('#A'), B = q('#B'), fl = q('#fl'), go = q('#go'), mk = q('#mk'), ttl = q('#ttl');
   const stg = q('#st'), sw = q('#sw'), kwHost = q('#kw'), subEl = q('#sub'), rg = q('#rg');
+  const burst = q('#burst'), paper = q('#paper'), slash = q('#slash');
+  /* torn paper edge, generated once */
+  if (paper) {
+    const pp = [], N = 18;
+    const j = (i, a) => Math.abs((Math.sin(i * 12.9898 + a * 78.233) * 43758.5453) % 1);
+    for (let i = 0; i <= N; i++) pp.push(`${(i / N * 100).toFixed(1)}% ${(1.5 + j(i, 1) * 4).toFixed(1)}%`);
+    for (let i = 0; i <= 8; i++) pp.push(`${(100 - j(i, 2) * 2.5).toFixed(1)}% ${(8 + i / 8 * 84).toFixed(1)}%`);
+    for (let i = N; i >= 0; i--) pp.push(`${(i / N * 100).toFixed(1)}% ${(98.5 - j(i, 3) * 4).toFixed(1)}%`);
+    for (let i = 8; i >= 0; i--) pp.push(`${(j(i, 4) * 2.5).toFixed(1)}% ${(8 + i / 8 * 84).toFixed(1)}%`);
+    paper.style.clipPath = `polygon(${pp.join(',')})`;
+  }
   const t1 = q('#t1'), t2 = q('#t2'), d1 = q('#d1'), d2 = q('#d2'), e1 = q('#e1'), e2 = q('#e2'), dg = q('#dg');
   const faces = { sp: q('#sp'), fo: q('#fo'), hp: q('#hp') };
   const FC = ['sp', 'fo', 'hp'];
@@ -168,10 +185,10 @@
   const G = [
     { cam: [-2, -1, -1.2, 1.04], dr: [-1, 2, -1], L: [{ xf: .84, gf: .42, r: 5, s: 24, v: 1, toks: [["V", 0, 'slam', 0], ["=", .151, 'whip', .5], ["IR", .302, 'drop', .6]] }] },
     { cam: [2.5, 1, 1, 1.02], dr: [-1, -1, -1], L: [{ xf: .5, gf: .78, r: -8, s: 22, toks: [["I", 0, 'spin', .55], ["=", .151, 'flip', .5], ["V", .302, 'slice', .55], ["/R", .453, 'wipe', .45]] }] },
-    { cam: [-1.5, -1.5, -1.2, 1.05], dr: [0, 2, 1], L: [{ xf: .84, gf: .42, r: 6, s: 24, v: 1, toks: [["P", 0, 'arc', .5], ["=", .151, 'elastic', .5], ["VI", .302, 'pop', .45]] }, { xf: .14, gf: .78, r: -6, s: 14, toks: [["watts", .453, 'rise', .5]] }] },
-    { cam: [2, .8, 1.2, 1.03], dr: [-1, 2, -1], L: [{ xf: .3, gf: .3, r: -6, s: 26, toks: [["R", 0, 'pop', .5], ["=", .151, 'arc', .5]] }, { xf: .5, gf: .74, r: 4, s: 24, toks: [["R₁", .453, 'whip', .5], ["+", .604, 'spin', .55], ["R₂", .755, 'flip', .5]] }, { xf: .86, gf: .3, r: 8, s: 30, toks: [["Ω", .906, 'elastic', .5]] }] },
+    { cam: [-1.5, -1.5, -1.2, 1.05], dr: [0, 2, 1], L: [{ xf: .84, gf: .42, r: 6, s: 24, v: 1, toks: [["P", 0, 'arc', .5], ["=", .151, 'elastic', .5], ["VI", .302, 'pop', .45]] }, { xf: .14, gf: .78, r: -6, s: 14, toks: [["watts", .453, 'type', .5]] }] },
+    { cam: [2, .8, 1.2, 1.03], dr: [-1, 2, -1], L: [{ xf: .3, gf: .3, r: -6, s: 26, toks: [["R", 0, 'pop', .5], ["=", .151, 'arc', .5]] }, { xf: .5, gf: .74, r: 4, s: 24, toks: [["R_1", .453, 'whip', .5], ["+", .604, 'spin', .55], ["R_2", .755, 'flip', .5]] }, { xf: .86, gf: .3, r: 8, s: 30, toks: [["Ω", .906, 'elastic', .5]] }] },
     { cam: [-2.5, -.8, -1, 1.045], dr: [0, 2, 0], L: [{ xf: .5, gf: .3, r: -5, s: 26, toks: [["ΣV", 0, 'slice', .55], ["=", .151, 'wipe', .5], ["0", .302, 'drop', .5]] }, { xf: .5, gf: .72, r: 4, s: 26, toks: [["ΣI", .604, 'elastic', .5], ["=", .755, 'rise', .5], ["0", .906, 'whip', .5]] }] },
-    { cam: [0, -1, .8, 1.05], dr: [0, 1, 1], L: [{ xf: .5, gf: .1, r: -5, s: 20, toks: [["OHM’S", 0, 'wipe', .5], ["LAW", .151, 'elastic', .5]] }, { xf: .32, gf: .66, r: -6, s: 20, toks: [["CIRCUIT", .604, 'rise', .55]] }, { xf: .68, gf: .86, r: 5, s: 20, toks: [["BUILDER", .755, 'whip', .5]] }] }
+    { cam: [0, -1, .8, 1.05], dr: [0, 1, 1], L: [{ xf: .5, gf: .1, r: -5, s: 20, toks: [["OHM’S", 0, 'type', .5], ["LAW", .302, 'type', .4]] }, { xf: .32, gf: .66, r: -6, s: 20, toks: [["CIRCUIT", .604, 'type', .6]] }, { xf: .68, gf: .86, r: 5, s: 20, toks: [["BUILDER", .755, 'type', .6]] }] }
   ];
   let cur = BEAT0;
   G.forEach(g => {
@@ -187,23 +204,45 @@
   const END = TE + 1;        /* engine timeline length (s) */
   const CAMK = [{ t: BEAT0, c: [0, 0, 0, 1] }, ...G.map(g => ({ t: (g.t0 + g.ex) / 2, c: g.cam })), { t: TT + .9, c: [0, 0, 0, 1] }];
 
-  /* each word = three stacked copies: the main one (stroke + shadow) and two cheap smear trails */
+  /* each word is ONE sprite canvas (built by js/kinetic.js once fonts are ready);
+     a "slice" word gets a second canvas for the other half */
   const kws = [], LN = [];
   G.forEach(g => g.L.forEach(L => {
     L.g = g; L.k = []; LN.push(L);
     L.toks.forEach(tk => {
       const [h, , m, d] = tk;
-      const mkEl = cls => {
-        const e = document.createElement('div');
-        e.className = 'a kw' + cls; e.textContent = h; e.style.left = '50%'; e.style.top = '50%'; e.style.display = 'none';
-        kwHost.appendChild(e);
-        return e;
-      };
-      const b = mkEl(' tr'), a = mkEl(' tr'), e = mkEl('');
-      const o = { e, a, b, g, L, t0: tk.t, x: 0, y: 0, r: L.r, k: kws.length, m, d, S: [0, 0], C: [0, 0], sz: L.s, w: 0, h: 0, u: 0, on: false };
+      const o = { e: null, a: null, text: h, g, L, t0: tk.t, x: 0, y: 0, r: L.r, k: kws.length, m, d, S: [0, 0], C: [0, 0], sz: L.s, w: 0, h: 0, u: 0, on: false, n: [...h.replace(/_\d/g, 'x')].length, sp: null, px: 0 };
       L.k.push(o); kws.push(o);
     });
   }));
+  /* build every sprite once; the font is waited for first, so lettering is never drawn in a fallback face */
+  let built = false;
+  function build() {
+    if (built || !window.EMC_KINETIC) return;
+    built = true;
+    const stageW = stg.offsetWidth || 600, dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    kws.forEach(o => {
+      /* sprite resolution follows the on-screen size so big words stay crisp */
+      const px = Math.max(96, Math.min(360, Math.ceil(o.L.s * 1.15 / 100 * stageW * dpr)));
+      o.sp = window.EMC_KINETIC.sprite(o.text, px);
+      o.px = px;
+      const mkc = src => {
+        const c = document.createElement('canvas');
+        c.className = 'a kc'; c.width = src.width; c.height = src.height; c.style.display = 'none'; c.style.left = '50%'; c.style.top = '50%';
+        c.getContext('2d').drawImage(src, 0, 0);
+        kwHost.appendChild(c);
+        return c;
+      };
+      o.e = mkc(o.sp.canvas);
+      if (o.m === 'slice') o.a = mkc(o.sp.canvas);
+    });
+  }
+  const sizeTok = o => {
+    if (!o.sp) return;                                       /* sprites not built (no canvas): nothing to size */
+    const k = o.sz / o.px;                                  /* cqw per sprite pixel */
+    for (const n of [o.e, o.a]) if (n) { n.style.width = (o.sp.cw * k).toFixed(3) + 'cqw'; n.style.height = (o.sp.ch * k).toFixed(3) + 'cqw'; }
+    o.w = o.sp.w * k; o.h = o.sz * .9;
+  };
 
   /* entrances: eleven distinct moves, tuned soft */
   function raw(o, t) {
@@ -211,7 +250,12 @@
     if (u < 0) return null;
     const m = o.m, pd = m === 'pop' ? .12 : 0, tt = clamp((u - pd) / (o.d * 1.25 || 1)), k = ez(tt), sg = o.x < 0 ? -1 : 1;
     let x = o.x, y = o.y, sc = 1, rot = o.r, sx = 1, cl = '';
-    if (m === 'slam') { const z = 1 - Math.pow(1 - clamp(u / .28), 3); sc = 1 + 1.8 * (1 - z); rot = o.r + sg * 12 * (1 - z); }
+    if (m === 'slam') { const z = 1 - Math.pow(1 - clamp(u / .13), 3); sc = 1 + 4.2 * (1 - z); rot = o.r + sg * 16 * (1 - z); y = o.y + 6 * (1 - z); }   /* arrives huge and cropped, shrinks into place in ~4 frames */
+    else if (m === 'type') {                                                /* long words type on glyph by glyph, then settle */
+      const n = Math.max(1, o.n), kk = Math.min(1, Math.floor(clamp(u / (o.d * .8)) * n + .001) / n);
+      cl = kk >= 1 ? '' : `inset(-30% ${((1 - kk) * 100 + 4).toFixed(1)}% -30% -15%)`;
+      sc = 1 + .22 * (1 - clamp(u / (o.d * .8 + .12))); rot = o.r + sg * 5 * (1 - k); y = o.y + 1.5 * (1 - k);
+    }
     else if (m === 'drop') { y = o.S[1] + (o.y - o.S[1]) * bo(tt); rot = o.r + sg * 8 * (1 - k); }
     else if (m === 'whip') { x = o.S[0] + (o.x - o.S[0]) * wh(tt); rot = o.r + sg * 6 * (1 - k); }
     else if (m === 'wipe') { x = o.S[0] + (o.x - o.S[0]) * k; y = o.y + 2 * (1 - k); cl = `inset(-30% ${((1 - k) * 125 - 15).toFixed(1)}% -30% -15%)`; }
@@ -236,19 +280,15 @@
     L.eh = w * Math.sin(a) + h * Math.cos(a);
   }
   function shr(L, f) {
-    L.k.forEach(o => { o.sz *= f; o.w *= f; o.h *= f; [o.e, o.a, o.b].forEach(n => n.style.setProperty('--s', o.sz + 'cqw')); });
+    L.k.forEach(o => { o.sz *= f; sizeTok(o); });
     lay(L);
   }
   function fit() {
     const W = stg.offsetWidth / 100 || 1, Hs = (stg.offsetHeight / W) || 100;
     HSC = Hs;
     const Wc = Math.max(100, (window.innerWidth || stg.offsetWidth) / (stg.offsetWidth || 1) * 100), bs = 1 + Math.min(.35, (Wc - 100) / 220);
-    /* write every size first, then read every width: one layout pass, not one per word */
-    LN.forEach(L => L.k.forEach(o => { o.sz = L.s * bs; [o.e, o.a, o.b].forEach(n => n.style.setProperty('--s', o.sz + 'cqw')); }));
-    const wasHidden = kws.filter(o => o.e.style.display === 'none');
-    wasHidden.forEach(o => { o.e.style.display = ''; });          /* display:none has no width to measure */
-    LN.forEach(L => L.k.forEach(o => { o.w = o.e.offsetWidth / W; o.h = o.e.offsetHeight / W; }));
-    wasHidden.forEach(o => { o.e.style.display = 'none'; });
+    /* sprite boxes are known from their pixel size: no DOM measuring at all */
+    LN.forEach(L => L.k.forEach(o => { o.sz = L.s * bs; sizeTok(o); }));
     LN.forEach(L => {
       lay(L);
       const f = Math.min(1, (Wc - 20) / L.ew, (Hs - 18) / L.eh);
@@ -313,19 +353,18 @@
     fitRaf = requestAnimationFrame(() => { fitRaf = 0; if (!removed) { readMkw(); fit(); } });
   }
 
-  /* lite mode: no smear trails, sparks or rings; lighter text shadow */
+  /* lite mode: no sparks, rings or extra particles (the lettering sprites are already cheap) */
   let lite = false;
   function setLite() {
     if (lite) return;
     lite = true;
     overlay.classList.add('lite');
-    kws.forEach(o => { S(o.a, 'display', 'none'); S(o.b, 'display', 'none'); });
     sparks.forEach(e => S(e, 'opacity', '0'));
     rings.forEach(e => S(e, 'opacity', '0'));
   }
 
   const hideTok = o => {
-    for (const n of [o.e, o.a, o.b]) { S(n, 'opacity', '0'); S(n, 'display', 'none'); S(n, 'willChange', 'auto'); }
+    for (const n of [o.e, o.a]) if (n) { S(n, 'opacity', '0'); S(n, 'display', 'none'); S(n, 'willChange', 'auto'); }
   };
 
   let landed = false;
@@ -337,6 +376,7 @@
 
   const spUsed = new Uint8Array(36);
   function frame(t) {
+    const tk = Math.floor(t * 30) / 30;          /* text/background motion runs on 30 fps "twos" like the reference */
     /* scene A: shape-face countdown */
     const inA = t < BEAT0 + .02, inB = t >= BEAT0;
     S(A, 'display', inA ? '' : 'none'); S(B, 'display', inB ? '' : 'none');
@@ -401,7 +441,7 @@
           S(rings[i], 'opacity', (Math.sin(p * Math.PI) * .9).toFixed(3));
         }
       }
-      if (t >= TE + .55) land();   /* the mascot starts falling back in just after it has jumped out */
+      if (t >= TE + .95) land();   /* once the background has wiped clean the page's own mascot drops in (js/landing.js) */
       let cc = [0, 0, 0, 1];
       { let i = 0; while (i < CAMK.length - 2 && t >= CAMK[i + 1].t) i++;
         const a = CAMK[i], b = CAMK[i + 1], u = clamp((t - a.t) / (b.t - a.t)), s3 = u * u * (3 - 2 * u);
@@ -427,15 +467,29 @@
         for (let i = 0; i < 36; i++) if (!spUsed[i]) S(sparks[i], 'opacity', '0');
       }
 
-      /* kinetic text: only tokens that are on screen are touched */
+      /* scene backgrounds: yellow rings -> pink burst -> torn red paper */
+      const bO = gi >= 2 && gi <= 4 ? 1 : 0, pO = gi === 5 && t < TT ? 1 : 0;
+      S(burst, 'opacity', bO ? '1' : '0');
+      S(burst, 'transform', `translate(-50%,-50%) rotate(${(tk * 14).toFixed(2)}deg)`);
+      S(paper, 'opacity', pO ? '1' : '0');
+      S(paper, 'transform', `translate(-50%,-50%) rotate(${(-2 + Math.sin(tk * 2) * .6).toFixed(2)}deg) scale(${(pO ? Math.max(.01, pop(tk, G[5].t0, .3)) : 0.01).toFixed(3)})`);
+
+      /* slash-bar cut between phrases */
+      let sli = -1;
+      for (let i = 1; i < G.length; i++) if (tk >= G[i].t0 && tk < G[i].t0 + .26) sli = i;
+      if (sli < 0) S(slash, 'opacity', '0');
+      else { const u = (tk - G[sli].t0) / .26, d = sli % 2 ? 1 : -1; put(slash, 1, d * (-150 + 300 * (1 - Math.pow(1 - u, 3))), [-6, 4, -2, 6, -4][sli - 1], d * -6, 1); }
+
+      /* kinetic text: 30 fps "twos" (tk), only tokens that are on screen are touched */
       kws.forEach(o => {
         const g = o.g;
-        if (t < o.t0 || t >= g.t1) { if (o.on) { hideTok(o); o.on = false; } return; }
-        if (!o.on) { o.on = true; S(o.e, 'display', ''); S(o.e, 'willChange', 'transform, opacity'); if (!lite) { S(o.a, 'display', ''); S(o.b, 'display', ''); S(o.a, 'willChange', 'transform, opacity'); S(o.b, 'willChange', 'transform, opacity'); } }
-        const dp = drift(clamp((t - g.t0) / (g.ex - g.t0))), eu = seg(t, g.ex + (o.k % 6) * .03, EXIT), ee = 1 - Math.pow(1 - eu, 3);
+        if (!o.e) return;
+        if (tk < o.t0 || t >= g.t1) { if (o.on) { hideTok(o); o.on = false; } return; }
+        if (!o.on) { o.on = true; S(o.e, 'display', ''); S(o.e, 'willChange', 'transform, opacity'); }
+        const dp = drift(clamp((tk - g.t0) / (g.ex - g.t0))), eu = seg(tk, g.ex + (o.k % 6) * .03, EXIT), ee = 1 - Math.pow(1 - eu, 3);
         const sgn = o.x < 0 ? -1 : 1, exx = sgn * 5 * ee, exy = -9 * ee, exs = 1 - .1 * ee, exa = 1 - ee;   /* held, then a smooth ease-out */
         if (o.m === 'slice') {
-          const k = ez(clamp((t - o.t0) / (o.d * 1.25))), off = 1 - k, ld = off < .015;   /* two halves slide together, then it is ONE whole word */
+          const k = ez(clamp((tk - o.t0) / (o.d * 1.25))), off = 1 - k, ld = off < .015;   /* two halves slide together, then it is ONE whole word */
           S(o.a, 'display', '');
           S(o.e, 'clipPath', ld ? 'none' : 'polygon(-15% -30%,115% -30%,115% 42%,-15% 62%)');
           S(o.a, 'clipPath', 'polygon(-15% 66%,115% 46%,115% 130%,-15% 130%)');
@@ -443,21 +497,15 @@
             S(el, 'transform', `translate(-50%,-50%) translate(${(o.x + dx * off + g.dr[0] * dp + exx).toFixed(2)}cqw,${(o.y + dy * off + g.dr[1] * dp + exy).toFixed(2)}cqw) rotate(${(o.r + g.dr[2] * dp).toFixed(2)}deg) scale(${((1 + .15 * off) * exs * pz).toFixed(3)})`);
             S(el, 'opacity', (vis * exa).toFixed(3));
           });
-          S(o.b, 'opacity', '0');
           return;
         }
-        S(o.a, 'clipPath', 'none');
-        const copies = lite ? [[o.e, 0, 1]] : [[o.e, 0, 1], [o.a, .03, .4], [o.b, .06, .2]];
-        for (const [el, dl, al] of copies) {
-          const r = raw(o, t - dl);
-          if (!r) { S(el, 'opacity', '0'); continue; }
-          const r2 = raw(o, t - dl - .016) || r, vx = r[0] - r2[0], vy = r[1] - r2[1], sp = Math.hypot(vx, vy) / .016, va = Math.atan2(vy, vx), st = 1 + clamp(sp / 450, 0, 1.4);
-          if (dl && sp < 80) { S(el, 'opacity', '0'); continue; }
-          const x = r[0] + g.dr[0] * dp + exx, y = r[1] + g.dr[1] * dp + Math.sin(t * 3 + o.k) * .25 + exy, rot = r[3] + g.dr[2] * dp + Math.sin(t * 2.3 + o.k) * .8;
-          S(el, 'transform', `translate(-50%,-50%) translate(${x.toFixed(2)}cqw,${y.toFixed(2)}cqw) rotate(${va.toFixed(3)}rad) scale(${st.toFixed(3)},${(1 / (1 + (st - 1) * .35)).toFixed(3)}) rotate(${(-va).toFixed(3)}rad) rotate(${rot.toFixed(2)}deg) scale(${(r[2] * r[4] * exs * pz).toFixed(3)},${(r[2] * exs * pz).toFixed(3)})`);
-          S(el, 'clipPath', r[5] || 'none');
-          S(el, 'opacity', (al * exa).toFixed(3));
-        }
+        const r = raw(o, tk);
+        if (!r) { S(o.e, 'opacity', '0'); return; }
+        const r2 = raw(o, tk - .034) || r, vx = r[0] - r2[0], vy = r[1] - r2[1], sp = Math.hypot(vx, vy) / .034, va = Math.atan2(vy, vx), st = 1 + clamp(sp / 520, 0, 1.2);   /* stretch along the travel direction = the reference's smear */
+        const x = r[0] + g.dr[0] * dp + exx, y = r[1] + g.dr[1] * dp + exy, rot = r[3] + g.dr[2] * dp;
+        S(o.e, 'transform', `translate(-50%,-50%) translate(${x.toFixed(2)}cqw,${y.toFixed(2)}cqw) rotate(${va.toFixed(3)}rad) scale(${st.toFixed(3)},${(1 / (1 + (st - 1) * .35)).toFixed(3)}) rotate(${(-va).toFixed(3)}rad) rotate(${rot.toFixed(2)}deg) scale(${(r[2] * r[4] * exs * pz).toFixed(3)},${(r[2] * exs * pz).toFixed(3)})`);
+        S(o.e, 'clipPath', r[5] || 'none');
+        S(o.e, 'opacity', exa.toFixed(3));
       });
 
       /* drifting charges, orbiting electrons, burst ring */
@@ -522,16 +570,22 @@
     frame(t);
     raf = requestAnimationFrame(step);
   }
+  const whenReady = () => (window.EMC_KINETIC ? window.EMC_KINETIC.ready() : Promise.resolve());
   function run() {
     if (raf) cancelAnimationFrame(raf);
     overlay.classList.remove('done');
     loadFaces();
-    readMkw(); fit();
-    if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) setLite();
-    if (window.EMC && window.EMC.reducedMotion) { frame(TT + 2); return; }  /* static end frame */
-    t0 = performance.now(); tShift = 0; pauseStart = 0; lastNow = 0;
-    landed = false;
-    raf = requestAnimationFrame(step);
+    /* the lettering font is waited for (font-display:block + preload keep this to a few ms) */
+    whenReady().then(() => {
+      if (removed || !overlay.isConnected) return;
+      try { build(); } catch (err) { /* no canvas support: the intro just plays without the lettering */ }
+      readMkw(); fit();
+      if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) setLite();
+      if (window.EMC && window.EMC.reducedMotion) { frame(TT + 2); return; }  /* static end frame */
+      t0 = performance.now(); tShift = 0; pauseStart = 0; lastNow = 0;
+      landed = false;
+      raf = requestAnimationFrame(step);
+    });
   }
   /* Hidden tab: drop the rAF chain and bank the elapsed time, so a backgrounded
      intro neither burns battery nor jump-cuts on return (and a settled home
@@ -551,6 +605,7 @@
 
   function removeIntro() {
     if (removed) return;
+    land();                         /* an intro that never played (skipped / bypassed) still hands the page back */
     removed = true;
     playing = false;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
@@ -607,7 +662,7 @@
 
     /* dev tuning freeze: ?t=5.5 draws one frame, no clock, no auto-dismiss */
     const freeze = new URLSearchParams(location.search).get('t');
-    if (freeze !== null) { loadFaces(); readMkw(); fit(); frame(+freeze); return; }
+    if (freeze !== null) { loadFaces(); whenReady().then(() => { if (removed || !overlay.isConnected) return; try { build(); } catch (err) { /* no canvas */ } readMkw(); fit(); frame(+freeze); }); return; }
 
     run();
     /* reduced motion: the static end frame is the whole show — clear fast */

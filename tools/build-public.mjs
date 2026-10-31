@@ -92,6 +92,7 @@ const MUST_EXIST = [
   'vendor/fonts/g8321-100.woff2',
   'vendor/fonts/g8321-400.woff2',
   'vendor/fonts/g8321-700.woff2',
+  'vendor/fonts/emc-display-900.woff2',
   'vendor/fonts/manifest.json',
 ];
 

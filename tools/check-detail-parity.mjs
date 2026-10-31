@@ -17,10 +17,11 @@
    Exits 1 on any violation. Stubs in topics/{charge,coulomb,field}.html
    carry no detail blocks and are scanned anyway for regressions.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGES = ['index.html', 'quiz.html',
   'topics/fields.html', 'topics/current.html',
   'topics/charge.html', 'topics/coulomb.html', 'topics/field.html'];

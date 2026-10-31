@@ -1270,10 +1270,10 @@
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
   transform: translate(-50%, -50%); container-type: size;
-  --mk: 34cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
+  --mk: 44cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
 @media (max-aspect-ratio: 4/5) {
   #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
-    --mk: 38cqw; --tt: 20cqw; --sb: 4cqw; --cf: 3.6cqw; }
+    --mk: 48cqw; --tt: 20cqw; --sb: 4cqw; --cf: 3.6cqw; }
   #introOverlay .chip em { display: none; }
 }
 #introOverlay #row { position: absolute; left: 50%; top: 86%;
@@ -1307,22 +1307,24 @@
 #introOverlay .chip { font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
   border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
 #introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; }
-/* v9 kinetic text (js/intro.js). Palette: white fill, ink outline, the site's
-   --pk pink for the offset shadow. Each word is three stacked copies; the two
-   `.tr` trail copies are fill-only (no stroke, no shadow) because they are
-   faint smears and the stroke/shadow is what makes text expensive to paint. */
+/* v10 kinetic lettering (js/intro.js + js/kinetic.js). Every word is a canvas
+   sprite drawn once (heavy serif, white fill, coral edge + extrusion), so there
+   is no per-frame text-stroke/text-shadow cost. */
 #introOverlay { contain: layout paint style; }
 #introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 #introOverlay .sr { position: absolute; left: 50%; top: 42%; width: 100vmin; height: 100vmin;
   margin: -50vmin 0 0 -50vmin; border-radius: 50%; border: 2.6vmin solid rgba(255, 255, 255, .55);
   opacity: 0; transform: scale(.06); }
 #introOverlay #kw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em;
-  font-style: italic; color: #fff; -webkit-text-stroke: 1cqw #17181c; paint-order: stroke fill;
-  text-shadow: -.5cqw .5cqw 0 var(--pk), -1cqw 1cqw 0 var(--pk), -1.4cqw 1.4cqw 0 #17181c;
-  white-space: nowrap; text-align: center; }
-#introOverlay .kw.tr { -webkit-text-stroke: 0; text-shadow: none; }
-#introOverlay.lite .kw { text-shadow: -1cqw 1cqw 0 var(--pk); }
+#introOverlay .kc { display: block; pointer-events: none; max-width: none; }
+/* scene 2: pink burst (conic rays) behind the mascot and the phrases */
+#introOverlay #burst { left: 50%; top: 40%; width: 220cqw; height: 220cqw; z-index: 0;
+  background: repeating-conic-gradient(from 0deg, #e8507a 0 7deg, #f8aebe 7deg 14deg);
+  opacity: 0; transition: none; }
+/* scene 3: torn red paper under OHM'S LAW */
+#introOverlay #paper { left: 50%; top: 52%; width: 92cqw; height: 52cqw; z-index: 1;
+  background: #e8507a; opacity: 0; transform: translate(-50%, -50%) scale(.01); }
+#introOverlay .sl { width: 170cqw; height: 13cqw; background: #fff; border: .8cqw solid #e8507a; z-index: 6; }
 #introOverlay .spk { width: 1.6cqw; height: 1.6cqw; }
 #introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: contain; }
