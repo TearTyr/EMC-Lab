@@ -312,7 +312,7 @@
     window.addEventListener('load', () => {
       const idle = cb => (typeof window.requestIdleCallback === 'function'
         ? window.requestIdleCallback(cb, { timeout: 4000 }) : setTimeout(cb, 1500));
-      idle(() => CHAPTERS.forEach(warm));
+      EMC.afterIntro(() => idle(() => CHAPTERS.forEach(warm)));
     }, { once: true });
   }
 

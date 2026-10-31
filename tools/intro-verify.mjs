@@ -8,7 +8,7 @@
    clicks and keys do nothing; the page underneath is inert while it plays.
      1 a bare load plays; unrelated clicks/keys are ignored; Tab stays inside
        the overlay; page controls cannot be clicked; Start is hidden and
-       unfocusable until ~10.3 s; auto-end lands in 12-15 s; zero timers /
+       unfocusable until ~15.0 s; auto-end lands in 16-19.5 s; zero timers /
        listeners / rAF / inert nodes afterwards; no intro key in any storage
      2 a refresh and a brand-new tab play it again
      3 stale legacy flags (emc.intro.v1 + .ls, __emcIntroSeen-style) are ignored
@@ -23,17 +23,18 @@
     11 ?t=<s> dev freeze draws one still frame and Skip still works
     12 at 3440x1440, 1366x768, 1024x768, 768x1024, 390x844 and 844x390 the Start
        CTA overlaps no chip/title/Skip/mascot and nothing leaves the viewport
-    13 once settled, title letters and chips do not drift (same boxes at 8 s / 9.5 s)
+    13 once settled, title letters and chips do not drift (boxes within a few px at 15.7 s / 15.95 s)
     14 zero console/page errors throughout
    Exits 1 on any failure.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
@@ -139,10 +140,10 @@ const introKeys = pg => pg.evaluate(() => {
   });
   ok('1 Start CTA is hidden and unfocusable before its moment', startEarly.vis === 'hidden' && !startEarly.on, JSON.stringify(startEarly));
 
-  /* CTA appears at ~10.3 s of playback */
+  /* CTA appears at ~15.0 s of playback (TT + 1.4 s, after the six phrases) */
   await pg.waitForFunction(() => document.querySelector('#introOverlay .in-start.on'), null, { timeout: 20000 });
   const ctaAt = (Date.now() - playStart) / 1000;
-  ok('1 Start CTA appears at the intended time (~10.3 s)', ctaAt > 9.6 && ctaAt < 11.6, ctaAt.toFixed(2) + ' s');
+  ok('1 Start CTA appears at the intended time (~15.0 s)', ctaAt > 14.2 && ctaAt < 16.2, ctaAt.toFixed(2) + ' s');
 
   await waitGone(pg);
   const endedAt = Date.now() - playStart;
@@ -323,7 +324,7 @@ for (const via of ['skip button', 'Escape']) {
     const ctx = await browser2.newContext({ viewport: { width: w, height: h } });
     const pg = await ctx.newPage();
     watch(pg);
-    await pg.goto(B + '/index.html?t=11', { waitUntil: 'load' });
+    await pg.goto(B + '/index.html?t=15.4', { waitUntil: 'load' });
     await waitPlaying(pg);
     const r = await pg.evaluate(() => {
       const box = e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
@@ -353,13 +354,15 @@ for (const via of ['skip button', 'Escape']) {
   const settledBoxes = async t => {
     await pg.goto(B + `/index.html?t=${t}`, { waitUntil: 'load' });
     await waitPlaying(pg);
+    await pg.waitForTimeout(600);        /* the frozen frame's letter slams finish on the compositor */
     return pg.evaluate(() => [...document.querySelectorAll('#ttl span, #sub, #introOverlay .chip')]
       .map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(n => Math.round(n * 10) / 10); }));
   };
-  /* chips enter on beats at ~6.1 s and ~7.0 s, so sample after the last settles */
-  const early = await settledBoxes(8), late = await settledBoxes(9.5);
-  ok('13 title letters, subtitle and chips are identical at 8 s and 9.5 s (no drift)',
-    JSON.stringify(early) === JSON.stringify(late) && early.length >= 8, `${early.length} boxes`);
+  /* v11: once landed the title, subtitle and chips are completely still until the mascot jumps */
+  const early = await settledBoxes(15.7), late = await settledBoxes(15.95);
+  const drift = Math.max(...early.map((b, i) => Math.max(...b.map((n, j) => Math.abs(n - (late[i] || b)[j])))));
+  ok('13 title letters, subtitle and chips hold still while the title card is up (no drift)',
+    early.length >= 8 && early.length === late.length && drift < .5, `${early.length} boxes, max shift ${drift.toFixed(1)} px`);
   await ctx.close();
 }
 

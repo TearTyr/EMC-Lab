@@ -14,10 +14,11 @@
       production origin and XML namespaces are allowed; nothing else.
    Exits 1 on any hit.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const ACTIVE_DIRS = ['js', 'css', 'topics'];
 const ACTIVE_FILES = ['index.html', 'quiz.html', 'js/registry.js', 'vercel.json'];

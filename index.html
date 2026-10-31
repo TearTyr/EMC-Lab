@@ -60,6 +60,8 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="icon" href="img/mascot.png" type="image/png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <!-- Landing sequence gate: on a bare home load (no hash route, no reduced motion, no ?t= freeze) the hero text and nav stay hidden until the intro hands the page back (js/landing.js always clears this, with failsafes). Never set without JS. -->
+  <script>(function(){var d=document.documentElement,h=location.hash;if((!h||h==='#/')&&!/[?&]t=/.test(location.search)&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('landing-pending');setTimeout(function(){d.classList.remove('landing-pending')},45000)}})();</script>
   <link rel="stylesheet" href="css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
   <link rel="stylesheet" href="css/fonts.css">
@@ -106,24 +108,18 @@
 </head>
 
 <body class="emc">
-  <!-- Opening composition v8 "drop-in cut": the friend's frame-accurate
-       recreation of the reference edit (shape-face countdown → flash cut →
-       title card with mascot face swaps, ghost mascots, orbiting electrons,
-       drifting charges, beat pulse → Start), integrated 2026-10-25. The rAF
-       timeline lives in js/intro.js (BEAT0 3.5 / BEAT 0.88 — the friend's own
-       timing map); sizing is container-query based so the whole composition
-       scales as one unit.
-       Repo contracts kept: hidden until .play, plays on EVERY bare landing
-       load (no seen-flag), captures pointer events while playing and makes the
-       page inert, only Skip / Start / Escape end it early, chapter routes skip
-       it, reduced motion gets the static end frame, faces fetch only on play.
+  <!-- Opening composition: shape-face countdown, flash cut, mascot with six
+       typed equations, title card, jump-out (timeline in js/intro.js, characters
+       split by js/kinetic.js). Repo contracts kept: hidden until .play, plays on
+       EVERY bare landing load (no seen-flag), the page is inert while it plays,
+       only Skip / Start / Escape end it early, chapter routes skip it, reduced
+       motion gets the static end frame, faces fetch only on play.
        Dev tuning: index.html?t=5.5 freezes any frame. -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
-    <div id="sw"></div>
-    <div id="ghosts"></div>
+    <div id="sw"><canvas id="bg" role="img" aria-label="Animated background" aria-hidden="true"></canvas></div>
     <div id="px"></div>
     <div id="st">
-      <div id="kw"></div>
+      <i class="a sl" id="slash" style="left:50%;top:50%"></i>
       <div id="A">
         <i class="a tri" id="t1" style="left:29%;top:47%"></i>
         <i class="a tri" id="t2" style="left:71%;top:47%"></i>
@@ -133,16 +129,18 @@
         <b class="a dig" id="dg" style="left:50%;top:56%"></b>
       </div>
       <div id="B">
-        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:30%"><img id="sp" width="409" height="415" alt=""><img id="fo" width="409" height="415" alt=""><img id="hp" width="409" height="415" alt=""></div>
+        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:30%"><img id="sp" width="409" height="415" alt=""></div>
         <i class="a" id="rg" style="left:50%;top:30%"></i>
         <b class="a el" style="left:50%;top:30%;background:#a8d3e0"></b><b class="a el" style="left:50%;top:30%;background:#f8aebe"></b><b class="a el" style="left:50%;top:30%;background:#b5d777"></b>
         <div class="a" id="ttl" style="left:50%;top:57%"></div>
-        <div class="a" id="sub" style="left:50%;top:72%">Interactive Electricity Tutorial</div>
+        <div class="a" id="sub" style="left:50%;top:70%">Interactive Electricity Tutorial</div>
+        <div id="jl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
         <div id="row"><div class="chip" style="background:#a8d3e0">Circuit Builder</div>
           <div class="chip" style="background:#f8aebe">Ohm’s Law</div>
         </div>
       </div>
     </div>
+    <div id="kw"><i class="a" id="paper"></i></div>
     <div id="fl"></div>
     <button class="intro-skip" id="introSkip" type="button" aria-keyshortcuts="Escape" title="Skip intro (Esc)">Skip intro &rarr;</button>
     <a class="btn btn-primary in-start" id="go" href="topics/current.html">Start Learning</a>
@@ -206,85 +204,26 @@
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
     </div>
 
-    <section class="hero">
+    <section class="hero hero-full" id="top">
       <div class="wrap hero-stack">
         <img class="mascot hero-mascot reveal" src="img/mascot.png" width="355" height="360"
              alt="Denki-chan, the EMC Lab mascot — a round cream creature with a lightning bolt">
-        <span class="eyebrow reveal rv-d1">Circuits · Electric charge · Electric fields</span>
-        <h1 class="h-hero reveal rv-d2">Learn electricity by playing with it.</h1>
-        <p class="lede reveal rv-d3">
-          The whole Electricity brief in <span id="ledeChapters">two</span> chapters, <span id="ledeSims">six</span> live
-          sandboxes and simulations and a <span id="ledeQuizN">16</span>-question scored quiz.
-          Build a circuit and watch the bulb follow P = VI, rub a balloon, tug charges around an arena, paint an electric field and tune a Bohr orbit — every number on screen is computed from the real equations, not faked.
-        </p>
-        <div class="btn-row reveal rv-d3">
-          <a class="btn btn-primary" href="topics/current.html">Start with Chapter 1</a>
-          <a class="btn" href="topics/fields.html#sim-fieldpaint-panel">Jump to the field painter</a>
+        <h1 class="h-hero lp-line" id="heroTitle">EMC Lab</h1>
+        <p class="hero-tag lp-line">Electricity, by playing.</p>
+        <div class="btn-row lp-line">
+          <a class="btn btn-primary" href="topics/current.html">Start Chapter 1</a>
           <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
         </div>
-        <!-- Hero equation strip (replaces the old animated dipole canvas): the four
-             governing laws of the lecture, typeset by KaTeX through the same
-             [data-tex] pipeline as every other equation on the site. The spans carry
-             hand-readable fallbacks, so the strip still reads if KaTeX never loads. -->
-        <div class="eq-strip" aria-label="Four governing equations of the course">
-          <span class="eq-item"><span data-tex="q = n e">q = n·e</span><small>charge is quantised</small></span>
-          <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup></span><small>Coulomb’s law</small></span>
-          <span class="eq-item"><span data-tex="E = \dfrac{F}{|q_0|}">E = F/|q<sub>0</sub>|</span><small>electric field</small></span>
-          <span class="eq-item"><span data-tex="E = \dfrac{kq}{r^2}">E = k·q/r<sup>2</sup></span><small>point charge</small></span>
-        </div>
-        <!-- Counts are derived at runtime by js/home.js from EMC_REGISTRY and
-             EMC_QUIZ (single sources of truth); the numbers below are the no-JS
-             fallbacks and must match the current content. -->
-        <div class="stat-strip reveal">
-          <div class="stat"><span class="stat-label">Chapters</span><span class="stat-value hl-cyan" id="statChapters">2</span></div>
-          <div class="stat"><span class="stat-label">Sandboxes &amp; sims</span><span class="stat-value hl-amber" id="statSims">6</span></div>
-          <div class="stat"><span class="stat-label">Quiz questions</span><span class="stat-value hl-emerald" id="statQuestions">16</span></div>
-        </div>
+        <p class="hero-meta lp-line"><span id="statChapters">2</span> chapters · <span id="statSims">6</span> sandboxes · <span id="statQuestions">16</span> questions</p>
       </div>
     </section>
 
-
-    <section class="section wrap">
-      <h2 class="h-sec reveal">How to use this site</h2>
-      <p class="lede" style="margin:.35rem 0 0">Read a chapter — 30-second summary first — play with its sandboxes, then prove it in the quiz. Your progress is saved on this device only.</p>
-      <div class="steps mt-4">
-        <div class="card step reveal">
-          <h3 class="font-bold">Read the lesson</h3>
-          <p class="small muted" style="margin:.35rem 0 0">
-            Each chapter opens with a 30-second summary and one key formula, then tells the
-            same idea in plain words, then in full technical detail with the course’s own
-            worked examples. The Details switch in the header picks your depth.
-          </p>
-        </div>
-        <div class="card step reveal">
-          <h3 class="font-bold">Play with the sandbox</h3>
-          <p class="small muted" style="margin:.35rem 0 0">
-            Every chapter ships open sandboxes and toys: build circuits, drop as many charges
-            as you like, drag anything, flip the switches. Optional challenges give stars;
-            nothing ever blocks your play, and every setup copies to a shareable link.
-          </p>
-        </div>
-        <div class="card step reveal">
-          <h3 class="font-bold">Prove it in the quiz</h3>
-          <p class="small muted" style="margin:.35rem 0 0">
-            <span id="quizCountWord">Sixteen</span> multiple-choice questions with hints and worked explanations. Your best score is
-            saved in this browser so you can track improvement.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <hr class="hr">
-
-    <section class="section wrap">
+    <section class="section wrap" id="chapters">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4 reveal">
-        <h2 class="h-sec" style="margin:0" data-mx="slam">The chapters</h2>
+        <h2 class="h-sec" style="margin:0" data-mx="words">Chapters</h2>
         <span class="tag tag-cyan" id="dashTopicsChip">0 of 2 chapters studied</span>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-mx="corner">
-
-        <!-- Chapter 1 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-mx="corner">
         <article class="card card-hover topic-card reveal" data-motif="circuit" style="--topic-accent:#e9ff47">
           <span class="topic-num" aria-hidden="true">01</span>
           <span class="topic-icon" aria-hidden="true">
@@ -293,19 +232,12 @@
             </svg>
           </span>
           <h3 class="text-xl font-bold">Circuits &amp; Ohm’s Law</h3>
-          <p class="small muted">Voltage pushes, resistance pushes back — and the bulb tells the truth in watts.</p>
-          <ul class="topic-list">
-            <li>Ohm’s law V = IR and power P = VI, live</li>
-            <li>Series &amp; parallel reduction</li>
-            <li>Drag-and-drop circuit builder</li>
-          </ul>
+          <p class="small muted">V = IR, P = VI — build it and watch the bulb.</p>
           <div class="flex items-center gap-2 mt-3">
             <a class="btn btn-sm btn-primary" href="topics/current.html" data-topic-link="ch1">Open chapter</a>
             <span class="check-pill" data-topic-check="ch1">not started</span>
           </div>
         </article>
-
-        <!-- Chapter 2 -->
         <article class="card card-hover topic-card reveal" data-motif="field" style="--topic-accent:#a8d3e0">
           <span class="topic-num" aria-hidden="true">02</span>
           <span class="topic-icon" aria-hidden="true">
@@ -314,102 +246,33 @@
             </svg>
           </span>
           <h3 class="text-xl font-bold">Electric Fields &amp; Coulomb’s Law</h3>
-          <p class="small muted">The graded lecture in three sections: charge, the inverse-square force, and the field.</p>
-          <ul class="topic-list">
-            <li>q = n·e — charge comes in parcels</li>
-            <li>F = k|q₁q₂|/r², added as arrows</li>
-            <li>E = F/|q₀| and the direction rule</li>
-          </ul>
+          <p class="small muted">Charge, the inverse-square force, and the field.</p>
           <div class="flex items-center gap-2 mt-3">
             <a class="btn btn-sm btn-primary" href="topics/fields.html" data-topic-link="ch2">Open chapter</a>
             <span class="check-pill" data-topic-check="ch2">not started</span>
           </div>
         </article>
-
-        </div>
-    </section>
-
-    <section class="section wrap">
-      <h2 class="h-sec reveal">Every simulation is a sandbox, driven by real equations</h2>
-      <p class="lede" data-detail="plain" style="margin:0 0 1.2rem">Every sandbox works out its numbers from the real physics equations while you play — nothing is faked or pre-recorded.</p>
-      <p class="lede" style="margin-bottom:1.2rem" data-detail="tech">
-        Nothing is animated by hand: every frame is computed from q = n·e, Coulomb’s law with
-        vector superposition, or E = Σ kq r̂/r². Change anything and the physics re-solves —
-        including the lecture’s own worked answers, which fall out of the live readouts.
-      </p>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <a class="card card-hover reveal" href="topics/fields.html#toy-balloon-panel">
-          <span class="tag tag-cyan">Chapter 2 · §2.1</span>
-          <h3 class="font-bold mt-2">Rub the Balloon</h3>
-          <p class="small muted mt-2">Swipe to transfer whole electrons (q = n·e) and watch the total charge stay constant.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/fields.html#sim-arena-panel">
-          <span class="tag tag-cyan">Chapter 2 · §2.2</span>
-          <h3 class="font-bold mt-2">Tug-of-War Arena</h3>
-          <p class="small muted mt-2">Any number of charges, net-force arrows with per-pair ghosts, release mode — and the lecture’s own examples as optional presets.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/fields.html#toy-bohr-panel">
-          <span class="tag tag-cyan">Chapter 2 · §2.2</span>
-          <h3 class="font-bold mt-2">Bohr Tuner</h3>
-          <p class="small muted mt-2">Tune the Bohr radius until the electron hits 2.19×10⁶ m/s.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/fields.html#sim-fieldpaint-panel">
-          <span class="tag tag-cyan">Chapter 2 · §2.3</span>
-          <h3 class="font-bold mt-2">Field Painter</h3>
-          <p class="small muted mt-2">Paint charges, watch arrows and lines form, drag the ghost test charge — the lecture’s y-axis example reads 7.56×10⁴ N/C at P.</p>
-        </a>
-        <a class="card card-hover reveal" href="topics/current.html#sim-ohm-panel">
-          <span class="tag tag-amber">Chapter 1</span>
-          <h3 class="font-bold mt-2">Ohm bench + circuit builder</h3>
-          <p class="small muted mt-2">Auto-ranging meters, a bulb that brightens with P = VI, and Kirchhoff-exact networks.</p>
-        </a>
-        <div class="card card-flat reveal">
-          <span class="tag">Governing equations</span>
-          <ul class="topic-list mt-2">
-            <li><span data-tex="q = n e">q = n·e</span>, e = 1.602×10<sup>−19</sup> C — charge is quantised and conserved</li>
-            <li><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q₁q₂|/r²</span>, added as vectors</li>
-            <li><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = kq/r²</span> — the direction rule: push on a + test charge</li>
-            <li>Ch1: <span data-tex="V = IR">V = IR</span>, <span data-tex="P = VI">P = VI</span></li>
-          </ul>
-        </div>
+      </div>
+      <ul class="sandbox-row reveal" aria-label="Sandboxes and simulations">
+        <li><a href="topics/current.html#sim-ohm-panel">Ohm bench</a></li>
+        <li><a href="topics/fields.html#toy-balloon-panel">Rub the Balloon</a></li>
+        <li><a href="topics/fields.html#sim-arena-panel">Tug-of-War Arena</a></li>
+        <li><a href="topics/fields.html#toy-bohr-panel">Bohr Tuner</a></li>
+        <li><a href="topics/fields.html#sim-fieldpaint-panel">Field Painter</a></li>
+      </ul>
+      <div class="eq-strip" aria-label="Four governing equations of the course">
+        <span class="eq-item"><span data-tex="q = n e">q = n·e</span></span>
+        <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup></span></span>
+        <span class="eq-item"><span data-tex="E = \dfrac{F}{|q_0|}">E = F/|q<sub>0</sub>|</span></span>
+        <span class="eq-item"><span data-tex="E = \dfrac{kq}{r^2}">E = k·q/r<sup>2</sup></span></span>
       </div>
     </section>
 
-    <hr class="hr">
-
-    <section class="section wrap">
-      <h2 class="h-sec reveal">Quick formula reference</h2>
-      <p class="lede" style="margin:.35rem 0 0">Formulas from both chapters, with units and what each tells you.</p>
-      <div class="panel reveal">
-        <div class="table-scroll">
-          <table class="data">
-            <thead>
-              <tr><th>Concept</th><th>Equation</th><th>Units</th><th>What it tells you</th></tr>
-            </thead>
-            <tbody>
-              <tr><td class="txt">Quantised charge</td><td><span data-tex="q = n e">q = n·e</span></td><td>C</td><td class="txt">Charge comes in whole electron parcels; 1 C = 6.24×10<sup>18</sup> of them</td></tr>
-              <tr><td class="txt">Coulomb force</td><td><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q<sub>1</sub>q<sub>2</sub>| / r<sup>2</sup></span></td><td>N</td><td class="txt">Inverse square: 2× the distance → ¼ the force; signs pick direction only</td></tr>
-              <tr><td class="txt">Superposition</td><td><span data-tex="\vec{F}_{net} = \vec{F}_1 + \vec{F}_2 + \dots">F⃗<sub>net</sub> = F⃗₁ + F⃗₂ + …</span></td><td>N</td><td class="txt">Forces and fields add as vectors (components), never as plain numbers</td></tr>
-              <tr><td class="txt">Electric field</td><td><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = k·q/r<sup>2</sup></span></td><td>N/C</td><td class="txt">Force per unit positive test charge; E points the way a + charge is pushed</td></tr>
-              <tr><td class="txt">Force in a field</td><td><span data-tex="F = |q_0| E">F = |q₀|·E</span></td><td>N</td><td class="txt">A negative charge feels it opposite E</td></tr>
-              <tr><td class="txt">Bohr speed</td><td><span data-tex="v = \sqrt{ke^2/(m_e r)}">v = √(ke²/(mₑr))</span></td><td>m/s</td><td class="txt">Coulomb pull as centripetal force: 2.19×10⁶ m/s at r = 5.29×10⁻¹¹ m</td></tr>
-              <tr><td class="txt">Ch1 · Ohm’s law</td><td><span data-tex="V = IR">V = I·R</span>, <span data-tex="P = VI">P = VI</span></td><td>V, A, Ω, W</td><td class="txt">Voltage drives current against resistance; power is the rate of heating</td></tr>
-              <tr><td class="txt">Ch1 · networks</td><td><span data-tex="R_{eq} = \sum R_i">R<sub>eq</sub> = ΣRᵢ</span> / <span data-tex="1/R_{eq} = \sum 1/R_i">1/R<sub>eq</sub> = Σ1/Rᵢ</span></td><td>Ω</td><td class="txt">Series adds; parallel adds conductances (always smaller than the smallest)</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <p class="tiny faint mt-3">
-        Constants used throughout: k = 8.99×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup> (the lecture’s value — computed with it
-        everywhere on this site, so every readout matches the lecture’s worked answers), e = 1.602×10<sup>−19</sup> C.
-      </p>
-    </section>
-
-    <section class="section wrap">
+    <section class="section wrap" id="progress">
       <div class="panel reveal">
         <div class="panel-head">
           <h2 class="panel-title"><span class="dot"></span> Your progress</h2>
-          <p class="panel-sub">Saved on this device only (localStorage) — use Export to move it to another one</p>
+          <p class="panel-sub">Saved on this device only</p>
           <div class="panel-actions">
             <button class="btn btn-sm" id="exportProgress" type="button">Export</button>
             <button class="btn btn-sm" id="importProgress" type="button">Import</button>
@@ -426,7 +289,6 @@
               </svg>
               <div class="ring-label"><b id="ringPct">0%</b><span>complete</span></div>
             </div>
-
             <div class="flex-1 min-w-0" style="flex:1 1 260px">
               <p class="muted small" id="dashPct" style="margin:0 0 .8rem">0% complete</p>
               <dl class="defs">
@@ -435,19 +297,9 @@
                 <div><dt>Quiz attempts</dt><dd id="dashQuizAttempts">0</dd></div>
                 <div><dt>Last saved</dt><dd id="dashUpdated">—</dd></div>
               </dl>
-              <p class="tiny faint" style="margin-top:.8rem">
-                Tick a chapter with the <em>Mark chapter as complete</em> button at the end of each page.
-                Scoring 70% or more in the quiz also ticks both chapters for you, since a pass
-                means the whole course has been covered — say the word and un-tick any of them.
-              </p>
-              <p class="tiny faint" style="margin-top:.4rem">
-                Nothing leaves this device: progress lives in your browser’s local storage, so a
-                different computer or browser starts from zero. <em>Export</em> saves a small JSON
-                file you can <em>Import</em> elsewhere.
-              </p>
+              <p class="tiny faint" style="margin-top:.8rem">Scoring 70% or more in the quiz also ticks both chapters for you.</p>
             </div>
           </div>
-
         </div>
       </div>
     </section>
@@ -456,15 +308,42 @@
       <div class="card reveal">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div style="flex:1 1 320px">
-            <h2 class="h-sec" style="margin:0" data-mx="slam">Ready to test yourself?</h2>
-            <p class="muted small" style="margin:.3rem 0 0">
-              <span id="quizCountCta">16</span> questions — 8 per chapter — with hints, instant or
-              exam marking, worked explanations, and a per-chapter breakdown so you know exactly what to revise.
-            </p>
+            <h2 class="h-sec" style="margin:0" data-mx="words">Test yourself</h2>
+            <p class="muted small" style="margin:.3rem 0 0"><span id="quizCountWord">Sixteen</span> questions, eight per chapter.</p>
           </div>
           <a class="btn btn-primary" href="quiz.html">Open the quiz →</a>
         </div>
       </div>
+    </section>
+
+    <section class="section wrap">
+      <details class="formula-sheet reveal">
+        <summary>Formula sheet</summary>
+        <div class="panel">
+          <div class="table-scroll">
+          <table class="data">
+            <thead>
+              <tr><th>Concept</th><th>Equation</th><th>Units</th><th>What it tells you</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="txt">Quantised charge</td><td><span data-tex="q = n e">q = n·e</span></td><td>C</td><td class="txt">Charge comes in whole electron parcels; 1 C = 6.24×10<sup>18</sup> of them</td></tr>
+              <tr><td class="txt">Coulomb force</td><td><span data-tex="F = k |q_1 q_2| / r^2">F = k·|q<sub>1</sub>q<sub>2</sub>| / r<sup>2</sup></span></td><td>N</td><td class="txt">Inverse square: 2× the distance → ¼ the force; signs pick direction only</td></tr>
+              <tr><td class="txt">Superposition</td><td><span data-tex="\vec{F}_{net} = \vec{F}_1 + \vec{F}_2 + \dots">F⃗<sub>net</sub> = F⃗₁ + F⃗₂ + …</span></td><td>N</td><td class="txt">Forces and fields add as vectors (components), never as plain numbers</td></tr>
+              <tr><td class="txt">Electric field</td><td><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = k·q/r<sup>2</sup></span></td><td>N/C</td><td class="txt">Force per unit positive test charge; E points the way a + charge is pushed</td></tr>
+              <tr><td class="txt">Force in a field</td><td><span data-tex="F = |q_0| E">F = |q₀|·E</span></td><td>N</td><td class="txt">A negative charge feels it opposite E</td></tr>
+              <tr><td class="txt">Bohr speed</td><td><span data-tex="v = \sqrt{ke^2/(m_e r)}">v = √(ke²/(mₑr))</span></td><td>m/s</td><td class="txt">Coulomb pull as centripetal force: 2.19×10⁶ m/s at r = 5.29×10⁻¹¹ m</td></tr>
+              <tr><td class="txt">Ch1 · Ohm’s law</td><td><span data-tex="V = IR">V = I·R</span>, <span data-tex="P = VI">P = VI</span></td><td>V, A, Ω, W</td><td class="txt">Voltage drives current against resistance; power is the rate of heating</td></tr>
+              <tr><td class="txt">Ch1 · networks</td><td><span data-tex="R_{eq} = \sum R_i">R<sub>eq</sub> = ΣRᵢ</span> / <span data-tex="1/R_{eq} = \sum 1/R_i">1/R<sub>eq</sub> = Σ1/Rᵢ</span></td><td>Ω</td><td class="txt">Series adds; parallel adds conductances (always smaller than the smallest)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </div>
+        <p class="tiny faint mt-3" data-detail="plain">Every number in the sandboxes is computed from these equations.</p>
+        <p class="tiny faint mt-3" data-detail="tech">
+        Constants used throughout: k = 8.99×10<sup>9</sup> N·m<sup>2</sup>/C<sup>2</sup> (the lecture’s value — computed with it
+        everywhere on this site, so every readout matches the lecture’s worked answers), e = 1.602×10<sup>−19</sup> C.
+      </p>
+      </details>
     </section>
     </section>
     <section id="shell-topic" hidden inert aria-label="Chapter reader">
@@ -510,7 +389,9 @@
   <script defer src="js/mascot.js"></script>
   <script defer src="js/motion.js"></script>
   <script defer src="js/home.js"></script>
+  <script defer src="js/kinetic.js"></script>
   <script defer src="js/intro.js"></script>
+  <script defer src="js/landing.js"></script>
   <script defer src="js/shell.js"></script>
 </body>
 </html>

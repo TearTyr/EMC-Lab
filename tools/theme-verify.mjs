@@ -19,6 +19,7 @@
      9 zero console/page errors
    Exits 1 on any failure.
    ========================================================================== */
+import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,7 +27,7 @@ import { resolve, dirname } from 'node:path';
 import { chromium } from 'playwright';
 import { skipIntroOnLoad } from './intro-bypass.mjs';
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = new Map();
 (function walk(dir) {
   for (const e of fs.readdirSync(dir)) {
@@ -208,7 +209,7 @@ async function contrastFailures(url, theme, results) {
     while ((n = walker.nextNode())) {
       if (!n.textContent.trim()) continue;
       const e = n.parentElement; if (!e || seen.has(e)) continue; seen.add(e);
-      if (e.closest('#introOverlay,script,style,canvas,svg,.katex-mathml,[hidden],[inert],.sr-only,.skip-link,.sim-canvas,.canvas-wrap,[data-mx]:not(.mx-in)')) continue;
+      if (e.closest('#introOverlay,script,style,canvas,svg,.katex-mathml,[hidden],[inert],.sr-only,.skip-link,.sim-canvas,.canvas-wrap,[data-mx]:not(.mx-in),.topic-num'  /* .topic-num: decorative aria-hidden watermark numerals */)) continue;
       if (e.closest('button:disabled,[disabled],[aria-disabled="true"]')) continue;       // inactive controls are exempt
       const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const r = e.getBoundingClientRect(); if (r.width === 0 || r.height === 0) continue;

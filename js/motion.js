@@ -38,6 +38,21 @@
 
   function reveal(el) { el.classList.add('mx-in'); }
 
+  /* data-mx="words": the heading's words become inline-block spans (once) so the
+     reveal can stagger them. The text stays in the DOM, so it reads the same. */
+  function splitWords(el) {
+    if (el.getAttribute('data-mx') !== 'words' || el.__mxSplit) return;
+    el.__mxSplit = true;
+    const words = el.textContent.trim().split(/\s+/);
+    el.textContent = '';
+    words.forEach((w, i) => {
+      const s = document.createElement('span');
+      s.className = 'mx-w'; s.textContent = w; s.style.setProperty('--w', i);
+      el.appendChild(s);
+      if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+    });
+  }
+
   /* scan a root for [data-mx]; above-the-fold elements stagger in now,
      below-the-fold ones wait for the observer (once each). */
   function scan(root) {
@@ -45,6 +60,7 @@
     const nodes = Array.from(scope.querySelectorAll('[data-mx]'))
       .filter(el => !el.classList.contains('mx-in') && !el.__mxQueued);
     if (!nodes.length) return;
+    nodes.forEach(splitWords);
     if (!ok()) { nodes.forEach(reveal); return; }          // reduced: show now
     const fold = window.innerHeight * 0.92;
     const byParent = new Map();
