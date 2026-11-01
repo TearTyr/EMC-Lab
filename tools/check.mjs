@@ -390,7 +390,7 @@ function scope() {
 
   let fails = 0;
   for (const f of activeFiles()) {
-    const rel = relative(ROOT, f);
+    const rel = relative(ROOT, f).split('\\').join('/');   // forward slashes so ALLOW matches on Windows too
     const s = readFileSync(f, 'utf8');
     for (const re of OUT_OF_SCOPE) {
       re.lastIndex = 0;
