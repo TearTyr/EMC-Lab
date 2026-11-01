@@ -14,7 +14,7 @@
 (function () {
   const EMC = window.EMC;
   if (!EMC) return;
-  const { CONST, clamp, arrow, label, chargeGlyph, eng, unit, roundRect } = EMC;
+  const { CONST, clamp, arrow, label, chargeGlyph, eng, unit, roundRect, PALETTE: P } = EMC;
   const K = CONST.K;
 
   /* ---- physics helpers (also exported for the tiny toys) ---------------- */
@@ -347,21 +347,21 @@
     /* -- object skins (all flat) ---------------------------------------------- */
     function neutralDisc(ctx, p, r) {
       ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#c9c6bb'; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = '#3a3d45'; ctx.stroke();
+      ctx.fillStyle = P.stone; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = P.edge; ctx.stroke();
     }
     function drawObject(ctx, o) {
       const p = toPx(o.x, o.y);
       const r = objRadius(o, state.view.scale);
       if (o.type === 'test') {
         ctx.save();
-        ctx.setLineDash([4, 4]); ctx.strokeStyle = '#f6d36b'; ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]); ctx.strokeStyle = P.amber; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
-        label(ctx, 'q₀', p.x, p.y + 1, { color: '#f6d36b', size: 11, weight: '800' });
+        label(ctx, 'q₀', p.x, p.y + 1, { color: P.amber, size: 11, weight: '800' });
       } else if (o.type === 'probe') {
         ctx.save();
-        ctx.strokeStyle = '#b5d777'; ctx.lineWidth = 2;
+        ctx.strokeStyle = P.mint; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(p.x - r - 5, p.y); ctx.lineTo(p.x + r + 5, p.y);
@@ -369,25 +369,25 @@
         ctx.stroke(); ctx.restore();
       } else if (o.type === 'sock') {
         roundRect(ctx, p.x - r * 0.7, p.y - r, r * 1.4, r * 2, r * 0.5);
-        ctx.fillStyle = o.q < 0 ? '#a8d3e0' : o.q > 0 ? '#f8aebe' : '#d5b8d8';
+        ctx.fillStyle = o.q < 0 ? P.sky : o.q > 0 ? P.pink : P.lilac;
         ctx.fill();
-        ctx.strokeStyle = '#3a3d45'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = P.edge; ctx.lineWidth = 2; ctx.stroke();
         roundRect(ctx, p.x - r * 0.7, p.y - r, r * 1.4, r * 0.5, r * 0.25);
         ctx.fillStyle = 'rgba(23,24,28,.3)'; ctx.fill();
-        if (o.q) label(ctx, o.q > 0 ? '+' : '−', p.x, p.y + r * 0.5, { color: '#17181c', size: 13, weight: '800' });
+        if (o.q) label(ctx, o.q > 0 ? '+' : '−', p.x, p.y + r * 0.5, { color: P.ink, size: 13, weight: '800' });
       } else if (o.type === 'rod') {
         roundRect(ctx, p.x - r * 2.1, p.y - r * 0.42, r * 4.2, r * 0.84, r * 0.4);
-        ctx.fillStyle = '#d5b8d8'; ctx.fill();
-        ctx.strokeStyle = '#3a3d45'; ctx.lineWidth = 2; ctx.stroke();
-        if (o.q) label(ctx, o.q > 0 ? '+' : '−', p.x, p.y + 1, { color: '#17181c', size: 12, weight: '800' });
+        ctx.fillStyle = P.lilac; ctx.fill();
+        ctx.strokeStyle = P.edge; ctx.lineWidth = 2; ctx.stroke();
+        if (o.q) label(ctx, o.q > 0 ? '+' : '−', p.x, p.y + 1, { color: P.ink, size: 12, weight: '800' });
       } else if (o.type === 'balloon') {
         ctx.beginPath(); ctx.arc(p.x, p.y - r * 0.12, r, 0, Math.PI * 2);
-        ctx.fillStyle = o.q < 0 ? '#a8d3e0' : o.q > 0 ? '#f8aebe' : '#e6e2d6';
-        ctx.fill(); ctx.strokeStyle = '#3a3d45'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = o.q < 0 ? P.sky : o.q > 0 ? P.pink : P.bone;
+        ctx.fill(); ctx.strokeStyle = P.edge; ctx.lineWidth = 2; ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(p.x - 4, p.y + r - 3); ctx.lineTo(p.x + 4, p.y + r - 3); ctx.lineTo(p.x, p.y + r + 5);
-        ctx.closePath(); ctx.fillStyle = '#3a3d45'; ctx.fill();
-        if (o.q) label(ctx, o.q > 0 ? '+' : '−', p.x, p.y - r * 0.12, { color: '#17181c', size: 14, weight: '800' });
+        ctx.closePath(); ctx.fillStyle = P.edge; ctx.fill();
+        if (o.q) label(ctx, o.q > 0 ? '+' : '−', p.x, p.y - r * 0.12, { color: P.ink, size: 14, weight: '800' });
       } else if (o.q === 0) {
         neutralDisc(ctx, p, r);
         if (o.type === 'ball') {
@@ -404,10 +404,10 @@
       }
       if (state.toggles.numbers && o.q && o.type !== 'test') {
         label(ctx, `${o.q > 0 ? '+' : '−'}${unit(Math.abs(o.q), 'C', 2)}`, p.x, p.y + r + 14,
-          { color: o.q > 0 ? '#fac0cd' : '#cfe9f2', size: 10.5 });
+          { color: o.q > 0 ? P.pinkHi : P.skyHi, size: 10.5 });
       }
       if (state.selected === o) {
-        ctx.save(); ctx.strokeStyle = '#a8d3e0'; ctx.lineWidth = 2;
+        ctx.save(); ctx.strokeStyle = P.sky; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(p.x, p.y, r + 6, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
     }
@@ -469,7 +469,7 @@
           const ux = F.fx / F.mag, uy = F.fy / F.mag;
           const r = objRadius(o, state.view.scale);
           arrow(ctx, p.x + ux * (r + 3), p.y + uy * (r + 3), p.x + ux * (r + 3 + L), p.y + uy * (r + 3 + L),
-            { color: F.mag >= F_CAP * 0.995 ? '#f6d36b' : '#f8aebe', width: 3.4, head: 11 });
+            { color: F.mag >= F_CAP * 0.995 ? P.amber : P.pink, width: 3.4, head: 11 });
           if (o === state.selected) {
             for (const b of state.objects) {
               if (b === o) continue;
@@ -493,7 +493,7 @@
             const p = toPx(ghost.x, ghost.y);
             const L = clamp(10 + (Math.log10(f.mag) + 3) * 5, 12, 54);
             arrow(ctx, p.x, p.y, p.x + f.ex / f.mag * L, p.y + f.ey / f.mag * L,
-              { color: '#f6d36b', width: 2.6, head: 9 });
+              { color: P.amber, width: 2.6, head: 9 });
           }
         }
       }
@@ -505,12 +505,12 @@
         ctx.strokeStyle = 'rgba(246,211,107,.85)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         for (const e of [a, b]) {
-          ctx.fillStyle = '#f6d36b'; ctx.beginPath(); ctx.arc(e.x, e.y, 5.5, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = '#17181c'; ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.fillStyle = P.amber; ctx.beginPath(); ctx.arc(e.x, e.y, 5.5, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = P.ink; ctx.lineWidth = 1.5; ctx.stroke();
         }
         ctx.restore();
         const dm = Math.hypot(state.ruler.x2 - state.ruler.x1, state.ruler.y2 - state.ruler.y1);
-        label(ctx, `${dm.toFixed(2)} m`, (a.x + b.x) / 2, (a.y + b.y) / 2 - 12, { color: '#f6d36b', size: 11.5, weight: '700' });
+        label(ctx, `${dm.toFixed(2)} m`, (a.x + b.x) / 2, (a.y + b.y) / 2 - 12, { color: P.amber, size: 11.5, weight: '700' });
       }
 
       for (const o of state.objects) drawObject(ctx, o);

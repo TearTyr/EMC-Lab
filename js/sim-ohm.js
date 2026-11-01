@@ -15,13 +15,13 @@
 
   EMC.whenNear(canvas, init);
   function init() {
-    const { clamp, unit, eng, label, arrow } = EMC;
+    const { clamp, unit, eng, label, arrow, PALETTE: P } = EMC;
     const el = id => document.getElementById(id);
     const state = { V: 12, R: 4 };
     const V_MAX = 24, R_MIN = 1, R_MAX = 100;
 
-    const AMBER = '#f6d36b', PINK = '#f8aebe', CYAN = '#a8d3e0', LIME = '#e9ff47';
-    const WIRE = '#3a3d45', WIRE_DK = '#25272d', MUTED = 'rgba(169,186,214,.85)';
+    const AMBER = P.amber, PINK = P.pink, CYAN = P.sky, LIME = P.yellow;
+    const WIRE = P.edge, WIRE_DK = P.wire, MUTED = 'rgba(169,186,214,.85)';
 
     const current = () => (state.R > 0 ? state.V / state.R : 0);
 
@@ -155,10 +155,10 @@
       /* ---- ammeter: ring gauge on a log scale, value in the middle ---- */
       const gr = 25;
       ctx.save();
-      ctx.fillStyle = '#17181c';
+      ctx.fillStyle = P.ink;
       ctx.beginPath(); ctx.arc(ax, ay, gr, 0, Math.PI * 2); ctx.fill();
       ctx.lineWidth = 4; ctx.lineCap = 'round';
-      ctx.strokeStyle = '#2e3138';
+      ctx.strokeStyle = P.line;
       ctx.beginPath(); ctx.arc(ax, ay, gr - 2, 0.75 * Math.PI, 2.25 * Math.PI); ctx.stroke();
       const frac = I > 0 ? clamp((Math.log10(I) + 1.5) / 3, 0.02, 1) : 0;   // 30 mA … 30 A
       if (frac > 0) {
@@ -201,7 +201,7 @@
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
       const big = clamp(Math.min(x1 - x0, y1 - y0) * 0.17, 20, 34);
       if (I === 0) {
-        label(ctx, 'no voltage → no current', cx, cy, { color: '#b9b7ae', size: 14, weight: '700' });
+        label(ctx, 'no voltage → no current', cx, cy, { color: P.dim, size: 14, weight: '700' });
       } else if (x1 - x0 > 190 && y1 - y0 > 130) {
         label(ctx, 'I = V ÷ R', cx, cy - big * 1.15, { color: MUTED, size: 12, weight: '600', halo: false });
         label(ctx, unit(I, 'A', 3), cx, cy, { color: CYAN, size: big, weight: '800', halo: false });
@@ -223,9 +223,9 @@
       ctx.save();
       ctx.fillStyle = 'rgba(34,36,43,.55)';
       EMC.roundRect(ctx, gx, gy, gw, gh, 14); ctx.fill();
-      ctx.strokeStyle = '#2e3138'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = P.line; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.restore();
-      label(ctx, 'I–V graph', gx + gw / 2, gy + 14, { color: '#e8eefb', size: 12, weight: '700', halo: false });
+      label(ctx, 'I–V graph', gx + gw / 2, gy + 14, { color: P.text, size: 12, weight: '700', halo: false });
 
       const X = v => px + (v / V_MAX) * pw;
       const Y = i => py + ph - (i / yMax) * ph;
@@ -262,7 +262,7 @@
       ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(246,211,107,.65)'; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.moveTo(X(state.V), py + ph); ctx.lineTo(X(state.V), Y(I)); ctx.lineTo(px, Y(I)); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = AMBER; ctx.strokeStyle = '#17181c'; ctx.lineWidth = 2;
+      ctx.fillStyle = AMBER; ctx.strokeStyle = P.ink; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(X(state.V), Y(I), 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.restore();
 

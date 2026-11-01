@@ -17,11 +17,11 @@
 
   EMC.whenNear(canvas, init);
   function init() {
-    const { CONST, clamp, arrow, label, eng, unit } = EMC;
+    const { CONST, clamp, arrow, label, eng, unit, PALETTE: P } = EMC;
     const K = CONST.K, e = CONST.E, me = CONST.M_ELECTRON;
     const R0 = 5.29e-11;                       // the lecture's Bohr radius
     const R_MIN = 2e-11, R_MAX = 1.2e-10;
-    const PINK = '#f8aebe', CYAN = '#a8d3e0', LIME = '#b5d777';
+    const PINK = P.pink, CYAN = P.sky, LIME = P.mint;
 
     const state = { r: R0, theta: 0, starred: true, touched: false, drag: false };
     /* starred starts true so merely loading the page cannot 'win';
@@ -86,7 +86,7 @@
         ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
         label(ctx, lecture && hit ? 'a₀ ✓ lecture radius' : name, cx + rr * 0.7071 + 4, cy - rr * 0.7071 - 2,
-          { color: lecture ? (hit ? LIME : '#fac0cd') : 'rgba(169,186,214,.5)', size: lecture ? 11 : 10, weight: lecture ? '700' : '500', align: 'left', halo: false });
+          { color: lecture ? (hit ? LIME : P.pinkHi) : 'rgba(169,186,214,.5)', size: lecture ? 11 : 10, weight: lecture ? '700' : '500', align: 'left', halo: false });
       });
 
       /* the electron's current orbit */
@@ -110,7 +110,7 @@
       ctx.fillStyle = 'rgba(248,174,190,.14)';
       ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.fill();
       EMC.chargeGlyph(ctx, cx, cy, 16, +e);
-      label(ctx, 'p⁺', cx, cy + 32, { color: '#fac0cd', size: 11 });
+      label(ctx, 'p⁺', cx, cy + 32, { color: P.pinkHi, size: 11 });
 
       /* electron + force and velocity arrows */
       const ex = cx + Math.cos(state.theta) * Rp, ey = cy + Math.sin(state.theta) * Rp;

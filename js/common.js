@@ -33,6 +33,18 @@ window.EMC = (function () {
     E: 1.602176634e-19
   };
 
+  /* ------------------------------------------------------------------------ 1b. Palette for canvas and script colours ---------------------------------
+     CSS custom properties cannot be read every frame, so canvas code takes its colours from this ONE table
+     (EMC.PALETTE). Every value is a token in css/input.css or a canvas-only tint of one; tools/check.mjs
+     (palette) fails any other colour literal in the scripts, pages and styles. Positive charge = pink,
+     negative = sky, field probes and test charges = amber. */
+  const PALETTE = Object.freeze({
+    pink: '#f8aebe', sky: '#a8d3e0', mint: '#b5d777', lilac: '#d5b8d8', yellow: '#e9ff47', amber: '#f6d36b', hot: '#e8507a',
+    ink: '#17181c', edge: '#3a3d45', line: '#2e3138', panel: '#22242b', wire: '#25272d', footer: '#141519', paper: '#faf7ec',
+    text: '#edebe3', dim: '#b9b7ae', faint: '#9a988e', stone: '#c9c6bb', bone: '#e6e2d6', grey: '#8d8f98',
+    pinkHi: '#fbc6d1', skyHi: '#cfe9f2', coral: '#c0405a', skyDeep: '#2f7f99', glow: '#fff6cf', glow2: '#fff0b8'
+  });
+
   /* ------------------------------------------------------------------------ 2. Math helpers ------------------------------------------------------------------------ */
   const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -543,7 +555,7 @@ window.EMC = (function () {
   }
 
   /* Arrow from (x1,y1) to (x2,y2) with a filled head. */
-  function arrow(ctx, x1, y1, x2, y2, { color = '#a8d3e0', width = 2.5, head = 9, dash = null } = {}) {
+  function arrow(ctx, x1, y1, x2, y2, { color = PALETTE.sky, width = 2.5, head = 9, dash = null } = {}) {
     const ang = Math.atan2(y2 - y1, x2 - x1);
     const len = Math.hypot(x2 - x1, y2 - y1);
     if (len < 0.5) return;
@@ -596,7 +608,7 @@ window.EMC = (function () {
   };
 
   /* Small label with a dark halo so it stays legible over any drawing. */
-  function label(ctx, text, x, y, { color = '#e8eefb', size = 12, align = 'center', baseline = 'middle', halo = true, weight = '600' } = {}) {
+  function label(ctx, text, x, y, { color = PALETTE.text, size = 12, align = 'center', baseline = 'middle', halo = true, weight = '600' } = {}) {
     ctx.save();
     ctx.font = fontFor(weight, size);
     ctx.textAlign = align; ctx.textBaseline = baseline;
@@ -612,12 +624,12 @@ window.EMC = (function () {
   function chargeGlyph(ctx, x, y, r, q, { pulse = 0 } = {}) {
     const pos = q >= 0;
     ctx.save();
-    ctx.fillStyle = pos ? '#f8aebe' : '#a8d3e0';
+    ctx.fillStyle = pos ? PALETTE.pink : PALETTE.sky;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(246,241,229,.85)'; ctx.stroke();
 
     // sign
-    ctx.strokeStyle = '#2b2d33'; ctx.lineWidth = Math.max(2, r * 0.18); ctx.lineCap = 'round';
+    ctx.strokeStyle = PALETTE.ink; ctx.lineWidth = Math.max(2, r * 0.18); ctx.lineCap = 'round';
     const s = r * 0.46;
     ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
     if (pos) { ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x, y + s); ctx.stroke(); }
@@ -1183,8 +1195,8 @@ window.EMC = (function () {
         document.body.appendChild(host);
       }
       const el = document.createElement('div');
-      const color = kind === 'ok' ? '#b5d777' : kind === 'warn' ? '#f6d36b' : '#a8d3e0';
-      el.style.cssText = `background:#141414;border:1px solid ${color};color:#fff;
+      const color = kind === 'ok' ? PALETTE.mint : kind === 'warn' ? PALETTE.amber : PALETTE.sky;
+      el.style.cssText = `background:${PALETTE.footer};border:1px solid ${color};color:#fff;
         padding:.55rem .95rem;border-radius:999px;font-size:.86rem;font-weight:600;
         box-shadow:0 16px 34px -18px #000;opacity:0;transform:translateY(8px);
         transition:opacity .25s ease,transform .25s ease;max-width:90vw;text-align:center`;
@@ -1249,7 +1261,7 @@ window.EMC = (function () {
       const apply = theme => {
         if (theme === 'light') root.dataset.theme = 'light'; else delete root.dataset.theme;
         if (btn) btn.setAttribute('aria-pressed', String(theme === 'light'));
-        if (meta) meta.setAttribute('content', theme === 'light' ? '#faf7ec' : '#17181c');
+        if (meta) meta.setAttribute('content', theme === 'light' ? PALETTE.paper : PALETTE.ink);
       };
       apply(Prefs.get('theme', 'dark') === 'light' ? 'light' : 'dark');
       if (!btn) return;
@@ -1668,7 +1680,7 @@ window.EMC = (function () {
 
   /* ------------------------------------------------------------------------ 10. Public API ------------------------------------------------------------------------ */
   const api = {
-    CONST, TOPICS, PROGRESS_KEY,
+    CONST, PALETTE, TOPICS, PROGRESS_KEY,
     clamp, lerp, dist, damp,
     eng, unit, fixed, setText, throttle,
     Stage, roundRect, arrow, label, chargeGlyph, scrollToEl, katexify, katexifyRest, afterIntro, loadLicensedFont, whenNear,
