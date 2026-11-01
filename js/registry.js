@@ -9,7 +9,7 @@
    An alias map folds every legacy topic id (field, efield, charges, current, circuits, …) onto the
    chapter that owns it now, so old hash routes, old quiz deep links and old
    progress records all resolve instead of 404ing or losing data.
-   The object below must stay pure JSON: tools/build-public.mjs parses it
+   The object below must stay pure JSON: tools/build.mjs parses it
    directly to derive the production page list. */
 window.EMC_REGISTRY = {
   "origin": "https://emc-lab.vercel.app",

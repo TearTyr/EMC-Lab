@@ -38,7 +38,7 @@ const PUB = path.join(ROOT, 'public');
 
 if (!fs.existsSync(path.join(PUB, 'index.html'))) {
   console.log('public/ missing — building…');
-  execFileSync(process.execPath, [path.join(ROOT, 'tools/build-public.mjs')], { stdio: 'inherit' });
+  execFileSync(process.execPath, [path.join(ROOT, 'tools/build.mjs')], { stdio: 'inherit' });
 }
 
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml',

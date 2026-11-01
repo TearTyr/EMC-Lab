@@ -1004,8 +1004,8 @@ console.log('\u2500'.repeat(66));
   /* --- item 15: a Vercel build must fail rather than ship unhashed assets
          under the 1-year immutable headers -------------------------------- */
   ok('item 15: build-public refuses the unhashed fallback on Vercel',
-    /if \(process\.env\.VERCEL\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')) &&
-    /process\.exit\(1\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')));
+    /if \(process\.env\.VERCEL\)/.test(readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8')) &&
+    /process\.exit\(1\)/.test(readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8')));
 
   /* --- item 13: the bank must not point readers at retired structures ----- */
   ok('item 13: the active bank references no retired topic/lesson structures',
@@ -1137,7 +1137,7 @@ console.log('\u2500'.repeat(66));
   ok('robots.txt allows everything and points at the production sitemap',
     /User-agent: \*/.test(robotsTxt) && /Allow: \//.test(robotsTxt) &&
     /Sitemap: https:\/\/emc-lab\.vercel\.app\/sitemap\.xml/.test(robotsTxt));
-  const buildSrc = readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8');
+  const buildSrc = readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8');
   ok('the deploy allow-list ships robots.txt + favicon.ico and fails the build without them',
     /'robots\.txt',\n  'favicon\.ico'/.test(buildSrc) &&
     (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'robots.txt'")) &&
@@ -1375,13 +1375,13 @@ console.log('\u2500'.repeat(66));
   ok('homepage ships the intro with a visible keyboard-reachable skip + Start action',
     /id="introOverlay"/.test(idx) && /<button class="intro-skip" id="introSkip"/.test(idx) &&
     /class="btn btn-primary in-start"[^>]*href="topics\/current\.html"/.test(idx));
-  /* CONTRACT CHANGE (2026-10-31): the intro keeps ONE mascot face (no switching), so only the sparkle face ships. */
+  /* CONTRACT CHANGE (2026-10-31, test/emc-intro-final.html port): the mascot changes expression on every beat again, so all three faces ship. */
   ok('hero keeps the supplied mascot art; intro ships its one face with explicit dimensions (no CLS)',
     /<img class="mascot hero-mascot reveal" src="img\/mascot\.png" width="355" height="360"/.test(idx) &&
     /<img id="sp" width="409" height="415" alt="">/.test(idx) &&
-    !/<img id="fo"/.test(idx) && !/<img id="hp"/.test(idx) &&
-    /mascot-face-sparkle\.png/.test(src) && !/mascot-face-focus\.png/.test(src) &&
-    !/mascot-face-happy\.png/.test(src));
+    /<img id="fo" width="409" height="415" alt="">/.test(idx) && /<img id="hp" width="409" height="415" alt="">/.test(idx) &&
+    /mascot-face-sparkle\.png/.test(src) && /mascot-face-focus\.png/.test(src) &&
+    /mascot-face-happy\.png/.test(src));
   /* CONTRACT CHANGE (2026-10-25, intro v8 "drop-in cut", user directive:
      "remove our old intro and integrate this" — the friend's frame-accurate
      recreation replaces the v7 explainer outright. Assertions re-pointed from
@@ -1395,7 +1395,7 @@ console.log('\u2500'.repeat(66));
      .in-start kills the inherited .btn transform transition. Tokens below
      re-pointed accordingly; no assertion deleted or weakened. */
   ok('v8 grammar: beat clock, container-query stage, shape-face cast in the engine',
-    /const BEAT0 = 3\.5, BEAT = \.604/.test(src) &&   /* v10: beat measured from the reference audio */
+    /const BEAT0 = 2\.608, BEAT = \.604/.test(src) &&   /* v10: beat measured from the reference audio */
     /#introOverlay #st \{[^}]*container-type: size/.test(css) &&
     /#introOverlay #mk \{ width: var\(--mk\)/.test(css) &&
     /#introOverlay \.tri \{[^}]*box-shadow: inset 2cqw/.test(css) &&
@@ -1406,19 +1406,19 @@ console.log('\u2500'.repeat(66));
   /* CONTRACT CHANGE (v10 "kinetic text", 2026-10-31): the test/ rework replaces the v8 timeline: six phrase
      groups on the 0.604 s beat grid, a face per group, Start at TT + 1.4 s (~15 s), mascot jump at TE, end at
      TE + 1 (~16.6 s). Tokens re-pointed, nothing deleted. */
-  ok('v10 story beats: countdown, flash cut at BEAT0, face per phrase group, Start at TT+1.4, static end frame',
-    /IMG = \{ sp: 'img\/mascot-face-sparkle\.png' \}/.test(src) &&
-    /S\(fl, 'opacity', clamp\(1 - Math\.abs\(t - \(BEAT0 \+ \.02\)\) \/ \.18\)/.test(src) &&
+  ok('story beats: countdown, face per beat, six phrase groups, Start at TT+1.4, static end frame',
+    /IMG = \{ sp: 'img\/mascot-face-sparkle\.png', fo: 'img\/mascot-face-focus\.png', hp: 'img\/mascot-face-happy\.png' \}/.test(src) &&
+    /const face = t >= TT \? 2 : gi < 0 \? 0 : gi === G\.length - 1/.test(src) &&
     /S\(go, 'visibility', on \? 'visible' : 'hidden'\)/.test(src) &&
     /const gp = pop\(t, TT \+ 1\.4, \.4\)/.test(src) &&
     /reducedMotion\) \{ e\.frame\(e\.TT \+ 2\); return; \}/.test(src));
-  /* CONTRACT CHANGE (2026-10-31): the ghost mascots were removed so the intro stays on the one mascot. */
-  ok('the intro has no ghost mascots; CTA pops without the .btn transition',
-    !/ghosts/.test(src) && !idx.includes('id="ghosts"') &&
+  /* CONTRACT CHANGE (2026-10-31): the faint ghost mascots are part of the ported intro again (css-driven, no per-frame work). */
+  ok('the faint ghost mascots drift on the compositor; CTA pops without the .btn transition',
+    idx.includes('id="ghosts"') && /@keyframes gh-drift/.test(css) &&
     /#introOverlay \.in-start \{[^}]*transition: none/.test(css));
   ok('v8 spacing is container-relative (cqw gap on the chip row, cqw stage units)',
     /#introOverlay #row \{[^}]*gap: 2cqw/.test(css) &&
-    /--mk: 22cqw; --tt: 18cqw/.test(css));
+    /--mk: 34cqw; --tt: 18cqw/.test(css));
   ok('the mascot reaction pair ships as transparent sticker assets',
     existsSync(join(ROOT, 'img/mascot.png')) && existsSync(join(ROOT, 'img/mascot-sparkle.png')) &&
     /* CONTRACT CHANGE (2026-10-25, cleanup): mascot-sparkle only ever renders as

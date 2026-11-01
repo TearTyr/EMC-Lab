@@ -348,7 +348,7 @@ for (const via of ['skip button', 'Escape']) {
   }
 }
 
-/* 13: settled elements hold still (no idle wobble) */
+/* 13: the title card is stable while Start is up */
 {
   const { ctx, pg } = await ctxPage();
   const settledBoxes = async t => {
@@ -356,13 +356,16 @@ for (const via of ['skip button', 'Escape']) {
     await waitPlaying(pg);
     await pg.waitForTimeout(600);        /* the frozen frame's letter slams finish on the compositor */
     return pg.evaluate(() => [...document.querySelectorAll('#ttl span, #sub, #introOverlay .chip')]
+      .concat([document.querySelector('#introOverlay .in-start')])
       .map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(n => Math.round(n * 10) / 10); }));
   };
-  /* v11: once landed the title, subtitle and chips are completely still until the mascot jumps */
-  const early = await settledBoxes(15.7), late = await settledBoxes(15.95);
-  const drift = Math.max(...early.map((b, i) => Math.max(...b.map((n, j) => Math.abs(n - (late[i] || b)[j])))));
-  ok('13 title letters, subtitle and chips hold still while the title card is up (no drift)',
-    early.length >= 8 && early.length === late.length && drift < .5, `${early.length} boxes, max shift ${drift.toFixed(1)} px`);
+  /* CONTRACT CHANGE (2026-10-31, port of test/emc-intro-final.html): letters bob and chips float a few px by design,
+     so this bounds the motion instead of requiring none; the Start CTA must not move at all. */
+  const early = await settledBoxes(15.1), late = await settledBoxes(15.35);
+  const diff = (a, c) => Math.max(...a.map((bx, i) => Math.max(...bx.map((n, j) => Math.abs(n - c[i][j])))));
+  const drift = diff(early.slice(0, -1), late.slice(0, -1)), cta = diff(early.slice(-1), late.slice(-1));
+  ok('13 title letters, subtitle and chips only bob a few px; the Start CTA holds perfectly still',
+    early.length >= 9 && early.length === late.length && drift < 16 && cta < .5, `${early.length} boxes, max shift ${drift.toFixed(1)} px, CTA ${cta.toFixed(1)} px`);
   await ctx.close();
 }
 
