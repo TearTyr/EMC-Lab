@@ -191,7 +191,7 @@
     /* little sparks burst off every landing (36 shared squares) */
     const pt = Array.from({ length: 36 }, (_, i) => {
       const e = document.createElement('i');
-      e.className = 'a spk'; e.style.cssText = 'left:50%;top:50%;background:' + (i % 2 ? '#fff' : '#e8507a');
+      e.className = 'a spk'; e.style.cssText = 'left:50%;top:50%;background:' + (i % 2 ? '#fff' : window.EMC.PALETTE.hot);
       stg.appendChild(e);
       return e;
     });
@@ -200,7 +200,7 @@
       const e = document.createElement('b');
       e.className = 'pt';
       e.textContent = i % 2 ? '+' : '-';
-      e.style.cssText = `left:${(i * 37 + 11) % 97 + 1}%;color:${['#f8aebe', '#a8d3e0', '#b5d777'][i % 3]};font-size:${2.4 + (i % 4) * .7}vmin;--dur:${9 + (i % 5) * 2}s;--dl:-${(i * 1.9).toFixed(1)}s`;
+      e.style.cssText = `left:${(i * 37 + 11) % 97 + 1}%;color:${[window.EMC.PALETTE.pink, window.EMC.PALETTE.sky, window.EMC.PALETTE.mint][i % 3]};font-size:${2.4 + (i % 4) * .7}vmin;--dur:${9 + (i % 5) * 2}s;--dl:-${(i * 1.9).toFixed(1)}s`;
       q('#px').appendChild(e);
     }
 

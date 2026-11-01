@@ -44,6 +44,17 @@
     --mi-t: rgba(181,215,119,.08); --mi-e: rgba(181,215,119,.40);
     --sk-t: rgba(168,211,224,.08); --sk-e: rgba(168,211,224,.40);
     --ye-t: rgba(233,255,71,.08); --ye-e: rgba(233,255,71,.45);
+    /* fixed colours: they do not change with the theme (intro, mascot surface, text on pastel fills, dark plates) */
+    --ink: #17181c;                                   /* outlines and text on pastels and the intro */
+    --butter: #fcefaa;                                /* intro and loading surface, the mascot's colour */
+    --hot: #e8507a;                                   /* intro coral: the landing sparks */
+    --amber: #f6d36b;                                 /* field probes, test charges, warnings */
+    --sk-deep: #8fc4d6;  --sk-dim: #5d7d89;           /* intro digits, range progress */
+    --danger: #d92b4b;                                /* focus ring on the intro's yellow */
+    --pk-hi: #fbc6d1;  --ye-hi: #f1ff77;              /* hover lifts of the pink and yellow buttons */
+    --on-ye: #161a02;  --on-pk: #2b1418;  --on-sk: #10222b;  --on-mi: #1c2610;   /* text on a pastel fill */
+    --lav: #f4eefc;  --wash: #fff6fa;  --blush: #fdf3f6;  --wine: #33202b;       /* title card, page flash, chapter art */
+    --on-plate: #edebe3;  --on-plate-dim: #b9b7ae;  --on-plate-faint: #9a988e;   /* text on the always-dark plates */
     /* Text-safe twins of the accents. In dark they ARE the pastels; the light theme
        swaps in darker inks so accent text/strokes keep 4.5:1 / 3:1 on pale surfaces
        (the pastels stay as fills, with dark text on them, in both themes). */
@@ -104,7 +115,7 @@
   p { margin: 0; }
   ul, ol { margin: 0; padding: 0; }
   a { color: var(--sk-ink); }
-  ::selection { background: var(--ye); color: #161a02; }
+  ::selection { background: var(--ye); color: var(--on-ye); }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
   /* metric-independent exponents (display faces carry extreme OS/2 values) */
   sup, sub { vertical-align: baseline; position: relative; line-height: 0; font-size: .72em; }
@@ -147,7 +158,7 @@
   .noscript-note strong { color: var(--ye-ink); }
   .skip-link {
     position: absolute; left: -9999px; top: 0; z-index: 200;
-    background: var(--ye); color: #221d07; padding: .5rem 1rem;
+    background: var(--ye); color: var(--on-ye); padding: .5rem 1rem;
     border-radius: 0 0 8px 8px; font-weight: 700; font-family: theme('fontFamily.ui');
   }
   .skip-link:focus { left: 0; }
@@ -240,7 +251,7 @@
   .nav-link:hover { color: var(--text); background: var(--panel-2); }
   .nav-link.active:not(.nav-cta) { color: var(--text); background: var(--panel-2); }
   .nav-link.nav-cta, .nav-link.nav-cta:hover, .nav-link.nav-cta.active {
-    background: var(--pk); color: #2b1418; padding: .45rem 1.05rem; font-weight: 700;
+    background: var(--pk); color: var(--on-pk); padding: .45rem 1.05rem; font-weight: 700;
   }
   .nav-link.nav-cta:hover { filter: brightness(1.05); }
   .theme-toggle { display: inline-flex; align-items: center; gap: .4rem; background: none; border: 0; cursor: pointer; font: inherit; font-family: theme('fontFamily.ui'); font-weight: 700; }
@@ -290,17 +301,17 @@
     padding: .55rem 1.15rem; border-radius: 999px; cursor: pointer;
     font-family: theme('fontFamily.ui'); font-size: .92rem; font-weight: 700;
     text-decoration: none; border: 2px solid var(--edge);
-    background: var(--pk); border-color: var(--pk); color: #2b1418; user-select: none;
+    background: var(--pk); border-color: var(--pk); color: var(--on-pk); user-select: none;
     -webkit-tap-highlight-color: transparent;
     /* slight overshoot on the transform gives the hover lift a soft spring;
        reduced-motion flattens every transition globally (see below) */
     transition: transform .22s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, box-shadow .22s ease;
   }
-  .btn:hover { border-color: #fbc6d1; background: #fbc6d1; box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }   /* lighter pink, no filters */
+  .btn:hover { border-color: var(--pk-hi); background: var(--pk-hi); box-shadow: 0 6px 16px -9px rgb(0 0 0 / .55); }   /* lighter pink, no filters */
   .btn:active:not(:disabled) { transform: translateY(0) scale(.975); }   /* gentle press */
   .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-  .btn-primary { background: var(--ye); border-color: var(--ye); color: #161a02; }
-  .btn-primary:hover { background: #f1ff77; border-color: #f1ff77; }   /* lighter token, no filters */
+  .btn-primary { background: var(--ye); border-color: var(--ye); color: var(--on-ye); }
+  .btn-primary:hover { background: var(--ye-hi); border-color: var(--ye-hi); }   /* lighter token, no filters */
   .btn-ghost { background: transparent; border-color: var(--pk); color: var(--pk-ink); }
   .btn-ghost:hover { background: var(--pk-t); border-color: var(--pk); }
   .btn-danger { background: transparent; border-color: var(--pk); color: var(--pk-ink); border-style: dashed; }
@@ -314,11 +325,11 @@
     padding: .38rem .9rem; border-radius: 999px;
   }
   .seg-btn:hover { color: var(--text); }
-  .seg-btn[aria-pressed="true"], .seg-btn.active { background: var(--sk); color: #10222b; font-weight: 700; }
+  .seg-btn[aria-pressed="true"], .seg-btn.active { background: var(--sk); color: var(--on-sk); font-weight: 700; }
   /* button groups carry real selected state (filters, durations, presets):
      aria-pressed alone was invisible to sighted users */
   .btn-group .btn[aria-pressed="true"], .btn-group .btn.active {
-    background: var(--sk); border-color: var(--sk-e); color: #10222b; font-weight: 700;
+    background: var(--sk); border-color: var(--sk-e); color: var(--on-sk); font-weight: 700;
   }
   .tag {
     display: inline-flex; align-items: center; gap: .3rem; padding: .14rem .6rem;
@@ -418,7 +429,7 @@
   input[type="range"].range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--track-2); }
   input[type="range"].range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--sk); border: 3px solid var(--plate); }
   input[type="range"].range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--track-2); }
-  input[type="range"].range::-moz-range-progress { height: 6px; border-radius: 999px; background: #5d7d89; }
+  input[type="range"].range::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--sk-dim); }
   input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--sk); border: 3px solid var(--plate); }
   input[type="number"].inp, input[type="text"].inp, select.inp { font-family: theme('fontFamily.ui'); font-size: .9rem; color: var(--text); background: var(--input-bg); border: 1.5px solid var(--edge); border-radius: 6px; padding: .4rem .6rem; width: 100%; }
   input[type="number"].inp:focus, select.inp:focus { border-color: var(--focus); outline: none; }
@@ -557,12 +568,12 @@
   .opt:hover:not(:disabled) { border-color: var(--edge); color: var(--text); }
   .opt .key { flex: none; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; background: var(--key-bg); border: 1.5px solid var(--line); font-family: theme('fontFamily.mono'); font-size: .75rem; font-weight: 700; color: var(--text-dim); }
   .opt[aria-checked="true"] { border-color: var(--sk); background: var(--sk-t); color: var(--text); }
-  .opt[aria-checked="true"] .key { background: var(--sk); color: #10222b; border-color: var(--sk); }
+  .opt[aria-checked="true"] .key { background: var(--sk); color: var(--on-sk); border-color: var(--sk); }
   .opt:disabled { cursor: default; }
   .opt.correct { border-color: var(--mi); background: var(--mi-t); color: var(--text); }
-  .opt.correct .key { background: var(--mi); color: #1c2610; border-color: var(--mi); }
+  .opt.correct .key { background: var(--mi); color: var(--on-mi); border-color: var(--mi); }
   .opt.wrong { border-color: var(--pk); background: var(--pk-t); color: var(--text); }
-  .opt.wrong .key { background: var(--pk); color: #2b1418; border-color: var(--pk); }
+  .opt.wrong .key { background: var(--pk); color: var(--on-pk); border-color: var(--pk); }
   .opt .mark { margin-left: auto; font-family: theme('fontFamily.ui'); font-weight: 700; font-size: .78rem; }
   .opt.burst { position: relative; }
   .opt.burst::after { content: ""; position: absolute; inset: -3px; border-radius: 12px; border: 3px solid var(--mi); opacity: 0; pointer-events: none; animation: burst .55s ease-out 1; }
@@ -709,7 +720,7 @@
     transition: transform .2s cubic-bezier(.34, 1.4, .64, 1), border-color .15s ease, background .15s ease, color .15s ease;
   }
   .q-flag:hover { color: var(--ye-ink); border-color: var(--ye-e); }
-  .q-flag.on { color: #221d07; background: var(--ye); border-color: var(--ye); }
+  .q-flag.on { color: var(--on-ye); background: var(--ye); border-color: var(--ye); }
   .q-card { transition: border-color .15s ease; }
   .q-card:not(.answered-correct):not(.answered-wrong):hover { border-color: var(--edge); }
   .q-card.flagged { border-color: var(--ye-e); }
@@ -1209,7 +1220,7 @@
    captures pointer events while .play (the page is also inert via JS), .done
    fade + pointer-events none on finish, reduced motion = static end frame,
    images fetch only when playback starts. */
-#introOverlay { position: fixed; inset: 0; background: #fcefaa; overflow: hidden; contain: layout paint style;
+#introOverlay { position: fixed; inset: 0; background: var(--butter); overflow: hidden; contain: layout paint style;
   transition: opacity .5s; z-index: 90; visibility: hidden; pointer-events: none; }
 #introOverlay.play { visibility: visible; pointer-events: auto; }
 #introOverlay.done { opacity: 0; pointer-events: none; }
@@ -1233,17 +1244,17 @@
 #introOverlay #t2 { box-shadow: inset -2cqw 0 0 0 var(--sk); }
 #introOverlay .dot { width: 5cqw; height: 5cqw; border-radius: 50%;
   background: var(--sk); display: grid; place-items: center;
-  font: 800 7cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
+  font: 800 7cqw/1 theme('fontFamily.sans'); color: var(--sk-deep); }
 #introOverlay .dot.go { background: none; }
 #introOverlay .ear { width: 6.5cqw; height: 8cqw; background: var(--sk);
   border-radius: 55% 55% 12% 12%/85% 85% 12% 12%; transform-origin: 50% 90%; }
-#introOverlay .dig { font: 800 9cqw/1 theme('fontFamily.sans'); color: #8fc4d6; }
+#introOverlay .dig { font: 800 9cqw/1 theme('fontFamily.sans'); color: var(--sk-deep); }
 
 /* scene B: mascot (three faces, cross-faded per beat), ring, electrons */
 #introOverlay #mk { width: var(--mk); height: var(--mk); z-index: 2; }
 #introOverlay #mk img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
-#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%; border: .7cqw solid #f6d36b; }
-#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%; border: .45cqw solid #17181c; }
+#introOverlay #rg { z-index: 1; width: 30cqw; height: 30cqw; border-radius: 50%; border: .7cqw solid var(--amber); }
+#introOverlay .el { width: 2.6cqw; height: 2.6cqw; border-radius: 50%; border: .45cqw solid var(--ink); }
 /* faint mascots drifting behind, and the + / - charges rising: both loop on the compositor */
 #introOverlay #ghosts, #introOverlay #px { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 #introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; transform: translate(-50%, -50%) rotate(var(--r)); transition: opacity .8s; }
@@ -1261,16 +1272,16 @@
   100% { opacity: 0; transform: translateY(-112vh) rotate(420deg); } }
 
 /* title card */
-#introOverlay #ttl { font: 800 var(--tt)/1 theme('fontFamily.sans'); color: #f4eefc;
-  -webkit-text-stroke: 2.2cqw #17181c; paint-order: stroke fill; white-space: nowrap; }
+#introOverlay #ttl { font: 800 var(--tt)/1 theme('fontFamily.sans'); color: var(--lav);
+  -webkit-text-stroke: 2.2cqw var(--ink); paint-order: stroke fill; white-space: nowrap; }
 #introOverlay #ttl span { display: inline-block; }
 #introOverlay #sub { font: 700 var(--sb) theme('fontFamily.sans'); background: #fff;
-  color: #17181c; border: .5cqw solid #17181c; border-radius: 99cqw;
+  color: var(--ink); border: .5cqw solid var(--ink); border-radius: 99cqw;
   padding: .9cqw 3cqw; white-space: nowrap; }
 #introOverlay #row { position: absolute; left: 50%; top: 81.5%;
   transform: translate(-50%, -50%); display: flex; gap: 2cqw; white-space: nowrap; }
 #introOverlay .chip { opacity: 0; font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
-  border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
+  border-radius: 99cqw; border: .55cqw solid var(--ink); color: var(--ink); white-space: nowrap; }
 
 /* the flying lettering: plain white text with one bold dark outline, nothing else
    (the same simple look as the title and the header brand).
@@ -1281,15 +1292,15 @@
 #introOverlay .kg.on, #introOverlay #kw.meas .kg { display: block; }
 #introOverlay .kg.on .kw.m { will-change: transform; }
 #introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em;
-  color: #fff; -webkit-text-stroke: 1.8cqw #17181c; paint-order: stroke fill;
+  color: #fff; -webkit-text-stroke: 1.8cqw var(--ink); paint-order: stroke fill;
   white-space: nowrap; text-align: center; }
 #introOverlay .kw sup, #introOverlay .kw sub { font-size: .55em; line-height: 0; }
 /* G8321 has no fraction bar or arrow glyph: both are drawn as white shapes with the same outline */
 #introOverlay .fb { display: block; width: 3.4em; height: .15em; margin: .12em 0; border-radius: .08em; background: #fff;
-  box-shadow: 0 0 0 .07em #17181c; }
+  box-shadow: 0 0 0 .07em var(--ink); }
 #introOverlay .ar { display: inline-block; width: 1.6em; height: .8em; vertical-align: -.1em; overflow: visible; fill: none;
   stroke-linecap: round; stroke-linejoin: round; }
-#introOverlay .ar .s3 { stroke: #17181c; stroke-width: 13; }
+#introOverlay .ar .s3 { stroke: var(--ink); stroke-width: 13; }
 #introOverlay .ar .s2 { display: none; }
 #introOverlay .ar .s1 { stroke: #fff; stroke-width: 5; }
 #introOverlay .spk { width: 1.6cqw; height: 1.6cqw; z-index: 7; }
@@ -1299,13 +1310,13 @@
    bottom-right: the top-right corner is the nav's quiz CTA behind the overlay. */
 #introOverlay .intro-skip { pointer-events: auto; position: absolute; right: 14px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); font: 700 15px theme('fontFamily.sans');
-  border: 3px solid #17181c; border-radius: 99px; color: #17181c; cursor: pointer;
+  border: 3px solid var(--ink); border-radius: 99px; color: var(--ink); cursor: pointer;
   background: rgba(255, 255, 255, .7); padding: 6px 14px; }
-#introOverlay .intro-skip:focus-visible { outline: 3px solid #d92b4b; outline-offset: 2px; }
+#introOverlay .intro-skip:focus-visible { outline: 3px solid var(--danger); outline-offset: 2px; }
 #introOverlay .in-start { position: absolute; left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 3%);
-  font: 700 clamp(16px, 2.6vmin, 21px) theme('fontFamily.sans'); border: 3px solid #17181c; border-radius: 99px;
-  color: #2b1418; cursor: pointer; background: var(--pk); padding: .6em 1.6em; white-space: nowrap;
+  font: 700 clamp(16px, 2.6vmin, 21px) theme('fontFamily.sans'); border: 3px solid var(--ink); border-radius: 99px;
+  color: var(--on-pk); cursor: pointer; background: var(--pk); padding: .6em 1.6em; white-space: nowrap;
   opacity: 0; pointer-events: none; visibility: hidden;   /* unfocusable till it pops */
   transition: none; }   /* the CTA wears .btn, whose transform transition would
   fight the engine's per-frame scale writes and smear the pop */
@@ -1351,7 +1362,7 @@
 
 /* white flash dip at section/route boundaries (footage: 2 white frames +
    ~250 ms decay). Dimmed to 85 % and capped at 260 ms on the site. */
-.mx-flash { position: fixed; inset: 0; z-index: 90; pointer-events: none; background: #fff6fa;
+.mx-flash { position: fixed; inset: 0; z-index: 90; pointer-events: none; background: var(--wash);
   animation: mx-flash var(--mx-flash) cubic-bezier(.3,.7,.4,1) both; }
 @keyframes mx-flash { 0% { opacity: 0; } 12% { opacity: .85; } 100% { opacity: 0; } }
 
@@ -1418,20 +1429,20 @@
        are deterministic HTML overlays so the physics labels are always
        exact; frame rides the reference's slow rotateY inset spin) -------- */
 .ch-art { margin: 1.1rem auto 0; max-width: 232px; text-align: center; }
-.ch-art-frame { position: relative; display: block; background: #fdf3f6; border: 3px solid #33202b;
+.ch-art-frame { position: relative; display: block; background: var(--blush); border: 3px solid var(--wine);
   border-radius: 14px; padding: .4rem; }
 .ch-art-frame img { display: block; width: 100%; height: auto; border-radius: 8px; }
 .ch-sym { position: absolute; transform: translate(-50%, -50%); font-family: theme('fontFamily.title');
-  font-weight: 700; font-size: 1.05rem; line-height: 1; color: #33202b; pointer-events: none; }
+  font-weight: 700; font-size: 1.05rem; line-height: 1; color: var(--wine); pointer-events: none; }
 .ch-art figcaption { margin-top: .45rem; }
 
 /* ==========================================================================
    Title-card transitions (js/motion.js cover()/uncover()).
    Every page / chapter boundary is a text-motion moment: the destination's
-   name slams in letter by letter in the intro's lettering (G8321 Bold, white
-   fill, coral edge, stepped #e8507a extrusion) over a pink and a yellow slash
-   bar, then whips out. Bars use the site tokens (--bg, --pk, --ye); the
-   lettering coral is the intro-only #e8507a. transform/opacity only; the card
+   name slams in letter by letter in the intro's lettering (G8321 Bold, plain
+   white fill, one bold dark outline) over a pink and a yellow slash
+   bar, then whips out. Bars use the site tokens (--bg, --pk, --ye).
+   transform/opacity only; the card
    blocks clicks while it covers. Reduced motion never creates the card. */
 .tc { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
   overflow: hidden; pointer-events: auto; contain: layout paint style; }
@@ -1444,8 +1455,7 @@
   transform: translateX(110%) rotate(-5deg); }
 .tc-word { position: relative; display: flex; font-family: theme('fontFamily.title'); font-weight: 700;
   font-size: clamp(3.2rem, 15vmin, 10rem); line-height: 1; letter-spacing: .01em; color: #fff;
-  -webkit-text-stroke: .025em #f58fa6; paint-order: stroke fill;   /* the intro's lettering */
-  text-shadow: -.02em .02em 0 #e8507a, -.04em .04em 0 #e8507a, -.06em .06em 0 #e8507a, -.08em .08em 0 #e8507a;
+  -webkit-text-stroke: .14em var(--ink); paint-order: stroke fill;   /* the intro's lettering: plain fill, one bold outline */
   white-space: nowrap; }
 .tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
   transform: translateY(-.5em) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
@@ -1566,17 +1576,17 @@ html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) 
 .demo-stage { display: grid; justify-items: center; gap: 1.2rem; padding: 1.6rem; border: 1.5px solid var(--line-soft);
   border-radius: var(--r-card); background: var(--plate); }
 .demo-read { display: flex; gap: 2.2rem; margin: 0; }
-.demo-read dt { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: #9a988e; }
-.demo-read dd { margin: 0; font-size: 1.5rem; font-weight: 700; color: #edebe3; }
+.demo-read dt { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--on-plate-faint); }
+.demo-read dd { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--on-plate); }
 .bulb { width: 9rem; height: auto; overflow: visible; }
 .bulb-glow { fill: var(--ye); opacity: 0; transform-origin: 60px 58px; transition: opacity .18s ease, transform .18s ease; }
-.bulb-glass { fill: none; stroke: #b9b7ae; stroke-width: 4; }
+.bulb-glass { fill: none; stroke: var(--on-plate-dim); stroke-width: 4; }
 .bulb-fil { fill: none; stroke: var(--pk); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.bulb-base { fill: #b9b7ae; }
+.bulb-base { fill: var(--on-plate-dim); }
 .cl { display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 26rem; min-height: 9rem; align-items: center; overflow: hidden; }
 .cl-side { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; transition: transform .18s ease; }
 .cl-right { justify-content: flex-start; }
-.cl-q { flex: none; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; font-size: 1.7rem; color: #17181c; }
+.cl-q { flex: none; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; font-size: 1.7rem; color: var(--ink); }
 .cl-p { background: var(--pk); } .cl-m { background: var(--sk); }
 .cl-arrow { display: block; width: 5rem; height: .4rem; border-radius: .4rem; background: var(--ye); transform-origin: 0 50%; transition: transform .18s ease; }
 .cl-right .cl-arrow { transform-origin: 100% 50%; }

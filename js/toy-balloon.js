@@ -18,9 +18,9 @@
 
   EMC.whenNear(canvas, init);
   function init() {
-    const { CONST, clamp, label, eng, unit } = EMC;
+    const { CONST, clamp, label, eng, unit, PALETTE: P } = EMC;
     const e = CONST.E;
-    const PINK = '#f8aebe', CYAN = '#a8d3e0', INK = '#17181c', EDGE = '#3a3d45';
+    const PINK = P.pink, CYAN = P.sky, INK = P.ink, EDGE = P.edge;
 
     const state = {
       n: 0,                     // electrons moved from hair to balloon
@@ -78,9 +78,9 @@
       /* ---- hair strip ---- */
       const hx0 = w * 0.04, hy0 = h * 0.12, hw = w * 0.34, hh = h * 0.76;
       ctx.save();
-      ctx.fillStyle = '#22242b';
+      ctx.fillStyle = P.panel;
       EMC.roundRect(ctx, hx0, hy0, hw, hh, 14); ctx.fill();
-      ctx.strokeStyle = '#2e3138'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = P.line; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.restore();
       const t = performance.now() / 1000;
       for (let i = 0; i < 14; i++) {
@@ -88,16 +88,16 @@
         /* strands lean toward the balloon when the hair is charged */
         const lean = s * 11 * clamp((bx - hx) / (w * 0.4), -1, 1) + Math.sin(t * 1.4 + i) * 0.6 * s;
         ctx.save();
-        ctx.strokeStyle = state.n > 0 ? PINK : '#b9b7ae'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+        ctx.strokeStyle = state.n > 0 ? PINK : P.dim; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(hx, hy + 16);
         ctx.quadraticCurveTo(hx + 5 + lean * 0.5, hy + 4, hx - 2 + lean, hy - 8); ctx.stroke();
         ctx.restore();
         if (i < nm) {                                           // + marks: electrons the hair lost
-          label(ctx, '+', hx - 2 + lean, hy - 15, { color: '#fac0cd', size: 12, weight: '800', halo: false });
+          label(ctx, '+', hx - 2 + lean, hy - 15, { color: P.pinkHi, size: 12, weight: '800', halo: false });
         }
       }
       label(ctx, state.n > 0 ? 'hair: lost electrons (+)' : 'hair', w * 0.21, h * 0.95,
-        { color: state.n > 0 ? '#fac0cd' : '#9a988e', size: 11 });
+        { color: state.n > 0 ? P.pinkHi : P.faint, size: 11 });
 
       /* ---- paper bits: polarisation pull, dt-based ---- */
       const range = w * (0.14 + 0.34 * s);
@@ -128,12 +128,12 @@
         const ang = Math.atan2(by - py, bx - px);
         ctx.save();
         ctx.translate(px, py); ctx.rotate(bit.stuck ? ang : ang * bit.near);
-        ctx.fillStyle = '#e6e2d6'; ctx.strokeStyle = EDGE; ctx.lineWidth = 1.5;
+        ctx.fillStyle = P.bone; ctx.strokeStyle = EDGE; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.rect(-6, -7, 12, 14); ctx.fill(); ctx.stroke();
         if (bit.near > 0.25 || bit.stuck) {        // induced charge: near side opposite, far side like
           /* local +x points at the balloon: a negative balloon pulls + to the near side */
-          label(ctx, '+', 3.5, 0, { color: '#c0405a', size: 11, weight: '800', halo: false });
-          label(ctx, '−', -3, 0, { color: '#2f7f99', size: 12, weight: '800', halo: false });
+          label(ctx, '+', 3.5, 0, { color: P.coral, size: 11, weight: '800', halo: false });
+          label(ctx, '−', -3, 0, { color: P.skyDeep, size: 12, weight: '800', halo: false });
         }
         ctx.restore();
       }
@@ -171,7 +171,7 @@
         label(ctx, '−', bx + Math.cos(a) * rr, by + Math.sin(a) * rr, { color: INK, size: 14, weight: '800', halo: false });
       }
       if (state.n > 0) {
-        label(ctx, `${sci(state.n, 2)} e⁻`, bx, by + R + 22, { color: '#cfe9f2', size: 10.5, weight: '700' });
+        label(ctx, `${sci(state.n, 2)} e⁻`, bx, by + R + 22, { color: P.skyHi, size: 10.5, weight: '700' });
       }
       label(ctx, state.n > 0 ? 'drag it back across the hair for more' : 'drag the balloon onto the hair and rub ↔',
         w * 0.5, 16, { color: 'rgba(169,186,214,.85)', size: 11.5, weight: '500' });

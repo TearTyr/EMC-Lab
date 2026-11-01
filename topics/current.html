@@ -74,13 +74,13 @@
        so these rules cost nothing on fast loads. Flat tokens, transform/opacity
        only; self-contained so it paints even if site.css is slow. */
     #bootOverlay {
-      position: fixed; inset: 0; z-index: 200; background: #101116;
+      position: fixed; inset: 0; z-index: 200; background: #101114;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
       opacity: 1; transition: opacity .24s ease;
     }
     #bootOverlay.hide { opacity: 0; pointer-events: none; }
     #bootOverlay .bo-bar { display: flex; gap: 5px; width: 192px; height: 5px; }
-    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #23252c; position: relative; overflow: hidden; }
+    #bootOverlay .bo-seg { flex: 1; border-radius: 999px; background: #22242b; position: relative; overflow: hidden; }
     #bootOverlay .bo-seg::after {
       content: ""; position: absolute; inset: 0; background: #e9ff47; border-radius: 999px;
       transform: scaleX(0); transform-origin: left; transition: transform .2s ease;
@@ -89,12 +89,12 @@
     #bootOverlay .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     #bootFatal {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 210; width: min(92vw, 34rem);
-      margin: 0 auto 1rem; background: #17181c; color: #e8eefb;
+      margin: 0 auto 1rem; background: #17181c; color: #edebe3;
       border: 1.5px solid #e9ff47; border-radius: .75rem; padding: 1rem 1.2rem;
       font: 600 .95rem/1.45 system-ui, sans-serif;
     }
     #bootFatal button, #bootFatal a {
-      font: inherit; font-weight: 700; color: #101116; background: #e9ff47;
+      font: inherit; font-weight: 700; color: #161a02; background: #e9ff47;
       border: 0; border-radius: .5rem; padding: .4rem .9rem; cursor: pointer; text-decoration: none;
     }
     #bootFatal a { display: inline-block; margin-left: .4rem; }
@@ -266,38 +266,38 @@
         <div class="fig-box">
           <svg viewBox="0 0 560 210" width="560" height="210" role="img"
                aria-label="Left: two resistors in series on one path. Right: two resistors in parallel on separate branches.">
-            <g stroke="#5b7299" stroke-width="2.5" fill="none">
+            <g stroke="#4b4e57" stroke-width="2.5" fill="none">
               <!-- SERIES -->
               <path d="M40 40 H250 V170 H40 Z"/>
               <!-- PARALLEL -->
               <path d="M310 40 H520 V170 H310 Z"/>
             </g>
             <!-- batteries -->
-            <g stroke="#e8eefb" stroke-width="2.5" stroke-linecap="round">
+            <g stroke="#edebe3" stroke-width="2.5" stroke-linecap="round">
               <path d="M26 90h28M33 102h14"/><path d="M296 90h28M303 102h14"/>
             </g>
-            <text x="14" y="130" fill="#fcd34d" font-size="12" font-family="monospace">V</text>
-            <text x="284" y="130" fill="#fcd34d" font-size="12" font-family="monospace">V</text>
+            <text x="14" y="130" fill="#f6d36b" font-size="12" font-family="monospace">V</text>
+            <text x="284" y="130" fill="#f6d36b" font-size="12" font-family="monospace">V</text>
 
             <!-- series resistors -->
-            <g stroke="#e2e8f0" stroke-width="2.4" fill="none">
+            <g stroke="#edebe3" stroke-width="2.4" fill="none">
               <path d="M85 40h6l5-11 10 22 10-22 10 22 10-22 5 11h6"/>
               <path d="M185 40h6l5-11 10 22 10-22 10 22 10-22 5 11h6"/>
             </g>
-            <text x="110" y="18" fill="#a5f3fc" font-size="12" font-family="monospace" text-anchor="middle">R1</text>
-            <text x="210" y="18" fill="#a5f3fc" font-size="12" font-family="monospace" text-anchor="middle">R2</text>
-            <text x="145" y="196" fill="#a9bad6" font-size="12.5" font-family="sans-serif" text-anchor="middle" font-weight="700">SERIES — one path, same current</text>
+            <text x="110" y="18" fill="#a8d3e0" font-size="12" font-family="monospace" text-anchor="middle">R1</text>
+            <text x="210" y="18" fill="#a8d3e0" font-size="12" font-family="monospace" text-anchor="middle">R2</text>
+            <text x="145" y="196" fill="#b9b7ae" font-size="12.5" font-family="sans-serif" text-anchor="middle" font-weight="700">SERIES — one path, same current</text>
 
             <!-- parallel resistors -->
-            <g stroke="#e2e8f0" stroke-width="2.4" fill="none">
+            <g stroke="#edebe3" stroke-width="2.4" fill="none">
               <path d="M380 60v6l-11 5 22 10-22 10 22 10-22 10 11 5v6"/>
               <path d="M460 60v6l-11 5 22 10-22 10 22 10-22 10 11 5v6"/>
             </g>
-            <text x="352" y="108" fill="#a5f3fc" font-size="12" font-family="monospace" text-anchor="middle">R1</text>
-            <text x="492" y="108" fill="#a5f3fc" font-size="12" font-family="monospace" text-anchor="middle">R2</text>
-            <circle cx="380" cy="40" r="3.4" fill="#93a7c8"/><circle cx="460" cy="40" r="3.4" fill="#93a7c8"/>
-            <circle cx="380" cy="170" r="3.4" fill="#93a7c8"/><circle cx="460" cy="170" r="3.4" fill="#93a7c8"/>
-            <text x="415" y="196" fill="#a9bad6" font-size="12.5" font-family="sans-serif" text-anchor="middle" font-weight="700">PARALLEL — many paths, same voltage</text>
+            <text x="352" y="108" fill="#a8d3e0" font-size="12" font-family="monospace" text-anchor="middle">R1</text>
+            <text x="492" y="108" fill="#a8d3e0" font-size="12" font-family="monospace" text-anchor="middle">R2</text>
+            <circle cx="380" cy="40" r="3.4" fill="#9a988e"/><circle cx="460" cy="40" r="3.4" fill="#9a988e"/>
+            <circle cx="380" cy="170" r="3.4" fill="#9a988e"/><circle cx="460" cy="170" r="3.4" fill="#9a988e"/>
+            <text x="415" y="196" fill="#b9b7ae" font-size="12.5" font-family="sans-serif" text-anchor="middle" font-weight="700">PARALLEL — many paths, same voltage</text>
           </svg>
         </div>
         <figcaption>Figure 1 — Series shares the current; parallel shares the voltage.</figcaption>

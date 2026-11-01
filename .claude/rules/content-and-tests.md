@@ -14,7 +14,7 @@
 |---|---|
 | Anything | `node tools/check.mjs` |
 | `js/intro.js`, intro CSS, `landing.js`, head gate | `verify intro motion loader` |
-| Colours, tokens, themes | `verify theme ui responsive` |
+| Colours, tokens, themes | `check.mjs palette`, then `verify theme ui responsive` |
 | Nav, shell, routes, registry | `verify nav shell smoke` |
 | A simulation or sandbox | `verify sims interact values` |
 | Quiz | `verify quiz values` |

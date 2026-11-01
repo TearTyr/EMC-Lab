@@ -3,7 +3,7 @@
   const host = document.getElementById('quiz-questions');
   if (!host || !window.EMC_QUIZ) return;
 
-  const { Progress, toast, store, Prefs } = EMC;
+  const { Progress, toast, store, Prefs, PALETTE: P } = EMC;
   const BANK = window.EMC_QUIZ.slice();
   // Four options per question, so exactly four key labels. (A stray 'E' here used
   // to print an empty fifth key chip on the keyboard hint row.)
@@ -27,7 +27,7 @@
   /* A tiny pastel confetti puff over the score card when the attempt passes.
      CSS owns the motion (one-shot, ends transparent); under reduced motion it
      is simply never rendered. */
-  const CONFETTI_COLORS = ['#f8aebe', '#f6d36b', '#b5d777', '#a8d3e0', '#d5b8d8'];
+  const CONFETTI_COLORS = [P.pink, P.amber, P.mint, P.sky, P.lilac];
   function confettiHTML() {
     if (EMC.reducedMotion) return '';
     let out = '';

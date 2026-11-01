@@ -460,6 +460,72 @@ function scope() {
   return fails;
 }
 
+/* ==========================================================================
+   EMC Lab — palette gate. Every colour lives in one place: the :root tokens in
+   css/input.css (CSS) and EMC.PALETTE in js/common.js (canvas and script).
+     - css/input.css: no hex outside the token blocks (print rules and comments
+       excepted), except pure #fff / #000. Use var(--token).
+     - js/*.js: no hex outside the PALETTE table, except #fff / #000.
+     - pages: hex is allowed (inline SVG art and the self-contained boot styles
+       cannot read tokens) but only values that ARE in the palette.
+   ========================================================================== */
+function palette() {
+  const read = f => readFileSync(join(ROOT, f), 'utf8').replace(/\r\n/g, '\n');
+  const HEX = /#[0-9a-fA-F]{6}\b/g;
+  const PURE = new Set(['#fff', '#000', '#ffffff', '#000000']);
+  const stripBlock = (src, open) => {                   // remove "<open> { ... }" blocks (brace matched)
+    let out = '', i = 0;
+    for (;;) {
+      const m = open.exec(src.slice(i));
+      if (!m) return out + src.slice(i);
+      const start = i + m.index, b = src.indexOf('{', start);
+      let d = 0, j = b;
+      for (; j < src.length; j++) { if (src[j] === '{') d++; else if (src[j] === '}' && --d === 0) break; }
+      out += src.slice(i, start); i = j + 1;
+    }
+  };
+  const tokenBlocks = src => [...src.matchAll(/:root(?:\[data-theme="light"\])?\s*\{[^}]*\}/g)].map(m => m[0]).join('\n');
+
+  const css = read('css/input.css');
+  const approved = new Set([...tokenBlocks(css).matchAll(HEX)].map(m => m[0].toLowerCase()));
+  const pal = /const PALETTE = Object\.freeze\(\{([\s\S]*?)\}\);/.exec(read('js/common.js'));
+  if (!pal) { console.log('FAIL palette: PALETTE table not found in js/common.js'); return 1; }
+  for (const m of pal[1].matchAll(HEX)) approved.add(m[0].toLowerCase());
+
+  let fails = 0;
+  const report = (rel, src, at, what, hint) => {
+    const line = src.slice(0, at).split('\n').length;
+    console.log('FAIL palette: ' + rel + ':' + line + ' - ' + what + ' ' + hint);
+    fails++;
+  };
+  const scan = (rel, code, strict) => {
+    for (const m of code.matchAll(HEX)) {
+      const v = m[0].toLowerCase();
+      if (PURE.has(v)) continue;
+      if (strict) report(rel, code, m.index, v, 'literal: use the token or EMC.PALETTE');
+      else if (!approved.has(v)) report(rel, code, m.index, v, 'is not in the palette');
+    }
+  };
+
+  /* css: drop comments, token blocks and print rules, keep line numbers by blanking with newlines */
+  let c = css.replace(/\/\*[\s\S]*?\*\//g, x => x.replace(/[^\n]/g, ' '));
+  c = stripBlock(c, /@media\s+print/);
+  c = c.replace(/:root(?:\[data-theme="light"\])?\s*\{[^}]*\}/g, x => x.replace(/[^\n]/g, ' '));
+  scan('css/input.css', c, true);
+
+  for (const f of readdirSync(join(ROOT, 'js')).filter(n => n.endsWith('.js'))) {
+    let j = read('js/' + f);
+    j = j.replace(/\/\*[\s\S]*?\*\//g, x => x.replace(/[^\n]/g, ' ')).replace(/(^|[^:\\'"\x60])\/\/.*$/gm, '$1');
+    if (f === 'common.js') j = j.replace(/const PALETTE = Object\.freeze\(\{[\s\S]*?\}\);/, x => x.replace(/[^\n]/g, ' '));
+    scan('js/' + f, j, true);
+  }
+  for (const p of ['index.html', 'quiz.html', ...readdirSync(join(ROOT, 'topics')).filter(n => n.endsWith('.html')).map(n => 'topics/' + n)]) {
+    scan(p, read(p).replace(/<!--[\s\S]*?-->/g, x => x.replace(/[^\n]/g, ' ')), false);
+  }
+  console.log(fails === 0 ? 'PALETTE PASS' : fails + ' PALETTE FAILURES');
+  return fails;
+}
+
 /* Physics gate: recomputes every lecture value and checks the quiz bank, the
    constants and the force softening against them.*/
 function physics() {
@@ -533,6 +599,7 @@ const checks = {
   links: ['every href/src/id/data hook/utility class in every page resolves', links],
   parity: ['Detail-on and Detail-off blocks stay in step on every chapter page', parity],
   scope: ['no third-party fetches, scope and network purity', scope],
+  palette: ['colours come from the tokens and EMC.PALETTE, nothing off-palette', palette],
   physics: ['lecture values, constants and the quiz bank recomputed', physics]
 };
 const want = process.argv.slice(2);

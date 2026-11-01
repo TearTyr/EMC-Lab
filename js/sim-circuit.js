@@ -17,7 +17,7 @@
 
   EMC.whenNear(canvas, init);
   function init() {
-    const { clamp, unit, eng, label } = EMC;
+    const { clamp, unit, eng, label, PALETTE: P } = EMC;
     const el = id => document.getElementById(id);
     const SOCKETS = 6;
     const PARTS = {
@@ -25,8 +25,8 @@
       res:  { name: 'resistor', min: 1,   max: 100, step: 1,   def: 22, unit: 'Ω' },
       bulb: { name: 'bulb',     min: 5,   max: 30,  step: 1,   def: 15, unit: 'Ω' }
     };
-    const AMBER = '#f6d36b', PINK = '#f8aebe', CYAN = '#a8d3e0', LIME = '#e9ff47';
-    const WIRE = '#3a3d45', WIRE_DK = '#25272d', MUTED = 'rgba(169,186,214,.85)';
+    const AMBER = P.amber, PINK = P.pink, CYAN = P.sky, LIME = P.yellow;
+    const WIRE = P.edge, WIRE_DK = P.wire, MUTED = 'rgba(169,186,214,.85)';
     /* direction of conventional current (clockwise) at each socket, radians */
     const FLOW = [0, 0, Math.PI / 2, Math.PI, Math.PI, -Math.PI / 2];
 
@@ -168,12 +168,12 @@
           ctx.fillStyle = `rgba(246,211,107,${(glow * 0.34 / g).toFixed(3)})`;
           ctx.beginPath(); ctx.arc(0, 0, 15 + g * 9 * glow, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.fillStyle = glow > .04 ? `rgba(246,211,107,${(0.35 + 0.6 * glow).toFixed(3)})` : '#22242b';
+        ctx.fillStyle = glow > .04 ? `rgba(246,211,107,${(0.35 + 0.6 * glow).toFixed(3)})` : P.panel;
         ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#edebe3'; ctx.lineWidth = 2.5;
+        ctx.strokeStyle = P.text; ctx.lineWidth = 2.5;
         ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.stroke();
         /* filament: a little coil between two posts */
-        ctx.strokeStyle = glow > .04 ? '#fff6cf' : '#8d8f98'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = glow > .04 ? P.glow : P.grey; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         ctx.beginPath(); ctx.moveTo(-9, 5); ctx.lineTo(-9, -1);
         ctx.lineTo(-6, -5); ctx.lineTo(-3, 1); ctx.lineTo(0, -5); ctx.lineTo(3, 1); ctx.lineTo(6, -5); ctx.lineTo(9, -1); ctx.lineTo(9, 5);
         ctx.stroke();
@@ -240,7 +240,7 @@
             ctx.lineWidth = isSnap ? 3 : 2;
             ctx.beginPath(); ctx.arc(p.x, p.y, isSnap ? 18 : 14, 0, Math.PI * 2); ctx.stroke();
           }
-          ctx.fillStyle = hot ? AMBER : (i === hover ? '#8d8f98' : '#2e3138');
+          ctx.fillStyle = hot ? AMBER : (i === hover ? P.grey : P.line);
           ctx.beginPath(); ctx.arc(p.x, p.y, hot ? 7 : (i === hover ? 7 : 5.5), 0, Math.PI * 2); ctx.fill();
           label(ctx, String(i + 1), spot.n.x, spot.n.y, { color: 'rgba(169,186,214,.55)', size: 10, weight: '600', align: spot.n.align, halo: false });
           return;
@@ -262,7 +262,7 @@
         }
         /* value outside, voltage drop inside */
         label(ctx, `${soc.val} ${PARTS[soc.kind].unit}`, spot.v.x, spot.v.y,
-          { color: soc.kind === 'bat' ? AMBER : soc.kind === 'bulb' ? '#fff0b8' : PINK, size: 12, weight: '700', align: spot.v.align });
+          { color: soc.kind === 'bat' ? AMBER : soc.kind === 'bulb' ? P.glow2 : PINK, size: 12, weight: '700', align: spot.v.align });
         if (s.I != null) {
           const txt = soc.kind === 'bat' ? `+${soc.val.toFixed(1)} V` : `−${(s.I * soc.val).toFixed(2)} V`;
           label(ctx, txt, spot.d.x, spot.d.y, { color: soc.kind === 'bat' ? 'rgba(246,211,107,.85)' : MUTED, size: 10.5, weight: '500', align: spot.d.align });
@@ -308,14 +308,14 @@
         label(ctx, `${s.V.toFixed(1)} V ÷ ${s.Rsum.toFixed(1)} Ω`, cx, cy + 26, { color: AMBER, size: 11.5, weight: '700', halo: false });
       } else if (s.open || s.short) {
         label(ctx, s.short ? 'short circuit — add a resistor' : (s.open.indexOf('battery') >= 0 && !sockets.some(q => q && q.kind === 'bat') ? 'no battery → no current' : 'add the bulb to close the loop'),
-          cx, cy, { color: '#b9b7ae', size: 13, weight: '700', halo: false });
+          cx, cy, { color: P.dim, size: 13, weight: '700', halo: false });
       }
 
       /* the part under drag rides the pointer, with a snap preview */
       if (drag) {
         if (snap >= 0) drawPart(ctx, drag.kind, drag.val, pts[snap].x, pts[snap].y, FLOW[snap], s, 0.45);
         drawPart(ctx, drag.kind, drag.val, drag.x, drag.y, 0, s, 0.95);
-        label(ctx, PARTS[drag.kind].name, drag.x, drag.y - 28, { color: '#e8eefb', size: 11, weight: '700' });
+        label(ctx, PARTS[drag.kind].name, drag.x, drag.y - 28, { color: P.text, size: 11, weight: '700' });
       }
 
       /* nothing moves without current, a drag or an armed part: park the loop */

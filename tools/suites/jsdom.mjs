@@ -1421,7 +1421,7 @@ async function smoke(h) {
          mark and a >4 K floor on the cheer icon. */
       statSync(join(ROOT, 'img/mascot.png')).size > 20000 && statSync(join(ROOT, 'img/mascot-sparkle.png')).size > 4000);
     ok('title-card art tokens ship in the overlay CSS (stage bg, eye dots, pill chips)',
-      /#introOverlay \{[^}]*background: #fcefaa/.test(css) &&
+      /#introOverlay \{[^}]*background: var\(--butter\)/.test(css) && /--butter: #fcefaa/.test(css) &&
       /#introOverlay \.dot \{[^}]*background: var\(--sk\)/.test(css) &&
       /#introOverlay \.chip \{[^}]*border-radius: 99cqw/.test(css));
     const siteCss = readFileSync(join(ROOT, 'css/site.css'), 'utf8');
