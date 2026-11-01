@@ -10,30 +10,34 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
 | Title-card transitions | `js/motion.js` (`cover`/`uncover`/`coverThenGo`), `.tc*` CSS | page and chapter changes show the destination's name |
 | Motion presets | `js/motion.js`, `[data-mx]` CSS, `--mx-*` tokens | scroll / route reveals |
 
-## Intro (v11)
-- **Lettering:** the site's own G8321 Bold as live text: white fill, thin pink edge, solid
-  `#e8507a` shadow. `EMC_KINETIC.split()` cuts a line into character spans (`R_1` draws a
-  small digit, `Σ` is a drawn glyph because G8321 has no Σ) and keeps the real text in
-  `aria-label`.
-- **Timeline:** 0 – 3.5 s countdown, then six phrases on a 0.151 s grid (`BEAT0 = 3.5`,
-  `BEAT = 0.604`, ~99 BPM), title at `TT` (~13.6 s), mascot jump at `TE = TT + 2.4`, end at
-  `TE + 1.1` (~17 s). `?t=<s>` freezes one frame for tuning.
-- **Motion grammar:** each phrase is one whole equation laid out in place under the mascot and
-  written like a typewriter: its pieces fly in one after another with the original entrance
-  moves (`slam`, `whip`, `drop`, `spin`, `flip`, `slice`, `wipe`, `arc`, `rise`, `elastic`, `pop`,
-  with the smear along the direction of travel, sampled at 30 fps "twos"), and line 2 only starts
-  once line 1 has landed. A landed piece has no transform at all, so it is sharp; a small sparkle
-  marks each landing. One mascot face throughout. Backgrounds go yellow rings → pink burst → torn
-  paper, with a slash bar where the scene changes.
-- **Ending:** crouch, stretch jump with speed lines, title letters whip up after the mascot,
-  then the overlay lifts by transform with a soft curved edge.
-- **Performance rules:** Only pieces that are in flight are written each frame; charges and exits are CSS animations on the compositor.
-  Rings and the burst share one small canvas, because scaled ring layers and a rotating
-  full-screen gradient dropped Firefox to single-digit frame rates. Every phrase
-  is laid out once. Lettering is never transformed at rest, which keeps it sharp; the camera
-  moves only the mascot and background. Layers are prepared before they are needed. The
-  clock starts after the first frame has painted. Background work waits for `EMC.afterIntro`.
-  The engine closure is dropped with the overlay. Lite mode covers slow devices.
+## Intro (port of `test/emc-intro-final.html`)
+- **Lettering:** the site's own G8321 Bold as live text, italic, white fill, dark outline, a
+  pink then a dark stacked shadow (MAD / "Override" look). G8321 has no `−`, `×`, `’`, `―` or
+  `→`, so the phrases use `-`, `x` and `'`, and the fraction bar and the arrow are drawn in CSS /
+  SVG (`.fb`, `.ar`) in the same style.
+- **Timeline:** scene A (shape-face countdown, 3-2-1-GO on the 0.302 s grid) to `BEAT0 = 2.608`,
+  then six phrases (charge, Coulomb's law, the field, Circuit Builder, Ohm's Law), the title at
+  `TT` (~13.2 s), the mascot jump at `TE = TT + 2.4`, the overlay lift from `TE + .2`, end at
+  `TE + 1.05` (~16.6 s). `BEAT = 0.604` (~99 BPM, measured from the reference track).
+  `?t=<s>` freezes one frame for tuning.
+- **Motion grammar:** the mascot changes face on every beat (the last phrase cycles twice as
+  fast and lands on the happy face). Each phrase's words fly in one after another with eleven
+  entrance moves (`slam`, `whip`, `drop`, `spin`, `flip`, `slice`, `wipe`, `arc`, `rise`,
+  `elastic`, `pop`), stretched along the direction of travel with two fading smear trails and a
+  burst of sparks per landing, then hold, then ease out. Lines are laid out in `fit()`: sizes
+  scale to the screen, overlapping lines are pushed apart and shrunk until they clear. A slow
+  camera dolly/pan/roll runs under it, rings drift behind, faint mascots and + / - charges
+  drift on the compositor.
+- **Ending:** crouch, stretch jump out of the top, then the overlay lifts away by transform.
+- **Performance rules:** only the phrase on screen is in the render tree (`.kg` groups are
+  `display:none` otherwise); words are laid out once and then only transformed, each on its own
+  layer while its group is on; smear trails exist only while a word travels; the rings are one
+  small canvas at 30 fps (a full-screen repeating gradient dropped Firefox to single digits);
+  charges and ghosts loop as CSS animations; the overlay lifts by transform instead of a
+  clip-path; every style write goes through a per-element cache; nothing measures the DOM in the
+  frame loop; layers are prepared before they are needed; the clock starts after the first frame
+  has painted; background work waits for `EMC.afterIntro`; the engine closure is dropped with the
+  overlay. Lite mode (slow devices) drops trails, sparks, and runs the text on twos.
 - **Contract:** plays on every bare home load, stores nothing, Skip / Esc / Start end it,
   the rest of the page is `inert` while it plays, zero timers/listeners afterwards
   (`tools/intro-verify.mjs`).

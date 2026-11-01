@@ -44,3 +44,4 @@ tools/perf-probe*.mjs
 
 # screenshot harness output (tools/screenshots.mjs)
 shots/
+test/
