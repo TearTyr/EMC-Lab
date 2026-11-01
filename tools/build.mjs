@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * tools/build-public.mjs — assemble the Vercel output directory (public/).
+ * tools/build.mjs — assemble the Vercel output directory (public/).
  *
  * Why this exists
  * ---------------

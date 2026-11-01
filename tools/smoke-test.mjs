@@ -1004,8 +1004,8 @@ console.log('\u2500'.repeat(66));
   /* --- item 15: a Vercel build must fail rather than ship unhashed assets
          under the 1-year immutable headers -------------------------------- */
   ok('item 15: build-public refuses the unhashed fallback on Vercel',
-    /if \(process\.env\.VERCEL\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')) &&
-    /process\.exit\(1\)/.test(readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8')));
+    /if \(process\.env\.VERCEL\)/.test(readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8')) &&
+    /process\.exit\(1\)/.test(readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8')));
 
   /* --- item 13: the bank must not point readers at retired structures ----- */
   ok('item 13: the active bank references no retired topic/lesson structures',
@@ -1137,7 +1137,7 @@ console.log('\u2500'.repeat(66));
   ok('robots.txt allows everything and points at the production sitemap',
     /User-agent: \*/.test(robotsTxt) && /Allow: \//.test(robotsTxt) &&
     /Sitemap: https:\/\/emc-lab\.vercel\.app\/sitemap\.xml/.test(robotsTxt));
-  const buildSrc = readFileSync(join(ROOT, 'tools/build-public.mjs'), 'utf8');
+  const buildSrc = readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8');
   ok('the deploy allow-list ships robots.txt + favicon.ico and fails the build without them',
     /'robots\.txt',\n  'favicon\.ico'/.test(buildSrc) &&
     (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'robots.txt'")) &&
