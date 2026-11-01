@@ -25,6 +25,11 @@
        CTA overlaps no chip/title/Skip/mascot and nothing leaves the viewport
     13 the title card only bobs a few px and Start holds still (15.1 s / 15.35 s)
     14 zero console/page errors throughout
+    15 resting phrase layout at phone/tablet/desktop sizes (EMC_INTRO.layout())
+    16 first paint is the butter yellow + loading bar, scroll locked, no dark loader
+    17 a slow image holds the start; 18 a blocked one cannot hang it (8 s deadline)
+    19 plain lettering: no text-shadow, no slant
+    20 hero mascot size on phones and desktop
    Exits 1 on any failure.
    ========================================================================== */
 async function intro(h) {
@@ -337,6 +342,126 @@ async function intro(h) {
     ok('13 title letters, subtitle and chips only bob a few px; the Start CTA holds perfectly still',
       early.length >= 9 && early.length === late.length && drift < 16 && cta < .5, `${early.length} boxes, max shift ${drift.toFixed(1)} px, CTA ${cta.toFixed(1)} px`);
     await ctx.close();
+  }
+
+  /* 15: where every word comes to rest (EMC_INTRO.layout()), at phone, tablet and desktop sizes: nothing leaves the
+     screen, phrases never overlap each other, and on tall (portrait phone) stages they stay clear of the mascot and Skip */
+  {
+    const VPS = [[360, 640, true], [390, 844, true], [412, 915, true], [768, 1024, true], [844, 390, true], [1280, 800, false]];
+    const problems = [];
+    for (const [w, hh, mobile] of VPS) {
+      const { ctx, pg } = await ctxPage({ viewport: { width: w, height: hh }, isMobile: mobile, hasTouch: mobile });
+      await pg.goto(B + '/index.html?t=1', { waitUntil: 'load' });
+      await pg.waitForFunction(() => window.EMC_INTRO && window.EMC_INTRO.layout && window.EMC_INTRO.layout(), null, { timeout: 8000 });
+      await pg.waitForTimeout(250);
+      const { L, W } = await pg.evaluate(() => ({ L: window.EMC_INTRO.layout(), W: document.getElementById('st').offsetWidth / 100 }));
+      const cx = w / 2, cy = hh / 2;
+      const box = o => {
+        const a = Math.abs(o.r) * Math.PI / 180, ew = o.w * Math.cos(a) + o.h * Math.sin(a), eh = o.w * Math.sin(a) + o.h * Math.cos(a);
+        return { n: o.t.trim().slice(0, 10), g: o.g, l: cx + (o.x - ew / 2) * W, r: cx + (o.x + ew / 2) * W, t: cy + (o.y - eh / 2) * W, b: cy + (o.y + eh / 2) * W };
+      };
+      const words = L.words.map(box), ms = L.mascot.s * 1.15 * .88 / 2;
+      const mk = { l: cx - ms * W, r: cx + ms * W, t: cy + L.mascot.y * W - ms * W, b: cy + L.mascot.y * W + ms * W };
+      const skip = { l: w - 150, r: w, t: hh - 62, b: hh };
+      const hit = (a, c) => a.l < c.r && a.r > c.l && a.t < c.b && a.b > c.t;
+      for (const x of words) {
+        if (x.l < 8 || x.r > w - 8 || x.t < 8 || x.b > hh - 8) problems.push(w + 'x' + hh + ' off-screen ' + x.n);
+        if (L.tall && hit(x, mk)) problems.push(w + 'x' + hh + ' on the mascot ' + x.n);
+        if (L.tall && hit(x, skip)) problems.push(w + 'x' + hh + ' on Skip ' + x.n);
+      }
+      for (let i = 0; i < words.length; i++) for (let j = i + 1; j < words.length; j++) {
+        const a = words[i], c = words[j];
+        if (a.g !== c.g || !a.n || !c.n) continue;                       // the drawn fraction bar is meant to touch its numbers
+        if (Math.min(a.r, c.r) - Math.max(a.l, c.l) > 6 && Math.min(a.b, c.b) - Math.max(a.t, c.t) > 14) problems.push(w + 'x' + hh + ' overlap ' + a.n + ' / ' + c.n);
+      }
+      await ctx.close();
+    }
+    ok('15 resting phrases stay on screen and apart at 360x640 .. 1280x800; portrait keeps them off the mascot and Skip',
+      problems.length === 0, problems.slice(0, 4).join('; '));
+  }
+
+  /* 16: the first paint is the intro's butter yellow, not the dark page: with common.js stalled, the cover and the
+     scroll lock are already there and no dark loader overlay is built on top */
+  {
+    const { ctx, pg } = await ctxPage();
+    await pg.route('**/js/common.js', async route => { await new Promise(r => setTimeout(r, 1800)); route.continue(); });
+    await pg.goto(B + '/index.html', { waitUntil: 'commit' });
+    await pg.waitForTimeout(900);
+    const st = await pg.evaluate(() => {
+      const o = document.getElementById('introOverlay'), cs = o && getComputedStyle(o);
+      return {
+        pending: document.documentElement.classList.contains('landing-pending'),
+        vis: cs && cs.visibility, bg: cs && cs.backgroundColor,
+        bar: !!document.getElementById('ilFill'), noEngine: typeof window.EMC === 'undefined',
+        boot: !!document.getElementById('bootOverlay'),
+        scroll: getComputedStyle(document.documentElement).overflow,
+        chrome: (document.querySelector('meta[name=theme-color]') || {}).content
+      };
+    });
+    ok('16 stalled boot: butter-yellow cover + loading bar already shown, scroll locked, browser chrome yellow, no dark loader',
+      st.pending && st.vis === 'visible' && st.bg === 'rgb(252, 239, 170)' && st.bar && st.noEngine && !st.boot &&
+      st.scroll === 'hidden' && st.chrome === '#fcefaa', JSON.stringify(st));
+    await waitPlaying(pg);
+    ok('16 and the intro still plays once the scripts arrive', true);
+    await ctx.close();
+  }
+
+  /* 17: the clock waits for the images: a slow face delays the start, then the bar fades and the intro plays */
+  {
+    const { ctx, pg } = await ctxPage();
+    await pg.route('**/img/mascot-face-happy.png', async route => { await new Promise(r => setTimeout(r, 2500)); route.continue(); });
+    await pg.goto(B + '/index.html', { waitUntil: 'commit' });      /* 'load' itself would wait for the slow image */
+    await waitPlaying(pg);
+    await pg.waitForTimeout(900);
+    const early = await pg.evaluate(() => document.getElementById('introOverlay').classList.contains('ready'));
+    await pg.waitForFunction(() => document.getElementById('introOverlay') && document.getElementById('introOverlay').classList.contains('ready'), null, { timeout: 6000 });
+    await pg.waitForTimeout(900);
+    const st = await pg.evaluate(() => ({ playing: window.EMC_INTRO.state().playing, bar: getComputedStyle(document.getElementById('introLoad')).opacity }));
+    ok('17 a slow face image holds the start (bar up), then the bar fades and the timeline runs',
+      early === false && st.playing === true && +st.bar < .1, JSON.stringify({ early, ...st }));
+    await ctx.close();
+  }
+
+  /* 18: a face that never loads can delay the intro, never hang it (8 s deadline) */
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const pg = await ctx.newPage();
+    await pg.route('**/img/mascot-face-focus.png', () => { /* the request hangs for good */ });
+    const t0 = Date.now();
+    await pg.goto(B + '/index.html', { waitUntil: 'commit' });
+    await pg.waitForFunction(() => document.getElementById('introOverlay') && document.getElementById('introOverlay').classList.contains('ready'), null, { timeout: 14000 });
+    const took = Date.now() - t0;
+    ok('18 an image that never answers delays the intro by the 8 s deadline, never hangs it', took > 7000 && took < 11000, took + ' ms');
+    await ctx.close();
+  }
+
+  /* 19: the flying words are plain: white fill, one outline, no stacked shadow, no slant */
+  {
+    const { ctx, pg } = await ctxPage();
+    await pg.goto(B + '/index.html?t=9.4', { waitUntil: 'load' });
+    await waitPlaying(pg);
+    await pg.waitForTimeout(400);
+    const cs = await pg.evaluate(() => {
+      const w = document.querySelector('.kg.on .kw.m'), s = getComputedStyle(w);
+      return { shadow: s.textShadow, style: s.fontStyle, stroke: s.webkitTextStrokeWidth, fill: s.color };
+    });
+    ok('19 intro words: no text-shadow, no slant, a bold outline', cs.shadow === 'none' && cs.style === 'normal' && parseFloat(cs.stroke) > 2, JSON.stringify(cs));
+    await ctx.close();
+  }
+
+  /* 20: the hero mascot stays small on phones (it was 235 px tall on a 390 px screen) and keeps its desktop size */
+  {
+    const sizes = [];
+    for (const [w, hh, mobile] of [[360, 640, true], [390, 844, true], [412, 915, true], [1280, 800, false]]) {
+      const { ctx, pg } = await ctxPage({ viewport: { width: w, height: hh }, isMobile: mobile, hasTouch: mobile });
+      await pg.addInitScript(skipIntroOnLoad);
+      await pg.goto(B + '/index.html', { waitUntil: 'load' });
+      await pg.waitForTimeout(4200);                       /* the landing sequence settles */
+      sizes.push([w, await pg.evaluate(() => Math.round(document.querySelector('.hero-mascot').getBoundingClientRect().height))]);
+      await ctx.close();
+    }
+    ok('20 hero mascot is at most 132 px tall on phones and still 200+ px on desktop',
+      sizes.slice(0, 3).every(([, hgt]) => hgt <= 132 && hgt >= 90) && sizes[3][1] >= 200, JSON.stringify(sizes));
   }
 
   console.log('console/page errors:', errors.length ? errors.slice(0, 6) : 'none');

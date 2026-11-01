@@ -1051,7 +1051,7 @@ async function smoke(h) {
       // never executing at all)
       ok(`${p}: pre-paint Detail pref + 1.5 s dead-man switch, no static overlay`,
         /if \(window\.EMC\) return;/.test(html) &&
-        /bootFatalRetry/.test(html) && /\}, 1500\);/.test(html) &&
+        /bootFatalRetry/.test(html) && /Math\.max\(0, 1500 - /.test(html) && /setTimeout\(bootCheck, 12000\)/.test(html) &&
         /document\.documentElement\.dataset\.detail = \(__p\.detail === 'off' \? 'off' : 'on'\)/.test(html) &&
         !/<div id="bootOverlay"/.test(html) && !/emc\.splash\.v1/.test(html));
       ok(`${p}: pre-paint script gates the .reveal entrance with html.js`,

@@ -8,9 +8,9 @@ description: Audit an EMC Lab page or diff for palette, mascot, lettering and mo
 Rules live in `.claude/rules/design-system.md` and `.claude/rules/motion.md`. Read them first, then check the target (a page, or `git diff main...HEAD`).
 
 ## Palette
-- `grep -nE '#[0-9a-fA-F]{3,8}\b'` over the changed CSS, HTML and JS. Every hit outside the `:root` token blocks must use a token or the shared palette object. Report each stray hex with the token it should become.
+- Run `node tools/check.mjs palette`. It fails any hex in CSS outside the token blocks, any hex in scripts outside `EMC.PALETTE`, and any off-palette hex in a page. For each failure name the token it should become.
 - Accent text and strokes use `--*-ink`, not the raw pastel (breaks light-theme contrast).
-- Positive = pink, negative = sky, fields and forces = yellow. Butter is only the intro surface.
+- Positive = pink, negative = sky, field probes and test charges = amber. Butter is only the intro surface.
 
 ## Lettering
 - No `text-shadow` stacks, slants or filters on brand, hero or intro text. One bold outline at most.

@@ -13,11 +13,16 @@
    3-2-1-GO on the 99 BPM grid, BEAT 0.604 s measured from the reference track).
    Scene B is the title card: the mascot changes expression on every beat while
    six phrases (charge, Coulomb, field, Circuit Builder, Ohm's Law) fly in word by
-   word with eleven entrance moves, smear trails and landing sparks, under a slow
+   word with eleven entrance moves (a few words type themselves in one character at a time),
+   smear trails and landing sparks, under a slow
    camera dolly; then the title, chips and Start, a crouch and jump, and the
    overlay lifts away.
-   Reduced motion draws the static end frame; faces are fetched only when playback
-   actually starts; ?t=<s> freezes a frame for tuning (dev).
+   LOADING: on a bare home load the page already shows the intro's butter yellow with a
+   small bar (css html.landing-pending). preload() fetches AND decodes everything the
+   timeline draws (lettering font, the three faces, the hero mascot) and waits for
+   window.load, with an 8 s deadline so it can never hang; then the bar fades and the
+   clock starts on the same yellow. Chapter routes never run any of it.
+   Reduced motion draws the static end frame; ?t=<s> freezes a frame for tuning (dev).
    PERFORMANCE: only the phrase on screen is in the render tree (the others are
    display:none), words are laid out once and then only transformed on their own
    layers, trails exist only while a word is travelling, the rings are one small
@@ -75,6 +80,7 @@
   /* ---------------------------------------------------------------- engine */
   const BEAT0 = 2.608, BEAT = .604;     /* ~99.4 BPM, measured from the reference audio */
   const IMG = { sp: 'img/mascot-face-sparkle.png', fo: 'img/mascot-face-focus.png', hp: 'img/mascot-face-happy.png' };
+  const PRELOAD_DEADLINE_MS = 8000, LOAD_FADE_MS = 350;
   const go = q('#go');
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const seg = (t, a, d) => clamp((t - a) / d);
@@ -140,7 +146,7 @@
         { xf: .55, gf: .72, r: 4, s: 24, toks: [['-1.602x10<sup>-19</sup>', .453, 'rise', .5], ['C', .604, 'drop', .5]] }] },
       { cam: [2.5, 1, 1, 1.02], dr: [-1, -1, -1], L: [
         { xf: .3, gf: .3, r: -5, s: 26, toks: [['LIKE', 0, 'spin', .55], ['REPEL', .302, 'flip', .5]] },
-        { xf: .7, gf: .72, r: 5, s: 26, toks: [['UNLIKE', .604, 'wipe', .5], ['ATTRACT', .906, 'slice', .55]] }] },
+        { xf: .7, gf: .72, r: 5, s: 26, toks: [['UNLIKE', .604, 'type', .5], ['ATTRACT', .906, 'type', .55]] }] },
       { cam: [-1.5, -1.5, -1.2, 1.05], dr: [0, 2, 1], L: [
         { xf: .22, gf: .5, r: -4, s: 20, toks: [['F', 0, 'pop', .5], ['=', .151, 'arc', .5], ['k', .302, 'elastic', .5]] },
         { xf: .7, gf: .5, r: 2, s: 18, v: 1, gp: .02, toks: [['|q<sub>1</sub>||q<sub>2</sub>|', .453, 'drop', .5], [FB, .604, 'wipe', .4], ['r<sup>2</sup>', .755, 'rise', .5]] }] },
@@ -149,11 +155,11 @@
         { xf: .55, gf: .5, r: 2, s: 22, v: 1, gp: .02, toks: [['F', .302, 'elastic', .5], [FB, .453, 'wipe', .4], ['|q<sub>0</sub>|', .604, 'spin', .55]] },
         { xf: .88, gf: .5, r: -3, s: 16, toks: [['N/C', .906, 'rise', .5]] }] },
       { cam: [0, -1, .8, 1.05], dr: [0, 1, 1], L: [
-        { xf: .5, gf: .3, r: -4, s: 22, toks: [['CIRCUIT', 0, 'wipe', .5], ['BUILDER', .151, 'elastic', .5]] },
+        { xf: .5, gf: .3, r: -4, s: 22, toks: [['CIRCUIT', 0, 'type', .5], ['BUILDER', .151, 'elastic', .5]] },
         { xf: .5, gf: .64, r: 3, s: 15, toks: [['DRAG', .453, 'rise', .5], ['&', .604, 'spin', .5], ['DROP', .755, 'whip', .5]] }] },
       { cam: [-1.5, .8, -.8, 1.05], dr: [0, 1, -1], L: [
         { xf: .5, gf: .2, r: -3, s: 26, toks: [["OHM'S", 0, 'drop', .5], ['LAW', .151, 'flip', .5]] },
-        { xf: .5, gf: .46, r: 3, s: 26, toks: [['CALCULATOR', .453, 'slice', .55]] },
+        { xf: .5, gf: .46, r: 3, s: 26, toks: [['CALCULATOR', .453, 'type', .55]] },
         { xf: .5, gf: .78, r: -3, s: 15, toks: [['CHANGE R, V', .906, 'arc', .5], [AR, 1.057, 'elastic', .5], ['SEE I', 1.208, 'pop', .45]] }] }
     ];
 
@@ -170,11 +176,15 @@
         for (const [html, tm, m, d] of L.toks) {
           const t0 = sn(g.t0 + tm);
           last = Math.max(last, t0 + LAND);
-          /* e = the word, a/b = its two smear trails; a sliced word uses a as its second half */
+          /* e = the word, a/b = its two smear trails (a typed word has none) */
           const mkEl = () => { const e = document.createElement('div'); e.className = 'a kw'; e.style.left = '50%'; e.style.top = '50%'; e.innerHTML = html; g.c.appendChild(e); return e; };
-          const e = mkEl(), a = mkEl(), b = m === 'slice' ? null : mkEl();
-          e.classList.add('m'); a.setAttribute('aria-hidden', 'true'); if (b) b.setAttribute('aria-hidden', 'true');
-          const o = { e, a, b, g, L, t0, x: 0, y: 0, r: L.r, k: kws.length, m, d, S: [0, 0], C: [0, 0], sz: L.s, w: 0, h: 0, u: 0 };
+          const typed = m === 'type';
+          const e = mkEl(), a = typed ? null : mkEl(), b = typed ? null : mkEl();
+          e.classList.add('m'); if (a) a.setAttribute('aria-hidden', 'true'); if (b) b.setAttribute('aria-hidden', 'true');
+          /* a typed word is plain text cut into characters (never into halves); each one pops in on its own beat */
+          const ch = typed ? [...html].map(c => { const sp = document.createElement('span'); sp.textContent = c; return sp; }) : null;
+          if (typed) { e.textContent = ''; for (const sp of ch) e.appendChild(sp); }
+          const o = { e, a, b, ch, g, L, t0, x: 0, y: 0, r: L.r, k: kws.length, m, d, S: [0, 0], C: [0, 0], sz: L.s, w: 0, h: 0, u: 0 };
           L.k.push(o); g.k.push(o); kws.push(o);
         }
       }
@@ -187,6 +197,8 @@
     const LIFT = TE + .2, END = TE + 1.05;
     /* camera keyframes: a slow dolly/pan/roll that never stops */
     const CAMK = [{ t: BEAT0, c: [0, 0, 0, 1] }, ...G.map(g => ({ t: (g.t0 + g.ex) / 2, c: g.cam })), { t: TT + .9, c: [0, 0, 0, 1] }];
+
+    for (const o of kws) if (o.ch) for (const sp of o.ch) { sp.style.display = 'inline-block'; sp.style.opacity = '0'; }   /* hidden until typed */
 
     /* little sparks burst off every landing (36 shared squares) */
     const pt = Array.from({ length: 36 }, (_, i) => {
@@ -222,7 +234,7 @@
     }
 
     /* ---- layout: measured once per run/resize, never in the frame loop ---- */
-    let Wc = 100, Hs = 100, HSC = 100;
+    let Wc = 100, Hs = 100, HSC = 100, tall = false;   /* tall: the phone-portrait stage (css gives it the whole screen) */
     function lay(L) {
       const ks = L.k, gp = ks[0].sz * (L.gp != null ? L.gp : L.v ? .1 : .26);
       let tot = 0, mh = 0;
@@ -244,6 +256,13 @@
       Hs = (stg.offsetHeight / W) || 100; HSC = Hs;
       Wc = Math.max(100, (innerWidth || stg.offsetWidth) / (stg.offsetWidth || 1) * 100);
       const bs = 1 + Math.min(.35, (Wc - 100) / 220);     /* text may use the full width of a wide screen */
+      tall = Hs > 125;
+      const mg = tall ? 16 : 10;                           /* side margin: the camera drifts, so phones keep more of it */
+      /* tall stage: the mascot owns the top; phrases get the zone under it (and above the Skip button) */
+      const zt = -.2 * Hs + mkw * .6 + 4, zb = Hs / 2 - 16;
+      const yLo = L => tall ? Math.min(zt + L.eh / 2, (zt + zb) / 2) : -Math.max(0, Hs / 2 - 9 - L.eh / 2);
+      const yHi = L => tall ? Math.max(zb - L.eh / 2, (zt + zb) / 2) : Math.max(0, Hs / 2 - 9 - L.eh / 2);
+      const clampX = L => { const mx = Math.max(0, Wc / 2 - mg - L.ew / 2); return x => c2(x, -mx, mx); };
       LN.forEach(L => {
         L.k.forEach(o => {
           o.sz = L.s * bs;
@@ -251,10 +270,10 @@
           o.w = o.e.offsetWidth / W; o.h = o.e.offsetHeight / W;
         });
         lay(L);
-        const f = Math.min(1, (Wc - 20) / L.ew, (Hs - 18) / L.eh);
+        const f = Math.min(1, (Wc - 2 * mg) / L.ew, tall ? (zb - zt) / L.eh : (Hs - 18) / L.eh);
         if (f < 1) shr(L, f);
-        const mx = Math.max(0, Wc / 2 - 10 - L.ew / 2), my = Math.max(0, Hs / 2 - 9 - L.eh / 2);
-        L.x = c2((L.xf - .5) * Wc, -mx, mx); L.y = c2((L.gf - .5) * Hs * .9, -my, my);
+        L.x = clampX(L)((L.xf - .5) * Wc);
+        L.y = c2(tall ? zt + (zb - zt) * clamp((L.gf - .2) / .6) : (L.gf - .5) * Hs * .9, yLo(L), yHi(L));
       });
       kwHost.classList.remove('meas');
       G.forEach(g => {
@@ -270,10 +289,7 @@
                 else { const s = dx < 0 ? -1 : 1; a.x -= s * ox / 2; b.x += s * ox / 2; }
               }
             }
-            ls.forEach(L => {
-              const mx = Math.max(0, Wc / 2 - 10 - L.ew / 2), my = Math.max(0, Hs / 2 - 9 - L.eh / 2);
-              L.x = c2(L.x, -mx, mx); L.y = c2(L.y, -my, my);
-            });
+            ls.forEach(L => { L.x = clampX(L)(L.x); L.y = c2(L.y, yLo(L), yHi(L)); });
             if (!mv) break;
           }
           let cr = false;
@@ -298,7 +314,7 @@
         });
       });
       /* one small shared background canvas, scaled up by css */
-      bgC.width = Math.min(640, innerWidth);
+      bgC.width = Math.min(tall ? 300 : 640, innerWidth);
       bgC.height = Math.round(bgC.width * innerHeight / innerWidth);
       bgStep = -1;
       if (lastT >= 0) frame(lastT);                        /* resizing a canvas clears it; positions changed too */
@@ -309,7 +325,7 @@
     let bgStep = -1, lastT = -1;
     function drawBg(t) {
       if (!bgX) return;
-      const k = Math.floor(t * (liteMode ? 15 : 30));
+      const k = Math.floor(t * (liteMode ? 15 : tall ? 20 : 30));   /* the rings only need to look smooth, not be 60 fps */
       if (k === bgStep) return;
       bgStep = k;
       const w = bgC.width, h = bgC.height, vm = Math.min(w, h) / 100;
@@ -344,18 +360,25 @@
     const TR = [[0, 1], [.03, .4], [.06, .2]];             /* [delay, opacity] of the word and its two smear trails */
     function drawTok(o, t, tt, dp) {
       const g = o.g;
-      if (tt < o.t0) { S(o.e, 'opacity', '0'); S(o.a, 'opacity', '0'); if (o.b) S(o.b, 'opacity', '0'); return; }
+      if (tt < o.t0) { S(o.e, 'opacity', '0'); if (o.a) S(o.a, 'opacity', '0'); if (o.b) S(o.b, 'opacity', '0'); return; }
       /* held, then a smooth ease-out */
       const eu = seg(tt, g.ex + (o.k % 6) * .03, EXIT), ee = 1 - Math.pow(1 - eu, 3), sgn = o.x < 0 ? -1 : 1;
       const exx = sgn * 16 * ee, exy = -13 * ee, exs = 1 - .14 * ee, exa = 1 - ee;
-      if (o.m === 'slice') {                               /* two halves slide together, then it is ONE whole word */
-        const k = ez(clamp((tt - o.t0) / (o.d * 1.25))), off = 1 - k, ld = off < .015;
-        S(o.e, 'clipPath', ld ? 'none' : 'polygon(-15% -30%,115% -30%,115% 42%,-15% 62%)');
-        S(o.a, 'clipPath', 'polygon(-15% 66%,115% 46%,115% 130%,-15% 130%)');
-        const hv = [[o.e, -70, -26, 1], [o.a, 70, 26, ld ? 0 : 1]];
-        for (const [el, dx, dy, vis] of hv) {
-          S(el, 'transform', `translate(-50%,-50%) translate(${(o.x + dx * off + g.dr[0] * dp + exx).toFixed(2)}cqw,${(o.y + dy * off + g.dr[1] * dp + exy).toFixed(2)}cqw) rotate(${(o.r + g.dr[2] * dp).toFixed(2)}deg) scale(${((1 + .15 * off) * exs).toFixed(3)})`);
-          S(el, 'opacity', (vis * exa).toFixed(3));
+      if (o.m === 'type') {                                /* one character at a time, each with a soft overshoot */
+        const u0 = tt - o.t0, n = o.ch.length, span = o.d * 1.25, step = span * .85 / n;
+        const x = o.x + g.dr[0] * dp + exx, y = o.y + g.dr[1] * dp + Math.sin(t * 3 + o.k) * .25 + exy, rot = o.r + g.dr[2] * dp + Math.sin(t * 2.3 + o.k) * .8;
+        S(o.e, 'transform', `translate(-50%,-50%) translate(${x.toFixed(2)}cqw,${y.toFixed(2)}cqw) rotate(${rot.toFixed(2)}deg) scale(${exs.toFixed(3)})`);
+        S(o.e, 'opacity', exa.toFixed(3));
+        if (u0 < span + .3) {                              /* still arriving: write each character; afterwards they rest at their final look */
+          for (let i = 0; i < n; i++) {
+            const cu = clamp((u0 - i * step) / .22), p = cu > 0 ? back(cu) : 0;
+            S(o.ch[i], 'transform', `translateY(${((1 - p) * -.2).toFixed(3)}em) scale(${p.toFixed(3)})`);
+            S(o.ch[i], 'opacity', cu > 0 ? '1' : '0');
+          }
+          o.tf = false;
+        } else if (!o.tf) {                                 /* typed: every character at rest, written once */
+          o.tf = true;
+          for (const sp of o.ch) { S(sp, 'transform', 'none'); S(sp, 'opacity', '1'); }
         }
         return;
       }
@@ -385,7 +408,7 @@
         const dp = drift(clamp((tt - g.t0) / (g.ex - g.t0)));
         for (const o of g.k) {
           drawTok(o, t, tt, dp);
-          if (liteMode || o.m === 'wipe' || o.m === 'slice') continue;
+          if (liteMode || o.m === 'wipe' || o.m === 'type') continue;
           const u = (tt - o.t0) / .4;
           if (u < 0 || u >= 1) continue;
           const sl = (o.k % 6) * 6, k = ez(u);
@@ -471,7 +494,8 @@
         let cc = [0, 0, 0, 1];
         { let i = 0; while (i < CAMK.length - 2 && t >= CAMK[i + 1].t) i++;
           const a = CAMK[i], b = CAMK[i + 1], u = clamp((t - a.t) / (b.t - a.t)), s3 = u * u * (3 - 2 * u);
-          cc = a.c.map((v, j) => v + (b.c[j] - v) * s3); }
+          cc = a.c.map((v, j) => v + (b.c[j] - v) * s3);
+          if (tall) cc = cc.map((v, j) => j === 3 ? 1 + (v - 1) * .5 : v * .5); }
         S(stg, 'transform', `translate(-50%,-50%) translate(${cc[0].toFixed(3)}%,${cc[1].toFixed(3)}%) rotate(${cc[2].toFixed(3)}deg) scale(${cc[3].toFixed(4)})`);
         S(sw, 'transform', `translate(${(-cc[0] * 1.3).toFixed(3)}%,${(-cc[1] * 1.3).toFixed(3)}%) scale(${(1 + (cc[3] - 1) * .5).toFixed(4)})`);
 
@@ -508,7 +532,16 @@
       overlay.querySelectorAll('.gh').forEach(g => { if (!g.src) g.src = IMG.fo; });   /* same url: no second download */
     }
 
-    return { frame, fit, readMkw, loadFaces, setLite, TT, TE, END };
+    /* where every word comes to rest, in stage units (1 unit = 1% of the stage width, origin at the stage
+       centre), plus the mascot's box. Used by tools/suites/page.mjs to prove nothing overlaps or leaves the screen. */
+    function layout() {
+      return {
+        tall, Wc, Hs, mascot: { x: 0, y: -.2 * Hs, s: mkw },
+        words: kws.map(o => ({ g: G.indexOf(o.g), t: o.e.textContent, x: o.x, y: o.y, w: o.w, h: o.h, r: o.r }))
+      };
+    }
+
+    return { frame, fit, readMkw, loadFaces, setLite, layout, TT, TE, END };
   }
 
   let E = null;                    /* the running engine; dropped when the overlay goes */
@@ -518,7 +551,12 @@
     return E;
   };
 
-  let fitRaf = 0;
+  let fitRaf = 0, lastW = innerWidth;
+  function onResize() {
+    if (innerWidth === lastW && window.matchMedia && matchMedia('(pointer: coarse)').matches) return;   /* the address bar sliding is not a new layout */
+    lastW = innerWidth;
+    refit();
+  }
   function refit() {
     if (fitRaf) return;
     fitRaf = requestAnimationFrame(() => { fitRaf = 0; if (E) { E.readMkw(); E.fit(); } });
@@ -556,27 +594,62 @@
     raf = requestAnimationFrame(step);
   }
   const whenReady = () => (window.EMC_KINETIC ? window.EMC_KINETIC.ready() : (document.fonts && document.fonts.ready) || Promise.resolve());
+
+  /* Everything the timeline draws, fetched and decoded before the clock starts, so no frame ever waits for
+     an image or a font. Progress drives the bar; the deadline means a dead image can only delay, never hang. */
+  let preloadP = null;
+  function preload() {
+    if (preloadP) return preloadP;
+    const fill = q('#ilFill');
+    let total = 0, done = 0;
+    const paint = () => { if (fill) fill.style.transform = 'scaleX(' + Math.max(.06, total ? done / total : 0).toFixed(3) + ')'; };
+    const track = p => { total++; return Promise.resolve(p).catch(() => {}).then(() => { done++; paint(); }); };
+    /* no decode() (very old browsers): the window load job below already waits for the fetch itself */
+    const decoded = img => (img.decode ? img.decode() : Promise.resolve());
+    const jobs = [];
+    if (document.fonts && document.fonts.load) {
+      jobs.push(track(document.fonts.load('700 64px G8321')), track(document.fonts.load('400 16px G8321')));
+    }
+    for (const id in IMG) {
+      const el = q('#' + id);
+      if (!el) continue;
+      if (!el.getAttribute('src')) { el.decoding = 'async'; el.src = IMG[id]; }
+      jobs.push(track(decoded(el)));
+    }
+    const hero = document.querySelector('.hero-mascot');
+    if (hero) jobs.push(track(decoded(hero)));
+    jobs.push(track(document.readyState === 'complete' ? 0 : new Promise(r => addEventListener('load', r, { once: true }))));
+    paint();
+    let dl = 0;
+    const deadline = new Promise(r => { dl = setTimeout(r, PRELOAD_DEADLINE_MS); });
+    preloadP = Promise.race([Promise.all(jobs), deadline]).then(() => clearTimeout(dl));
+    return preloadP;
+  }
   function run() {
     if (raf) cancelAnimationFrame(raf);
     overlay.classList.remove('done');
     /* the lettering font is preloaded, so this wait is a few ms at most */
-    whenReady().then(() => {
+    Promise.all([whenReady(), preload()]).then(() => {
       if (removed || !overlay.isConnected) return;
       const e = engine();
       e.loadFaces(); e.readMkw(); e.fit();
       if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) e.setLite();
       const reducedMotion = window.EMC && window.EMC.reducedMotion;
+      overlay.classList.add('ready');                    /* the loading bar fades out on the same yellow */
       if (reducedMotion) { e.frame(e.TT + 2); return; }  /* static end frame */
       landed = false; started = true;
-      /* the clock starts after the first frame has painted: locking the page and
-         building the overlay's layers must not eat the start of the timeline */
+      /* the clock starts after the first frame has painted (and after the bar has faded): locking the page
+         and building the overlay's layers must not eat the start of the timeline */
       e.frame(0);
-      raf = requestAnimationFrame(() => {
-        raf = requestAnimationFrame(now => {
-          t0 = now; tShift = 0; pauseStart = 0; lastNow = 0;
-          step(now);
+      schedule(() => {
+        if (removed || !playing || overlay.classList.contains('done')) return;   /* skipped during the fade */
+        raf = requestAnimationFrame(() => {
+          raf = requestAnimationFrame(now => {
+            t0 = now; tShift = 0; pauseStart = 0; lastNow = 0;
+            step(now);
+          });
         });
-      });
+      }, LOAD_FADE_MS);
     });
   }
   /* Hidden tab: drop the rAF chain and bank the elapsed time, so a backgrounded
@@ -648,7 +721,7 @@
     addListener(q('#introSkip'), 'click', dismissIntro);
     addListener(go, 'click', dismissIntro);       /* navigation proceeds; overlay fades */
     addListener(document, 'visibilitychange', onVis);
-    addListener(window, 'resize', refit);
+    addListener(window, 'resize', onResize);
     addListener(document, 'emc:intro-done', () => {
       schedule(removeIntro, EXIT_BUFFER_MS);
     });
@@ -656,7 +729,7 @@
 
     /* dev tuning freeze: ?t=5.5 draws one frame, no clock, no auto-dismiss */
     const freeze = new URLSearchParams(location.search).get('t');
-    if (freeze !== null) { whenReady().then(() => { if (removed || !overlay.isConnected) return; const e = engine(); e.loadFaces(); e.readMkw(); e.fit(); e.frame(+freeze); }); return; }
+    if (freeze !== null) { whenReady().then(() => { if (removed || !overlay.isConnected) return; const e = engine(); e.loadFaces(); e.readMkw(); e.fit(); overlay.classList.add('ready'); e.frame(+freeze); }); return; }
 
     run();
     /* reduced motion: the static end frame is the whole show — clear fast */
@@ -671,6 +744,9 @@
     removeIntro();
     return;
   }
+
+  /* Start fetching right away (not after the loader): the page is already showing the loading bar. */
+  if (new URLSearchParams(location.search).get('t') === null) preload();
 
   /* Wait for the page loader unless it has already finished. */
   if (window.EMC && window.EMC.loader && window.EMC.loader.state().finished) {
@@ -693,6 +769,7 @@
         duration
       };
     },
-    dismiss: dismissIntro
+    dismiss: dismissIntro,
+    layout() { return E ? E.layout() : null; }
   };
 })();

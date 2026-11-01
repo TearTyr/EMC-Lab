@@ -1228,10 +1228,12 @@
 #introOverlay #st { position: absolute; left: 50%; top: 50%;
   width: min(100vw, 100vh); height: min(100vw, 100vh);
   transform: translate(-50%, -50%); container-type: size;
-  --mk: 34cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
+  --my: 30%; --mk: 34cqw; --tt: 18cqw; --sb: 3.8cqw; --cf: 3cqw; }
 @media (max-aspect-ratio: 4/5) {
-  #introOverlay #st { width: 100vw; height: min(100vh, 135vw);
-    --mk: 38cqw; --tt: 17cqw; --sb: 4cqw; --cf: 3.6cqw; }
+  /* portrait: the stage is the whole screen (svh = the viewport with the browser bars out, so it never
+     changes while the address bar slides) and the mascot is smaller; intro.js keeps the phrases below it */
+  #introOverlay #st { width: 100vw; height: 100vh; height: 100svh;
+    --mk: 32cqw; --tt: 17cqw; --sb: 4cqw; --cf: 3.6cqw; }
 }
 #introOverlay .a { position: absolute; transform: translate(-50%, -50%); opacity: 0; }
 #introOverlay #sw { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
@@ -1260,6 +1262,11 @@
 #introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; transform: translate(-50%, -50%) rotate(var(--r)); transition: opacity .8s; }
 #introOverlay.sb .gh { animation: gh-drift 11s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.7s); }
 #introOverlay.cut .gh { opacity: .16; }
+/* phones (profiled at 4x CPU throttle: the decoration was a third of the slow frames): three faint mascots that hold still, four drifting charges */
+@media (max-aspect-ratio: 4/5) {
+  #introOverlay .gh:nth-child(n+4), #introOverlay .pt:nth-child(n+5) { display: none; }
+  #introOverlay.sb .gh { animation: none; }
+}
 @keyframes gh-drift {
   from { transform: translate(-50%, -50%) translate(-1.2vmin, -1.5vmin) rotate(var(--r)); }
   to { transform: translate(-50%, -50%) translate(1.2vmin, 1.5vmin) rotate(var(--r)); } }
@@ -1330,6 +1337,19 @@
 @media (max-height: 520px) and (min-aspect-ratio: 3/2) {
   #introOverlay .in-start { left: 85%; bottom: 40%; }
 }
+/* First paint: on a bare home load (html.landing-pending, set by the inline gate in index.html) the page
+   starts on the intro's butter yellow while fonts, faces and scripts load. The scroll is locked, then the bar
+   fades (.ready) and the intro plays on the same yellow, so there is no colour jump and no dark flash. */
+html.landing-pending { overflow: hidden; overscroll-behavior: none; }
+html.landing-pending #introOverlay { visibility: visible; }
+#introLoad { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; pointer-events: none;
+  transition: opacity .35s ease; }
+#introLoad .il-bar { display: block; width: min(46vw, 11rem); height: .5rem; border-radius: 99px;
+  border: .17rem solid var(--ink); background: #fff; overflow: hidden; }
+#introLoad .il-bar i { display: block; width: 100%; height: 100%; background: var(--pk); border-radius: 99px;
+  transform: scaleX(.06); transform-origin: left center; transition: transform .25s ease-out; }
+#introLoad .il-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#introOverlay.ready #introLoad { opacity: 0; }
 /* reduced motion: the engine draws one static end frame; nothing may animate */
 #introOverlay.rm, #introOverlay.rm * { animation: none !important; transition: none !important; }
 
@@ -1561,7 +1581,8 @@ html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) 
 }
 
 /* ---- home page: hero scroll cue + the live examples ---- */
-.hero-full .hero-mascot { height: clamp(140px, 30vh, 240px); }
+.hero-full .hero-mascot { height: clamp(96px, 30vw, 132px); }
+@media (min-width: 641px) { .hero-full .hero-mascot { height: clamp(140px, 30vh, 240px); } }
 .scroll-cue { display: inline-flex; flex-direction: column; align-items: center; gap: .3rem; margin-top: .6rem;
   color: var(--text-faint); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; min-height: 44px; }
 .scroll-cue:hover { color: var(--pk-ink); }
@@ -1599,6 +1620,8 @@ html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) 
   .demo-opts { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 640px) {
+  .lp-shadow { left: -4rem; width: 8rem; }
+  .lp-ring { left: -5.5rem; top: -1.5rem; width: 11rem; height: 3rem; border-width: .28rem; }
   .hero-meta { font-size: .74rem; letter-spacing: .05em; white-space: nowrap; }
   .eq-strip { display: grid; grid-template-columns: 1fr 1fr; }
 }

@@ -13,10 +13,11 @@
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
     /* Boot dead-man switch — part of the ONE loader lifecycle owned by js/common.js.
        If the engine never comes up (a script failed to load or threw during
-       startup), show an error card with Retry and Home after 1500 ms. When
+       startup), show an error card with Retry and Home once the page has loaded
+       (and at least 1500 ms have passed). When
        common.js is alive this does nothing: its loader owns the experience and
        the page content is already on screen either way. */
-    setTimeout(function () {
+    function bootCheck() {
       if (window.EMC) return;
       var home = location.pathname.indexOf('/topics/') >= 0 ? '../index.html' : 'index.html';
       var d = document.createElement('div');
@@ -31,7 +32,16 @@
       d.appendChild(p1); d.appendChild(p2);
       (document.body || document.documentElement).appendChild(d);
       rb.addEventListener('click', function () { location.reload(); });
-    }, 1500);
+      /* the intro's yellow cover and scroll lock must not outlive a dead boot */
+      var ov = document.getElementById('introOverlay'); if (ov) ov.remove();
+      document.documentElement.classList.remove('landing-pending');
+    }
+    /* Look once the page's scripts have had their chance (window load), never before 1500 ms, and never
+       later than 12 s if the connection stalls: a slow network is not a failed boot. */
+    var bootT = setTimeout(bootCheck, 12000);
+    addEventListener('load', function () {
+      setTimeout(function () { clearTimeout(bootT); bootCheck(); }, Math.max(0, 1500 - (window.performance && performance.now ? performance.now() : 0)));
+    });
   </script>
   <title>2 · Electric Fields &amp; Coulomb's Law — EMC Lab</title>
   <link rel="canonical" href="https://emc-lab.vercel.app/topics/fields.html">

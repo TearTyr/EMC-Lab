@@ -27,9 +27,16 @@
   let drop = null, fx = null;
   const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
 
+  /* the browser chrome was butter yellow under the intro: back to the page's own colour */
+  function restoreChrome() {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta && window.EMC && window.EMC.PALETTE) meta.setAttribute('content', html.dataset.theme === 'light' ? window.EMC.PALETTE.paper : window.EMC.PALETTE.ink);
+  }
+
   function clear() {
     done = true;
     html.classList.remove('landing-pending', 'lp-land', 'lp-reveal', 'lp-rest');
+    restoreChrome();
     if (mascot) {
       if (drop) drop.cancel();
       mascot.style.transformOrigin = '';
@@ -131,6 +138,7 @@
   function onLand(e) {
     if (done) return;
     document.removeEventListener('emc:intro-land', onLand);
+    restoreChrome();
     const played = !(e && e.detail && e.detail.played === false);
     if (!played || !mascot || !mascot.animate || (window.EMC && window.EMC.reducedMotion)) { instant(); return; }
     if (stale) measure();
