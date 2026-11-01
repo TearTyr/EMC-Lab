@@ -708,7 +708,9 @@ window.EMC = (function () {
     function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0; }
 
     function build() {
-      if (overlay || !document.body) return;
+      /* the intro's own yellow cover and loading bar are already on screen: a dark overlay on top of them
+         would be the flash this page is built to avoid */
+      if (overlay || !document.body || document.documentElement.classList.contains('landing-pending')) return;
       const el = document.createElement('div');
       el.id = 'bootOverlay';
       el.setAttribute('role', 'status');
@@ -1261,7 +1263,8 @@ window.EMC = (function () {
       const apply = theme => {
         if (theme === 'light') root.dataset.theme = 'light'; else delete root.dataset.theme;
         if (btn) btn.setAttribute('aria-pressed', String(theme === 'light'));
-        if (meta) meta.setAttribute('content', theme === 'light' ? PALETTE.paper : PALETTE.ink);
+        /* while the intro covers the page the browser chrome stays butter yellow (js/landing.js restores it) */
+        if (meta && !root.classList.contains('landing-pending')) meta.setAttribute('content', theme === 'light' ? PALETTE.paper : PALETTE.ink);
       };
       apply(Prefs.get('theme', 'dark') === 'light' ? 'light' : 'dark');
       if (!btn) return;

@@ -13,10 +13,11 @@
     document.documentElement.classList.add('js'); /* gates the .reveal entrance: no JS, no hidden content */
     /* Boot dead-man switch — part of the ONE loader lifecycle owned by js/common.js.
        If the engine never comes up (a script failed to load or threw during
-       startup), show an error card with Retry and Home after 1500 ms. When
+       startup), show an error card with Retry and Home once the page has loaded
+       (and at least 1500 ms have passed). When
        common.js is alive this does nothing: its loader owns the experience and
        the page content is already on screen either way. */
-    setTimeout(function () {
+    function bootCheck() {
       if (window.EMC) return;
       var home = location.pathname.indexOf('/topics/') >= 0 ? '../index.html' : 'index.html';
       var d = document.createElement('div');
@@ -31,7 +32,16 @@
       d.appendChild(p1); d.appendChild(p2);
       (document.body || document.documentElement).appendChild(d);
       rb.addEventListener('click', function () { location.reload(); });
-    }, 1500);
+      /* the intro's yellow cover and scroll lock must not outlive a dead boot */
+      var ov = document.getElementById('introOverlay'); if (ov) ov.remove();
+      document.documentElement.classList.remove('landing-pending');
+    }
+    /* Look once the page's scripts have had their chance (window load), never before 1500 ms, and never
+       later than 12 s if the connection stalls: a slow network is not a failed boot. */
+    var bootT = setTimeout(bootCheck, 12000);
+    addEventListener('load', function () {
+      setTimeout(function () { clearTimeout(bootT); bootCheck(); }, Math.max(0, 1500 - (window.performance && performance.now ? performance.now() : 0)));
+    });
   </script>
   <title>EMC Lab · Interactive Electricity Tutorial</title>
   <link rel="canonical" href="https://emc-lab.vercel.app/">
@@ -60,8 +70,8 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="icon" href="img/mascot.png" type="image/png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-  <!-- Landing sequence gate: on a bare home load (no hash route, no reduced motion, no ?t= freeze) the hero text and nav stay hidden until the intro hands the page back (js/landing.js always clears this, with failsafes). Never set without JS. -->
-  <script>(function(){var d=document.documentElement,h=location.hash;if((!h||h==='#/')&&!/[?&]t=/.test(location.search)&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('landing-pending');setTimeout(function(){d.classList.remove('landing-pending')},45000)}})();</script>
+  <!-- Landing sequence gate: on a bare home load the page starts on the intro's butter yellow (css: html.landing-pending shows #introOverlay at once, scroll locked) while everything the intro needs loads; the intro then fades the bar and plays. Set only when there is no hash route, no reduced motion and no ?t= freeze. The hero text and nav stay hidden until the intro hands the page back (js/landing.js always clears this, with failsafes). Never set without JS. -->
+  <script>(function(){var d=document.documentElement,h=location.hash;if((!h||h==='#/')&&!/[?&]t=/.test(location.search)&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('landing-pending');var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content','#fcefaa');setTimeout(function(){d.classList.remove('landing-pending')},45000)}})();</script>
   <link rel="stylesheet" href="css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
   <link rel="stylesheet" href="css/fonts.css">
@@ -116,6 +126,7 @@
        reduced motion gets the static end frame, images fetch only on play.
        Dev tuning: index.html?t=5.5 freezes any frame. -->
   <div id="introOverlay" aria-label="EMC Lab introduction">
+    <div id="introLoad" role="status"><span class="il-bar" aria-hidden="true"><i id="ilFill"></i></span><span class="il-sr">Loading EMC Lab</span></div>
     <div id="sw"><canvas id="bg" role="img" aria-label="Animated background" aria-hidden="true"></canvas></div>
     <div id="ghosts" aria-hidden="true">
       <img class="a gh" alt="" width="409" height="415" style="left:7%;top:20%;--r:-12deg;--i:0"><img class="a gh" alt="" width="409" height="415" style="left:17%;top:68%;--r:9deg;--i:1"><img class="a gh" alt="" width="409" height="415" style="left:93%;top:22%;--r:12deg;--i:2"><img class="a gh" alt="" width="409" height="415" style="left:84%;top:72%;--r:-8deg;--i:3"><img class="a gh" alt="" width="409" height="415" style="left:50%;top:6%;--r:0deg;--i:4"><img class="a gh" alt="" width="409" height="415" style="left:4%;top:88%;--r:6deg;--i:5">
@@ -132,9 +143,9 @@
         <b class="a dig" id="dg" style="left:50%;top:56%"></b>
       </div>
       <div id="B">
-        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:30%"><img id="sp" width="409" height="415" alt=""><img id="fo" width="409" height="415" alt=""><img id="hp" width="409" height="415" alt=""></div>
-        <i class="a" id="rg" style="left:50%;top:30%"></i>
-        <b class="a el" style="left:50%;top:30%;background:#a8d3e0"></b><b class="a el" style="left:50%;top:30%;background:#f8aebe"></b><b class="a el" style="left:50%;top:30%;background:#b5d777"></b>
+        <div class="a" id="mk" role="img" aria-label="EMC Lab mascot" style="left:50%;top:var(--my)"><img id="sp" width="409" height="415" alt=""><img id="fo" width="409" height="415" alt=""><img id="hp" width="409" height="415" alt=""></div>
+        <i class="a" id="rg" style="left:50%;top:var(--my)"></i>
+        <b class="a el" style="left:50%;top:var(--my);background:#a8d3e0"></b><b class="a el" style="left:50%;top:var(--my);background:#f8aebe"></b><b class="a el" style="left:50%;top:var(--my);background:#b5d777"></b>
         <div class="a" id="ttl" style="left:50%;top:57%"></div>
         <div class="a" id="sub" style="left:50%;top:70%">Electric Forces, Fields &amp; Circuits</div>
         <div id="row"><div class="chip" style="background:#a8d3e0">Circuit Builder</div>

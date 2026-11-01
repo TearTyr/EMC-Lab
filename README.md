@@ -41,6 +41,7 @@ Serve the folder with any static server, for example `python3 -m http.server`, a
 | Command | What it checks |
 |---|---|
 | `npm run check` | Links and ids, detail-toggle parity, scope and network purity, physics values |
+| `node tools/check.mjs palette` | Every colour comes from the tokens in `css/input.css` or `EMC.PALETTE`; nothing off-palette |
 | `npm run check:physics` | Lecture values, all quiz answers, force softening, banned wording |
 | `npm test` | Full runtime test of both chapters, the simulations, the quiz and progress |
 | `npm run test:browsers` | Core flows in Chrome, Firefox and Edge (needs those browsers installed) |
@@ -104,7 +105,8 @@ bubble and never blocks input. New class names used only in `mascot.js` must sta
 ### Landing intro
 
 The intro (`js/intro.js`) plays on every full load or refresh of the bare landing page
-(`/` or `index.html`). Nothing is stored to remember it, so repeat visits see it again.
+(`/` or `index.html`). The page starts on the intro's butter yellow with a small loading bar while
+the font, the faces and the scripts load (8 s at most); then the bar fades and the intro plays. Nothing is stored to remember it, so repeat visits see it again.
 It never runs on chapter routes (`#/ch1`, `#/ch2`) or other pages. While it plays the rest of
 the page is inert; only the **Skip intro** button, the **Start** button (from ~15 s) or
 **Escape** end it early. `npm run intro-verify` tests this contract. Other browser scripts
