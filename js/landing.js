@@ -51,11 +51,13 @@
   function splitTitle() {
     if (!title || title.querySelector('.lp-ch')) return;
     const text = title.textContent;
+    const lab = title.querySelector('em');                  // the pink word keeps its colour per letter
+    const chars = [...title.childNodes].flatMap(n => [...n.textContent].map(c => [c, n === lab]));
     title.setAttribute('aria-label', text);
     title.textContent = '';
-    [...text].forEach((c, j) => {
+    chars.forEach(([c, pink], j) => {
       const s = document.createElement('span');
-      s.className = 'lp-ch'; s.setAttribute('aria-hidden', 'true');
+      s.className = 'lp-ch' + (pink ? ' lp-lab' : ''); s.setAttribute('aria-hidden', 'true');
       s.textContent = c === ' ' ? ' ' : c;
       s.style.setProperty('--j', j);
       title.appendChild(s);

@@ -1133,7 +1133,7 @@ async function smoke(h) {
       /Sitemap: https:\/\/emc-lab\.vercel\.app\/sitemap\.xml/.test(robotsTxt));
     const buildSrc = readFileSync(join(ROOT, 'tools/build.mjs'), 'utf8');
     ok('the deploy allow-list ships robots.txt + favicon.ico and fails the build without them',
-      /'robots\.txt',\n  'favicon\.ico'/.test(buildSrc) &&
+      /'robots\.txt',\r?\n  'favicon\.ico'/.test(buildSrc) &&
       (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'robots.txt'")) &&
       (buildSrc.match(/MUST_EXIST = \[[\s\S]*?\]/)[0].includes("'favicon.ico'")));
     ok('the generated sitemap carries lastmod stamps',

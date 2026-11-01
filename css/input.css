@@ -1272,25 +1272,25 @@
 #introOverlay .chip { opacity: 0; font: 700 var(--cf) theme('fontFamily.sans'); padding: 1cqw 2.4cqw;
   border-radius: 99cqw; border: .55cqw solid #17181c; color: #17181c; white-space: nowrap; }
 
-/* the flying lettering: white fill, dark outline, pink then dark stacked shadow.
+/* the flying lettering: plain white text with one bold dark outline, nothing else
+   (the same simple look as the title and the header brand).
    Only the phrase on screen (.kg.on) is in the render tree; #kw.meas shows all of
    them for the one-off measuring pass. */
 #introOverlay #kw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 #introOverlay .kg { display: none; position: absolute; inset: 0; }
 #introOverlay .kg.on, #introOverlay #kw.meas .kg { display: block; }
 #introOverlay .kg.on .kw.m { will-change: transform; }
-#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em; font-style: italic;
-  color: #fff; -webkit-text-stroke: 1cqw #17181c; paint-order: stroke fill;
-  text-shadow: -.5cqw .5cqw 0 #e8507a, -1cqw 1cqw 0 #e8507a, -1.4cqw 1.4cqw 0 #17181c;
+#introOverlay .kw { font: 800 var(--s, 20cqw)/1 theme('fontFamily.sans'); letter-spacing: .05em;
+  color: #fff; -webkit-text-stroke: 1.8cqw #17181c; paint-order: stroke fill;
   white-space: nowrap; text-align: center; }
-#introOverlay .kw sup, #introOverlay .kw sub { font-size: .55em; line-height: 0; font-style: italic; }
-/* G8321 has no fraction bar or arrow glyph: both are drawn in the same lettering */
+#introOverlay .kw sup, #introOverlay .kw sub { font-size: .55em; line-height: 0; }
+/* G8321 has no fraction bar or arrow glyph: both are drawn as white shapes with the same outline */
 #introOverlay .fb { display: block; width: 3.4em; height: .15em; margin: .12em 0; border-radius: .08em; background: #fff;
-  box-shadow: 0 0 0 .035em #17181c, -.035em .035em 0 .035em #e8507a, -.07em .07em 0 .035em #e8507a, -.105em .105em 0 .035em #17181c; }
+  box-shadow: 0 0 0 .07em #17181c; }
 #introOverlay .ar { display: inline-block; width: 1.6em; height: .8em; vertical-align: -.1em; overflow: visible; fill: none;
-  stroke-linecap: round; stroke-linejoin: round; font-style: normal; }
-#introOverlay .ar .s3 { stroke: #17181c; stroke-width: 13; transform: translate(-3px, 3px); }
-#introOverlay .ar .s2 { stroke: #e8507a; stroke-width: 9; transform: translate(-1.5px, 1.5px); }
+  stroke-linecap: round; stroke-linejoin: round; }
+#introOverlay .ar .s3 { stroke: #17181c; stroke-width: 13; }
+#introOverlay .ar .s2 { display: none; }
 #introOverlay .ar .s1 { stroke: #fff; stroke-width: 5; }
 #introOverlay .spk { width: 1.6cqw; height: 1.6cqw; z-index: 7; }
 
@@ -1487,7 +1487,8 @@ html.mx-paused .tc * { animation-play-state: paused; }
 .hero-full { min-height: calc(100vh - var(--header-h)); min-height: calc(100svh - var(--header-h));
   display: grid; align-items: center; padding-block: 1.5rem; }
 .hero-full .h-hero { font-size: clamp(3.2rem, 13vw, 7.2rem); line-height: 1; margin: .2rem 0 0;
-  color: var(--text); text-shadow: -.035em .035em 0 var(--pk), -.07em .07em 0 var(--pk-e); }
+  color: var(--text); -webkit-text-stroke: .1em var(--edge); paint-order: stroke fill; }   /* the header brand's look: cream "EMC", pink "Lab", one bold outline in the mascot's outline grey */
+.hero-full .h-hero em, .hero-full .h-hero .lp-lab { font-style: normal; color: var(--pk-ink); }
 .hero-tag { margin: 0; font-size: clamp(1.05rem, 2.6vw, 1.4rem); color: var(--text-dim); }
 .hero-meta { margin: .3rem 0 0; font-size: .86rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
 .hero-meta span { color: var(--pk-ink); font-weight: 700; }
