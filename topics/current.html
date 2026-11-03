@@ -166,7 +166,7 @@
   </header>
 
   <main class="emc-main" id="main" tabindex="-1">
-    <div class="wrap wrap-narrow section-tight topic-head">
+    <div class="wrap wrap-narrow section-tight topic-head ch-head">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Chapter 1 · Circuits &amp; Ohm’s Law</span>
@@ -190,6 +190,51 @@
         <figcaption class="small muted">One loop, one current: the battery pushes, the bulb tells the truth in watts.</figcaption>
       </figure>
 
+      <ol class="lesson-cards" aria-label="Lessons in this chapter" data-mx="corner">
+        <li><a class="lc" href="#quantities">
+          <span class="lc-num" aria-hidden="true">1.1</span>
+          <span class="lc-title">Current, voltage and resistance</span>
+          <p data-detail="tech">I = ΔQ/Δt, V = W/Q and R = V/I: the three definitions the whole chapter leans on.</p>
+          <p data-detail="plain">What current, voltage and resistance mean, with a water-pipe picture.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#ohm">
+          <span class="lc-num" aria-hidden="true">1.2</span>
+          <span class="lc-title">Ohm’s law</span>
+          <p data-detail="tech">V = IR and P = IV: find any one quantity from the other two, and see where the heat goes.</p>
+          <p data-detail="plain">Turn the voltage up and more flows. Resistance holds it back. Power is how fast energy gets used.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#networks">
+          <span class="lc-num" aria-hidden="true">1.3</span>
+          <span class="lc-title">Series and parallel</span>
+          <p data-detail="tech">Series: R = ΣR<sub>i</sub>. Parallel: 1/R = Σ1/R<sub>i</sub>. Reduce any network one step at a time.</p>
+          <p data-detail="plain">Resistors in a row or side by side, and how to swap many of them for one.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#sim-ohm-panel">
+          <span class="lc-num" aria-hidden="true">1.4</span>
+          <span class="lc-title">Ohm’s law calculator</span>
+          <p data-detail="tech">Set V and R and read I, P and the I–V line live.</p>
+          <p data-detail="plain">Turn two dials and watch the bulb and the numbers change.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#sim-circuit-panel">
+          <span class="lc-num" aria-hidden="true">1.5</span>
+          <span class="lc-title">Circuit builder</span>
+          <p data-detail="tech">Wire a battery, resistors and a bulb in series or parallel and read every current and voltage.</p>
+          <p data-detail="plain">Build your own circuit like a kit and find out if the bulb lights.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#check">
+          <span class="lc-num" aria-hidden="true">1.6</span>
+          <span class="lc-title">Check your understanding</span>
+          <p data-detail="tech">Short questions on V = IR, power and network reduction, marked against the lecture’s values.</p>
+          <p data-detail="plain">A few questions to see what stuck.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+      </ol>
+
       <div class="card mt-4">
         <h2 class="h-sub" style="margin-top:0" data-mx="slam">Learning objectives</h2>
         <ul class="objectives" data-mx="lines">
@@ -203,7 +248,7 @@
     </div>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec reveal" id="quantities">1.1 · Current, voltage and resistance</h2>
+      <h2 class="h-sec" id="quantities" data-mx="slam">1.1 · Current, voltage and resistance</h2>
       <p data-detail="plain">Voltage (volts) is energy transferred per unit charge. Current (amperes) is charge passing a point per second. Resistance (ohms) is how strongly a component opposes current.</p>
       <p data-detail="tech">Three definitions carry the whole chapter: current I = ΔQ/Δt in amperes (one coulomb per second is 6.24×10<sup>18</sup> electrons/s), potential difference V = W/Q in volts (joules delivered per coulomb), and resistance R = V/I in ohms. For a uniform wire R = ρL/A — resistance grows with length and shrinks with cross-section.</p>
       <dl class="defs">
@@ -239,7 +284,7 @@
         </div>
       </details>
 
-      <h2 class="h-sec reveal" id="ohm">1.2 · Ohm’s law</h2>
+      <h2 class="h-sec" id="ohm" data-mx="slam">1.2 · Ohm’s law</h2>
       <p data-detail="plain">Ohm’s law is V = IR. For a conductor that obeys it (many metals at constant temperature), doubling V doubles I, and doubling R halves I. Power is how fast energy is converted.</p>
       <div class="formula">
         <span class="eq" data-display data-tex="V = IR">V = I · R</span>
@@ -271,7 +316,7 @@
         <p class="mono small">R = V/I = 12/3 = <b>4 Ω</b> &nbsp;&nbsp; P = VI = 12 × 3 = <b>36 W</b> &nbsp;&nbsp; check: I<sup>2</sup>R = 9 × 4 = 36 W ✓</p>
       </div>
 
-      <h2 class="h-sec reveal" id="networks">1.3 · Series and parallel circuits</h2>
+      <h2 class="h-sec" id="networks" data-mx="slam">1.3 · Series and parallel circuits</h2>
       <p data-detail="plain">Series: one path, so resistances add — R<sub>eq</sub> = R<sub>1</sub> + R<sub>2</sub> + … is always larger than the biggest single resistor. Parallel: extra paths, so 1/R<sub>eq</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub> + … is always smaller than the smallest branch. Reduce a mixed network step by step.</p>
       <p data-detail="tech">In series the same current flows through every element and the voltages divide in proportion to R (one I in V = IR for all). In parallel every element shares the same voltage and the currents divide in inverse proportion to R — equivalently, conductances add: 1/R<sub>eq</sub> = Σ 1/R<sub>i</sub>. A mixed network reduces by collapsing the innermost series or parallel group first, then working outwards, redrawing at every step.</p>
       <figure class="fig reveal">
@@ -400,7 +445,7 @@
         </div>
       </details>
 
-      <h2 class="h-sec reveal" id="sim-ohm-panel" style="scroll-margin-top:5rem">1.4 · Simulation — Ohm’s law calculator</h2>
+      <h2 class="h-sec" id="sim-ohm-panel" data-mx="slam" style="scroll-margin-top:5rem">1.4 · Simulation — Ohm’s law calculator</h2>
       <p class="sim-hint tiny faint">Two controls — V and R — and one oversized answer: the current. The charge dots crawl the loop at exactly that speed.</p>
       <p data-detail="plain">Move the voltage and resistance sliders (or type exact values). The big current readout and the crawling dots <em>are</em> Ohm’s law: current = voltage ÷ resistance.</p>
       <p data-detail="tech">
@@ -458,7 +503,7 @@
     </section>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec reveal" id="sim-circuit-panel" style="scroll-margin-top:5rem">1.5 · Simulation — circuit builder</h2>
+      <h2 class="h-sec" id="sim-circuit-panel" data-mx="slam" style="scroll-margin-top:5rem">1.5 · Simulation — circuit builder</h2>
       <p class="sim-hint tiny faint">Drag the battery, resistors and the bulb from the palette onto the loop — six sockets, one wire. Drag a part off the bench to remove it; the keyboard path arms a part, then places it on a socket.</p>
       <p data-detail="plain">One loop, one current: every part you add sits in the same wire, so resistances add and the current falls. The bulb glows with the power it dissipates.</p>
       <p data-detail="tech">
@@ -512,7 +557,7 @@
     </section>
 
     <section class="section wrap wrap-narrow prose">
-      <h2 class="h-sec reveal" id="check">1.6 · Check your understanding</h2>
+      <h2 class="h-sec" id="check" data-mx="slam">1.6 · Check your understanding</h2>
 
       <details class="check">
         <summary>Three 9 Ω resistors are available. What is the largest and the smallest equivalent resistance you can make using all three?</summary>
@@ -595,6 +640,7 @@
   <script defer src="../js/common.js"></script>
   <script defer src="../js/mascot.js"></script>
   <script defer src="../js/motion.js"></script>
+  <script defer src="../js/chapter-nav.js"></script>
   <script defer src="../js/sim-ohm.js"></script>
   <script defer src="../js/sim-circuit.js"></script>
 </body>

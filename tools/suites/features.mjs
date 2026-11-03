@@ -793,9 +793,12 @@ async function interact(h) {
   /* ---- Arena: mouse drag moves a charge and updates the real readouts ---- */
   {
     const { ctx, pg } = await page(B + '/topics/fields.html');
+    /* the preset centres on the canvas as it is now. Clicking it scrolls the button into view, which can leave the (taller)
+       canvas below the fold, so jump back to the canvas (instant: the page's smooth scroll would still be moving) */
+    const toArena = () => pg.evaluate(() => document.getElementById('sim-arena').scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await toArena(); await pg.waitForTimeout(400);
     await pg.click('[data-sb-preset="pair"]');
-    await pg.locator('#sim-arena').scrollIntoViewIfNeeded();
-    await pg.waitForTimeout(300);
+    await toArena(); await pg.waitForTimeout(400);
     const bb = await pg.locator('#sim-arena').boundingBox();
     // preset "pair" zooms x2 about (1.35 m, 0.60 m): q1 lands near 40%/50% of
     // the canvas, q2 near 60%/50%
@@ -978,9 +981,104 @@ async function interact(h) {
   console.log(h.failed() === 0 ? 'INTERACTION TESTS PASS' : h.failed() + ' FAILURES');
 }
 
+/* ==========================================================================
+   EMC Lab — the chapter pages (js/chapter-nav.js, the lesson cards, the simulation panel layout).
+     1 every lesson card links to a lesson that exists, and the lesson wire has one dot per lesson
+     2 scrolling to each lesson lights its dot and fills the wire down to it
+     3 the Details switch changes every card's description (technical and plain differ, neither empty)
+     4 the Rub the Balloon canvas fills its column: no empty band under it (it left one at wide sizes)
+     5 phones: nothing scrolls sideways, the wire is not shown, the cards stack
+     6 same-page mount: one wire, gone when you leave, still one after coming back (no duplicates)
+   ========================================================================== */
+async function chapters(h) {
+  const { ok, B, browser, skipIntroOnLoad } = h;
+  const errors = [];
+  async function open(url, opts = {}) {
+    const ctx = await browser.newContext(Object.assign({ viewport: { width: 1440, height: 900 } }, opts));
+    const pg = await ctx.newPage();
+    pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
+    pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+    await pg.addInitScript(skipIntroOnLoad);
+    await pg.goto(B + url, { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    return { ctx, pg };
+  }
+  const to = (pg, id) => pg.evaluate(i => { const e = document.getElementById(i); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 140, behavior: 'instant' }); }, id);
+
+  for (const [url, name, want] of [['/topics/current.html', 'Circuits', 6], ['/topics/fields.html', 'Fields', 3]]) {
+    const { ctx, pg } = await open(url);
+    /* 1 */
+    const info = await pg.evaluate(() => ({
+      cards: [...document.querySelectorAll('.lc')].map(a => ({ href: a.getAttribute('href'), ok: !!document.getElementById(a.getAttribute('href').slice(1)) })),
+      dots: document.querySelectorAll('.lw-chapter li').length
+    }));
+    ok(`1 ${name}: ${want} lesson cards, each linking to a lesson that exists, and one wire dot per lesson`,
+      info.cards.length === want && info.cards.every(c => c.ok) && info.dots === want, JSON.stringify(info).slice(0, 200));
+    /* 2 */
+    const ids = info.cards.map(c => c.href.slice(1)), lit = [];
+    for (const id of ids) {
+      await to(pg, id);
+      await pg.waitForTimeout(450);
+      lit.push(await pg.evaluate(() => { const l = [...document.querySelectorAll('.lw-chapter a')]; return { cur: l.findIndex(a => a.classList.contains('cur')), fill: getComputedStyle(document.querySelector('.lw-chapter ol'), '::after').transform }; }));
+    }
+    ok(`2 ${name}: scrolling to each lesson lights its dot in order`, lit.every((x, i) => x.cur === i), JSON.stringify(lit.map(x => x.cur)));
+    ok(`2 ${name}: the wire fills down to the lit lesson (the last one is filled all the way)`, lit[lit.length - 1].fill !== 'none' && /matrix\(1, 0, 0, 1,/.test(lit[lit.length - 1].fill), lit[lit.length - 1].fill);
+    /* 3 */
+    await pg.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    const read = () => pg.evaluate(() => [...document.querySelectorAll('.lc')].map(a => [...a.querySelectorAll('p')].filter(p => getComputedStyle(p).display !== 'none').map(p => p.textContent.trim()).join('|')));
+    const a = await read();
+    await pg.click('#detailToggle'); await pg.waitForTimeout(500);
+    const b = await read();
+    ok(`3 ${name}: the Details switch changes every card's description (neither version empty)`,
+      a.length === want && a.every((t, i) => t.length > 20 && b[i].length > 20 && t !== b[i]), a[0].slice(0, 30) + ' / ' + b[0].slice(0, 30));
+    await ctx.close();
+  }
+
+  /* 4: the balloon canvas fills its column */
+  {
+    const { ctx, pg } = await open('/topics/fields.html');
+    await pg.evaluate(() => document.getElementById('toy-balloon-panel').scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await pg.waitForTimeout(900);
+    const g = await pg.evaluate(() => { const c = document.getElementById('toy-balloon').getBoundingClientRect(), cell = document.getElementById('toy-balloon').closest('.sim-grid').firstElementChild.getBoundingClientRect(), ctl = document.querySelector('#toy-balloon-panel .panel-body').getBoundingClientRect();
+      return { canvasBottom: Math.round(c.bottom), cellBottom: Math.round(cell.bottom), controlsBottom: Math.round(ctl.bottom), w: Math.round(c.width), h: Math.round(c.height) }; });
+    ok('4 the Rub the Balloon canvas reaches the bottom of its column (no empty band under it)', Math.abs(g.canvasBottom - g.cellBottom) <= 4 && g.h >= 300, JSON.stringify(g));
+    await ctx.close();
+  }
+
+  /* 5: phone */
+  {
+    const { ctx, pg } = await open('/topics/fields.html', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const g = await pg.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth, wire: getComputedStyle(document.querySelector('.lw-chapter')).display,
+      widths: [...document.querySelectorAll('.lc')].map(a => Math.round(a.getBoundingClientRect().width)) }));
+    ok('5 phone: no sideways scroll, no lesson wire, cards stack at full width', g.sw <= g.iw && g.wire === 'none' && g.widths.every(w => w >= g.iw - 60), JSON.stringify(g));
+    await ctx.close();
+  }
+
+  /* 6: same-page mount */
+  {
+    const { ctx, pg } = await open('/index.html');
+    const settled = (hiddenTopic) => pg.waitForFunction(ht => document.getElementById('shell-topic').hidden === ht && !document.querySelector('.tc'), hiddenTopic, { timeout: 9000 });
+    await pg.click('a[data-topic-link="ch2"]'); await settled(false);
+    await pg.waitForTimeout(500);
+    const first = await pg.evaluate(() => document.querySelectorAll('#shell-topic .lw-chapter').length);
+    await pg.evaluate(() => { location.hash = '#/'; }); await settled(true);
+    const gone = await pg.evaluate(() => document.querySelectorAll('.lw-chapter').length);
+    await pg.evaluate(() => { location.hash = '#/ch2'; }); await settled(false);
+    await pg.waitForTimeout(500);
+    const again = await pg.evaluate(() => document.querySelectorAll('.lw-chapter').length);
+    ok('6 same-page mount: one lesson wire, none left behind on Home, still exactly one when the chapter is opened again', first === 1 && gone === 0 && again === 1, JSON.stringify({ first, gone, again }));
+    await ctx.close();
+  }
+
+  console.log('console/page errors:', errors.length ? errors.slice(0, 6) : 'none');
+  if (errors.length) h.fail(errors.length);
+  console.log(h.failed() === 0 ? 'CHAPTERS PASS' : h.failed() + ' CHAPTERS FAILURES');
+}
+
 export const suites = {
   quiz: { about: 'quiz flow, scoring, resume, results', browser: true, run: quiz },
   sims: { about: 'simulation behaviour, sandboxes, lifecycle', browser: true, run: sims },
   values: { about: 'lecture check values against the live UI', browser: true, run: values },
-  interact: { about: 'drives sims, canvases and controls with real pointer input', browser: true, run: interact }
+  interact: { about: 'drives sims, canvases and controls with real pointer input', browser: true, run: interact },
+  chapters: { about: 'chapter pages: lesson cards, lesson wire, Details, sim panel layout, phone, same-page mount', browser: true, run: chapters }
 };
