@@ -293,7 +293,7 @@
   }
   .nav-toggle span { display: block; width: 18px; height: 2.5px; margin: 3.5px auto; background: var(--text); border-radius: 2px; }
   .scroll-progress { position: absolute; left: 0; bottom: -1.5px; height: 3px; width: 100%; }
-  .scroll-progress i { display: block; height: 100%; width: 0%; background: var(--sk); }
+  .scroll-progress i { display: block; height: 100%; width: 100%; background: var(--sk); transform: scaleX(0); transform-origin: 0 50%; }
 
   /* -- stickers: buttons, segments, tags --------------------------------- */
   .btn {
@@ -1325,6 +1325,7 @@
 #introOverlay .in-start.on { pointer-events: auto; }
 /* Phone portrait: the centred CTA would sit on top of Skip, so lift it above */
 @media (max-aspect-ratio: 4/5) and (max-width: 520px) {
+  #introOverlay #st { --mk: 42cqw; }
   #introOverlay .in-start { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
 }
 /* Short landscape: the stage is a square with free space on both sides and no
@@ -1452,53 +1453,95 @@ html.landing-pending #introOverlay { visibility: visible; }
 .ch-art figcaption { margin-top: .45rem; }
 
 /* ==========================================================================
-   Title-card transitions (js/motion.js cover()/uncover()).
-   Every page / chapter boundary is a text-motion moment: the destination's
-   name slams in letter by letter in the intro's lettering (G8321 Bold, plain
-   white fill, one bold dark outline) over a pink and a yellow slash
-   bar, then whips out. Bars use the site tokens (--bg, --pk, --ye).
-   transform/opacity only; the card
-   blocks clicks while it covers. Reduced motion never creates the card. */
-.tc { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
-  overflow: hidden; pointer-events: auto; contain: layout paint style; }
-.tc::before { content: ""; position: absolute; inset: 0; background: var(--bg);
-  opacity: 0; will-change: opacity; }
-.tc-bar { position: absolute; left: -10%; top: 50%; width: 120%; height: 18vmin;
-  margin-top: -9vmin; background: var(--pk); transform: translateX(-110%) rotate(-5deg);
-  will-change: transform; }
-.tc-bar2 { height: 3.2vmin; margin-top: 8vmin; background: var(--ye);
-  transform: translateX(110%) rotate(-5deg); }
+   Page transitions: change the channel (js/motion.js cover()/uncover()).
+   COVER  two shutters close on a bright line (a TV switching off), static fills the screen, three comic
+          panels slam in carrying the destination's name, Denki-chan and an on-screen tag (CH 02 ...).
+   HOLD   fully covered for a fixed minimum; the arriving page starts here (.hold) with no animation.
+   REVEAL the panels slide out, the static drops and the shutters open on the new page.
+   The same length however fast the page loads. Lettering is the intro's: G8321 Bold, plain white fill,
+   one bold dark outline. Colours are tokens only (ink, pink, sky, yellow); no gradients, no filters.
+   transform and opacity only; the card blocks clicks while it covers and is never created under
+   reduced motion. html.tc-arrive (head gate) paints the first frame of an arriving page. */
+html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; background: var(--ink); }
+.tc { position: fixed; inset: 0; z-index: 80; overflow: hidden; pointer-events: auto; contain: layout paint style; }
+.tc-sh { position: absolute; left: 0; right: 0; height: 50.5%; background: var(--ink); will-change: transform; }
+.tc-top { top: 0; transform: translate3d(0, -100%, 0); }
+.tc-bot { bottom: 0; transform: translate3d(0, 100%, 0); }
+.tc-ns { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; opacity: 0; }
+.tc-ns:nth-of-type(2) { --k: 1; }
+.tc-ns:nth-of-type(3) { --k: 2; }
+.tc-line { position: absolute; left: 0; right: 0; top: 50%; height: .7vmin; margin-top: -.35vmin; background: var(--ye);
+  opacity: 0; transform: scaleX(0); }
+.tc-stage { position: absolute; inset: 0; display: grid; place-items: center; }
+.tc-stage > * { grid-area: 1 / 1; }
+.tc-pan { display: block; border: .8vmin solid var(--ink); opacity: 0; will-change: transform; }
+.tc-p1 { --tx: 0vw; --ty: -1vmin; --rot: -4deg; --fx: -110vw; width: min(92vw, 76rem); height: clamp(6rem, 30vmin, 17rem); background: var(--pk); }
+.tc-p2 { --tx: 14vw; --ty: 19vmin; --rot: 3deg; --fx: 110vw; width: min(56vw, 34rem); height: clamp(2.6rem, 9vmin, 5rem); background: var(--sk); }
+.tc-p3 { --tx: -12vw; --ty: -20vmin; --rot: -3deg; --fx: -110vw; width: min(64vw, 44rem); height: 3.2vmin; background: var(--ye); }
+.tc-main { position: relative; display: flex; justify-content: center; transform: translate3d(0, -1vmin, 0) rotate(-4deg); }
+.tc-face { position: absolute; right: -5vmin; top: -11vmin; width: clamp(3.6rem, 12vmin, 6.5rem); height: auto; opacity: 0; }
 .tc-word { position: relative; display: flex; font-family: theme('fontFamily.title'); font-weight: 700;
-  font-size: clamp(3.2rem, 15vmin, 10rem); line-height: 1; letter-spacing: .01em; color: #fff;
-  -webkit-text-stroke: .14em var(--ink); paint-order: stroke fill;   /* the intro's lettering: plain fill, one bold outline */
-  white-space: nowrap; }
+  font-size: clamp(2.8rem, 12vmin, 8.5rem); line-height: 1; letter-spacing: .01em; color: #fff;
+  -webkit-text-stroke: .14em var(--ink); paint-order: stroke fill; white-space: nowrap; }
 .tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
-  transform: translateY(-.5em) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
+  transform: translate3d(0, -.5em, 0) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
+.tc-osd { position: absolute; left: 3.5vmin; top: 3.5vmin; padding: .55em .9em; border-left: .8vmin solid var(--ye); background: var(--ink);
+  color: var(--on-plate); font-weight: 700; font-size: clamp(.8rem, 2.2vmin, 1.2rem); letter-spacing: .14em; opacity: 0; }
+
 /* cover */
-.tc.on::before { animation: tc-bg .16s ease-out forwards; }
-.tc.on .tc-bar { animation: tc-bar-in .24s cubic-bezier(.2,.9,.25,1) forwards; }
-.tc.on .tc-bar2 { animation: tc-bar2-in .26s cubic-bezier(.2,.9,.25,1) .04s forwards; }
-.tc.on .tc-word span { animation: tc-slam .26s cubic-bezier(.2,1.4,.4,1) calc(var(--i) * 36ms + 60ms) forwards; }
-/* held: the arriving page starts already covered (no animation) */
-.tc.hold::before { opacity: 1; }
-.tc.hold .tc-bar { transform: translateX(0) rotate(-5deg); }
-.tc.hold .tc-bar2 { transform: translateX(0) rotate(-5deg); }
+.tc.on .tc-top { animation: tc-top-in .2s cubic-bezier(.6, 0, .9, .4) forwards; }
+.tc.on .tc-bot { animation: tc-bot-in .2s cubic-bezier(.6, 0, .9, .4) forwards; }
+.tc.on .tc-line { animation: tc-line .44s ease-out .1s forwards; }
+.tc.on .tc-ns { animation: tc-nz .21s steps(1) calc(.2s + var(--k, 0) * .07s) infinite; }
+.tc.on .tc-pan { animation: tc-pan-in .24s cubic-bezier(.2, 1.2, .3, 1) .26s forwards; }
+.tc.on .tc-p2 { animation-delay: .32s; }
+.tc.on .tc-p3 { animation-delay: .38s; }
+.tc.on .tc-word span { animation: tc-slam .24s cubic-bezier(.2, 1.4, .4, 1) calc(var(--i) * 22ms + 300ms) forwards; }
+.tc.on .tc-face { animation: tc-face-in .24s cubic-bezier(.2, 1.4, .4, 1) .42s forwards; }
+.tc.on .tc-osd { animation: tc-fade-in .16s ease-out .3s forwards; }
+/* held: the arriving page starts already covered (no entrance, the static keeps flickering) */
+.tc.hold .tc-sh { transform: none; }
+.tc.hold .tc-ns { animation: tc-nz .21s steps(1) calc(var(--k, 0) * .07s) infinite; }
+.tc.hold .tc-pan { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); }
 .tc.hold .tc-word span { opacity: 1; transform: none; }
-/* reveal: letters whip up and away, bars sweep off, the page shows through */
+.tc.hold .tc-face { opacity: 1; transform: rotate(8deg); }
+.tc.hold .tc-osd { opacity: 1; }
+/* reveal: the panels slide off, the static drops, the shutters open on the new page */
 .tc.out { pointer-events: none; }
-.tc.out::before { opacity: 1; animation: tc-bg-out .26s ease-in .1s forwards; }
-.tc.out .tc-bar { transform: translateX(0) rotate(-5deg); animation: tc-bar-out .28s cubic-bezier(.6,0,.8,.4) .06s forwards; }
-.tc.out .tc-bar2 { transform: translateX(0) rotate(-5deg); animation: tc-bar2-out .28s cubic-bezier(.6,0,.8,.4) forwards; }
-.tc.out .tc-word span { opacity: 1; transform: none; animation: tc-whip .22s cubic-bezier(.5,0,.9,.4) calc(var(--i) * 22ms) forwards; }
-@keyframes tc-bg { to { opacity: 1; } }
-@keyframes tc-bg-out { to { opacity: 0; } }
-@keyframes tc-bar-in { to { transform: translateX(0) rotate(-5deg); } }
-@keyframes tc-bar2-in { to { transform: translateX(0) rotate(-5deg); } }
-@keyframes tc-bar-out { to { transform: translateX(120%) rotate(-5deg); } }
-@keyframes tc-bar2-out { to { transform: translateX(-120%) rotate(-5deg); } }
+.tc.out .tc-sh { transform: none; }
+.tc.out .tc-top { animation: tc-top-out .32s cubic-bezier(.5, 0, .8, .3) .2s forwards; }
+.tc.out .tc-bot { animation: tc-bot-out .32s cubic-bezier(.5, 0, .8, .3) .2s forwards; }
+.tc.out .tc-ns { animation: tc-nz .21s steps(1) calc(var(--k, 0) * .07s) infinite, tc-off .08s linear .16s forwards; }
+.tc.out .tc-line { opacity: 1; transform: scaleX(1); animation: tc-line-out .26s ease-out .16s forwards; }
+.tc.out .tc-pan { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); animation: tc-pan-out .22s cubic-bezier(.6, 0, .9, .4) forwards; }
+.tc.out .tc-p2 { animation-delay: .04s; }
+.tc.out .tc-p3 { animation-delay: .08s; }
+.tc.out .tc-word span { opacity: 1; transform: none; animation: tc-whip .2s cubic-bezier(.5, 0, .9, .4) calc(var(--i) * 12ms) forwards; }
+.tc.out .tc-face { opacity: 1; transform: rotate(8deg); animation: tc-face-out .18s ease-in forwards; }
+.tc.out .tc-osd { opacity: 1; animation: tc-fade-out .14s linear forwards; }
+@keyframes tc-top-in { to { transform: none; } }
+@keyframes tc-bot-in { to { transform: none; } }
+@keyframes tc-top-out { to { transform: translate3d(0, -100%, 0); } }
+@keyframes tc-bot-out { to { transform: translate3d(0, 100%, 0); } }
+@keyframes tc-line { 0% { opacity: 0; transform: scaleX(.04); } 35% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(1); } }
+@keyframes tc-line-out { from { opacity: 1; transform: scaleX(1); } to { opacity: 0; transform: scaleX(1); } }
+@keyframes tc-nz { 0% { opacity: 1; } 33.33%, 100% { opacity: 0; } }
+@keyframes tc-off { to { opacity: 0; } }
+@keyframes tc-pan-in { from { opacity: 1; transform: translate3d(calc(var(--tx) + var(--fx)), var(--ty), 0) rotate(calc(var(--rot) - 8deg)); }
+  to { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); } }
+@keyframes tc-pan-out { to { opacity: 1; transform: translate3d(calc(var(--tx) - var(--fx)), var(--ty), 0) rotate(calc(var(--rot) + 8deg)); } }
 @keyframes tc-slam { to { opacity: 1; transform: none; } }
-@keyframes tc-whip { to { opacity: 0; transform: translateY(-.6em) rotate(8deg) scale(.7); } }
-@media (prefers-reduced-motion: reduce) { .tc { display: none; } }
+@keyframes tc-whip { to { opacity: 0; transform: translate3d(0, -.6em, 0) rotate(8deg) scale(.7); } }
+@keyframes tc-face-in { from { opacity: 0; transform: scale(.3) rotate(-30deg); } to { opacity: 1; transform: rotate(8deg); } }
+@keyframes tc-face-out { to { opacity: 0; transform: scale(.4) rotate(30deg); } }
+@keyframes tc-fade-in { to { opacity: 1; } }
+@keyframes tc-fade-out { to { opacity: 0; } }
+@media (max-width: 640px) {
+  .tc-p3 { display: none; }
+  .tc-p2 { --tx: 8vw; --ty: 17vmin; }
+  .tc-face { right: -2vmin; top: -9vmin; }
+}
+@media (prefers-reduced-motion: reduce) { .tc, html.tc-arrive::before { display: none; } }
 html.mx-paused .tc * { animation-play-state: paused; }
 
 /* ==========================================================================
@@ -1576,7 +1619,7 @@ html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) 
 }
 
 /* ---- home page: hero scroll cue + the live examples ---- */
-.hero-full .hero-mascot { height: clamp(96px, 30vw, 132px); }
+.hero-full .hero-mascot { height: clamp(120px, min(44vw, 20vh), 200px); height: clamp(120px, min(44vw, 20svh), 200px); }   /* phones: grows with the screen, 20% of its height at most */
 @media (min-width: 641px) { .hero-full .hero-mascot { height: clamp(140px, 30vh, 240px); } }
 .scroll-cue { display: inline-flex; flex-direction: column; align-items: center; gap: .3rem; margin-top: .6rem;
   color: var(--text-faint); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; min-height: 44px; }
@@ -1637,7 +1680,8 @@ html.lp-reveal .site-header { animation: lp-nav .55s cubic-bezier(.2, 1, .3, 1) 
 .demo-stage { --pk-ink: var(--pk); --text-dim: var(--on-plate-dim); }
 
 /* -- one fixed canvas behind the home page (field lines that turn with the scroll) -- */
-.ls-bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0; }
+.ls-bg { display: none; position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0; }
+html.ls-story .ls-bg { display: block; }
 
 /* -- statement ---------------------------------------------------------------- */
 .statement { min-height: 92vh; min-height: 92svh; display: grid; align-content: center; gap: 1.6rem; padding-block: 4.5rem; }

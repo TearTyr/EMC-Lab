@@ -585,7 +585,8 @@ async function sims(h) {
     for (let i = 0; i < 4; i++) {
       for (const ch of ['ch1', 'ch2']) {
         await pg.evaluate(c => { location.hash = '#/' + c; }, ch);
-        await pg.waitForTimeout(1300);
+        await pg.waitForSelector('.tc', { timeout: 3000 }).catch(() => {}); await pg.waitForFunction(() => !document.querySelector('.tc'), null, { timeout: 8000 });   // the card came and went: the chapter is mounted
+        await pg.waitForTimeout(900);
         await scrollAll();
         await pg.waitForTimeout(400);
         const s = await stats();

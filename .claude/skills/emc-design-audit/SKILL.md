@@ -16,7 +16,7 @@ Rules live in `.claude/rules/design-system.md` and `.claude/rules/motion.md`. Re
 - No `text-shadow` stacks, slants or filters on brand, hero or intro text. One bold outline at most.
 
 ## Mascot
-- At most one large mascot per viewport; phone hero at most 132 px; never over text or controls.
+- At most one large mascot per viewport; phone hero 120 to 200 px, scaled to the screen; never over text or controls.
 - Face matches meaning (happy = success, focus = working, sparkle = discovery).
 - Decorative copies `alt=""`; the descriptive one matches the art.
 

@@ -1175,15 +1175,21 @@ window.EMC = (function () {
     initReadingBar() {
       const bar = document.getElementById('readingProgress');
       if (!bar) return;
-      const onScroll = () => {
-        const doc = document.documentElement;
-        const max = doc.scrollHeight - window.innerHeight;
-        const pct = max > 0 ? clamp((window.scrollY / max) * 100, 0, 100) : 0;
-        bar.style.width = pct.toFixed(2) + '%';
+      /* transform only, and the page height is read when it changes (resize, content growing), never on
+         a scroll event: reading it there forced a layout on every frame of a phone scroll */
+      let max = 0, raf = 0, shown = '';
+      const measure = () => { max = document.documentElement.scrollHeight - window.innerHeight; };
+      const paint = () => {
+        raf = 0;
+        const v = 'scaleX(' + (max > 0 ? clamp(window.scrollY / max, 0, 1) : 0).toFixed(3) + ')';
+        if (v !== shown) { shown = v; bar.style.transform = v; }
       };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(paint); };
+      const onSize = () => { measure(); onScroll(); };
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
-      onScroll();
+      window.addEventListener('resize', onSize);
+      if (typeof ResizeObserver === 'function') new ResizeObserver(onSize).observe(document.body);
+      measure(); paint();
     },
 
     /* Transient status message (used when progress is saved). */

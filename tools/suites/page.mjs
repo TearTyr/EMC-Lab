@@ -29,7 +29,7 @@
     16 first paint is the butter yellow + loading bar, scroll locked, no dark loader
     17 a slow image holds the start; 18 a blocked one cannot hang it (8 s deadline)
     19 plain lettering: no text-shadow, no slant
-    20 hero mascot size on phones and desktop
+    20 hero mascot size on phones (scales with the screen) and desktop
    Exits 1 on any failure.
    ========================================================================== */
 async function intro(h) {
@@ -449,7 +449,7 @@ async function intro(h) {
     await ctx.close();
   }
 
-  /* 20: the hero mascot stays small on phones (it was 235 px tall on a 390 px screen) and keeps its desktop size */
+  /* 20: the hero mascot grows with the phone screen (a fifth of its height, 120 to 200 px; it was 235 px tall on a 390 px screen) and keeps its desktop size */
   {
     const sizes = [];
     for (const [w, hh, mobile] of [[360, 640, true], [390, 844, true], [412, 915, true], [1280, 800, false]]) {
@@ -460,8 +460,8 @@ async function intro(h) {
       sizes.push([w, await pg.evaluate(() => Math.round(document.querySelector('.hero-mascot').getBoundingClientRect().height))]);
       await ctx.close();
     }
-    ok('20 hero mascot is at most 132 px tall on phones and still 200+ px on desktop',
-      sizes.slice(0, 3).every(([, hgt]) => hgt <= 132 && hgt >= 90) && sizes[3][1] >= 200, JSON.stringify(sizes));
+    ok('20 hero mascot is 120 to 200 px tall on phones, taller on the taller screens, and still 200+ px on desktop',
+      sizes.slice(0, 3).every(([, hgt]) => hgt <= 200 && hgt >= 120) && sizes[1][1] > sizes[0][1] && sizes[2][1] >= sizes[1][1] && sizes[3][1] >= 200, JSON.stringify(sizes));
   }
 
   console.log('console/page errors:', errors.length ? errors.slice(0, 6) : 'none');
@@ -680,6 +680,10 @@ async function landing(h) {
        plays and cleans itself up;
      7 double emc:view-shown never stacks two flash nodes;
      8 flash interrupted mid-dip by navigation still cleans up.
+     9 page transitions are one fixed timeline: swap only under a closed card, hold, reveal; cached = first visit,
+       a slow response only lengthens the hold;
+    10 arriving from another page is covered from the first frame, held, then lifted;
+    11 home and straight back to the mounted chapter, inside the card, ends on the chapter.
    Exits 1 on any failure.
    ========================================================================== */
 async function motion(h) {
@@ -761,6 +765,104 @@ async function motion(h) {
     await ctx.close();
   }
 
+  /* 9: the transition is one fixed timeline: the page is swapped only once the card has covered it, the card is
+        lifted no sooner than the hold after that, a delayed response only makes the hold longer, and a cached
+        chapter takes as long as an uncached one */
+  {
+    const T = { COVER: 460, HOLD: 380, OUT: 520 };
+    const record = pg => pg.evaluate(() => {
+      const topic = document.getElementById('shell-topic'), hidden0 = topic.hidden;
+      const r = window.__tc = { add: 0, swap: 0, out: 0, rm: 0, onAtSwap: null };
+      const tick = () => {
+        const c = document.querySelector('.tc'), n = performance.now();
+        if (c && !r.add) r.add = n;
+        if (r.add && !r.swap && topic.hidden !== hidden0) { r.swap = n; r.onAtSwap = !!c && c.classList.contains('on'); }
+        if (c && c.classList.contains('out') && !r.out) r.out = n;
+        if (r.add && !c && !r.rm) { r.rm = n; return; }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    const finish = pg => pg.waitForFunction(() => window.__tc && window.__tc.rm, null, { timeout: 8000 }).then(() => pg.evaluate(() => window.__tc));
+    const d = r => ({ swap: Math.round(r.swap - r.add), out: Math.round(r.out - r.add), total: Math.round(r.rm - r.add) });
+
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await record(pg); await pg.click('a[data-topic-link="ch2"]');
+    const s1 = d(await finish(pg));                                  // first visit
+    await pg.waitForTimeout(400);
+    await pg.evaluate(() => { location.hash = '#/'; });
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 6000 });
+    await pg.waitForTimeout(300);
+    await record(pg); await pg.click('a[data-topic-link="ch2"]');
+    const s2 = d(await finish(pg));                                  // cached
+    const at2 = await pg.evaluate(() => window.__tc.onAtSwap);
+    ok('9 the page is swapped under a fully closed card and the card lifts only after the hold',
+      at2 === true && s2.swap >= T.COVER - 40 && s2.out >= T.COVER + T.HOLD - 40 && s2.total >= T.COVER + T.HOLD + T.OUT - 40, JSON.stringify(s2));
+    ok('9 a cached chapter plays the same timeline as the first visit (within 250 ms)', Math.abs(s1.total - s2.total) < 250, JSON.stringify({ first: s1, cached: s2 }));
+    await ctx.close();
+
+    const slow = await ctxPage();
+    await noIntro(slow.pg);
+    await slow.pg.route('**/topics/fields.html', async route => { await new Promise(r => setTimeout(r, 3000)); await route.continue(); });
+    await slow.pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await slow.pg.waitForTimeout(500);
+    await record(slow.pg); await slow.pg.click('a[data-topic-link="ch2"]');
+    const s3 = d(await finish(slow.pg));
+    ok('9 a slow response keeps the card up until the chapter is ready (the hold only gets longer)',
+      s3.out >= 2000 && s3.swap >= T.COVER - 40 && s3.swap < 900, JSON.stringify(s3));
+    await slow.ctx.close();
+  }
+
+  /* 10: arriving from another page (full navigation): the cover is on the first frame, held, then lifted */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('emc.tc')) return;
+        const a = window.__arrive = { first: null, add: 0, rm: 0 };
+        requestAnimationFrame(() => { a.first = { gate: document.documentElement.classList.contains('tc-arrive'), card: !!document.querySelector('.tc') }; });
+        const mo = new MutationObserver(() => {
+          const c = document.querySelector('.tc');
+          if (c && !a.add) a.add = performance.now();
+          if (a.add && !c && !a.rm) { a.rm = performance.now(); mo.disconnect(); }
+        });
+        mo.observe(document, { childList: true, subtree: true });
+      } catch (e) { /* storage blocked */ }
+    });
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await pg.click('a.nav-cta');
+    await pg.waitForURL(/quiz\.html/, { timeout: 8000 });
+    await pg.waitForFunction(() => window.__arrive && window.__arrive.rm, null, { timeout: 8000 });
+    const a = await pg.evaluate(() => ({ first: window.__arrive.first, life: Math.round(window.__arrive.rm - window.__arrive.add), gate: document.documentElement.classList.contains('tc-arrive'), key: sessionStorage.getItem('emc.tc') }));
+    ok('10 an arriving page is covered on its first frame (head gate, then the held card), never bare',
+      a.first && (a.first.gate || a.first.card), JSON.stringify(a));
+    ok('10 the arrival holds, reveals and cleans up (gate removed, one-shot marker consumed)',
+      a.life >= 380 + 520 - 120 && a.life < 4000 && a.gate === false && a.key === null, JSON.stringify(a));
+    await ctx.close();
+  }
+
+  /* 11: asking for Home and then, while the card is still covering, for the chapter that is mounted must end on the chapter */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html#/ch2', { waitUntil: 'load' });
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden, null, { timeout: 8000 });
+    await pg.waitForTimeout(600);
+    await pg.evaluate(() => { location.hash = '#/'; });
+    await pg.waitForTimeout(150);
+    await pg.evaluate(() => { location.hash = '#/ch2'; });
+    await pg.waitForFunction(() => !document.querySelector('.tc'), null, { timeout: 8000 });
+    await pg.waitForTimeout(300);
+    const end = await pg.evaluate(() => ({ topic: !document.getElementById('shell-topic').hidden, homeHidden: document.getElementById('shell-home').hidden, hash: location.hash, h1: (document.querySelector('#shell-topic h1') || {}).textContent }));
+    ok('11 home and straight back to the mounted chapter (inside the card) ends on the chapter', end.topic && end.homeHidden && end.hash === '#/ch2' && !!end.h1, JSON.stringify(end));
+    await ctx.close();
+  }
+
   /* 4: reduced motion gets final states, no dip */
   {
     const { ctx, pg } = await ctxPage({ reducedMotion: 'reduce' });
@@ -778,6 +880,8 @@ async function motion(h) {
       };
     });
     ok('4 reduced motion: no flash dip, content visible, nothing running', rm.flash === 0 && rm.op === '1' && rm.anims === 0, JSON.stringify(rm));
+    const noCard = await pg.evaluate(() => ({ card: document.querySelectorAll('.tc').length, gate: document.documentElement.classList.contains('tc-arrive'), key: sessionStorage.getItem('emc.tc') }));
+    ok('4 reduced motion: no transition card, no arrival gate, nothing stored for the next page', noCard.card === 0 && noCard.gate === false && noCard.key === null, JSON.stringify(noCard));
     await ctx.close();
   }
 
@@ -1067,9 +1171,9 @@ async function loader(h) {
     const mounted = await pg.evaluate(() => !document.getElementById('shell-topic').hidden);
     ok('7 hash deep link mounts the chapter', mounted);
     await pg.evaluate(() => { location.hash = '#/'; });
-    await pg.waitForTimeout(400);
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 6000 });
     await pg.evaluate(() => { location.hash = '#/field'; });
-    await pg.waitForTimeout(900);
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
     const st = await pg.evaluate(() => ({
       overlay: !!document.getElementById('bootOverlay'),
       timers: window.EMC && window.EMC.loader ? window.EMC.loader.state().timers : -1,

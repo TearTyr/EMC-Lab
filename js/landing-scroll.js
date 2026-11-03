@@ -100,9 +100,10 @@
   /* ------------------------------------------------------- background canvas */
   const C = { el: byId('lsBg'), ctx: null, w: 0, h: 0, dpr: 1, from: 0, to: 1, g: -1, alpha: '' };
   if (C.el && C.el.getContext) C.ctx = C.el.getContext('2d');
+  const bgOn = () => !!(C.ctx && fx && wide && wide.matches);       /* wide screens only: a phone gets no extra full-screen layer */
   function sizeCanvas() {
-    if (!C.ctx) return;
-    C.dpr = Math.min(window.devicePixelRatio || 1, wide && wide.matches ? 1.5 : 1);
+    if (!bgOn()) return;
+    C.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = Math.round(innerWidth * C.dpr), h = Math.round(innerHeight * C.dpr);
     if (w !== C.w || h !== C.h) { C.w = C.el.width = w; C.h = C.el.height = h; C.g = -1; }
   }
@@ -141,11 +142,10 @@
     ctx.globalAlpha = 1;
   }
   function updateCanvas(y) {
-    if (!C.ctx || !fx) return;                                            /* reduced motion: no canvas (css hides it) */
+    if (!bgOn()) return;                                                  /* phones, short windows, reduced motion: no canvas (css hides it) */
     /* fades in as the statement arrives and out after the quiz call; turns with the scroll on wide screens */
     const a = clamp((y + vh - C.from) / (vh * 0.6), 0, 1) * clamp((C.to - y) / (vh * 0.6), 0, 1);
-    put(C.el, 'opacity', (a * (innerWidth < 640 ? 0.55 : 1)).toFixed(3));        /* fainter behind narrow text columns */
-    if (!(fx && wide && wide.matches)) { if (C.g < 0) { C.g = 0.35; drawCanvas(C.g); } return; }
+    put(C.el, 'opacity', a.toFixed(3));
     if (a <= 0) return;
     const g = Math.round(clamp((y - C.from + vh) / Math.max(1, C.to - C.from), 0, 1) * 400) / 400;
     if (g !== C.g) { C.g = g; drawCanvas(g); }
@@ -255,7 +255,7 @@
     const grid = preview && preview.querySelector('.pv-grid');
     if (grid && usable(grid)) { const g = docTop(grid); V.tops = V.panels.map(p => g + p.offsetTop); }
     if (quizCall && usable(quizCall)) Q.top = docTop(quizCall);
-    if (C.el && about && usable(about)) {
+    if (C.el && about && usable(about) && bgOn()) {
       C.from = docTop(about);
       C.to = quizCall ? docTop(quizCall) + quizCall.offsetHeight - vh * 0.4 : document.documentElement.scrollHeight;
       sizeCanvas();
@@ -330,11 +330,11 @@
     if (S.pinned) updateStory(window.scrollY);
     if (simsTrack) { if (P.pinned) updateScroller(window.scrollY); else { if (P.i < 0) setCard(0); updateCarousel(); } }
     if (fx) { W.lit = -1; updateWords(window.scrollY); updatePreview(window.scrollY); updateQuiz(window.scrollY); }
-    if (C.ctx && fx) updateCanvas(window.scrollY);
+    if (bgOn()) updateCanvas(window.scrollY);
     syncListening();
   }
   function onResize() { if (!resizeRaf) resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; apply(); }); }
-  function redrawCanvas() { if (C.ctx && C.g >= 0) drawCanvas(C.g); }
+  function redrawCanvas() { if (bgOn() && C.g >= 0) drawCanvas(C.g); }
 
   /* ------------------------------------------------------------------ init */
   function init() {

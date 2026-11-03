@@ -39,7 +39,7 @@ Contrast: text must pass WCAG AA in both themes (`node tools/verify.mjs theme` c
 
 - Source art: `img/mascot.png` (resting), `img/mascot-face-{sparkle,focus,happy}.png` (intro faces), `img/mascot-sparkle.png`. Do not redraw or recolour it.
 - Faces mean something: happy = success or finished, focus = working or thinking, sparkle = discovery or a new thing.
-- Size: header 28 to 34 px; hero at most 132 px on phones (width ≤ 640 px) and 240 px on desktop; at most one large mascot per viewport. Never covers text, controls or the nav.
+- Size: header 28 to 34 px; hero 120 to 200 px on phones (width ≤ 640 px: the smaller of 44% of the width and 20% of the height) and 240 px on desktop; at most one large mascot per viewport. Never covers text, controls or the nav.
 - It reacts through the `emc:mascot` event (`{ kind: 'quiz', pct }`, `{ kind: 'chapter-done' }`) and the helper panel in `js/mascot.js`. It never blocks input.
 - Decorative copies are `alt=""`. The meaningful one describes it as it looks: "Denki-chan, the EMC Lab mascot, a round cream creature with small ears".
 

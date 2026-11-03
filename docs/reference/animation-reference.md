@@ -64,11 +64,27 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
 (mascot rides up, `h1` letters slam, `.lp-line` rows and the header animate in).
 `html.landing-pending` hides the hero text and nav until then; `landing.js` always clears it.
 
-## Title cards
-`EMC_MOTION.coverThenGo(label, go)` covers the page, stores the label in
-`sessionStorage['emc.tc']` (read and deleted by the next page) and navigates; the new page
-starts covered and reveals itself. The shell fires `emc:view-leaving` / `emc:view-shown` for
-chapter switches. A failsafe removes a stuck card after 2.5 s. Reduced motion: no card.
+## Page transitions (title cards: "change the channel")
+One fixed timeline for every boundary (chapter switch, quiz, back home), however fast the page loads:
+**COVER** 460 ms (two ink shutters close on a yellow line like a TV switching off, a three-frame static
+canvas flickers, three comic panels slam in carrying the destination's name, Denki-chan's face and an
+on-screen tag such as `CH 02 · FIELDS`) → **HOLD** at least 380 ms fully covered (a slow load only makes
+it longer) → **REVEAL** 520 ms (panels slide out, the static drops, the shutters open on the new page).
+About 1.4 s, the same cached or not. Constants: `EMC_MOTION.timing`.
+
+- `cover(label)` returns a promise that settles when the page is fully covered; the page underneath is
+  swapped only after it. `uncover()` lifts the card, never before the hold. A card already up is shared
+  (the newest route wins). Reduced motion never creates it.
+- Same-document switches: the shell (`js/shell.js`) dispatches `emc:view-leaving` with `detail.wait`
+  (an array); the card pushes its cover promise there and the shell waits for it before tearing the old view
+  down, fetching the chapter in the meantime. `detail.boot` (a deep link) skips the card. `emc:view-shown`
+  lifts it.
+- Full navigations: `EMC_MOTION.coverThenGo(label, go)` covers, stores `{label, osd, face}` in
+  `sessionStorage['emc.tc']` (read and deleted by the next page) and navigates. A head gate on every page
+  sets `html.tc-arrive` (CSS paints the ink cover on the first frame) and the arriving page builds its card
+  already held, then lifts it. A 2.5 s timer clears the gate if the script never loads; a 7 s failsafe removes
+  a stuck card. The bare home load is not covered (the intro owns it).
+- Transform and opacity only; the card is `aria-hidden`; colours are tokens (ink, pink, sky, yellow).
 
 ## Presets (`[data-mx]`)
 `rise`, `slam`, `slide`, `pop`, `flash`, `whip`, `spin`, `lines`, `corner`, `badge`, `words`

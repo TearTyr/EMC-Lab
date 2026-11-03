@@ -46,13 +46,13 @@ async function ui(h) {
     await pg.click('#topicsBtn');
     await pg.click('#topicsMenu a[href$="fields.html"]');
     await pg.waitForFunction(() => location.hash === '#/ch2');
-    await pg.waitForTimeout(500);
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
     c = await current();
     ok('1 chapter route #/ch2: only Chapter 2 is current and the Chapters button is lit',
       c.links.length === 1 && /2 · Electric/.test(c.links[0]) && c.btn, JSON.stringify(c));
     await pg.click('a.brand');
     await pg.waitForFunction(() => location.hash === '#/' || location.hash === '');
-    await pg.waitForTimeout(400);
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
     c = await current();
     ok('1 back home: highlight returns to Home', c.links.length === 1 && /Home/.test(c.links[0]) && !c.btn, JSON.stringify(c));
     await ctx.close();

@@ -41,7 +41,8 @@
   const mainCache = new Map();     // chapter id -> <main> innerHTML
   const srcCache = new Map();      // chapter id -> sim id -> script src (as shipped)
   const scriptCache = new Map();   // sim url -> source text (network: once)
-  let active = 'home';             // 'home' | chapter id
+  let active = 'home';             // 'home' | chapter id (what is mounted)
+  let want = 'home';               // the view the reader last asked for: it differs from `active` while a title card is covering
   let pendingAnchor = null;        // e.g. sim-arena-panel from a deep link
   let loadToken = 0;               // ignores fetches that lose a race
 
@@ -173,25 +174,38 @@
       .catch(() => { /* offline or mid-deploy: nothing to warm */ });
   }
 
-  function showHome(opts) {
+  /* Tell the page a view is about to be replaced. The title card (js/motion.js) puts a promise in
+     detail.wait that settles once it fully covers the screen, so the swap happens underneath it and
+     a cached chapter looks exactly like a slow one. Without the card nothing is waited for. */
+  async function leaving(view, label, boot) {
+    const wait = [];
+    document.dispatchEvent(new CustomEvent('emc:view-leaving', { detail: { view, label, wait, boot: !!boot } }));
+    if (wait.length) await Promise.all(wait);
+  }
+
+  async function showHome(opts) {
     const token = ++loadToken;
-    if (active === 'home' && !(opts && opts.force)) return;
-    document.dispatchEvent(new CustomEvent('emc:view-leaving', { detail: { view: 'home', label: 'Home' } }));
+    if (active === 'home' && want === 'home' && !(opts && opts.force)) return;
+    want = 'home';
+    await leaving('home', 'Home');
+    if (token !== loadToken) return;            // a newer switch won while the card was covering
     teardownTopic();
     active = 'home';
     setSections(false);
     document.title = HOME_TITLE;
     if (!opts || opts.scroll !== false) window.scrollTo(0, 0);
-    void token;
     document.dispatchEvent(new CustomEvent('emc:view-shown', { detail: { view: 'home', root: document } }));
   }
 
   async function activate(id, opts) {
     const ch = byId(id);
     if (!ch) { showHome(opts); return; }
-    if (active === id) return;                  // before the bump: a repeat call must not cancel an in-flight load
+    if (active === id && want === id) return;   // before the bump: a repeat call must not cancel an in-flight load
     const token = ++loadToken;
-    document.dispatchEvent(new CustomEvent('emc:view-leaving', { detail: { view: id, label: ch.short } }));
+    want = id;                                  // so a click back to the mounted chapter while a card covers still wins
+    fetchMain(ch).catch(() => { /* activate() reports it */ });   // fetch while the card closes over the page
+    await leaving(id, ch.short, opts && opts.boot);
+    if (token !== loadToken) return;            // a newer switch won while the card was covering
     teardownTopic();
     active = id;
     setSections(true);
@@ -250,7 +264,7 @@
          re-enter. Never leaves the reader on a dead "Loading…". */
       const retry = body.querySelector('[data-shell-retry]');
       if (retry) retry.addEventListener('click', () => {
-        active = null;
+        active = null; want = null;
         mainCache.delete(ch.id);
         activate(id, {});
       });
@@ -319,7 +333,7 @@
   /* ---- boot: honour a deep link ------------------------------------------ */
   const bootRoute = routeFromHash();
   if (bootRoute && bootRoute !== 'home') {
-    activate(bootRoute, {});
+    activate(bootRoute, { boot: true });             // a deep link: the page opens on the chapter, no title card
   } else if (bootRoute === 'home' && (location.hash || '') !== '#/') {
     // unknown #/… on a fresh load: normalise, no history junk
     if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#/');

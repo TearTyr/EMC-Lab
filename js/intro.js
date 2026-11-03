@@ -142,7 +142,7 @@
     const FB = '<i class="fb"></i>';
     const G = [
       { cam: [-2, -1, -1.2, 1.04], dr: [-1, 2, -1], L: [
-        { xf: .5, gf: .7, r: -3, s: 30, toks: [['e', 0, 'slam', 0], ['=', .151, 'whip', .5], ['-1.602x10<sup>-19</sup>', .453, 'rise', .5], ['C', .604, 'drop', .5]] }] },
+        { xf: .5, gf: .6, r: -3, s: 30, toks: [['e', 0, 'slam', 0], ['=', .151, 'whip', .5], ['-1.602x10<sup>-19</sup>', .453, 'rise', .5], ['C', .604, 'drop', .5]] }] },
       { cam: [2.5, 1, 1, 1.02], dr: [-1, -1, -1], L: [
         { xf: .3, gf: .3, r: -5, s: 26, toks: [['LIKE', 0, 'spin', .55], ['REPEL', .302, 'flip', .5]] },
         { xf: .7, gf: .72, r: 5, s: 26, toks: [['UNLIKE', .604, 'type', .5], ['ATTRACT', .906, 'type', .55]] }] },
@@ -157,7 +157,7 @@
         { xf: .5, gf: .3, r: -4, s: 22, toks: [['CIRCUIT', 0, 'type', .5], ['BUILDER', .151, 'elastic', .5]] },
         { xf: .5, gf: .64, r: 3, s: 15, toks: [['DRAG', .453, 'rise', .5], ['&', .604, 'spin', .5], ['DROP', .755, 'whip', .5]] }] },
       { cam: [-1.5, .8, -.8, 1.05], dr: [0, 1, -1], until: 1.208, L: [
-        { xf: .5, gf: .66, r: -3, s: 26, toks: [["OHM'S", 0, 'drop', .5], ['LAW', .151, 'flip', .5], ['CALCULATOR', .453, 'type', .55]] }] }
+        { xf: .5, gf: .6, r: -3, s: 26, toks: [["OHM'S", 0, 'drop', .5], ['LAW', .151, 'flip', .5], ['CALCULATOR', .453, 'type', .55]] }] }
     ];
 
     const HOLD = .35, EXIT = .28, LAND = .42, Q16 = BEAT / 4, G0 = .5 + 2.712;   /* G0: beat grid measured from the reference audio */
@@ -261,12 +261,13 @@
       const yLo = L => tall ? Math.min(zt + L.eh / 2, (zt + zb) / 2) : -Math.max(0, Hs / 2 - 9 - L.eh / 2);
       const yHi = L => tall ? Math.max(zb - L.eh / 2, (zt + zb) / 2) : Math.max(0, Hs / 2 - 9 - L.eh / 2);
       const clampX = L => { const mx = Math.max(0, Wc / 2 - mg - L.ew / 2); return x => c2(x, -mx, mx); };
+      /* write every size, then read every width: one layout instead of one per word (it was ~60 forced layouts) */
+      LN.forEach(L => L.k.forEach(o => {
+        o.sz = L.s * bs;
+        for (const n of [o.e, o.a, o.b]) if (n) n.style.setProperty('--s', o.sz + 'cqw');
+      }));
+      LN.forEach(L => L.k.forEach(o => { o.w = o.e.offsetWidth / W; o.h = o.e.offsetHeight / W; }));
       LN.forEach(L => {
-        L.k.forEach(o => {
-          o.sz = L.s * bs;
-          for (const n of [o.e, o.a, o.b]) if (n) n.style.setProperty('--s', o.sz + 'cqw');
-          o.w = o.e.offsetWidth / W; o.h = o.e.offsetHeight / W;
-        });
         lay(L);
         const f = Math.min(1, (Wc - 2 * mg) / L.ew, tall ? (zb - zt) / L.eh : (Hs - 18) / L.eh);
         if (f < 1) shr(L, f);
