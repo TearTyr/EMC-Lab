@@ -537,8 +537,57 @@ async function core(h) {
   await ctx.close();
 }
 
+/* ==========================================================================
+   EMC Lab — the deployed site, read only (run: node tools/verify.mjs live --url https://emc-lab.vercel.app).
+   Opens the home page, the quiz and both chapters at a desktop and a phone size and checks what a visitor
+   would hit: HTTP 200 (a Vercel login page counts as a failure), no console or page errors, no request to
+   another origin, no failed request, no sideways scroll, and the landing sections of the current design.
+   Screenshots go to .scratch/live/ (git-ignored). It never writes to the site.
+   ========================================================================== */
+async function live(h) {
+  const { ok, B, browser, skipIntroOnLoad, ROOT, fs, path } = h;
+  const base = new URL(B), shots = path.join(ROOT, '.scratch', 'live');
+  fs.mkdirSync(shots, { recursive: true });
+  const pages = [['/', 'home'], ['/quiz.html', 'quiz'], ['/topics/current.html', 'chapter1'], ['/topics/fields.html', 'chapter2']];
+  const sizes = [[1280, 800, false], [390, 844, true]];
+  for (const [w, hh, mobile] of sizes) {
+    for (const [route, name] of pages) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: hh }, isMobile: mobile, hasTouch: mobile });
+      const pg = await ctx.newPage();
+      const errs = [], other = new Set(), failed = [];
+      pg.on('pageerror', e => errs.push(String(e).slice(0, 120)));
+      pg.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 120)); });
+      pg.on('request', r => { try { const u = new URL(r.url()); if (u.protocol.startsWith('http') && u.host !== base.host) other.add(u.host); } catch (e) { /* data: urls */ } });
+      pg.on('requestfailed', r => failed.push(r.url().slice(-60)));
+      await pg.addInitScript(skipIntroOnLoad);
+      const tag = `${name} ${w}x${hh}`;
+      let res = null;
+      try { res = await pg.goto(new URL(route, base).href, { waitUntil: 'load', timeout: 45000 }); } catch (e) { errs.push('goto: ' + String(e).slice(0, 100)); }
+      await pg.waitForTimeout(1500);
+      const url = pg.url(), sso = /vercel\.com\/(sso|login)/.test(url);
+      ok(`${tag}: loads with HTTP 200${sso ? ' (redirected to a Vercel login: previews are protected)' : ''}`, !!res && res.status() === 200 && !sso, (res ? res.status() : 'no response') + ' ' + url.slice(0, 80));
+      if (sso) { await ctx.close(); continue; }
+      ok(`${tag}: no console errors, no other origin, no failed request`, errs.length === 0 && other.size === 0 && failed.length === 0, JSON.stringify({ errs: errs.slice(0, 3), other: [...other], failed: failed.slice(0, 3) }));
+      const geo = await pg.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
+      ok(`${tag}: no sideways scroll`, geo.sw <= geo.iw, JSON.stringify(geo));
+      if (name === 'home') {
+        const ids = await pg.evaluate(() => ['about', 'preview', 'learn', 'sims', 'quiz-call'].filter(i => document.getElementById(i)));
+        ok(`${tag}: the landing sections are there (statement, preview, lessons, simulations, quiz call)`, ids.length === 5, ids.join());
+        const cards = await pg.evaluate(() => document.querySelectorAll('.sim-card').length);
+        const want = await pg.evaluate(() => (window.EMC_REGISTRY ? window.EMC_REGISTRY.chapters.reduce((n, c) => n + c.sims.length, 0) : -1));
+        ok(`${tag}: one card per registry simulation`, cards === want && cards > 0, cards + ' / ' + want);
+      }
+      await pg.screenshot({ path: path.join(shots, `${name}-${w}x${hh}.png`) });
+      await ctx.close();
+    }
+  }
+  console.log('screenshots:', shots);
+  console.log(h.failed() === 0 ? 'LIVE PASS' : h.failed() + ' LIVE FAILURES');
+}
+
 export const suites = {
   stress: { about: 'long-running and rapid-switching stability', browser: true, slow: true, run: stress },
   prod: { about: 'the same shell contracts against the hashed production build in public/', browser: true, slow: true, run: prod },
+  live: { about: 'the deployed site, read only: node tools/verify.mjs live --url <base>', browser: true, slow: true, remote: true, run: live },
   core: { about: 'core flow (home, chapters, builder, quiz, Detail toggle); run per engine with --browser', browser: true, run: core }
 };

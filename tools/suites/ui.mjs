@@ -46,13 +46,13 @@ async function ui(h) {
     await pg.click('#topicsBtn');
     await pg.click('#topicsMenu a[href$="fields.html"]');
     await pg.waitForFunction(() => location.hash === '#/ch2');
-    await pg.waitForTimeout(500);
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
     c = await current();
     ok('1 chapter route #/ch2: only Chapter 2 is current and the Chapters button is lit',
       c.links.length === 1 && /2 · Electric/.test(c.links[0]) && c.btn, JSON.stringify(c));
     await pg.click('a.brand');
     await pg.waitForFunction(() => location.hash === '#/' || location.hash === '');
-    await pg.waitForTimeout(400);
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
     c = await current();
     ok('1 back home: highlight returns to Home', c.links.length === 1 && /Home/.test(c.links[0]) && !c.btn, JSON.stringify(c));
     await ctx.close();
@@ -525,7 +525,7 @@ async function responsive(h) {
           if (b.width === 0 || b.height === 0 || (b.right <= vw + 1 && b.left >= -1)) return;
           for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
             const o = getComputedStyle(p).overflowX;
-            if ((o === 'auto' || o === 'scroll' || o === 'hidden') && p.scrollWidth >= p.clientWidth) return;   // inside its own scroller
+            if ((o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') && p.scrollWidth >= p.clientWidth) return;   // inside its own scroller
           }
           poking.push((e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/)[0] : '') || e.tagName);
         });

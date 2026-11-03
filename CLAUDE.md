@@ -11,6 +11,7 @@ Canvas simulations. No framework, no runtime dependencies, no requests to other 
 | `node tools/check.mjs` | Static checks (~1 s): links, Detail parity, scope and network purity, physics values |
 | `node tools/verify.mjs` | Everyday runtime suites (jsdom + Chromium) |
 | `node tools/verify.mjs intro ui` | Only these suites or groups. `--list` shows all, `--all` adds slow ones, `--browser firefox\|edge` switches engine |
+| `node tools/verify.mjs live landing --url <base>` | Read-only checks of a deployed site (production or a preview) instead of the local server; only suites marked remote run. Screenshots go to `.scratch/live/`. A protected Vercel preview redirects to a login and fails with that reason |
 | `npm run build:css` | Compile `css/input.css` to `css/site.css`. **Run after any CSS or Tailwind-scanned HTML change and commit `site.css`** |
 | `bun run build` | CSS + `tools/build.mjs`, which assembles `public/` (hashed names) for Vercel. `public/` is generated, never commit it |
 

@@ -66,6 +66,8 @@
   <link rel="icon" href="../favicon.ico" type="image/x-icon">
   <link rel="icon" href="../img/mascot.png" type="image/png">
   <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+  <!-- Page transition gate: arriving from a title card (js/motion.js left sessionStorage 'emc.tc'), paint the cover on the very first frame so the new page never shows before its card. Not on a bare home load (the intro's yellow owns that), never with reduced motion or without JS; motion.js always clears it, and so does this timer if it never loads. -->
+  <script>try{var d=document.documentElement;if(sessionStorage.getItem('emc.tc')&&!d.classList.contains('landing-pending')&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('tc-arrive');setTimeout(function(){d.classList.remove('tc-arrive')},2500)}}catch(e){}</script>
   <link rel="stylesheet" href="../css/site.css">
   <!-- Type: one family site-wide — G8321 (SIL OFL, committed woff2): Thin 100 display numerals, Regular 400 body, Bold 700 headings/UI. Titles try the privately licensed fot-yuruka-std first (local machines only). -->
   <link rel="stylesheet" href="../css/fonts.css">
@@ -167,7 +169,7 @@
         <a href="../index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Chapter 2 · Electric Fields &amp; Coulomb’s Law</span>
       </nav>
     </div>
-    <header class="wrap wrap-narrow" style="padding-top:.4rem">
+    <header class="wrap wrap-narrow ch-head" style="padding-top:.4rem">
       <span class="eyebrow eyebrow-amber reveal rv-d1" style="margin-top:.45rem">Chapter 2 of 2</span>
       <h1 class="h-topic reveal rv-d2" style="margin:.4rem 0 .35rem">Electric Fields &amp; Coulomb’s Law</h1>
       <p class="lede" data-detail="plain">Charges push and pull on each other across empty space. This chapter is the lecture in three sections: what charge is, how hard it pushes (Coulomb's law), and how to map that push around it (the electric field).</p>
@@ -187,17 +189,35 @@
         </span>
         <figcaption class="small muted">Field lines leave + and enter &minus; : the force law, drawn.</figcaption>
       </figure>
-      <nav class="btn-row reveal rv-d3" aria-label="Chapter sections" style="margin:.6rem 0 .2rem">
-        <a class="btn btn-sm" href="#charge">2.1 · Electric Charge</a>
-        <a class="btn btn-sm" href="#coulomb">2.2 · Coulomb's Law</a>
-        <a class="btn btn-sm" href="#field">2.3 · Electric Field</a>
-      </nav>
+      <ol class="lesson-cards" aria-label="Lessons in this chapter" data-mx="corner">
+        <li><a class="lc" href="#charge">
+          <span class="lc-num" aria-hidden="true">2.1</span>
+          <span class="lc-title">Electric Charge</span>
+          <p data-detail="tech">q = n·e, conservation, like and unlike, conductors and insulators, with the Rub the Balloon sandbox.</p>
+          <p data-detail="plain">Rub a balloon and charges move. Same signs push apart, opposite signs pull together.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#coulomb">
+          <span class="lc-num" aria-hidden="true">2.2</span>
+          <span class="lc-title">Coulomb’s Law</span>
+          <p data-detail="tech">F = k|q₁q₂|/r², superposition in 1-D and 2-D and the Bohr atom, with the Tug-of-War Arena.</p>
+          <p data-detail="plain">How hard two charges push or pull, and how to add up many pushes at once.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+        <li><a class="lc" href="#field">
+          <span class="lc-num" aria-hidden="true">2.3</span>
+          <span class="lc-title">Electric Field</span>
+          <p data-detail="tech">E = F/|q₀|, field lines and the two-charge example, with the Field Painter.</p>
+          <p data-detail="plain">An invisible map of the pushes and pulls around a charge.</p>
+          <span class="lc-go" aria-hidden="true">Jump in →</span>
+        </a></li>
+      </ol>
     </header>
 
 
     <section class="lesson-section" aria-labelledby="charge" id="section-charge">
       <div class="wrap wrap-narrow" style="padding-top:1.2rem">
-      <h2 class="h-topic reveal rv-d2" id="charge" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.1</span>Electric Charge</h2>
+      <h2 class="h-topic" id="charge" data-mx="slam" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.1</span>Electric Charge</h2>
       <p class="lede" data-detail="plain">Everything is full of tiny charged bits. Rub two things together and some bits move — that moved charge is static electricity, and it follows two rules that never break.</p>
       <p class="lede" data-detail="tech">
         Charge is the property of matter behind every electric push and pull. It comes in two
@@ -383,7 +403,7 @@
           </div>
           <div class="panel-body">
             <div class="ctl">
-              <span class="ctl-label"><span class="sym">strokes</span> rub strength</span>
+              <span class="ctl-label">Rub strength</span>
               <span class="ctl-value" id="bl-ratev">2×10¹² e⁻ / stroke</span>
               <input class="range ctl-range" type="range" id="bl-rate" min="1" max="9" step="1" value="2" aria-label="Electrons transferred per rub stroke, in units of 10 to the 12">
             </div>
@@ -411,7 +431,7 @@
 
     <section class="lesson-section" aria-labelledby="coulomb" id="section-coulomb">
       <div class="wrap wrap-narrow" style="padding-top:1.2rem">
-      <h2 class="h-topic reveal rv-d2" id="coulomb" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.2</span>Coulomb’s Law</h2>
+      <h2 class="h-topic" id="coulomb" data-mx="slam" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.2</span>Coulomb’s Law</h2>
       <p class="lede" data-detail="plain">Charges push and pull on each other across empty space. One equation says exactly how hard — and the arena below lets you feel it with your hands.</p>
       <p class="lede" data-detail="tech">
         The force between two point charges is the lecture’s workhorse: inverse-square in the
@@ -684,7 +704,7 @@
 
     <section class="lesson-section" aria-labelledby="field" id="section-field">
       <div class="wrap wrap-narrow" style="padding-top:1.2rem">
-      <h2 class="h-topic reveal rv-d2" id="field" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.3</span>Electric Field</h2>
+      <h2 class="h-topic" id="field" data-mx="slam" style="scroll-margin-top:5rem;margin:.4rem 0 .35rem"><span class="tag tag-cyan" style="margin-right:.5rem;vertical-align:middle">2.3</span>Electric Field</h2>
       <p class="lede" data-detail="plain">A charge changes the space around it — that condition is the field. Hold up a tiny test charge anywhere and it points the way the push goes. The painter below lets you draw fields and feel them.</p>
       <p class="lede" data-detail="tech">
         Rather than charges reaching across empty space, physics says each charge modifies the
@@ -1028,6 +1048,7 @@
   <script defer src="../js/common.js"></script>
   <script defer src="../js/mascot.js"></script>
   <script defer src="../js/motion.js"></script>
+  <script defer src="../js/chapter-nav.js"></script>
   <script defer src="../js/sandbox-core.js"></script>
   <script defer src="../js/toy-balloon.js"></script>
   <script defer src="../js/sim-arena.js"></script>

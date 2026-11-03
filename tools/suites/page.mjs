@@ -29,7 +29,7 @@
     16 first paint is the butter yellow + loading bar, scroll locked, no dark loader
     17 a slow image holds the start; 18 a blocked one cannot hang it (8 s deadline)
     19 plain lettering: no text-shadow, no slant
-    20 hero mascot size on phones and desktop
+    20 hero mascot size on phones (scales with the screen) and desktop
    Exits 1 on any failure.
    ========================================================================== */
 async function intro(h) {
@@ -449,7 +449,7 @@ async function intro(h) {
     await ctx.close();
   }
 
-  /* 20: the hero mascot stays small on phones (it was 235 px tall on a 390 px screen) and keeps its desktop size */
+  /* 20: the hero mascot grows with the phone screen (a fifth of its height, 120 to 200 px; it was 235 px tall on a 390 px screen) and keeps its desktop size */
   {
     const sizes = [];
     for (const [w, hh, mobile] of [[360, 640, true], [390, 844, true], [412, 915, true], [1280, 800, false]]) {
@@ -460,13 +460,214 @@ async function intro(h) {
       sizes.push([w, await pg.evaluate(() => Math.round(document.querySelector('.hero-mascot').getBoundingClientRect().height))]);
       await ctx.close();
     }
-    ok('20 hero mascot is at most 132 px tall on phones and still 200+ px on desktop',
-      sizes.slice(0, 3).every(([, hgt]) => hgt <= 132 && hgt >= 90) && sizes[3][1] >= 200, JSON.stringify(sizes));
+    ok('20 hero mascot is 120 to 200 px tall on phones, taller on the taller screens, and still 200+ px on desktop',
+      sizes.slice(0, 3).every(([, hgt]) => hgt <= 200 && hgt >= 120) && sizes[1][1] > sizes[0][1] && sizes[2][1] >= sizes[1][1] && sizes[3][1] >= 200, JSON.stringify(sizes));
   }
 
   console.log('console/page errors:', errors.length ? errors.slice(0, 6) : 'none');
   if (errors.length) h.fail(errors.length);
   console.log(h.failed() === 0 ? 'INTRO CONTRACT PASS' : h.failed() + ' INTRO FAILURES');
+}
+
+/* ==========================================================================
+   EMC Lab — landing page verification (js/landing-scroll.js, the sections after the hero).
+     1 the page reads statement, preview, lessons, simulations, quiz call; the six simulation cards are
+       the registry's simulations and the syllabus titles are the lessons' own titles
+     2 wide screen: the lessons and the scroller pin; scrolling walks every lesson and every card in order,
+       the counter, dots and mascot face follow, and exactly one lesson is on
+     3 the last card ends inside the screen and the carousel never overflows it (1024, 1280, 1920)
+     4 the chooser: pointing at a lesson previews it, scrolling on ends the preview, a click jumps to it,
+       keyboard focus on a syllabus row previews it and Enter jumps to it; the arrows and focus move the cards
+     5 the statement lights up as it scrolls through the screen, the preview grows in
+     6 the Details switch changes the copy, and the pinned positions are still right after it moves the page
+     7 at rest no frame loop runs; below the landing sections nothing listens to scroll and the card art
+       only animates while the simulations are on screen; no console errors
+     8 phone: nothing pins, the page never scrolls sideways, the carousel swipes (arrows too)
+     9 reduced motion and short windows: nothing pins, every word is lit, the carousel still works
+   ========================================================================== */
+async function landing(h) {
+  const { ok, B, browser, skipIntroOnLoad } = h;
+  const errors = [];
+  async function open(opts) {
+    const ctx = await browser.newContext(opts);
+    const pg = await ctx.newPage();
+    pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
+    pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+    await pg.addInitScript(skipIntroOnLoad);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForFunction(() => window.EMC_LANDSCROLL && window.EMC_LANDSCROLL.state().started, null, { timeout: 15000 });
+    await pg.waitForTimeout(300);
+    return { ctx, pg };
+  }
+  const state = pg => pg.evaluate(() => window.EMC_LANDSCROLL.state());
+  const scrollTo = async (pg, y) => { await pg.evaluate(v => window.scrollTo({ top: v, behavior: 'instant' }), y); await pg.waitForTimeout(260); };
+  const trackY = (pg, id) => pg.evaluate(i => document.getElementById(i).getBoundingClientRect().top + scrollY - document.querySelector('.site-header').offsetHeight, id);
+  const range = (pg, track, stick) => pg.evaluate(([t, s]) => document.getElementById(t).offsetHeight - document.querySelector(s).offsetHeight, [track, stick]);
+
+  /* 1: order, registry, syllabus */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 800 } });
+    const r = await pg.evaluate(() => {
+      const R = window.EMC_REGISTRY, ids = R.chapters.flatMap(c => c.sims);
+      const cards = [...document.querySelectorAll('.sim-card')].map(c => ({ id: c.dataset.sim, href: c.querySelector('a').getAttribute('href'), title: c.querySelector('.sim-title').textContent }));
+      const want = ids.map(id => {
+        const ch = R.chapters.find(c => c.sims.includes(id)), info = R.simInfo[id];
+        return { id, href: ch.path + info.anchor, title: info.title };
+      });
+      const order = [...document.querySelectorAll('#shell-home > section[id]')].map(s => s.id).filter(i => ['about', 'preview', 'learn', 'sims', 'quiz-call'].includes(i));
+      const labels = [...document.querySelectorAll('.lw-btn .lw-t')].map(e => e.textContent);
+      const titles = [...document.querySelectorAll('.stop .stop-title')].map(e => e.textContent);
+      return { cards, want, order, labels, titles };
+    });
+    ok('1 the page reads statement, preview, lessons, simulations, quiz call', r.order.join() === 'about,preview,learn,sims,quiz-call', r.order.join());
+    ok('1 the simulation cards are exactly the registry simulations, titles and deep links included',
+      JSON.stringify(r.cards) === JSON.stringify(r.want), JSON.stringify(r.cards).slice(0, 160));
+    ok('1 the syllabus is built from the lessons: same titles, same order', r.labels.length === 7 && JSON.stringify(r.labels) === JSON.stringify(r.titles), r.labels.join(' | '));
+    await ctx.close();
+  }
+
+  /* 2, 4, 5, 6, 7: wide screen */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 800 } });
+    const st0 = await state(pg);
+    ok('2 wide screen: the lessons and the scroller pin', st0.story === true && st0.pin === true && st0.fx === true, JSON.stringify(st0));
+    /* 5: statement and preview */
+    const aboutY = await trackY(pg, 'about');
+    await scrollTo(pg, aboutY - 700);
+    const dim = (await state(pg)).lit;
+    await scrollTo(pg, await pg.evaluate(() => document.getElementById('aboutTitle').getBoundingClientRect().top + scrollY - innerHeight * 0.25));
+    const lit = await state(pg);
+    const pvY = await trackY(pg, 'preview');
+    await scrollTo(pg, pvY - 500);
+    const growing = await pg.evaluate(() => getComputedStyle(document.getElementById('pvOhm')).transform);
+    await scrollTo(pg, pvY + 200);
+    const grown = await pg.evaluate(() => getComputedStyle(document.getElementById('pvOhm')).transform);
+    ok('5 the statement lights up word by word as it arrives, and the preview grows in',
+      dim < lit.words && lit.lit === lit.words && growing !== 'none' && grown === 'none', `${dim}/${lit.words} -> ${lit.lit}; ${growing.slice(0, 30)} -> ${grown}`);
+    /* 2: lessons */
+    const lt = await trackY(pg, 'learnTrack'), lr = await range(pg, 'learnTrack', '.learn-stick');
+    const seen = [];
+    for (let i = 0; i < 7; i++) {
+      await scrollTo(pg, lt + (i / 6) * lr);
+      seen.push(await pg.evaluate(() => ({ on: [...document.querySelectorAll('.stop')].map((s, j) => s.classList.contains('on') ? j : -1).filter(j => j >= 0), done: document.querySelectorAll('.lw-nodes li.done').length,
+        cur: [...document.querySelectorAll('.lw-btn')].findIndex(b => b.getAttribute('aria-current') === 'step') })));
+    }
+    ok('2 scrolling walks all seven lessons in order, one on at a time, the wire filling and the syllabus following',
+      seen.every((x, i) => x.on.length === 1 && x.on[0] === i && x.done === i + 1 && x.cur === i), JSON.stringify(seen));
+    /* 4: the chooser */
+    await scrollTo(pg, lt);
+    await pg.hover('.lw-nodes li:nth-child(5) .lw-btn'); await pg.waitForTimeout(150);
+    const hovered = await state(pg);
+    await pg.mouse.move(5, 5);                                   /* leaving the list keeps the preview */
+    const kept = await state(pg);
+    await scrollTo(pg, lt + (2 / 6) * lr);
+    const moved = await state(pg);
+    await pg.click('.lw-nodes li:nth-child(6) .lw-btn'); await pg.waitForTimeout(250);
+    const clicked = await state(pg);
+    await scrollTo(pg, lt);
+    await pg.focus('.lw-nodes li:nth-child(7) .lw-btn'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(250);
+    const focused = await state(pg);
+    ok('4 the chooser: pointing previews a lesson, scrolling on ends the preview, a click jumps to it, the keyboard reaches every lesson through its row',
+      hovered.shown === 4 && hovered.stop === 0 && kept.shown === 4 && moved.shown === 2 && clicked.stop === 5 && clicked.shown === 5 && focused.stop === 6 && focused.shown === 6,
+      [hovered, kept, moved, clicked, focused].map(s => s.stop + '/' + s.shown).join(' '));
+    /* 2: scroller */
+    const stt = await trackY(pg, 'simsTrack'), sr = await range(pg, 'simsTrack', '.sims-stick');
+    const cards = [];
+    for (let i = 0; i < 6; i++) {
+      await scrollTo(pg, stt + (i / 5) * sr);
+      cards.push(await pg.evaluate(() => ({ n: document.getElementById('simsCount').textContent, on: [...document.querySelectorAll('.sim-card')].map((c, j) => c.classList.contains('on') ? j : -1).filter(j => j >= 0), face: document.getElementById('simsMascot').getAttribute('src') })));
+    }
+    ok('2 scrolling the scroller walks all six cards; counter, dots and the mascot face follow',
+      cards.every((x, i) => x.n === (i + 1) + ' / 6' && x.on.length === 1 && x.on[0] === i) && new Set(cards.map(x => x.face)).size >= 2, JSON.stringify(cards).slice(0, 260));
+    const anim = await pg.evaluate(() => document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.sim-art')).length);
+    await scrollTo(pg, stt);
+    await pg.click('#simsNext'); await pg.waitForTimeout(900);
+    const afterNext = (await state(pg)).card;
+    await pg.focus('.sim-card:nth-child(5) a'); await pg.waitForTimeout(400);
+    const afterFocus = (await state(pg)).card;
+    ok('4 the arrow moves to the next card and focusing a card with the keyboard brings it into view',
+      afterNext === 1 && afterFocus === 4, afterNext + ' / ' + afterFocus);
+    /* the pinned view cannot be scrolled sideways, however it is asked (focus, find in page, a restored position) */
+    const clip = await pg.evaluate(async () => { const v = document.getElementById('simsView'); v.scrollLeft = 700; await new Promise(r => setTimeout(r, 120)); return { sl: v.scrollLeft, ox: getComputedStyle(v).overflowX }; });
+    ok('4 the pinned carousel cannot be scrolled sideways (overflow clip), so the rail can only follow the page', clip.sl === 0 && /clip|hidden/.test(clip.ox), JSON.stringify(clip));
+    /* 6: Details */
+    await scrollTo(pg, aboutY);
+    const readLede = () => pg.evaluate(() => [...document.querySelectorAll('#about .lede')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.textContent.trim()).join('|'));
+    const before = await readLede();
+    await pg.click('#detailToggle'); await pg.waitForTimeout(500);
+    const after = await readLede();
+    ok('6 the Details switch changes the statement copy', before.length > 20 && after.length > 20 && before !== after, before.slice(0, 40) + ' / ' + after.slice(0, 40));
+    await pg.evaluate(() => window.EMC_LANDSCROLL.goStop(3)); await pg.waitForTimeout(250);
+    const afterDetail = await state(pg);
+    ok('6 after the Details switch moves the page, jumping to a lesson still lands on it', afterDetail.stop === 3 && afterDetail.shown === 3, JSON.stringify(afterDetail));
+    /* 7: at rest */
+    await scrollTo(pg, 0); await pg.waitForTimeout(400);
+    const top = await pg.evaluate(() => ({ ls: window.EMC_LANDSCROLL.state(), rafs: window.EMC.stats().rafs }));
+    await scrollTo(pg, await pg.evaluate(() => document.documentElement.scrollHeight)); await pg.waitForTimeout(400);
+    const bottom = await pg.evaluate(() => ({ ls: window.EMC_LANDSCROLL.state(), rafs: window.EMC.stats().rafs,
+      art: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.sim-art')).length }));
+    ok('7 at rest no frame loop runs; past the landing sections nothing listens to scroll; the card art animates only on screen',
+      top.ls.rafs === 0 && top.rafs === 0 && bottom.ls.listening === false && bottom.ls.rafs === 0 && bottom.art === 0 && anim > 0,
+      JSON.stringify({ top: top.ls.rafs, bottom: bottom.ls, art: bottom.art, onScreen: anim }));
+    await ctx.close();
+  }
+
+  /* 3: scroller geometry at three widths */
+  for (const [w, hh] of [[1024, 768], [1280, 800], [1920, 1080]]) {
+    const { ctx, pg } = await open({ viewport: { width: w, height: hh } });
+    const stt = await trackY(pg, 'simsTrack'), sr = await range(pg, 'simsTrack', '.sims-stick');
+    await scrollTo(pg, stt + sr);
+    const g = await pg.evaluate(() => {
+      const v = document.getElementById('simsView').getBoundingClientRect(), cs = [...document.querySelectorAll('.sim-card')];
+      const lastR = cs[cs.length - 1].getBoundingClientRect().right;
+      return { view: Math.round(v.width), iw: innerWidth, last: Math.round(lastR), sw: document.documentElement.scrollWidth };
+    });
+    ok(`3 ${w}x${hh}: the carousel fits the screen and the last card ends inside it`, g.view <= g.iw && g.last <= g.iw && g.sw <= g.iw, JSON.stringify(g));
+    await ctx.close();
+  }
+
+  /* 8: phone */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const st = await state(pg);
+    const geo = await pg.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth, swipe: document.getElementById('simsView').scrollWidth > document.getElementById('simsView').clientWidth,
+      pinned: document.documentElement.classList.contains('ls-story') || document.documentElement.classList.contains('ls-pin') }));
+    ok('8 phone: nothing pins and the page never scrolls sideways', st.story === false && st.pin === false && !geo.pinned && geo.sw <= geo.iw, JSON.stringify(geo));
+    await pg.locator('#sims').scrollIntoViewIfNeeded();
+    await pg.waitForTimeout(300);
+    await pg.click('#simsNext'); await pg.waitForTimeout(900);
+    const c1 = (await state(pg)).card;
+    await pg.evaluate(() => document.getElementById('simsView').scrollTo({ left: 99999 }));
+    await pg.waitForTimeout(700);
+    const last = await pg.evaluate(() => ({ card: window.EMC_LANDSCROLL.state().card, count: document.getElementById('simsCount').textContent, next: document.getElementById('simsNext').disabled }));
+    ok('8 phone: the carousel swipes (arrows and a drag to the end both update the card, counter and arrows)',
+      geo.swipe && c1 === 1 && last.card === 5 && last.count === '6 / 6' && last.next === true, c1 + ' ' + JSON.stringify(last));
+    await ctx.close();
+  }
+
+  /* 9: reduced motion, short window */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+    const st = await state(pg);
+    const geo = await pg.evaluate(() => ({ cls: ['ls-story', 'ls-pin', 'ls-fx'].filter(c => document.documentElement.classList.contains(c)),
+      dimWords: [...document.querySelectorAll('.st-w')].filter(w => getComputedStyle(w).opacity !== '1').length,
+      stops: [...document.querySelectorAll('.stop')].filter(s => getComputedStyle(s).position !== 'absolute').length }));
+    await pg.locator('#sims').scrollIntoViewIfNeeded();
+    await pg.click('#simsNext'); await pg.waitForTimeout(500);
+    ok('9 reduced motion: nothing pins or scrubs, every word is lit, every lesson is in the page, and the carousel still works',
+      st.story === false && st.pin === false && geo.cls.length === 0 && geo.dimWords === 0 && geo.stops === 7 && (await state(pg)).card === 1, JSON.stringify({ st, geo }));
+    await ctx.close();
+  }
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 500 } });
+    const st = await state(pg);
+    ok('9 a short window (1280x500) does not pin', st.story === false && st.pin === false, JSON.stringify(st));
+    await ctx.close();
+  }
+
+  console.log('console/page errors:', errors.length ? errors.slice(0, 6) : 'none');
+  if (errors.length) h.fail(errors.length);
+  console.log(h.failed() === 0 ? 'LANDING PASS' : h.failed() + ' LANDING FAILURES');
 }
 
 /* ==========================================================================
@@ -482,6 +683,12 @@ async function intro(h) {
        plays and cleans itself up;
      7 double emc:view-shown never stacks two flash nodes;
      8 flash interrupted mid-dip by navigation still cleans up.
+     9 page transitions are one fixed timeline: swap only under a closed card, hold, reveal; cached = first visit,
+       a slow response only lengthens the hold;
+    10 arriving from another page is covered from the first frame, held, then lifted;
+    11 home and straight back to the mounted chapter, inside the card, ends on the chapter;
+    12 the destination page animates along: reveals held under the card, released as it lifts, title split into letters;
+    13 the browser Back button from a chapter returns to Home.
    Exits 1 on any failure.
    ========================================================================== */
 async function motion(h) {
@@ -563,6 +770,149 @@ async function motion(h) {
     await ctx.close();
   }
 
+  /* 9: the transition is one fixed timeline: the page is swapped only once the card has covered it, the card is
+        lifted no sooner than the hold after that, a delayed response only makes the hold longer, and a cached
+        chapter takes as long as an uncached one */
+  {
+    const T = { COVER: 480, HOLD: 420, OUT: 560 };
+    const record = pg => pg.evaluate(() => {
+      const topic = document.getElementById('shell-topic'), hidden0 = topic.hidden;
+      const r = window.__tc = { add: 0, swap: 0, out: 0, rm: 0, onAtSwap: null };
+      const tick = () => {
+        const c = document.querySelector('.tc'), n = performance.now();
+        if (c && !r.add) r.add = n;
+        if (r.add && !r.swap && topic.hidden !== hidden0) { r.swap = n; r.onAtSwap = !!c && c.classList.contains('on'); }
+        if (c && c.classList.contains('out') && !r.out) r.out = n;
+        if (r.add && !c && !r.rm) { r.rm = n; return; }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    const finish = pg => pg.waitForFunction(() => window.__tc && window.__tc.rm, null, { timeout: 8000 }).then(() => pg.evaluate(() => window.__tc));
+    const d = r => ({ swap: Math.round(r.swap - r.add), out: Math.round(r.out - r.add), total: Math.round(r.rm - r.add) });
+
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await record(pg); await pg.click('a[data-topic-link="ch2"]');
+    const s1 = d(await finish(pg));                                  // first visit
+    await pg.waitForTimeout(400);
+    await pg.evaluate(() => { location.hash = '#/'; });
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 6000 });
+    await pg.waitForTimeout(300);
+    await record(pg); await pg.click('a[data-topic-link="ch2"]');
+    const s2 = d(await finish(pg));                                  // cached
+    const at2 = await pg.evaluate(() => window.__tc.onAtSwap);
+    ok('9 the page is swapped under a fully closed card and the card lifts only after the hold',
+      at2 === true && s2.swap >= T.COVER - 40 && s2.out >= T.COVER + T.HOLD - 40 && s2.total >= T.COVER + T.HOLD + T.OUT - 40, JSON.stringify(s2));
+    ok('9 a cached chapter plays the same timeline as the first visit (within 250 ms)', Math.abs(s1.total - s2.total) < 250, JSON.stringify({ first: s1, cached: s2 }));
+    await ctx.close();
+
+    const slow = await ctxPage();
+    await noIntro(slow.pg);
+    await slow.pg.route('**/topics/fields.html', async route => { await new Promise(r => setTimeout(r, 3000)); await route.continue(); });
+    await slow.pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await slow.pg.waitForTimeout(500);
+    await record(slow.pg); await slow.pg.click('a[data-topic-link="ch2"]');
+    const s3 = d(await finish(slow.pg));
+    ok('9 a slow response keeps the card up until the chapter is ready (the hold only gets longer)',
+      s3.out >= 2000 && s3.swap >= T.COVER - 40 && s3.swap < 900, JSON.stringify(s3));
+    await slow.ctx.close();
+  }
+
+  /* 10: arriving from another page (full navigation): the cover is on the first frame, held, then lifted */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('emc.tc')) return;
+        const a = window.__arrive = { first: null, add: 0, rm: 0 };
+        requestAnimationFrame(() => { a.first = { gate: document.documentElement.classList.contains('tc-arrive'), card: !!document.querySelector('.tc') }; });
+        const mo = new MutationObserver(() => {
+          const c = document.querySelector('.tc');
+          if (c && !a.add) a.add = performance.now();
+          if (a.add && !c && !a.rm) { a.rm = performance.now(); mo.disconnect(); }
+        });
+        mo.observe(document, { childList: true, subtree: true });
+      } catch (e) { /* storage blocked */ }
+    });
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await pg.click('a.nav-cta');
+    await pg.waitForURL(/quiz\.html/, { timeout: 8000 });
+    await pg.waitForFunction(() => window.__arrive && window.__arrive.rm, null, { timeout: 8000 });
+    const a = await pg.evaluate(() => ({ first: window.__arrive.first, life: Math.round(window.__arrive.rm - window.__arrive.add), gate: document.documentElement.classList.contains('tc-arrive'), key: sessionStorage.getItem('emc.tc') }));
+    ok('10 an arriving page is covered on its first frame (head gate, then the held card), never bare',
+      a.first && (a.first.gate || a.first.card), JSON.stringify(a));
+    ok('10 the arrival holds, reveals and cleans up (gate removed, one-shot marker consumed)',
+      a.life >= 420 + 560 - 120 && a.life < 4000 && a.gate === false && a.key === null, JSON.stringify(a));
+    await ctx.close();
+  }
+
+  /* 11: asking for Home and then, while the card is still covering, for the chapter that is mounted must end on the chapter */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html#/ch2', { waitUntil: 'load' });
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden, null, { timeout: 8000 });
+    await pg.waitForTimeout(600);
+    await pg.evaluate(() => { location.hash = '#/'; });
+    await pg.waitForTimeout(150);
+    await pg.evaluate(() => { location.hash = '#/ch2'; });
+    await pg.waitForFunction(() => !document.querySelector('.tc'), null, { timeout: 8000 });
+    await pg.waitForTimeout(300);
+    const end = await pg.evaluate(() => ({ topic: !document.getElementById('shell-topic').hidden, homeHidden: document.getElementById('shell-home').hidden, hash: location.hash, h1: (document.querySelector('#shell-topic h1') || {}).textContent }));
+    ok('11 home and straight back to the mounted chapter (inside the card) ends on the chapter', end.topic && end.homeHidden && end.hash === '#/ch2' && !!end.h1, JSON.stringify(end));
+    await ctx.close();
+  }
+
+  /* 12: the page we go to animates along: its reveals are held while the card covers, play as the card lifts,
+         and its title is split into letters that animate; afterwards nothing is held and the title reads the same */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await pg.click('a[data-topic-link="ch2"]');
+    await pg.waitForFunction(() => document.documentElement.classList.contains('tc-wait') && !document.getElementById('shell-topic').hidden && document.querySelector('#shell-topic h1'), null, { timeout: 8000 });
+    const held = await pg.evaluate(() => ({ wait: document.documentElement.classList.contains('tc-wait'),
+      ops: [...document.querySelectorAll('#shell-topic .reveal')].slice(0, 4).map(e => getComputedStyle(e).opacity) }));
+    await pg.waitForSelector('.tc.out', { timeout: 8000 });
+    await pg.waitForTimeout(330);
+    const along = await pg.evaluate(() => ({ wait: document.documentElement.classList.contains('tc-wait'),
+      anims: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#shell-topic')).length,
+      letters: document.querySelectorAll('#shell-topic h1 span[aria-hidden] > span').length }));
+    await pg.waitForFunction(() => !document.querySelector('.tc'), null, { timeout: 8000 });
+    await pg.waitForTimeout(1600);
+    const done = await pg.evaluate(() => { const h = document.querySelector('#shell-topic h1'); return { text: h.textContent.trim(), label: h.getAttribute('aria-label'), op: getComputedStyle(h).opacity,
+      wait: document.documentElement.classList.contains('tc-wait'), reveals: [...document.querySelectorAll('#shell-topic .reveal.in')].every(e => getComputedStyle(e).opacity === '1') }; });
+    ok('12 while the card covers, the destination\'s reveals wait at their start state', held.wait && held.ops.length > 0 && held.ops.every(o => o === '0'), JSON.stringify(held));
+    ok('12 as the card lifts the page\'s text comes in with it: reveals released, title split into letters, blocks animating', along.wait === false && along.letters >= 10 && along.anims >= 8, JSON.stringify(along));
+    ok('12 and it settles: the title reads the same (text and aria-label), nothing is held, every revealed block is visible',
+      done.text === 'Electric Fields & Coulomb\u2019s Law' && done.label === done.text && done.op === '1' && !done.wait && done.reveals, JSON.stringify(done));
+    await ctx.close();
+  }
+
+  /* 13: the browser's Back button from a chapter returns to Home (the bare address the visit began on) */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await pg.click('a[data-topic-link="ch1"]');
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
+    await pg.goBack();
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
+    const back = await pg.evaluate(() => ({ home: !document.getElementById('shell-home').hidden, hash: location.hash }));
+    ok('13 Back from a chapter returns to Home', back.home && back.hash === '', JSON.stringify(back));
+    await pg.goForward();
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
+    ok('13 Forward returns to the chapter', true);
+    await ctx.close();
+  }
+
   /* 4: reduced motion gets final states, no dip */
   {
     const { ctx, pg } = await ctxPage({ reducedMotion: 'reduce' });
@@ -580,6 +930,8 @@ async function motion(h) {
       };
     });
     ok('4 reduced motion: no flash dip, content visible, nothing running', rm.flash === 0 && rm.op === '1' && rm.anims === 0, JSON.stringify(rm));
+    const noCard = await pg.evaluate(() => ({ card: document.querySelectorAll('.tc').length, gate: document.documentElement.classList.contains('tc-arrive'), key: sessionStorage.getItem('emc.tc') }));
+    ok('4 reduced motion: no transition card, no arrival gate, nothing stored for the next page', noCard.card === 0 && noCard.gate === false && noCard.key === null, JSON.stringify(noCard));
     await ctx.close();
   }
 
@@ -869,9 +1221,9 @@ async function loader(h) {
     const mounted = await pg.evaluate(() => !document.getElementById('shell-topic').hidden);
     ok('7 hash deep link mounts the chapter', mounted);
     await pg.evaluate(() => { location.hash = '#/'; });
-    await pg.waitForTimeout(400);
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 6000 });
     await pg.evaluate(() => { location.hash = '#/field'; });
-    await pg.waitForTimeout(900);
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
     const st = await pg.evaluate(() => ({
       overlay: !!document.getElementById('bootOverlay'),
       timers: window.EMC && window.EMC.loader ? window.EMC.loader.state().timers : -1,
@@ -1162,6 +1514,7 @@ async function nav(h) {
 export const suites = {
   intro: { about: 'plays every load; only Skip / Start / Esc end it; reduced motion; cleanup; layout at six viewports', browser: true, run: intro },
   motion: { about: 'title-card transitions, reveals, reduced motion', browser: true, run: motion },
+  landing: { about: 'landing page: section order, cards = registry, lesson chooser, pinned lessons and scroller, phone swipe, reduced motion, Details', browser: true, remote: true, run: landing },
   loader: { about: 'page loader, boot, failure paths', browser: true, run: loader },
   nav: { about: 'navigation, routes, prefetch, shell mounts', browser: true, run: nav }
 };

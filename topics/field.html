@@ -7,6 +7,8 @@
   <meta name="robots" content="noindex">
   <link rel="canonical" href="https://emc-lab.vercel.app/topics/fields.html">
   <meta http-equiv="refresh" content="0; url=fields.html#field">
+  <!-- Page transition gate: arriving from a title card (js/motion.js left sessionStorage 'emc.tc'), paint the cover on the very first frame so the new page never shows before its card. Not on a bare home load (the intro's yellow owns that), never with reduced motion or without JS; motion.js always clears it, and so does this timer if it never loads. -->
+  <script>try{var d=document.documentElement;if(sessionStorage.getItem('emc.tc')&&!d.classList.contains('landing-pending')&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('tc-arrive');setTimeout(function(){d.classList.remove('tc-arrive')},2500)}}catch(e){}</script>
   <link rel="stylesheet" href="../css/site.css">
   <link rel="stylesheet" href="../css/fonts.css">
   <script>/* Old URLs keep working (§3.3): redirect into the merged chapter and

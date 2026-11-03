@@ -20,7 +20,7 @@ Then look at screenshots of at least three frames (a phrase, the title card, Sta
 
 ## After the intro
 - `document.documentElement.scrollWidth <= innerWidth` on `index.html`, `quiz.html`, both chapters.
-- Hero mascot height at most 132 px at widths ≤ 640 px.
+- Hero mascot height 120 to 200 px at widths ≤ 640 px, taller on taller screens (44% of the width or 20% of the height, whichever is smaller).
 - The Details switch, nav toggle and primary buttons are reachable and at least 44 px tall.
 
 ## Smoothness
