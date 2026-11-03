@@ -34,6 +34,14 @@ window.EMC_REGISTRY = {
       "points": ["Like repels, unlike attracts; q = n·e, conserved", "F = k|q₁q₂|/r² — forces add as arrows", "E = F/|q₀| and the +test-charge direction rule"]
     }
   ],
+  "simInfo": {
+    "sim-ohm": { "title": "Ohm bench", "anchor": "#sim-ohm-panel" },
+    "sim-circuit": { "title": "Circuit builder", "anchor": "#sim-circuit-panel" },
+    "toy-balloon": { "title": "Rub the Balloon", "anchor": "#toy-balloon-panel" },
+    "sim-arena": { "title": "Tug-of-War Arena", "anchor": "#sim-arena-panel" },
+    "toy-bohr": { "title": "Bohr Tuner", "anchor": "#toy-bohr-panel" },
+    "sim-fieldpaint": { "title": "Field Painter", "anchor": "#sim-fieldpaint-panel" }
+  },
   "aliases": {
     "charge": "ch2", "coulomb": "ch2", "field": "ch2", "efield": "ch2", "charges": "ch2",
     "current": "ch1", "circuits": "ch1"

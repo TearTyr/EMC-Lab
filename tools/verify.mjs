@@ -6,6 +6,7 @@
      node tools/verify.mjs --all              everything, incl. the slow release suites
      node tools/verify.mjs --browser firefox  run the browser suites in firefox | edge | chromium
      node tools/verify.mjs --list             what exists
+     node tools/verify.mjs live --url <base>  read-only checks of a deployed site (also: landing)
    Suites live in tools/suites/<group>.mjs (a suite is `{ about, browser, run(h) }`);
    tools/lib/harness.mjs gives them one server, one browser and a counting ok().
    Static checks are `node tools/check.mjs`, the production build is `node tools/build.mjs`. */
@@ -15,6 +16,7 @@ const GROUPS = ['jsdom', 'page', 'ui', 'features', 'release'];
 const args = process.argv.slice(2);
 const flag = n => { const i = args.indexOf(n); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
 const browserKind = flag('--browser') || 'chromium';
+const remoteUrl = flag('--url');         /* a deployed site instead of the local server: only suites marked remote may run */
 const all = args.includes('--all'), list = args.includes('--list');
 const wanted = args.filter(a => !a.startsWith('--'));
 
@@ -25,7 +27,7 @@ for (const g of GROUPS) {
 }
 
 if (list) {
-  for (const s of registry) console.log(s.name.padEnd(12), s.group.padEnd(9), (s.slow ? '[slow] ' : '') + s.about);
+  for (const s of registry) console.log(s.name.padEnd(12), s.group.padEnd(9), (s.slow ? '[slow] ' : '') + (s.remote ? '[remote] ' : '') + s.about);
   process.exit(0);
 }
 
@@ -35,10 +37,15 @@ const picked = wanted.length
 const unknown = wanted.filter(w => !registry.some(s => s.name === w || s.group === w));
 if (unknown.length) { console.error('unknown suite/group:', unknown.join(', '), '(try --list)'); process.exit(2); }
 
+if (remoteUrl) {
+  const local = picked.filter(s => !s.remote).map(s => s.name);
+  if (local.length) { console.error('--url runs remote suites only; these need the local files:', local.join(', ')); process.exit(2); }
+  if (!picked.length) { console.error('--url needs at least one remote suite (try: live landing)'); process.exit(2); }
+}
 const shared = {};
 if (picked.some(s => s.browser)) {
-  shared.srv = await serve();
-  shared.B = shared.srv.B;
+  if (remoteUrl) shared.B = remoteUrl.replace(/\/+$/, '');
+  else { shared.srv = await serve(); shared.B = shared.srv.B; }
   shared.browser = await launch(browserKind);
 }
 

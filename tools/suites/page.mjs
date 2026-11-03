@@ -470,6 +470,204 @@ async function intro(h) {
 }
 
 /* ==========================================================================
+   EMC Lab — landing page verification (js/landing-scroll.js, the sections after the hero).
+     1 the page reads statement, preview, lessons, simulations, quiz call; the six simulation cards are
+       the registry's simulations and the syllabus titles are the lessons' own titles
+     2 wide screen: the lessons and the scroller pin; scrolling walks every lesson and every card in order,
+       the counter, dots and mascot face follow, and exactly one lesson is on
+     3 the last card ends inside the screen and the carousel never overflows it (1024, 1280, 1920)
+     4 the chooser: pointing at a lesson previews it, scrolling on ends the preview, a click jumps to it,
+       keyboard focus on a syllabus row previews it and Enter jumps to it; the arrows and focus move the cards
+     5 the statement lights up as it scrolls through the screen, the preview grows in
+     6 the Details switch changes the copy, and the pinned positions are still right after it moves the page
+     7 at rest no frame loop runs; below the landing sections nothing listens to scroll and the card art
+       only animates while the simulations are on screen; no console errors
+     8 phone: nothing pins, the page never scrolls sideways, the carousel swipes (arrows too)
+     9 reduced motion and short windows: nothing pins, every word is lit, the carousel still works
+   ========================================================================== */
+async function landing(h) {
+  const { ok, B, browser, skipIntroOnLoad } = h;
+  const errors = [];
+  async function open(opts) {
+    const ctx = await browser.newContext(opts);
+    const pg = await ctx.newPage();
+    pg.on('pageerror', e => errors.push(String(e).slice(0, 140)));
+    pg.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 140)); });
+    await pg.addInitScript(skipIntroOnLoad);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForFunction(() => window.EMC_LANDSCROLL && window.EMC_LANDSCROLL.state().started, null, { timeout: 15000 });
+    await pg.waitForTimeout(300);
+    return { ctx, pg };
+  }
+  const state = pg => pg.evaluate(() => window.EMC_LANDSCROLL.state());
+  const scrollTo = async (pg, y) => { await pg.evaluate(v => window.scrollTo({ top: v, behavior: 'instant' }), y); await pg.waitForTimeout(260); };
+  const trackY = (pg, id) => pg.evaluate(i => document.getElementById(i).getBoundingClientRect().top + scrollY - document.querySelector('.site-header').offsetHeight, id);
+  const range = (pg, track, stick) => pg.evaluate(([t, s]) => document.getElementById(t).offsetHeight - document.querySelector(s).offsetHeight, [track, stick]);
+
+  /* 1: order, registry, syllabus */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 800 } });
+    const r = await pg.evaluate(() => {
+      const R = window.EMC_REGISTRY, ids = R.chapters.flatMap(c => c.sims);
+      const cards = [...document.querySelectorAll('.sim-card')].map(c => ({ id: c.dataset.sim, href: c.querySelector('a').getAttribute('href'), title: c.querySelector('.sim-title').textContent }));
+      const want = ids.map(id => {
+        const ch = R.chapters.find(c => c.sims.includes(id)), info = R.simInfo[id];
+        return { id, href: ch.path + info.anchor, title: info.title };
+      });
+      const order = [...document.querySelectorAll('#shell-home > section[id]')].map(s => s.id).filter(i => ['about', 'preview', 'learn', 'sims', 'quiz-call'].includes(i));
+      const labels = [...document.querySelectorAll('.lw-btn .lw-t')].map(e => e.textContent);
+      const titles = [...document.querySelectorAll('.stop .stop-title')].map(e => e.textContent);
+      return { cards, want, order, labels, titles };
+    });
+    ok('1 the page reads statement, preview, lessons, simulations, quiz call', r.order.join() === 'about,preview,learn,sims,quiz-call', r.order.join());
+    ok('1 the simulation cards are exactly the registry simulations, titles and deep links included',
+      JSON.stringify(r.cards) === JSON.stringify(r.want), JSON.stringify(r.cards).slice(0, 160));
+    ok('1 the syllabus is built from the lessons: same titles, same order', r.labels.length === 7 && JSON.stringify(r.labels) === JSON.stringify(r.titles), r.labels.join(' | '));
+    await ctx.close();
+  }
+
+  /* 2, 4, 5, 6, 7: wide screen */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 800 } });
+    const st0 = await state(pg);
+    ok('2 wide screen: the lessons and the scroller pin', st0.story === true && st0.pin === true && st0.fx === true, JSON.stringify(st0));
+    /* 5: statement and preview */
+    const aboutY = await trackY(pg, 'about');
+    await scrollTo(pg, aboutY - 700);
+    const dim = (await state(pg)).lit;
+    await scrollTo(pg, await pg.evaluate(() => document.getElementById('aboutTitle').getBoundingClientRect().top + scrollY - innerHeight * 0.25));
+    const lit = await state(pg);
+    const pvY = await trackY(pg, 'preview');
+    await scrollTo(pg, pvY - 500);
+    const growing = await pg.evaluate(() => getComputedStyle(document.getElementById('pvOhm')).transform);
+    await scrollTo(pg, pvY + 200);
+    const grown = await pg.evaluate(() => getComputedStyle(document.getElementById('pvOhm')).transform);
+    ok('5 the statement lights up word by word as it arrives, and the preview grows in',
+      dim < lit.words && lit.lit === lit.words && growing !== 'none' && grown === 'none', `${dim}/${lit.words} -> ${lit.lit}; ${growing.slice(0, 30)} -> ${grown}`);
+    /* 2: lessons */
+    const lt = await trackY(pg, 'learnTrack'), lr = await range(pg, 'learnTrack', '.learn-stick');
+    const seen = [];
+    for (let i = 0; i < 7; i++) {
+      await scrollTo(pg, lt + (i / 6) * lr);
+      seen.push(await pg.evaluate(() => ({ on: [...document.querySelectorAll('.stop')].map((s, j) => s.classList.contains('on') ? j : -1).filter(j => j >= 0), done: document.querySelectorAll('.lw-nodes li.done').length,
+        cur: [...document.querySelectorAll('.lw-btn')].findIndex(b => b.getAttribute('aria-current') === 'step') })));
+    }
+    ok('2 scrolling walks all seven lessons in order, one on at a time, the wire filling and the syllabus following',
+      seen.every((x, i) => x.on.length === 1 && x.on[0] === i && x.done === i + 1 && x.cur === i), JSON.stringify(seen));
+    /* 4: the chooser */
+    await scrollTo(pg, lt);
+    await pg.hover('.lw-nodes li:nth-child(5) .lw-btn'); await pg.waitForTimeout(150);
+    const hovered = await state(pg);
+    await pg.mouse.move(5, 5);                                   /* leaving the list keeps the preview */
+    const kept = await state(pg);
+    await scrollTo(pg, lt + (2 / 6) * lr);
+    const moved = await state(pg);
+    await pg.click('.lw-nodes li:nth-child(6) .lw-btn'); await pg.waitForTimeout(250);
+    const clicked = await state(pg);
+    await scrollTo(pg, lt);
+    await pg.focus('.lw-nodes li:nth-child(7) .lw-btn'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(250);
+    const focused = await state(pg);
+    ok('4 the chooser: pointing previews a lesson, scrolling on ends the preview, a click jumps to it, the keyboard reaches every lesson through its row',
+      hovered.shown === 4 && hovered.stop === 0 && kept.shown === 4 && moved.shown === 2 && clicked.stop === 5 && clicked.shown === 5 && focused.stop === 6 && focused.shown === 6,
+      [hovered, kept, moved, clicked, focused].map(s => s.stop + '/' + s.shown).join(' '));
+    /* 2: scroller */
+    const stt = await trackY(pg, 'simsTrack'), sr = await range(pg, 'simsTrack', '.sims-stick');
+    const cards = [];
+    for (let i = 0; i < 6; i++) {
+      await scrollTo(pg, stt + (i / 5) * sr);
+      cards.push(await pg.evaluate(() => ({ n: document.getElementById('simsCount').textContent, on: [...document.querySelectorAll('.sim-card')].map((c, j) => c.classList.contains('on') ? j : -1).filter(j => j >= 0), face: document.getElementById('simsMascot').getAttribute('src') })));
+    }
+    ok('2 scrolling the scroller walks all six cards; counter, dots and the mascot face follow',
+      cards.every((x, i) => x.n === (i + 1) + ' / 6' && x.on.length === 1 && x.on[0] === i) && new Set(cards.map(x => x.face)).size >= 2, JSON.stringify(cards).slice(0, 260));
+    const anim = await pg.evaluate(() => document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.sim-art')).length);
+    await scrollTo(pg, stt);
+    await pg.click('#simsNext'); await pg.waitForTimeout(900);
+    const afterNext = (await state(pg)).card;
+    await pg.focus('.sim-card:nth-child(5) a'); await pg.waitForTimeout(400);
+    const afterFocus = (await state(pg)).card;
+    ok('4 the arrow moves to the next card and focusing a card with the keyboard brings it into view',
+      afterNext === 1 && afterFocus === 4, afterNext + ' / ' + afterFocus);
+    /* 6: Details */
+    await scrollTo(pg, aboutY);
+    const readLede = () => pg.evaluate(() => [...document.querySelectorAll('#about .lede')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.textContent.trim()).join('|'));
+    const before = await readLede();
+    await pg.click('#detailToggle'); await pg.waitForTimeout(500);
+    const after = await readLede();
+    ok('6 the Details switch changes the statement copy', before.length > 20 && after.length > 20 && before !== after, before.slice(0, 40) + ' / ' + after.slice(0, 40));
+    await pg.evaluate(() => window.EMC_LANDSCROLL.goStop(3)); await pg.waitForTimeout(250);
+    const afterDetail = await state(pg);
+    ok('6 after the Details switch moves the page, jumping to a lesson still lands on it', afterDetail.stop === 3 && afterDetail.shown === 3, JSON.stringify(afterDetail));
+    /* 7: at rest */
+    await scrollTo(pg, 0); await pg.waitForTimeout(400);
+    const top = await pg.evaluate(() => ({ ls: window.EMC_LANDSCROLL.state(), rafs: window.EMC.stats().rafs }));
+    await scrollTo(pg, await pg.evaluate(() => document.documentElement.scrollHeight)); await pg.waitForTimeout(400);
+    const bottom = await pg.evaluate(() => ({ ls: window.EMC_LANDSCROLL.state(), rafs: window.EMC.stats().rafs,
+      art: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.sim-art')).length }));
+    ok('7 at rest no frame loop runs; past the landing sections nothing listens to scroll; the card art animates only on screen',
+      top.ls.rafs === 0 && top.rafs === 0 && bottom.ls.listening === false && bottom.ls.rafs === 0 && bottom.art === 0 && anim > 0,
+      JSON.stringify({ top: top.ls.rafs, bottom: bottom.ls, art: bottom.art, onScreen: anim }));
+    await ctx.close();
+  }
+
+  /* 3: scroller geometry at three widths */
+  for (const [w, hh] of [[1024, 768], [1280, 800], [1920, 1080]]) {
+    const { ctx, pg } = await open({ viewport: { width: w, height: hh } });
+    const stt = await trackY(pg, 'simsTrack'), sr = await range(pg, 'simsTrack', '.sims-stick');
+    await scrollTo(pg, stt + sr);
+    const g = await pg.evaluate(() => {
+      const v = document.getElementById('simsView').getBoundingClientRect(), cs = [...document.querySelectorAll('.sim-card')];
+      const lastR = cs[cs.length - 1].getBoundingClientRect().right;
+      return { view: Math.round(v.width), iw: innerWidth, last: Math.round(lastR), sw: document.documentElement.scrollWidth };
+    });
+    ok(`3 ${w}x${hh}: the carousel fits the screen and the last card ends inside it`, g.view <= g.iw && g.last <= g.iw && g.sw <= g.iw, JSON.stringify(g));
+    await ctx.close();
+  }
+
+  /* 8: phone */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const st = await state(pg);
+    const geo = await pg.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth, swipe: document.getElementById('simsView').scrollWidth > document.getElementById('simsView').clientWidth,
+      pinned: document.documentElement.classList.contains('ls-story') || document.documentElement.classList.contains('ls-pin') }));
+    ok('8 phone: nothing pins and the page never scrolls sideways', st.story === false && st.pin === false && !geo.pinned && geo.sw <= geo.iw, JSON.stringify(geo));
+    await pg.locator('#sims').scrollIntoViewIfNeeded();
+    await pg.waitForTimeout(300);
+    await pg.click('#simsNext'); await pg.waitForTimeout(900);
+    const c1 = (await state(pg)).card;
+    await pg.evaluate(() => document.getElementById('simsView').scrollTo({ left: 99999 }));
+    await pg.waitForTimeout(700);
+    const last = await pg.evaluate(() => ({ card: window.EMC_LANDSCROLL.state().card, count: document.getElementById('simsCount').textContent, next: document.getElementById('simsNext').disabled }));
+    ok('8 phone: the carousel swipes (arrows and a drag to the end both update the card, counter and arrows)',
+      geo.swipe && c1 === 1 && last.card === 5 && last.count === '6 / 6' && last.next === true, c1 + ' ' + JSON.stringify(last));
+    await ctx.close();
+  }
+
+  /* 9: reduced motion, short window */
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+    const st = await state(pg);
+    const geo = await pg.evaluate(() => ({ cls: ['ls-story', 'ls-pin', 'ls-fx'].filter(c => document.documentElement.classList.contains(c)),
+      dimWords: [...document.querySelectorAll('.st-w')].filter(w => getComputedStyle(w).opacity !== '1').length,
+      stops: [...document.querySelectorAll('.stop')].filter(s => getComputedStyle(s).position !== 'absolute').length }));
+    await pg.locator('#sims').scrollIntoViewIfNeeded();
+    await pg.click('#simsNext'); await pg.waitForTimeout(500);
+    ok('9 reduced motion: nothing pins or scrubs, every word is lit, every lesson is in the page, and the carousel still works',
+      st.story === false && st.pin === false && geo.cls.length === 0 && geo.dimWords === 0 && geo.stops === 7 && (await state(pg)).card === 1, JSON.stringify({ st, geo }));
+    await ctx.close();
+  }
+  {
+    const { ctx, pg } = await open({ viewport: { width: 1280, height: 500 } });
+    const st = await state(pg);
+    ok('9 a short window (1280x500) does not pin', st.story === false && st.pin === false, JSON.stringify(st));
+    await ctx.close();
+  }
+
+  console.log('console/page errors:', errors.length ? errors.slice(0, 6) : 'none');
+  if (errors.length) h.fail(errors.length);
+  console.log(h.failed() === 0 ? 'LANDING PASS' : h.failed() + ' LANDING FAILURES');
+}
+
+/* ==========================================================================
    EMC Lab — site-wide motion system verification (phase 8 §5/§8).
      1 boot: html.mx-js gate set; above-fold [data-mx] reveal, below-fold wait
        for the observer and reveal on scroll;
@@ -1162,6 +1360,7 @@ async function nav(h) {
 export const suites = {
   intro: { about: 'plays every load; only Skip / Start / Esc end it; reduced motion; cleanup; layout at six viewports', browser: true, run: intro },
   motion: { about: 'title-card transitions, reveals, reduced motion', browser: true, run: motion },
+  landing: { about: 'landing page: section order, cards = registry, lesson chooser, pinned lessons and scroller, phone swipe, reduced motion, Details', browser: true, remote: true, run: landing },
   loader: { about: 'page loader, boot, failure paths', browser: true, run: loader },
   nav: { about: 'navigation, routes, prefetch, shell mounts', browser: true, run: nav }
 };

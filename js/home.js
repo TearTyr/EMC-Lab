@@ -41,6 +41,9 @@
     fill('statSims', simCount);
     fill('ledeSims', numberToWords(simCount));
   }
+  /* the landing sections' own counters */
+  const counts = { chapters: chapters.length, sims: simCount, questions: quizCount };
+  document.querySelectorAll('[data-count]').forEach(n => { const v = counts[n.dataset.count]; if (v) n.textContent = String(v); });
   if (quizCount) {
     fill('statQuestions', quizCount);
     fill('ledeQuizN', quizCount);

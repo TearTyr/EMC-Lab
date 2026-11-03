@@ -211,6 +211,7 @@
     <!-- Shell: home view and the mounted topic view are sibling sections;
          the inactive one is hidden AND inert. js/shell.js owns switching. -->
     <section id="shell-home">
+    <canvas class="ls-bg" id="lsBg" role="img" aria-label="Decorative background of electric field lines" aria-hidden="true"></canvas>
     <div class="wrap section-tight">
       <div class="callout callout-warn" id="storageNotice" role="status" hidden></div>
     </div>
@@ -226,49 +227,260 @@
           <a class="btn btn-ghost" href="quiz.html">Take the quiz</a>
         </div>
         <p class="hero-meta lp-line"><span id="statChapters">2</span> chapters · <span id="statSims">6</span> sandboxes · <span id="statQuestions">16</span> questions</p>
-        <a class="scroll-cue lp-line" href="#try-ohm"><span>Try it</span><i aria-hidden="true"></i></a>
+        <a class="scroll-cue lp-line" href="#about"><span>Scroll</span><i aria-hidden="true"></i></a>
       </div>
     </section>
 
-    <section class="section wrap demo" id="try-ohm">
-      <div class="demo-copy reveal">
-        <h2 class="h-sec" data-mx="words">Turn the dial, watch the bulb</h2>
-        <p class="muted">Ohm’s law, live: <span data-tex="I = V/R">I = V/R</span>, <span data-tex="P = VI">P = VI</span>.</p>
-        <label class="demo-ctl"><span>Voltage <output id="dOhmVv">12 V</output></span>
-          <input class="range" type="range" id="dOhmV" min="0" max="24" step="1" value="12" aria-label="Voltage in volts"></label>
-        <label class="demo-ctl"><span>Resistance <output id="dOhmRv">6 Ω</output></span>
-          <input class="range" type="range" id="dOhmR" min="1" max="40" step="1" value="6" aria-label="Resistance in ohms"></label>
-      </div>
-      <div class="demo-stage reveal">
-        <svg class="bulb" viewBox="0 0 120 160" aria-hidden="true">
-          <circle class="bulb-glow" id="dOhmGlow" cx="60" cy="58" r="58"/>
-          <path class="bulb-glass" d="M60 14a44 44 0 0 0-26 79c5 4 8 9 8 15v6h36v-6c0-6 3-11 8-15A44 44 0 0 0 60 14z"/>
-          <path class="bulb-fil" d="M46 68l7-16 7 16 7-16 7 16"/>
-          <rect class="bulb-base" x="44" y="118" width="32" height="20" rx="5"/>
-        </svg>
-        <dl class="demo-read">
-          <div><dt>Current</dt><dd id="dOhmI">2.00 A</dd></div>
-          <div><dt>Power</dt><dd id="dOhmP">24.0 W</dd></div>
-        </dl>
-      </div>
-    </section>
-
-    <section class="section wrap demo demo-flip" id="try-coulomb">
-      <div class="demo-copy reveal">
-        <h2 class="h-sec" data-mx="words">Pull two charges apart</h2>
-        <p class="muted">Double the distance and the force drops to a quarter.</p>
-        <label class="demo-ctl"><span>Distance <output id="dCoulRv">1.0 km</output></span>
-          <input class="range" type="range" id="dCoulR" min="0.5" max="3" step="0.1" value="1" aria-label="Distance in kilometres"></label>
-      </div>
-      <div class="demo-stage reveal">
-        <div class="cl" aria-hidden="true">
-          <div class="cl-side" id="dCoulL"><b class="cl-q cl-p">+</b><i class="cl-arrow" id="dCoulAL"></i></div>
-          <div class="cl-side cl-right" id="dCoulRt"><i class="cl-arrow" id="dCoulAR"></i><b class="cl-q cl-m">−</b></div>
+    <section class="section wrap statement" id="about" aria-labelledby="aboutTitle">
+      <p class="kicker">Calculus-based Physics 2 · Electricity</p>
+      <h2 class="st-big" id="aboutTitle" data-st-words>Electricity is not something you memorise. It is something you try.</h2>
+      <div class="st-foot">
+        <div>
+          <p class="lede" data-detail="tech">Every number on screen is computed from the real equations with the lecture’s own constants. Drag charges, tune an atom, build a circuit, and get the answers your lecture works out by hand.</p>
+          <p class="lede" data-detail="plain">Push, pull and build things on screen and watch what happens. The numbers are real, so what you see is what the physics says.</p>
+          <p class="tiny faint">Free, no account, and your progress stays on this device.</p>
         </div>
-        <dl class="demo-read">
-          <div><dt>Charges</dt><dd>+1 C, −1 C</dd></div>
-          <div><dt>Force</dt><dd id="dCoulF">8,990 N</dd></div>
-        </dl>
+        <ul class="about-facts" aria-label="What is inside">
+          <li><b data-count="chapters">2</b> chapters</li>
+          <li><b data-count="sims">6</b> simulations</li>
+          <li><b data-count="questions">16</b> quiz questions</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section preview" id="preview" aria-labelledby="previewTitle">
+      <div class="wrap pv-head">
+        <p class="kicker">Live preview</p>
+        <h2 class="h-sec" id="previewTitle" data-mx="words">Try it before you read a word</h2>
+        <p class="muted" data-detail="tech">Two of the course models, running right here. Move a slider and every readout is recomputed from Ohm’s law and Coulomb’s law.</p>
+        <p class="muted" data-detail="plain">Two small experiments to play with now. Move a slider and watch what changes.</p>
+      </div>
+      <div class="wrap pv-grid">
+        <article class="pv-panel" id="pvOhm" aria-labelledby="pvOhmTitle">
+          <div class="demo-stage">
+            <svg class="bulb" viewBox="0 0 120 160" aria-hidden="true">
+              <circle class="bulb-glow" id="dOhmGlow" cx="60" cy="58" r="58"/>
+              <path class="bulb-glass" d="M60 14a44 44 0 0 0-26 79c5 4 8 9 8 15v6h36v-6c0-6 3-11 8-15A44 44 0 0 0 60 14z"/>
+              <path class="bulb-fil" d="M46 68l7-16 7 16 7-16 7 16"/>
+              <rect class="bulb-base" x="44" y="118" width="32" height="20" rx="5"/>
+            </svg>
+            <dl class="demo-read">
+              <div><dt>Current</dt><dd id="dOhmI">2.00 A</dd></div>
+              <div><dt>Power</dt><dd id="dOhmP">24.0 W</dd></div>
+            </dl>
+            <div class="demo-ctls">
+              <label class="demo-ctl"><span>Voltage <output id="dOhmVv">12 V</output></span>
+                <input class="range" type="range" id="dOhmV" min="0" max="24" step="1" value="12" aria-label="Voltage in volts"></label>
+              <label class="demo-ctl"><span>Resistance <output id="dOhmRv">6 Ω</output></span>
+                <input class="range" type="range" id="dOhmR" min="1" max="40" step="1" value="6" aria-label="Resistance in ohms"></label>
+            </div>
+          </div>
+          <div class="pv-copy">
+            <span class="tag tag-amber">Chapter 1</span>
+            <h3 class="pv-title" id="pvOhmTitle">Turn the dial, watch the bulb</h3>
+            <p data-detail="tech">The current is <span data-tex="I = V/R">I = V/R</span> and the power is <span data-tex="P = VI">P = VI</span>, so the glow follows the power, not the voltage alone.</p>
+            <p data-detail="plain">More voltage pushes more current through the bulb, and it burns brighter. More resistance holds it back.</p>
+            <a class="pv-link" href="topics/current.html#sim-ohm-panel">Open the full Ohm bench →</a>
+          </div>
+        </article>
+        <article class="pv-panel" id="pvCoul" aria-labelledby="pvCoulTitle">
+          <div class="demo-stage">
+            <div class="cl" aria-hidden="true">
+              <div class="cl-side" id="dCoulL"><b class="cl-q cl-p">+</b><i class="cl-arrow" id="dCoulAL"></i></div>
+              <div class="cl-side cl-right" id="dCoulRt"><i class="cl-arrow" id="dCoulAR"></i><b class="cl-q cl-m">−</b></div>
+            </div>
+            <dl class="demo-read">
+              <div><dt>Charges</dt><dd>+1 C, −1 C</dd></div>
+              <div><dt>Force</dt><dd id="dCoulF">8,990 N</dd></div>
+            </dl>
+            <div class="demo-ctls">
+              <label class="demo-ctl"><span>Distance <output id="dCoulRv">1.0 km</output></span>
+                <input class="range" type="range" id="dCoulR" min="0.5" max="3" step="0.1" value="1" aria-label="Distance in kilometres"></label>
+            </div>
+          </div>
+          <div class="pv-copy">
+            <span class="tag tag-cyan">Chapter 2</span>
+            <h3 class="pv-title" id="pvCoulTitle">Pull two charges apart</h3>
+            <p data-detail="tech">Coulomb’s law, <span data-tex="F = k\,|q_1 q_2|/r^2">F = k·|q₁q₂|/r²</span>: double the distance and the force drops to a quarter.</p>
+            <p data-detail="plain">Opposite charges pull on each other. Move them twice as far apart and the pull is only a quarter as strong.</p>
+            <a class="pv-link" href="topics/fields.html#sim-arena-panel">Open the Tug-of-War Arena →</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section wrap learn" id="learn" aria-labelledby="learnTitle">
+      <div class="learn-track" id="learnTrack" style="--n:7">
+        <div class="learn-stick">
+          <div class="learn-head">
+            <p class="kicker">The syllabus</p>
+            <h2 class="h-sec" id="learnTitle" data-mx="words">Choose what to learn</h2>
+            <p class="muted" data-detail="tech">Seven lessons in the order the course builds them, from Ohm’s law to the electric field. Pick one to preview it.</p>
+            <p class="muted" data-detail="plain">Seven short lessons, easiest first. Pick one to see what it covers, or just keep scrolling.</p>
+          </div>
+          <div class="learn-wire">
+            <i class="lw-line" aria-hidden="true"><i class="lw-fill" id="lwFill"></i></i>
+            <ol class="lw-nodes" id="lwNodes" aria-label="Lessons"><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ol>
+            <img class="lw-mascot" id="lwMascot" src="img/mascot.png" width="32" height="32" alt="" decoding="async">
+          </div>
+          <ol class="learn-stops" id="learnStops">
+          <li class="stop" id="stop-1" data-stop="0" data-ch="1">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">01</span><span class="tag tag-amber">Chapter 1</span></div>
+            <h3 class="stop-title">Voltage, current and resistance</h3>
+            <p data-detail="tech">Voltage pushes charge round a circuit, resistance holds it back, and the current is how much flows. Three quantities, one relationship.</p>
+            <p data-detail="plain">Think of a pump (voltage), a narrow pipe (resistance) and the water that flows (current).</p>
+            <div class="stop-eq"><span data-tex="I = V/R">I = V/R</span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/current.html">Start this lesson →</a><a class="stop-sim" href="topics/current.html#sim-ohm-panel">Try: Ohm bench</a></div>
+          </li>
+          <li class="stop" id="stop-2" data-stop="1" data-ch="1">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">02</span><span class="tag tag-amber">Chapter 1</span></div>
+            <h3 class="stop-title">Ohm’s law and power</h3>
+            <p data-detail="tech">V = IR sets the current for a given voltage and resistance, and P = VI is the rate at which the circuit turns energy into heat and light.</p>
+            <p data-detail="plain">Turn the voltage up and more current flows. The bulb gets brighter because it is using energy faster.</p>
+            <div class="stop-eq"><span data-tex="P = VI = I^2 R">P = VI = I²R</span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/current.html#sim-ohm-panel">Start this lesson →</a><a class="stop-sim" href="topics/current.html#sim-ohm-panel">Try: Ohm bench</a></div>
+          </li>
+          <li class="stop" id="stop-3" data-stop="2" data-ch="1">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">03</span><span class="tag tag-amber">Chapter 1</span></div>
+            <h3 class="stop-title">Series and parallel</h3>
+            <p data-detail="tech">Resistors in series add up. In parallel their conductances add, so the total is always smaller than the smallest one. Reduce any network step by step.</p>
+            <p data-detail="plain">One path means the same current everywhere. Many paths share the voltage, and the whole circuit lets more through.</p>
+            <div class="stop-eq"><span data-tex="R_{eq} = \sum R_i">R<sub>eq</sub> = ΣRᵢ</span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/current.html#sim-circuit-panel">Start this lesson →</a><a class="stop-sim" href="topics/current.html#sim-circuit-panel">Try: Circuit builder</a></div>
+          </li>
+          <li class="stop" id="stop-4" data-stop="3" data-ch="2">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">04</span><span class="tag tag-cyan">Chapter 2</span></div>
+            <h3 class="stop-title">Electric charge</h3>
+            <p data-detail="tech">Charge comes in whole parcels of e = 1.602×10⁻¹⁹ C, it is conserved, like charges repel and unlike charges attract.</p>
+            <p data-detail="plain">Rub a balloon and tiny charges move across. Same signs push apart, opposite signs pull together.</p>
+            <div class="stop-eq"><span data-tex="q = n e">q = n·e</span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/fields.html#charge">Start this lesson →</a><a class="stop-sim" href="topics/fields.html#toy-balloon-panel">Try: Rub the Balloon</a></div>
+          </li>
+          <li class="stop" id="stop-5" data-stop="4" data-ch="2">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">05</span><span class="tag tag-cyan">Chapter 2</span></div>
+            <h3 class="stop-title">Coulomb’s law</h3>
+            <p data-detail="tech">The force between two point charges falls with the square of the distance: double the distance and it drops to a quarter.</p>
+            <p data-detail="plain">The closer two charges are, the harder they push or pull. Twice as far means only a quarter of the force.</p>
+            <div class="stop-eq"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·|q<sub>1</sub>q<sub>2</sub>| / r<sup>2</sup></span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/fields.html#coulomb">Start this lesson →</a><a class="stop-sim" href="topics/fields.html#sim-arena-panel">Try: Tug-of-War Arena</a></div>
+          </li>
+          <li class="stop" id="stop-6" data-stop="5" data-ch="2">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">06</span><span class="tag tag-cyan">Chapter 2</span></div>
+            <h3 class="stop-title">Superposition</h3>
+            <p data-detail="tech">With several charges, add the forces as vectors: components first, never plain numbers.</p>
+            <p data-detail="plain">Each charge pulls or pushes on its own. Add all the arrows to find where the one in the middle really goes.</p>
+            <div class="stop-eq"><span data-tex="\vec{F}_{net} = \vec{F}_1 + \vec{F}_2 + \dots">F⃗<sub>net</sub> = F⃗₁ + F⃗₂ + …</span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/fields.html#coulomb">Start this lesson →</a><a class="stop-sim" href="topics/fields.html#sim-arena-panel">Try: Tug-of-War Arena</a></div>
+          </li>
+          <li class="stop" id="stop-7" data-stop="6" data-ch="2">
+            <div class="stop-top"><span class="stop-num" aria-hidden="true">07</span><span class="tag tag-cyan">Chapter 2</span></div>
+            <h3 class="stop-title">The electric field</h3>
+            <p data-detail="tech">The field is the force per unit positive test charge, and it points the way a positive charge would be pushed.</p>
+            <p data-detail="plain">The field is an invisible map of pushes and pulls around a charge. Put a charge anywhere and the map tells you what it feels.</p>
+            <div class="stop-eq"><span data-tex="E = F/|q_0| = kq/r^2">E = F/|q₀| = k·q/r<sup>2</sup></span></div>
+            <div class="stop-actions"><a class="stop-link" href="topics/fields.html#field">Start this lesson →</a><a class="stop-sim" href="topics/fields.html#sim-fieldpaint-panel">Try: Field Painter</a></div>
+          </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section sims" id="sims" aria-labelledby="simsTitle">
+      <div class="sims-track" id="simsTrack" style="--n:6">
+        <div class="sims-stick">
+          <div class="wrap sims-head">
+            <div>
+              <p class="kicker">Hands-on</p>
+              <h2 class="h-sec" id="simsTitle" data-mx="words">Pick a simulation</h2>
+              <p class="muted"><span data-count="sims">6</span> hands-on simulations. Each one opens inside its chapter.</p>
+            </div>
+            <div class="sims-ctl">
+              <img class="sims-mascot" id="simsMascot" src="img/mascot-face-focus.png" width="52" height="52" alt="" decoding="async">
+              <button class="sims-btn" id="simsPrev" type="button" aria-label="Previous simulation" disabled><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2L4 7l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <output class="sims-count" id="simsCount" aria-live="polite">1 / 6</output>
+              <button class="sims-btn" id="simsNext" type="button" aria-label="Next simulation"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </div>
+          <div class="sims-view" id="simsView">
+            <ul class="sims-rail" id="simsRail" aria-label="Simulations">
+            <li class="sim-card on" data-sim="sim-ohm" data-face="focus" style="--card-accent:var(--ye)">
+              <a class="sim-link" href="topics/current.html#sim-ohm-panel">
+                <div class="sim-art" aria-hidden="true"><svg viewBox="0 0 160 100" focusable="false"><circle class="af-ye a-pulse" cx="80" cy="44" r="27"/><path class="as-dim" d="M80 22a22 22 0 0 0-13 40c3 2 4 5 4 8v3h18v-3c0-3 1-6 4-8A22 22 0 0 0 80 22z" fill="none" stroke-width="3"/><path class="as-pk" d="M72 46l4-9 4 9 4-9 4 9" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect class="af-dim" x="71" y="74" width="18" height="10" rx="3"/></svg></div>
+                <span class="tag tag-amber">Chapter 1</span>
+                <h3 class="sim-title">Ohm bench</h3>
+                <p data-detail="tech">Set V and R and read I, P and the I–V line live. V = IR, P = VI.</p>
+                <p data-detail="plain">Turn two dials and see how much current flows and how bright the bulb gets.</p>
+                <span class="sim-go">Try it →</span>
+              </a>
+            </li>
+            <li class="sim-card" data-sim="sim-circuit" data-face="focus" style="--card-accent:var(--ye)">
+              <a class="sim-link" href="topics/current.html#sim-circuit-panel">
+                <div class="sim-art" aria-hidden="true"><svg viewBox="0 0 160 100" focusable="false"><rect class="as-edge" x="26" y="22" width="108" height="56" rx="9" fill="none" stroke-width="3"/><rect class="af-ye" x="19" y="40" width="14" height="20" rx="3"/><path class="as-am" d="M56 22h6l4-8 6 16 6-16 6 16 4-8h6" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle class="af-ye a-pulse" cx="134" cy="50" r="10"/><circle class="af-pk a-run" cx="30" cy="78" r="4"/></svg></div>
+                <span class="tag tag-amber">Chapter 1</span>
+                <h3 class="sim-title">Circuit builder</h3>
+                <p data-detail="tech">Drag a battery, resistors and a bulb, wire them in series or parallel and read every current and voltage.</p>
+                <p data-detail="plain">Build your own circuit like a kit and find out if the bulb lights.</p>
+                <span class="sim-go">Try it →</span>
+              </a>
+            </li>
+            <li class="sim-card" data-sim="toy-balloon" data-face="sparkle" style="--card-accent:var(--sk)">
+              <a class="sim-link" href="topics/fields.html#toy-balloon-panel">
+                <div class="sim-art" aria-hidden="true"><svg viewBox="0 0 160 100" focusable="false"><ellipse class="af-pk" cx="62" cy="42" rx="27" ry="31"/><path class="as-dim" d="M62 73q-6 9 1 21" fill="none" stroke-width="2.5" stroke-linecap="round"/><circle class="af-sk a-drift" cx="112" cy="34" r="6"/><circle class="af-sk a-drift2" cx="126" cy="58" r="6"/><circle class="af-sk a-drift" cx="104" cy="70" r="6"/></svg></div>
+                <span class="tag tag-cyan">Chapter 2</span>
+                <h3 class="sim-title">Rub the Balloon</h3>
+                <p data-detail="tech">Rub it, count the electrons that moved (q = n·e) and watch the wall pull back.</p>
+                <p data-detail="plain">Rub a balloon on hair and see why it sticks to the wall.</p>
+                <span class="sim-go">Try it →</span>
+              </a>
+            </li>
+            <li class="sim-card" data-sim="sim-arena" data-face="focus" style="--card-accent:var(--sk)">
+              <a class="sim-link" href="topics/fields.html#sim-arena-panel">
+                <div class="sim-art" aria-hidden="true"><svg viewBox="0 0 160 100" focusable="false"><circle class="af-pk" cx="42" cy="50" r="15"/><circle class="af-sk" cx="118" cy="50" r="15"/><rect class="af-ye a-bar" x="62" y="47" width="36" height="6" rx="3"/></svg></div>
+                <span class="tag tag-cyan">Chapter 2</span>
+                <h3 class="sim-title">Tug-of-War Arena</h3>
+                <p data-detail="tech">Place charges and read each net force. The arrows add as vectors (superposition).</p>
+                <p data-detail="plain">Drop charges in the arena and see which way each one gets pushed or pulled.</p>
+                <span class="sim-go">Try it →</span>
+              </a>
+            </li>
+            <li class="sim-card" data-sim="toy-bohr" data-face="sparkle" style="--card-accent:var(--sk)">
+              <a class="sim-link" href="topics/fields.html#toy-bohr-panel">
+                <div class="sim-art" aria-hidden="true"><svg viewBox="0 0 160 100" focusable="false"><ellipse class="as-edge" cx="80" cy="50" rx="46" ry="30" fill="none" stroke-width="2.5"/><circle class="af-pk" cx="80" cy="50" r="10"/><g class="a-orbit"><circle class="af-sk" cx="126" cy="50" r="6"/></g></svg></div>
+                <span class="tag tag-cyan">Chapter 2</span>
+                <h3 class="sim-title">Bohr Tuner</h3>
+                <p data-detail="tech">Tune the orbit radius and read the speed the Coulomb pull requires.</p>
+                <p data-detail="plain">Move the electron closer or farther and see how fast it has to go.</p>
+                <span class="sim-go">Try it →</span>
+              </a>
+            </li>
+            <li class="sim-card" data-sim="sim-fieldpaint" data-face="sparkle" style="--card-accent:var(--sk)">
+              <a class="sim-link" href="topics/fields.html#sim-fieldpaint-panel">
+                <div class="sim-art" aria-hidden="true"><svg viewBox="0 0 160 100" focusable="false"><g class="a-spin as-am" stroke-width="3" stroke-linecap="round"><path d="M80 50V14M80 50v36M80 50h36M80 50H44M80 50l26-26M80 50L54 76M80 50l26 26M80 50L54 24"/></g><circle class="af-pk" cx="80" cy="50" r="12"/></svg></div>
+                <span class="tag tag-cyan">Chapter 2</span>
+                <h3 class="sim-title">Field Painter</h3>
+                <p data-detail="tech">Paint charges and read E = F/|q₀| at any point, with the field lines drawn.</p>
+                <p data-detail="plain">Place charges and watch invisible field arrows spread out around them.</p>
+                <span class="sim-go">Try it →</span>
+              </a>
+            </li>
+            </ul>
+          </div>
+          <div class="sims-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="quiz-call" id="quiz-call" aria-labelledby="quizCallTitle">
+      <div class="wrap qc-inner">
+        <img class="qc-mascot" src="img/mascot-face-happy.png" width="120" height="120" alt="" decoding="async">
+        <p class="kicker">When you are ready</p>
+        <h2 class="qc-big" id="quizCallTitle"><span class="qc-w qc-w1">Test</span> <span class="qc-w qc-w2">yourself</span></h2>
+        <p class="lede qc-lede" data-detail="tech"><span data-count="questions">16</span> questions across both chapters, each marked against the lecture’s worked values and explained when you get it wrong.</p>
+        <p class="lede qc-lede" data-detail="plain">A short quiz with <span data-count="questions">16</span> questions. Every answer comes with a reason, so a wrong one still teaches you something.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary qc-go" href="quiz.html">Take the quiz →</a>
+          <a class="btn btn-ghost" href="topics/current.html">Start Chapter 1 first</a>
+        </div>
       </div>
     </section>
 
@@ -320,13 +532,6 @@
           </div>
         </article>
       </div>
-      <ul class="sandbox-row reveal" aria-label="Sandboxes and simulations">
-        <li><a href="topics/current.html#sim-ohm-panel">Ohm bench</a></li>
-        <li><a href="topics/fields.html#toy-balloon-panel">Rub the Balloon</a></li>
-        <li><a href="topics/fields.html#sim-arena-panel">Tug-of-War Arena</a></li>
-        <li><a href="topics/fields.html#toy-bohr-panel">Bohr Tuner</a></li>
-        <li><a href="topics/fields.html#sim-fieldpaint-panel">Field Painter</a></li>
-      </ul>
       <div class="eq-strip" aria-label="Four governing equations of the course">
         <span class="eq-item"><span data-tex="q = n e">q = n·e</span></span>
         <span class="eq-item"><span data-tex="F = k\,\dfrac{|q_1 q_2|}{r^2}">F = k·|q<sub>1</sub>q<sub>2</sub>|/r<sup>2</sup></span></span>
@@ -447,6 +652,7 @@
   <script defer src="js/kinetic.js"></script>
   <script defer src="js/intro.js"></script>
   <script defer src="js/landing.js"></script>
+  <script defer src="js/landing-scroll.js"></script>
   <script defer src="js/shell.js"></script>
 </body>
 </html>

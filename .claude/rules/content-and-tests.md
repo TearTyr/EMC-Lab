@@ -19,6 +19,7 @@
 | A simulation or sandbox | `verify sims interact values` |
 | Quiz | `verify quiz values` |
 | Layout, new section, new page | `verify responsive a11y assets` |
+| The deployed site | `verify live landing --url https://emc-lab.vercel.app` (or the preview URL from `gh api repos/{owner}/{repo}/deployments`) |
 | Build, deploy, script names | `bun run build` then `verify prod` |
 
 `smoke` and `shell` need no browser. Before opening a PR run `verify` (the everyday set) and say which suites did not pass or were not run.
