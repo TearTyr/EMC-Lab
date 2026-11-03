@@ -1454,15 +1454,20 @@ html.landing-pending #introOverlay { visibility: visible; }
 
 /* ==========================================================================
    Page transitions: change the channel (js/motion.js cover()/uncover()).
-   COVER  two shutters close on a bright line (a TV switching off), static fills the screen, three comic
-          panels slam in carrying the destination's name, Denki-chan and an on-screen tag (CH 02 ...).
+   COVER  two shutters close on a bright line (a TV switching off), speed streaks and static fill the
+          screen, three comic panels slam in, then the destination's name lands with an impact: a punch,
+          a colour-split ghost, a shock ring and sparks, next to a spinning Denki-chan and an on-screen tag.
    HOLD   fully covered for a fixed minimum; the arriving page starts here (.hold) with no animation.
-   REVEAL the panels slide out, the static drops and the shutters open on the new page.
+   REVEAL the panels slide out, the static drops, the shutters open on the new page; the page's own text
+          comes in with them (js/motion.js enter(); html.tc-wait holds its reveals until then).
    The same length however fast the page loads. Lettering is the intro's: G8321 Bold, plain white fill,
    one bold dark outline. Colours are tokens only (ink, pink, sky, yellow); no gradients, no filters.
    transform and opacity only; the card blocks clicks while it covers and is never created under
    reduced motion. html.tc-arrive (head gate) paints the first frame of an arriving page. */
 html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; background: var(--ink); }
+/* while the card covers, the destination's reveals wait at their start state and play when it lifts */
+html.tc-wait .reveal, html.tc-wait [data-mx], html.tc-wait [data-mx] > *, html.tc-wait .mx-w { opacity: 0 !important; animation: none !important; transition: none !important; }
+html.tc-wait .reveal { transform: translate3d(0, 12px, 0) !important; }
 .tc { position: fixed; inset: 0; z-index: 80; overflow: hidden; pointer-events: auto; contain: layout paint style; }
 .tc-sh { position: absolute; left: 0; right: 0; height: 50.5%; background: var(--ink); will-change: transform; }
 .tc-top { top: 0; transform: translate3d(0, -100%, 0); }
@@ -1470,6 +1475,10 @@ html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; ba
 .tc-ns { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; opacity: 0; }
 .tc-ns:nth-of-type(2) { --k: 1; }
 .tc-ns:nth-of-type(3) { --k: 2; }
+.tc-speed { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.tc-sl { position: absolute; left: 0; width: var(--w); height: .55vmin; border-radius: 1vmin; background: var(--ye); opacity: 0; }
+.tc-sl1 { background: var(--pk); }
+.tc-sl2 { background: var(--sk); }
 .tc-line { position: absolute; left: 0; right: 0; top: 50%; height: .7vmin; margin-top: -.35vmin; background: var(--ye);
   opacity: 0; transform: scaleX(0); }
 .tc-stage { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -1478,11 +1487,20 @@ html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; ba
 .tc-p1 { --tx: 0vw; --ty: -1vmin; --rot: -4deg; --fx: -110vw; width: min(92vw, 76rem); height: clamp(6rem, 30vmin, 17rem); background: var(--pk); }
 .tc-p2 { --tx: 14vw; --ty: 19vmin; --rot: 3deg; --fx: 110vw; width: min(56vw, 34rem); height: clamp(2.6rem, 9vmin, 5rem); background: var(--sk); }
 .tc-p3 { --tx: -12vw; --ty: -20vmin; --rot: -3deg; --fx: -110vw; width: min(64vw, 44rem); height: 3.2vmin; background: var(--ye); }
+.tc-ring { place-self: center; width: 40vmin; height: 40vmin; border-radius: 50%; border: .9vmin solid var(--ye); opacity: 0; transform: scale(.2); }
+.tc-sparks { place-self: center; position: relative; width: 0; height: 0; }
+.tc-sp { position: absolute; left: -.8vmin; top: -.8vmin; width: 1.6vmin; height: 1.6vmin; background: var(--ye); opacity: 0; }
+.tc-sp1 { background: var(--pk); }
+.tc-sp2 { background: var(--sk); }
 .tc-main { position: relative; display: flex; justify-content: center; transform: translate3d(0, -1vmin, 0) rotate(-4deg); }
 .tc-face { position: absolute; right: -5vmin; top: -11vmin; width: clamp(3.6rem, 12vmin, 6.5rem); height: auto; opacity: 0; }
-.tc-word { position: relative; display: flex; font-family: theme('fontFamily.title'); font-weight: 700;
+.tc-word, .tc-ghost { display: flex; font-family: theme('fontFamily.title'); font-weight: 700;
   font-size: clamp(2.8rem, 12vmin, 8.5rem); line-height: 1; letter-spacing: .01em; color: #fff;
   -webkit-text-stroke: .14em var(--ink); paint-order: stroke fill; white-space: nowrap; }
+.tc-word { position: relative; }
+.tc-ghost { position: absolute; left: 0; right: 0; top: 0; justify-content: center; opacity: 0; }
+.tc-g1 { color: var(--pk); -webkit-text-stroke-color: var(--pk); }
+.tc-g2 { color: var(--sk); -webkit-text-stroke-color: var(--sk); }
 .tc-word span { display: inline-block; opacity: 0; will-change: transform, opacity;
   transform: translate3d(0, -.5em, 0) rotate(calc(var(--i) * 4deg - 12deg)) scale(1.9); }
 .tc-osd { position: absolute; left: 3.5vmin; top: 3.5vmin; padding: .55em .9em; border-left: .8vmin solid var(--ye); background: var(--ink);
@@ -1491,13 +1509,20 @@ html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; ba
 /* cover */
 .tc.on .tc-top { animation: tc-top-in .2s cubic-bezier(.6, 0, .9, .4) forwards; }
 .tc.on .tc-bot { animation: tc-bot-in .2s cubic-bezier(.6, 0, .9, .4) forwards; }
+.tc.on .tc-sl { animation: tc-streak .34s cubic-bezier(.3, .6, .4, 1) var(--d) both; }
 .tc.on .tc-line { animation: tc-line .44s ease-out .1s forwards; }
 .tc.on .tc-ns { animation: tc-nz .21s steps(1) calc(.2s + var(--k, 0) * .07s) infinite; }
-.tc.on .tc-pan { animation: tc-pan-in .24s cubic-bezier(.2, 1.2, .3, 1) .26s forwards; }
-.tc.on .tc-p2 { animation-delay: .32s; }
-.tc.on .tc-p3 { animation-delay: .38s; }
-.tc.on .tc-word span { animation: tc-slam .24s cubic-bezier(.2, 1.4, .4, 1) calc(var(--i) * 22ms + 300ms) forwards; }
-.tc.on .tc-face { animation: tc-face-in .24s cubic-bezier(.2, 1.4, .4, 1) .42s forwards; }
+.tc.on .tc-pan { animation: tc-pan-in .3s cubic-bezier(.2, .9, .3, 1) .24s forwards; }
+.tc.on .tc-p2 { animation-delay: .3s; }
+.tc.on .tc-p3 { animation-delay: .36s; }
+.tc.on .tc-word span { animation: tc-slam .22s cubic-bezier(.2, 1.5, .4, 1) calc(var(--i) * 18ms + 260ms) forwards; }
+.tc.on .tc-main { animation: tc-punch .44s cubic-bezier(.3, 1.4, .5, 1) .44s both; }
+.tc.on .tc-stage { animation: tc-shake .28s steps(1) .44s both; }
+.tc.on .tc-g1 { animation: tc-ghost1 .38s steps(1) .46s forwards; }
+.tc.on .tc-g2 { animation: tc-ghost2 .38s steps(1) .46s forwards; }
+.tc.on .tc-ring { animation: tc-ring .55s cubic-bezier(.1, .7, .3, 1) .46s forwards; }
+.tc.on .tc-sp { animation: tc-spark .58s cubic-bezier(.15, .7, .3, 1) .46s forwards; }
+.tc.on .tc-face { animation: tc-face-in .46s cubic-bezier(.2, 1.3, .4, 1) .4s forwards; }
 .tc.on .tc-osd { animation: tc-fade-in .16s ease-out .3s forwards; }
 /* held: the arriving page starts already covered (no entrance, the static keeps flickering) */
 .tc.hold .tc-sh { transform: none; }
@@ -1509,11 +1534,12 @@ html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; ba
 /* reveal: the panels slide off, the static drops, the shutters open on the new page */
 .tc.out { pointer-events: none; }
 .tc.out .tc-sh { transform: none; }
-.tc.out .tc-top { animation: tc-top-out .32s cubic-bezier(.5, 0, .8, .3) .2s forwards; }
-.tc.out .tc-bot { animation: tc-bot-out .32s cubic-bezier(.5, 0, .8, .3) .2s forwards; }
+.tc.out .tc-top { animation: tc-top-out .34s cubic-bezier(.5, 0, .8, .3) .2s forwards; }
+.tc.out .tc-bot { animation: tc-bot-out .34s cubic-bezier(.5, 0, .8, .3) .2s forwards; }
+.tc.out .tc-sl { animation: tc-streak-out .3s cubic-bezier(.3, .6, .4, 1) calc(var(--d) + .1s) both; }
 .tc.out .tc-ns { animation: tc-nz .21s steps(1) calc(var(--k, 0) * .07s) infinite, tc-off .08s linear .16s forwards; }
-.tc.out .tc-line { opacity: 1; transform: scaleX(1); animation: tc-line-out .26s ease-out .16s forwards; }
-.tc.out .tc-pan { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); animation: tc-pan-out .22s cubic-bezier(.6, 0, .9, .4) forwards; }
+.tc.out .tc-line { opacity: 1; transform: scaleX(1); animation: tc-line-out .34s ease-out .14s forwards; }
+.tc.out .tc-pan { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); animation: tc-pan-out .24s cubic-bezier(.6, 0, .9, .4) forwards; }
 .tc.out .tc-p2 { animation-delay: .04s; }
 .tc.out .tc-p3 { animation-delay: .08s; }
 .tc.out .tc-word span { opacity: 1; transform: none; animation: tc-whip .2s cubic-bezier(.5, 0, .9, .4) calc(var(--i) * 12ms) forwards; }
@@ -1523,25 +1549,39 @@ html.tc-arrive::before { content: ""; position: fixed; inset: 0; z-index: 79; ba
 @keyframes tc-bot-in { to { transform: none; } }
 @keyframes tc-top-out { to { transform: translate3d(0, -100%, 0); } }
 @keyframes tc-bot-out { to { transform: translate3d(0, 100%, 0); } }
+@keyframes tc-streak { 0% { opacity: 1; transform: translate3d(-30vw, 0, 0); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate3d(130vw, 0, 0); } }
+@keyframes tc-streak-out { 0% { opacity: 1; transform: translate3d(130vw, 0, 0); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate3d(-30vw, 0, 0); } }
 @keyframes tc-line { 0% { opacity: 0; transform: scaleX(.04); } 35% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(1); } }
-@keyframes tc-line-out { from { opacity: 1; transform: scaleX(1); } to { opacity: 0; transform: scaleX(1); } }
+@keyframes tc-line-out { 0% { opacity: 1; transform: scale(1, 1); } 55% { opacity: 1; transform: scale(1, 9); } 100% { opacity: 0; transform: scale(1, 15); } }
 @keyframes tc-nz { 0% { opacity: 1; } 33.33%, 100% { opacity: 0; } }
 @keyframes tc-off { to { opacity: 0; } }
-@keyframes tc-pan-in { from { opacity: 1; transform: translate3d(calc(var(--tx) + var(--fx)), var(--ty), 0) rotate(calc(var(--rot) - 8deg)); }
-  to { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); } }
-@keyframes tc-pan-out { to { opacity: 1; transform: translate3d(calc(var(--tx) - var(--fx)), var(--ty), 0) rotate(calc(var(--rot) + 8deg)); } }
+@keyframes tc-pan-in { 0% { opacity: 1; transform: translate3d(calc(var(--tx) + var(--fx)), var(--ty), 0) rotate(calc(var(--rot) - 8deg)) skewX(-16deg); }
+  65% { opacity: 1; transform: translate3d(calc(var(--tx) - var(--fx) * .02), var(--ty), 0) rotate(var(--rot)) skewX(3deg); }
+  100% { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)); } }
+@keyframes tc-pan-out { to { opacity: 1; transform: translate3d(calc(var(--tx) - var(--fx)), var(--ty), 0) rotate(calc(var(--rot) + 8deg)) skewX(14deg); } }
 @keyframes tc-slam { to { opacity: 1; transform: none; } }
 @keyframes tc-whip { to { opacity: 0; transform: translate3d(0, -.6em, 0) rotate(8deg) scale(.7); } }
-@keyframes tc-face-in { from { opacity: 0; transform: scale(.3) rotate(-30deg); } to { opacity: 1; transform: rotate(8deg); } }
+@keyframes tc-punch { 0% { transform: translate3d(0, -1vmin, 0) rotate(-4deg) scale(1); } 22% { transform: translate3d(0, -1vmin, 0) rotate(-7deg) scale(1.22); }
+  48% { transform: translate3d(0, -1vmin, 0) rotate(-3deg) scale(.95); } 72% { transform: translate3d(0, -1vmin, 0) rotate(-4.5deg) scale(1.04); } 100% { transform: translate3d(0, -1vmin, 0) rotate(-4deg) scale(1); } }
+@keyframes tc-shake { 0% { transform: translate3d(0, 0, 0); } 20% { transform: translate3d(-1.2vmin, .6vmin, 0); } 40% { transform: translate3d(1vmin, -.8vmin, 0); }
+  60% { transform: translate3d(-.6vmin, .4vmin, 0); } 80% { transform: translate3d(.4vmin, -.2vmin, 0); } 100% { transform: translate3d(0, 0, 0); } }
+@keyframes tc-ghost1 { 0% { opacity: 1; transform: translate3d(-1.8vmin, .7vmin, 0); } 34% { opacity: 1; transform: translate3d(1.3vmin, -.6vmin, 0); }
+  67% { opacity: 1; transform: translate3d(-.6vmin, .2vmin, 0); } 100% { opacity: 0; transform: translate3d(0, 0, 0); } }
+@keyframes tc-ghost2 { 0% { opacity: 1; transform: translate3d(1.8vmin, -.7vmin, 0); } 34% { opacity: 1; transform: translate3d(-1.3vmin, .6vmin, 0); }
+  67% { opacity: 1; transform: translate3d(.6vmin, -.2vmin, 0); } 100% { opacity: 0; transform: translate3d(0, 0, 0); } }
+@keyframes tc-ring { 0% { opacity: .95; transform: scale(.2); } 100% { opacity: 0; transform: scale(3.4); } }
+@keyframes tc-spark { 0% { opacity: 1; transform: rotate(var(--a)) translate3d(2vmin, 0, 0) scale(1); } 100% { opacity: 0; transform: rotate(var(--a)) translate3d(var(--r), 0, 0) scale(.2); } }
+@keyframes tc-face-in { 0% { opacity: 0; transform: scale(.2) rotate(-200deg); } 70% { opacity: 1; transform: scale(1.18) rotate(14deg); } 100% { opacity: 1; transform: scale(1) rotate(8deg); } }
 @keyframes tc-face-out { to { opacity: 0; transform: scale(.4) rotate(30deg); } }
 @keyframes tc-fade-in { to { opacity: 1; } }
 @keyframes tc-fade-out { to { opacity: 0; } }
 @media (max-width: 640px) {
-  .tc-p3 { display: none; }
+  .tc-p3, .tc-sl:nth-child(n+7) { display: none; }
   .tc-p2 { --tx: 8vw; --ty: 17vmin; }
   .tc-face { right: -2vmin; top: -9vmin; }
+  .tc-sp:nth-child(n+7) { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .tc, html.tc-arrive::before { display: none; } }
+@media (prefers-reduced-motion: reduce) { .tc, html.tc-arrive::before { display: none; } html.tc-wait .reveal, html.tc-wait [data-mx], html.tc-wait [data-mx] > *, html.tc-wait .mx-w { opacity: 1 !important; } }
 html.mx-paused .tc * { animation-play-state: paused; }
 
 /* ==========================================================================
@@ -1835,7 +1875,7 @@ html.ls-story .stop-eq { align-self: flex-start; font-size: 1.25rem; padding: .8
 /* pinned scroller (wide screens) */
 html.ls-pin .sims-track { height: calc(var(--n) * 34vh + 46vh); }
 html.ls-pin .sims-stick { position: sticky; top: var(--header-h); min-height: calc(100vh - var(--header-h)); display: flex; flex-direction: column; justify-content: center; }
-html.ls-pin .sims-view { overflow: hidden; scroll-snap-type: none; }
+html.ls-pin .sims-view { overflow: hidden; overflow: clip; scroll-snap-type: none; }   /* clip: not scrollable at all, even by focus or a restored position */
 html.ls-pin .sim-card { flex-basis: clamp(19rem, 24vw, 26rem); }
 html.ls-pin .sim-link { min-height: clamp(20rem, 44vh, 27rem); }
 html.ls-pin .sim-art { height: clamp(7.6rem, 19vh, 12rem); }

@@ -587,6 +587,9 @@ async function landing(h) {
     const afterFocus = (await state(pg)).card;
     ok('4 the arrow moves to the next card and focusing a card with the keyboard brings it into view',
       afterNext === 1 && afterFocus === 4, afterNext + ' / ' + afterFocus);
+    /* the pinned view cannot be scrolled sideways, however it is asked (focus, find in page, a restored position) */
+    const clip = await pg.evaluate(async () => { const v = document.getElementById('simsView'); v.scrollLeft = 700; await new Promise(r => setTimeout(r, 120)); return { sl: v.scrollLeft, ox: getComputedStyle(v).overflowX }; });
+    ok('4 the pinned carousel cannot be scrolled sideways (overflow clip), so the rail can only follow the page', clip.sl === 0 && /clip|hidden/.test(clip.ox), JSON.stringify(clip));
     /* 6: Details */
     await scrollTo(pg, aboutY);
     const readLede = () => pg.evaluate(() => [...document.querySelectorAll('#about .lede')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.textContent.trim()).join('|'));
@@ -683,7 +686,9 @@ async function landing(h) {
      9 page transitions are one fixed timeline: swap only under a closed card, hold, reveal; cached = first visit,
        a slow response only lengthens the hold;
     10 arriving from another page is covered from the first frame, held, then lifted;
-    11 home and straight back to the mounted chapter, inside the card, ends on the chapter.
+    11 home and straight back to the mounted chapter, inside the card, ends on the chapter;
+    12 the destination page animates along: reveals held under the card, released as it lifts, title split into letters;
+    13 the browser Back button from a chapter returns to Home.
    Exits 1 on any failure.
    ========================================================================== */
 async function motion(h) {
@@ -769,7 +774,7 @@ async function motion(h) {
         lifted no sooner than the hold after that, a delayed response only makes the hold longer, and a cached
         chapter takes as long as an uncached one */
   {
-    const T = { COVER: 460, HOLD: 380, OUT: 520 };
+    const T = { COVER: 480, HOLD: 420, OUT: 560 };
     const record = pg => pg.evaluate(() => {
       const topic = document.getElementById('shell-topic'), hidden0 = topic.hidden;
       const r = window.__tc = { add: 0, swap: 0, out: 0, rm: 0, onAtSwap: null };
@@ -842,7 +847,7 @@ async function motion(h) {
     ok('10 an arriving page is covered on its first frame (head gate, then the held card), never bare',
       a.first && (a.first.gate || a.first.card), JSON.stringify(a));
     ok('10 the arrival holds, reveals and cleans up (gate removed, one-shot marker consumed)',
-      a.life >= 380 + 520 - 120 && a.life < 4000 && a.gate === false && a.key === null, JSON.stringify(a));
+      a.life >= 420 + 560 - 120 && a.life < 4000 && a.gate === false && a.key === null, JSON.stringify(a));
     await ctx.close();
   }
 
@@ -860,6 +865,51 @@ async function motion(h) {
     await pg.waitForTimeout(300);
     const end = await pg.evaluate(() => ({ topic: !document.getElementById('shell-topic').hidden, homeHidden: document.getElementById('shell-home').hidden, hash: location.hash, h1: (document.querySelector('#shell-topic h1') || {}).textContent }));
     ok('11 home and straight back to the mounted chapter (inside the card) ends on the chapter', end.topic && end.homeHidden && end.hash === '#/ch2' && !!end.h1, JSON.stringify(end));
+    await ctx.close();
+  }
+
+  /* 12: the page we go to animates along: its reveals are held while the card covers, play as the card lifts,
+         and its title is split into letters that animate; afterwards nothing is held and the title reads the same */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await pg.click('a[data-topic-link="ch2"]');
+    await pg.waitForFunction(() => document.documentElement.classList.contains('tc-wait') && !document.getElementById('shell-topic').hidden && document.querySelector('#shell-topic h1'), null, { timeout: 8000 });
+    const held = await pg.evaluate(() => ({ wait: document.documentElement.classList.contains('tc-wait'),
+      ops: [...document.querySelectorAll('#shell-topic .reveal')].slice(0, 4).map(e => getComputedStyle(e).opacity) }));
+    await pg.waitForSelector('.tc.out', { timeout: 8000 });
+    await pg.waitForTimeout(330);
+    const along = await pg.evaluate(() => ({ wait: document.documentElement.classList.contains('tc-wait'),
+      anims: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#shell-topic')).length,
+      letters: document.querySelectorAll('#shell-topic h1 span[aria-hidden] > span').length }));
+    await pg.waitForFunction(() => !document.querySelector('.tc'), null, { timeout: 8000 });
+    await pg.waitForTimeout(1600);
+    const done = await pg.evaluate(() => { const h = document.querySelector('#shell-topic h1'); return { text: h.textContent.trim(), label: h.getAttribute('aria-label'), op: getComputedStyle(h).opacity,
+      wait: document.documentElement.classList.contains('tc-wait'), reveals: [...document.querySelectorAll('#shell-topic .reveal.in')].every(e => getComputedStyle(e).opacity === '1') }; });
+    ok('12 while the card covers, the destination\'s reveals wait at their start state', held.wait && held.ops.length > 0 && held.ops.every(o => o === '0'), JSON.stringify(held));
+    ok('12 as the card lifts the page\'s text comes in with it: reveals released, title split into letters, blocks animating', along.wait === false && along.letters >= 10 && along.anims >= 8, JSON.stringify(along));
+    ok('12 and it settles: the title reads the same (text and aria-label), nothing is held, every revealed block is visible',
+      done.text === 'Electric Fields & Coulomb\u2019s Law' && done.label === done.text && done.op === '1' && !done.wait && done.reveals, JSON.stringify(done));
+    await ctx.close();
+  }
+
+  /* 13: the browser's Back button from a chapter returns to Home (the bare address the visit began on) */
+  {
+    const { ctx, pg } = await ctxPage();
+    await noIntro(pg);
+    await pg.goto(B + '/index.html', { waitUntil: 'load' });
+    await pg.waitForTimeout(1200);
+    await pg.click('a[data-topic-link="ch1"]');
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
+    await pg.goBack();
+    await pg.waitForFunction(() => document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
+    const back = await pg.evaluate(() => ({ home: !document.getElementById('shell-home').hidden, hash: location.hash }));
+    ok('13 Back from a chapter returns to Home', back.home && back.hash === '', JSON.stringify(back));
+    await pg.goForward();
+    await pg.waitForFunction(() => !document.getElementById('shell-topic').hidden && !document.querySelector('.tc'), null, { timeout: 8000 });
+    ok('13 Forward returns to the chapter', true);
     await ctx.close();
   }
 

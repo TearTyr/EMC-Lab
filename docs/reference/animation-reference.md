@@ -66,25 +66,36 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
 
 ## Page transitions (title cards: "change the channel")
 One fixed timeline for every boundary (chapter switch, quiz, back home), however fast the page loads:
-**COVER** 460 ms (two ink shutters close on a yellow line like a TV switching off, a three-frame static
-canvas flickers, three comic panels slam in carrying the destination's name, Denki-chan's face and an
-on-screen tag such as `CH 02 · FIELDS`) → **HOLD** at least 380 ms fully covered (a slow load only makes
-it longer) → **REVEAL** 520 ms (panels slide out, the static drops, the shutters open on the new page).
-About 1.4 s, the same cached or not. Constants: `EMC_MOTION.timing`.
+**COVER** 480 ms (two ink shutters close on a yellow line like a TV switching off, speed streaks cross the
+screen, a three-frame static canvas flickers, three comic panels slam in; then the destination's name lands
+with an impact: a punch with squash, a pink/sky colour-split ghost, a shock ring, ten sparks, a spinning
+Denki-chan and an on-screen tag such as `CH 02 · FIELDS`) → **HOLD** at least 420 ms fully covered (a slow
+load only makes it longer) → **REVEAL** 560 ms (panels slide out, the static drops, a yellow band flashes as
+the shutters open on the new page). About 1.5 s, the same cached or not. Constants: `EMC_MOTION.timing`.
+
+**The page's text comes in with it.** While the card covers, `html.tc-wait` forces the destination's
+`.reveal` and `[data-mx]` items to their start state, so nothing plays out of sight. 170 ms into the reveal
+(as the shutters begin to open) the hold is released, so those reveals play now, and `enter()` choreographs
+the rest of the first screen with the Web Animations API: the title is split into words and letters (the
+full text stays in `aria-label`) and slams in letter by letter with the intro's overshoot, and the other
+blocks rise one after another (70 ms apart). On the home page only the hero animates. Reduced motion skips
+all of it.
 
 - `cover(label)` returns a promise that settles when the page is fully covered; the page underneath is
   swapped only after it. `uncover()` lifts the card, never before the hold. A card already up is shared
   (the newest route wins). Reduced motion never creates it.
 - Same-document switches: the shell (`js/shell.js`) dispatches `emc:view-leaving` with `detail.wait`
   (an array); the card pushes its cover promise there and the shell waits for it before tearing the old view
-  down, fetching the chapter in the meantime. `detail.boot` (a deep link) skips the card. `emc:view-shown`
-  lifts it.
+  down, fetching the chapter in the meantime, then jumps to the top instantly (`html` smooth scrolling would
+  otherwise still be gliding when the card lifts). `detail.boot` (a deep link) skips the card.
+  `emc:view-shown` lifts it. The browser Back button to the bare address returns Home.
 - Full navigations: `EMC_MOTION.coverThenGo(label, go)` covers, stores `{label, osd, face}` in
   `sessionStorage['emc.tc']` (read and deleted by the next page) and navigates. A head gate on every page
   sets `html.tc-arrive` (CSS paints the ink cover on the first frame) and the arriving page builds its card
   already held, then lifts it. A 2.5 s timer clears the gate if the script never loads; a 7 s failsafe removes
   a stuck card. The bare home load is not covered (the intro owns it).
-- Transform and opacity only; the card is `aria-hidden`; colours are tokens (ink, pink, sky, yellow).
+- Transform and opacity only; the card is `aria-hidden`; colours are tokens (ink, pink, sky, yellow). Ghost,
+  ring and sparks use `fill-mode: forwards` (with `both` their first keyframe shows during the start delay).
 
 ## Presets (`[data-mx]`)
 `rise`, `slam`, `slide`, `pop`, `flash`, `whip`, `spin`, `lines`, `corner`, `badge`, `words`

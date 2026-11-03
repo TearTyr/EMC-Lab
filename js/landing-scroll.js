@@ -223,6 +223,7 @@
   function updateScroller(y) {
     if (!P.ok) return;
     const n = P.cards.length, p = clamp((y + headerH - P.top) / P.range, 0, 1);
+    if (P.view.scrollLeft) P.view.scrollLeft = 0;                          /* belt and braces: the rail moves by transform only */
     put(P.rail, 'transform', 'translate3d(' + (-p * P.shift).toFixed(1) + 'px,0,0)');
     const idx = Math.round(p * (n - 1));
     if (idx !== P.i) setCard(idx);
@@ -389,6 +390,7 @@
     if (wide && wide.addEventListener) { wide.addEventListener('change', onResize); listeners.push([wide, 'change', onResize]); }
     on(document, 'emc:view-shown', onResize);                            /* the home view came back from a chapter */
     on(document, 'emc:theme', redrawCanvas);
+    on(window, 'pageshow', onResize);                                    /* back/forward restores a page with stale positions */
     on(window, 'load', onResize);                                        /* fonts and equations have settled the layout above */
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(onResize);
     /* anything that changes the page's height (Details switch, equations, an opened panel) moves the tracks */

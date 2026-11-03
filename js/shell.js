@@ -49,6 +49,8 @@
   /* ---- routing ---------------------------------------------------------- */
   function routeFromHash() {
     const h = location.hash || '';
+    /* the browser's Back button from a chapter lands on the bare address the visit began on: that is Home */
+    if (h === '' || h === '#') return (active !== 'home' || want !== 'home') ? 'home' : null;
     if (h.indexOf('#/') !== 0) return null;     // plain anchor: leave it native
     const raw = h.slice(2);
     if (byId(raw)) return raw;
@@ -193,7 +195,7 @@
     active = 'home';
     setSections(false);
     document.title = HOME_TITLE;
-    if (!opts || opts.scroll !== false) window.scrollTo(0, 0);
+    if (!opts || opts.scroll !== false) window.scrollTo({ top: 0, behavior: 'instant' });
     document.dispatchEvent(new CustomEvent('emc:view-shown', { detail: { view: 'home', root: document } }));
   }
 
@@ -212,7 +214,7 @@
     document.title = ch.num + ' · ' + ch.title + ' — EMC Lab';
     body.innerHTML = '<div class="wrap section-tight"><div class="card">' +
       '<p class="small muted" style="margin:0">Loading ' + ch.short + '…</p></div></div>';
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
     try {
       const html = await fetchMain(ch);
       if (token !== loadToken) return;          // a newer switch won the race
