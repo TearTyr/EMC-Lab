@@ -1302,14 +1302,9 @@
   color: #fff; -webkit-text-stroke: 1.8cqw var(--ink); paint-order: stroke fill;
   white-space: nowrap; text-align: center; }
 #introOverlay .kw sup, #introOverlay .kw sub { font-size: .55em; line-height: 0; }
-/* G8321 has no fraction bar or arrow glyph: both are drawn as white shapes with the same outline */
+/* G8321 has no fraction bar glyph: it is drawn as a white shape with the same outline */
 #introOverlay .fb { display: block; width: 3.4em; height: .15em; margin: .12em 0; border-radius: .08em; background: #fff;
   box-shadow: 0 0 0 .07em var(--ink); }
-#introOverlay .ar { display: inline-block; width: 1.6em; height: .8em; vertical-align: -.1em; overflow: visible; fill: none;
-  stroke-linecap: round; stroke-linejoin: round; }
-#introOverlay .ar .s3 { stroke: var(--ink); stroke-width: 13; }
-#introOverlay .ar .s2 { display: none; }
-#introOverlay .ar .s1 { stroke: #fff; stroke-width: 5; }
 #introOverlay .spk { width: 1.6cqw; height: 1.6cqw; z-index: 7; }
 
 /* skip + start keep the repo's classes/ids so the a11y and smoke contracts
