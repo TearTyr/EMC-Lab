@@ -126,19 +126,6 @@ window.EMC = (function () {
     return (Object.is(r, -0) ? 0 : r).toFixed(dp);
   }
 
-  /* Device tier: small high-DPR screens (phones, emulated mobile profiles)
-     get a 30 fps animation cap and sims may trim particle counts. Signals are
-     feature-detected with safe fallbacks; desktop is never tiered down. */
-  function detectLowTier() {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    const small = (window.innerWidth || 1200) < 500;
-    const hidpi = (window.devicePixelRatio || 1) >= 3;
-    const coarse = window.matchMedia('(pointer: coarse)').matches;
-    const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 8;
-    return (hidpi && small) || (coarse && cores <= 4);
-  }
-  const LOW_TIER_DEVICE = detectLowTier();
-
   /* ------------------------------------------------------------------------ 4. Stage — HiDPI canvas wrapper with an optional rAF loop ------------------------------------------------------------------------ */
   /* * @param {HTMLCanvasElement} canvas * @param {(ctx:CanvasRenderingContext2D, w:number, h:number, stage:Stage)=>void} render * @param {{animate?:boolean}} [opts] animate=true keeps a rAF loop running * (it auto-pauses when the canvas scrolls out of view to save CPU). */
   /* ---- Stage registry, budget and dev diagnostics -----------------------
@@ -230,8 +217,6 @@ window.EMC = (function () {
       this.pointer = { x: 0, y: 0, down: false, inside: false };
       this._raf = 0; this._last = 0; this._visible = true; this._running = false;
       this._drawRaf = 0; this._pmRaf = 0; this._pm = null;
-      this._lastRender = 0;
-      this._fpsCap = LOW_TIER_DEVICE ? 30 : 0;      // 0 = uncapped
       /* Entrance: objects assemble into place on first paint. draw() applies
          a generic decelerating fade+rise; sims that choreograph their own
          objects (charges converging, a magnet sliding in) read intro().
@@ -465,13 +450,6 @@ window.EMC = (function () {
       this._raf = requestAnimationFrame(now => {
         this._raf = 0;
         if (!this._running) return;
-        // device tier: skip renders between capped frames while keeping the
-        // chain and the real-time dt bookkeeping intact
-        if (this._fpsCap && this._lastRender && (now - this._lastRender) < (1000 / this._fpsCap) - 2) {
-          this._tick();
-          return;
-        }
-        this._lastRender = now;
         if (!this._last) this._last = now;
         // Clamp dt so a backgrounded tab does not produce a huge time jump.
         const dt = clamp((now - this._last) / 1000, 0, 0.05);
@@ -1727,7 +1705,6 @@ window.EMC = (function () {
       return n;
     },
     get reducedMotion() { return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); },
-    get lowTier() { return LOW_TIER_DEVICE; },
     store, Progress, Prefs, PREFS_KEY,
     bindRange, bindSegment, bindToggles,
     loader: LOADER,

@@ -184,7 +184,7 @@
 
     /* flying electrons hair -> balloon (cosmetic; shared by the drag and the Rub button) */
     function spawnParts(count) {
-      if (state.parts.length >= (EMC.lowTier ? 8 : 22)) return;
+      if (state.parts.length >= 22) return;
       const w = stage.w, h = stage.h;
       for (let i = 0; i < count; i++) {
         state.parts.push({

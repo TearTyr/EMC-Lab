@@ -632,7 +632,7 @@
       if (removed || !overlay.isConnected) return;
       const e = engine();
       e.loadFaces(); e.readMkw(); e.fit();
-      if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) e.setLite();
+      if ((navigator.hardwareConcurrency || 8) <= 2) e.setLite();
       const reducedMotion = window.EMC && window.EMC.reducedMotion;
       overlay.classList.add('ready');                    /* the loading bar fades out on the same yellow */
       if (reducedMotion) { e.frame(e.TT + 2); return; }  /* static end frame */
