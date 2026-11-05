@@ -11,14 +11,14 @@
    shadowed by generated utilities (it is a TOP-LEVEL option — inside
    `content` it is invalid and triggers the purge/content warning).    */
 export default {
-  content: ['./*.html', './topics/*.html', './js/quiz.js', './js/mascot.js'],
+  content: ['./*.html', './topics/*.html', './js/quiz.js', './js/mascot.js', './js/sim-*.js', './js/toy-*.js', './js/sandbox-core.js'],
   blocklist: ['container', 'collapse', 'resize', 'filter', 'transform',
               'table', 'ring', 'summary', 'content', 'order', 'grow', 'shrink',
               // '!btn' / '!card' were extracted out of a JS null-check
               // (`if (!card) return`) and compiled to phantom important-variants
               // of two hand-written component classes. The null checks are now
               // explicit, and blocking the names keeps them out for good.
-              '!btn', '!card', '!panel'],
+              '!btn', '!card', '!panel', '!opts', '!armed', 'rounded'],
   theme: {
     screens: { sm: '640px', md: '900px', lg: '1200px' },
     extend: {

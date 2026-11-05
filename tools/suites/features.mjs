@@ -580,7 +580,7 @@ async function sims(h) {
   {
     const { ctx, pg } = await open('/index.html');
     const stats = () => pg.evaluate(() => EMC.stats());
-    const scrollAll = () => pg.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { scrollTo(0, y); await new Promise(r => setTimeout(r, 70)); } });
+    const scrollAll = () => pg.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { scrollTo({ top: y, behavior: 'instant' }); await new Promise(r => setTimeout(r, 70)); } });   // html is scroll-behavior:smooth; a smooth scroll lags the steps and skips lazy sims
     const seen = {};
     for (let i = 0; i < 4; i++) {
       for (const ch of ['ch1', 'ch2']) {
