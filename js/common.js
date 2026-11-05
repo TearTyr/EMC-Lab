@@ -588,6 +588,8 @@ window.EMC = (function () {
   /* Small label with a dark halo so it stays legible over any drawing. */
   function label(ctx, text, x, y, { color = PALETTE.text, size = 12, align = 'center', baseline = 'middle', halo = true, weight = '600' } = {}) {
     ctx.save();
+    /* narrow (phone) canvases: floor label size at 11px (a scale-up overflows long headers) */
+    if (ctx.canvas && ctx.canvas.width / ctx.getTransform().a < 480) size = Math.max(size, 11);
     ctx.font = fontFor(weight, size);
     ctx.textAlign = align; ctx.textBaseline = baseline;
     if (halo) {
