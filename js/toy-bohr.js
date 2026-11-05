@@ -69,11 +69,23 @@
       if (!hit) state.starred = false;
     }
 
-    function render(ctx, w, h) {
-      ctx.clearRect(0, 0, w, h);
+    /* The rings, orbit, proton and text only change with size, r or the lecture
+       hit, so each is painted once into an offscreen layer and blitted per frame. */
+    const layers = {};
+    function layer(name, key, w, h, dpr, paint) {
+      const L = layers[name] || (layers[name] = { cv: document.createElement('canvas'), key: '' });
+      if (L.key !== key) {
+        L.cv.width = Math.round(w * dpr); L.cv.height = Math.round(h * dpr);
+        const c = L.cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        paint(c);
+        L.key = key;
+      }
+      return L.cv;
+    }
+
+    function paintBase(ctx, w, h, hit) {
       const cx = w / 2, cy = h / 2 + 4;
       const Rp = dispR(state.r);
-      const hit = hitLecture();
 
       /* guide rings in units of a₀; the lecture radius is the bright one */
       [[0.5, '½ a₀'], [1, 'a₀'], [1.5, '1½ a₀'], [2, '2 a₀']].forEach(([k, name]) => {
@@ -95,6 +107,28 @@
       ctx.beginPath(); ctx.arc(cx, cy, Rp, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
 
+      /* proton */
+      ctx.fillStyle = 'rgba(248,174,190,.14)';
+      ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.fill();
+      EMC.chargeGlyph(ctx, cx, cy, 16, +e);
+      label(ctx, 'p⁺', cx, cy + 32, { color: P.pinkHi, size: 11 });
+    }
+
+    function paintTop(ctx, w, h, hit) {
+      label(ctx, `r = ${unit(state.r, 'm', 3)} — drag the electron or use the slider`, w / 2, 16,
+        { color: 'rgba(169,186,214,.85)', size: 11.5, weight: '500' });
+      label(ctx, `r = ${(state.r / R0).toFixed(2)} a₀`, 14, h - 34, { color: 'rgba(169,186,214,.9)', size: 11.5, weight: '600', align: 'left' });
+      label(ctx, `v / v₀ = ${(v() / v0).toFixed(2)}  (v ∝ 1/√r)`, 14, h - 16, { color: hit ? LIME : 'rgba(169,186,214,.9)', size: 11.5, weight: '600', align: 'left' });
+    }
+
+    function render(ctx, w, h) {
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2, cy = h / 2 + 4;
+      const Rp = dispR(state.r);
+      const hit = hitLecture();
+      const key = [w, h, stage.dpr, state.r, hit, document.documentElement.getAttribute('data-theme')].join('|');
+      ctx.drawImage(layer('base', key, w, h, stage.dpr, c => paintBase(c, w, h, hit)), 0, 0, w, h);
+
       /* fading trail behind the electron (angular speed sign is +) */
       ctx.save();
       ctx.lineCap = 'round'; ctx.lineWidth = 4;
@@ -105,12 +139,6 @@
         ctx.beginPath(); ctx.arc(cx, cy, Rp, a0, a1); ctx.stroke();
       }
       ctx.restore();
-
-      /* proton */
-      ctx.fillStyle = 'rgba(248,174,190,.14)';
-      ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.fill();
-      EMC.chargeGlyph(ctx, cx, cy, 16, +e);
-      label(ctx, 'p⁺', cx, cy + 32, { color: P.pinkHi, size: 11 });
 
       /* electron + force and velocity arrows */
       const ex = cx + Math.cos(state.theta) * Rp, ey = cy + Math.sin(state.theta) * Rp;
@@ -125,10 +153,7 @@
       EMC.chargeGlyph(ctx, ex, ey, 8, -e);
 
       /* header + live meters */
-      label(ctx, `r = ${unit(state.r, 'm', 3)} — drag the electron or use the slider`, w / 2, 16,
-        { color: 'rgba(169,186,214,.85)', size: 11.5, weight: '500' });
-      label(ctx, `r = ${(state.r / R0).toFixed(2)} a₀`, 14, h - 34, { color: 'rgba(169,186,214,.9)', size: 11.5, weight: '600', align: 'left' });
-      label(ctx, `v / v₀ = ${(v() / v0).toFixed(2)}  (v ∝ 1/√r)`, 14, h - 16, { color: hit ? LIME : 'rgba(169,186,214,.9)', size: 11.5, weight: '600', align: 'left' });
+      ctx.drawImage(layer('top', key, w, h, stage.dpr, c => paintTop(c, w, h, hit)), 0, 0, w, h);
     }
 
     const stage = new EMC.Stage(canvas, (ctx, w, h, _st, dt) => {

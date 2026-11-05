@@ -29,8 +29,7 @@
    canvas at 30 fps, the charges loop on the compositor, the overlay lifts by
    transform, every style write goes through a per-element cache, nothing queries
    or measures the DOM in the frame loop, and the engine closure is dropped with
-   the overlay. Low-tier devices and sustained slow frames switch to a lite mode
-   (no trails or sparks, text on twos, rings at 15 fps). */
+   the overlay. Every device plays the same show: there is no lite mode. */
 (function () {
   const overlay = document.getElementById('introOverlay');
   if (!overlay) return;
@@ -324,7 +323,7 @@
     let bgStep = -1, lastT = -1;
     function drawBg(t) {
       if (!bgX) return;
-      const k = Math.floor(t * (liteMode ? 15 : tall ? 20 : 30));   /* the rings only need to look smooth, not be 60 fps */
+      const k = Math.floor(t * 30);   /* the rings only need to look smooth, not be 60 fps */
       if (k === bgStep) return;
       bgStep = k;
       const w = bgC.width, h = bgC.height, vm = Math.min(w, h) / 100;
@@ -349,12 +348,6 @@
       const v = parseFloat(getComputedStyle(stg).getPropertyValue('--mk'));
       if (v) mkw = v;
     };
-
-    function setLite() {
-      if (liteMode) return;
-      liteMode = true;
-      overlay.classList.add('lite');
-    }
 
     const TR = [[0, 1], [.03, .4], [.06, .2]];             /* [delay, opacity] of the word and its two smear trails */
     function drawTok(o, t, tt, dp) {
@@ -384,7 +377,7 @@
       const moving = tt < o.t0 + o.d * 1.25 + .2;
       for (let j = 0; j < 3; j++) {
         const el = j === 0 ? o.e : j === 1 ? o.a : o.b, dl = TR[j][0];
-        if (j && (liteMode || !moving)) { S(el, 'opacity', '0'); S(el, 'willChange', 'auto'); continue; }
+        if (j && !moving) { S(el, 'opacity', '0'); S(el, 'willChange', 'auto'); continue; }
         const r = raw(o, tt - dl);
         if (!r) { S(el, 'opacity', '0'); continue; }
         const r2 = raw(o, tt - dl - .016) || r, vx = r[0] - r2[0], vy = r[1] - r2[1], sp = Math.hypot(vx, vy) / .016, va = Math.atan2(vy, vx), st = 1 + clamp(sp / 450, 0, 1.4);
@@ -398,7 +391,7 @@
     }
 
     function drawText(t) {
-      const tt = liteMode ? Math.floor(t * 30) / 30 : t;   /* lite mode moves the text on twos, like the reference */
+      const tt = t;
       for (let i = 0; i < pt.length; i++) S(pt[i], 'opacity', '0');
       for (const g of G) {
         const on = t >= g.t0 - .4 && t < g.t1;
@@ -407,7 +400,7 @@
         const dp = drift(clamp((tt - g.t0) / (g.ex - g.t0)));
         for (const o of g.k) {
           drawTok(o, t, tt, dp);
-          if (liteMode || o.m === 'wipe' || o.m === 'type') continue;
+          if (o.m === 'wipe' || o.m === 'type') continue;
           const u = (tt - o.t0) / .4;
           if (u < 0 || u >= 1) continue;
           const sl = (o.k % 6) * 6, k = ez(u);
@@ -494,7 +487,7 @@
         { let i = 0; while (i < CAMK.length - 2 && t >= CAMK[i + 1].t) i++;
           const a = CAMK[i], b = CAMK[i + 1], u = clamp((t - a.t) / (b.t - a.t)), s3 = u * u * (3 - 2 * u);
           cc = a.c.map((v, j) => v + (b.c[j] - v) * s3);
-          if (tall) cc = cc.map((v, j) => j === 3 ? 1 + (v - 1) * .5 : v * .5); }
+        }
         S(stg, 'transform', `translate(-50%,-50%) translate(${cc[0].toFixed(3)}%,${cc[1].toFixed(3)}%) rotate(${cc[2].toFixed(3)}deg) scale(${cc[3].toFixed(4)})`);
         S(sw, 'transform', `translate(${(-cc[0] * 1.3).toFixed(3)}%,${(-cc[1] * 1.3).toFixed(3)}%) scale(${(1 + (cc[3] - 1) * .5).toFixed(4)})`);
 
@@ -540,11 +533,11 @@
       };
     }
 
-    return { frame, fit, readMkw, loadFaces, setLite, layout, TT, TE, END };
+    return { frame, fit, readMkw, loadFaces, layout, TT, TE, END };
   }
 
   let E = null;                    /* the running engine; dropped when the overlay goes */
-  let liteMode = false, duration = 0;
+  let duration = 0;
   const engine = () => {
     if (!E && !removed) { E = makeEngine(); duration = E.END; }
     return E;
@@ -578,17 +571,10 @@
     }
   }
 
-  let t0 = 0, tShift = 0, pauseStart = 0, lastNow = 0, ema = 16, slow = 0;
+  let t0 = 0, tShift = 0, pauseStart = 0;
   function step(now) {
     const t = (now - t0 - tShift) / 1000;
     if (t >= E.END) { E.frame(E.END); finish(); return; }
-    /* adaptive quality: sustained slow frames drop the extras */
-    if (lastNow && t > 1 && !liteMode) {
-      ema = ema * .9 + (now - lastNow) * .1;
-      slow = ema > 28 ? slow + 1 : 0;
-      if (slow > 18) E.setLite();
-    }
-    lastNow = now;
     E.frame(t);
     raf = requestAnimationFrame(step);
   }
@@ -632,7 +618,6 @@
       if (removed || !overlay.isConnected) return;
       const e = engine();
       e.loadFaces(); e.readMkw(); e.fit();
-      if (window.EMC && (window.EMC.lowTier || window.EMC.saveData) || (navigator.hardwareConcurrency || 8) <= 2) e.setLite();
       const reducedMotion = window.EMC && window.EMC.reducedMotion;
       overlay.classList.add('ready');                    /* the loading bar fades out on the same yellow */
       if (reducedMotion) { e.frame(e.TT + 2); return; }  /* static end frame */
@@ -644,7 +629,7 @@
         if (removed || !playing || overlay.classList.contains('done')) return;   /* skipped during the fade */
         raf = requestAnimationFrame(() => {
           raf = requestAnimationFrame(now => {
-            t0 = now; tShift = 0; pauseStart = 0; lastNow = 0;
+            t0 = now; tShift = 0; pauseStart = 0;
             step(now);
           });
         });
@@ -661,7 +646,7 @@
       pauseStart = performance.now();
     } else if (pauseStart) {
       tShift += performance.now() - pauseStart;
-      pauseStart = 0; lastNow = 0;
+      pauseStart = 0;
       if (!raf && !overlay.classList.contains('done') && E) raf = requestAnimationFrame(step);
     }
   }
@@ -764,7 +749,6 @@
         listeners: listeners.length,
         rafs: (raf ? 1 : 0) + (fitRaf ? 1 : 0),
         inert: inertedNodes.length,
-        lite: liteMode,
         duration
       };
     },

@@ -39,8 +39,7 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
   skips the gate and draws the static end frame.
 - **Phones (portrait):** the stage is the whole screen (`100svh`, so the sliding address bar never
   changes it) and the mascot is 32cqw. `fit()` keeps every phrase in a zone under the mascot and above the
-  Skip button, with larger side margins; camera pan and roll are halved; three faint mascots hold still and
-  four charges drift; the ring canvas is smaller and runs at 20 fps. `EMC_INTRO.layout()` returns every
+  Skip button, with larger side margins; the camera, ghosts, charges and rings run exactly as on desktop (only the ring canvas is smaller). `EMC_INTRO.layout()` returns every
   word's resting box; `tools/suites/page.mjs` (test 15) proves nothing leaves the screen or overlaps.
   Height-only resizes on touch devices are ignored.
 - **Profiling:** measured at 390x844, 4x CPU throttle, software raster (a harsher stand-in for a phone):
@@ -54,7 +53,7 @@ only, every effect has a reduced-motion path, and nothing runs without JS.
   clip-path; every style write goes through a per-element cache; nothing measures the DOM in the
   frame loop; layers are prepared before they are needed; the clock starts after the first frame
   has painted; background work waits for `EMC.afterIntro`; the engine closure is dropped with the
-  overlay. Lite mode (slow devices) drops trails, sparks, and runs the text on twos.
+  overlay. There is no lite mode: every device plays the same show, so cost is cut by caching and layering, never by dropping content.
 - **Contract:** plays on every bare home load, stores nothing, Skip / Esc / Start end it,
   the rest of the page is `inert` while it plays, zero timers/listeners afterwards
   (`tools/intro-verify.mjs`).

@@ -282,6 +282,13 @@
         const nLines = lite ? clamp(Math.round(1.5 * Math.abs(c.q) * 1e6), 6, 14)
           : clamp(Math.round(3 * Math.abs(c.q) * 1e6), 6, 26);
         const startR = objRadius(c, state.view.scale) + 3;
+        /* opposite-sign objects that end a line, in pixels: computed once per source, not per step */
+        const sinks = [];
+        for (const other of state.objects) {
+          if (other === c || !other.q || other.type === 'test' || Math.sign(other.q) === Math.sign(c.q)) continue;
+          const o = toPx(other.x, other.y), r = objRadius(other, state.view.scale) + 2;
+          sinks.push(o.x, o.y, r * r);
+        }
         const offset = c.q > 0 ? 0 : Math.PI / nLines;
         for (let i = 0; i < nLines; i++) {
           const a = offset + (i / nLines) * Math.PI * 2;
@@ -291,8 +298,7 @@
           let travelled = 0, nextHead = 46;
           ctx.beginPath(); ctx.moveTo(x, y);
           for (let s = 0; s < maxSteps; s++) {
-            const m = toM(x, y);
-            const f = fieldAtM(m.x, m.y);
+            const f = fieldAtM((x - state.view.ox) / state.view.scale, (y - state.view.oy) / state.view.scale);
             if (f.mag < 1e-9) break;
             const sgn = c.q > 0 ? 1 : -1;
             x += sgn * (f.ex / f.mag) * step; y += sgn * (f.ey / f.mag) * step;
@@ -300,10 +306,9 @@
             if (travelled >= nextHead) { heads.push([x, y, Math.atan2(f.ey, f.ex)]); nextHead += 88; }
             if (x < -40 || x > w + 40 || y < -40 || y > h + 40) break;
             ctx.lineTo(x, y);
-            for (const other of state.objects) {
-              if (other === c || !other.q || other.type === 'test' || Math.sign(other.q) === Math.sign(c.q)) continue;
-              const o = toPx(other.x, other.y);
-              if (Math.hypot(x - o.x, y - o.y) < objRadius(other, state.view.scale) + 2) { hit = true; break; }
+            for (let k = 0; k < sinks.length; k += 3) {
+              const dx = x - sinks[k], dy = y - sinks[k + 1];
+              if (dx * dx + dy * dy < sinks[k + 2]) { hit = true; break; }
             }
             if (hit) break;
           }
@@ -436,7 +441,7 @@
         return;
       }
 
-      const lite = !!state.dragging || state.objects.length > 12 || EMC.lowTier;
+      const lite = !!state.dragging || state.objects.length > 12;
       if (state.toggles.lines) traceLines(ctx, w, h, lite);
       if (state.toggles.arrows) drawVectorGrid(ctx, w, h);
 
@@ -942,7 +947,7 @@
             state.ruler[state.dragging.kind === 'r1' ? 'x1' : 'x2'] = m.x;
             state.ruler[state.dragging.kind === 'r1' ? 'y1' : 'y2'] = m.y;
           }
-          stage.draw(); readouts();
+          stage.invalidate(); readouts();
         } else {
           const o = hitTest(p.x, p.y);
           if (o !== state.hover) {
@@ -1015,7 +1020,7 @@
           state.view.scale = ns;
           state.view.ox = mid.x - wx * ns; state.view.oy = mid.y - wy * ns;
           if (e.preventDefault) e.preventDefault();
-          stage.draw();
+          stage.invalidate();
         }
       }, { passive: false });
       const endPinch = () => {

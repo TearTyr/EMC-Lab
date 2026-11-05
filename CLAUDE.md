@@ -48,3 +48,12 @@ server. Serve manually with `python3 -m http.server` if you need to look at the 
 
 Detailed rules: `.claude/rules/design-system.md`, `.claude/rules/motion.md`, `.claude/rules/content-and-tests.md`.
 Skills: `emc-verify`, `emc-mobile-check`, `emc-design-audit`, `emc-add-sim` in `.claude/skills/`.
+
+## Always-on skills
+
+At the start of every session, and for every task, invoke the `caveman` skill and the `ponytail` skill (Skill tool) before doing anything else, and keep both on until the user says "stop caveman" or "normal mode".
+
+- `caveman`: terse replies, answer first, every technical fact kept.
+- `ponytail`: the smallest change that fully solves the task; no extra abstractions or scope.
+
+The hard contracts above still win over both: terse and small never means skipping a test, a parity pair or a reduced-motion path.
