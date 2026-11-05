@@ -17,5 +17,5 @@ Full reference: `docs/reference/animation-reference.md`. These are the rules tha
 - The intro stage uses container units (`cqw`) on `#st`; size with `svh` (with a `vh` fallback), never a fixed pixel height. Ignore height-only resizes (address bar).
 - Check at 360×640, 390×844, 412×915 and 844×390 (`emc-mobile-check`). Nothing may overlap the mascot or leave the screen at rest.
 - Profile before optimising: CPU-throttle (4×) at 390×844 and look at frame times. Do not drop an entrance move to fix lag; reduce what each move costs (fewer layers, no `will-change` at rest, smaller canvases).
-- Lite mode (`overlay.lite`) is the last resort for very slow devices because it changes how the motion looks.
+- No lite mode and no phone-only removal of elements or frames: phones show what desktop shows. Cut cost with caching, layering and fewer layout reads.
 - Reveal order on the landing page: intro, landing drop, hero text, then the rest. Each handoff is an event (`emc:intro-land`, `emc:landing-done`).

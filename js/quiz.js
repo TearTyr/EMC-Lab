@@ -1311,7 +1311,7 @@
         }]
       },
       options: {
-        maintainAspectRatio: false, cutout: '66%',
+        maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), cutout: '66%',
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
       }
     }));
@@ -1331,7 +1331,7 @@
       type: 'bar',
       data: { labels, datasets: [{ data: vals, backgroundColor: css('--chart-bar'), borderRadius: 5, maxBarThickness: 18 }] },
       options: {
-        indexAxis: 'y', maintainAspectRatio: false,
+        indexAxis: 'y', maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
         scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
         plugins: { legend: { display: false } }
       }
@@ -1350,7 +1350,7 @@
         }]
       },
       options: {
-        maintainAspectRatio: false,
+        maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
         scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
         plugins: { legend: { display: false } }
       }
