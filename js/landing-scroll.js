@@ -386,7 +386,9 @@
       }, { rootMargin: '120px 0px 120px 0px' });
       SECTIONS.forEach(s => io.observe(s));
     } else { SECTIONS.forEach(s => inView.add(s)); if (sims) sims.classList.add('ls-live'); }
-    on(window, 'resize', onResize);
+    /* touch: the address bar sliding fires height-only resizes while scrolling, which are not a new layout */
+    let lastW = innerWidth;
+    on(window, 'resize', () => { if (innerWidth === lastW && matchMedia('(pointer: coarse)').matches) return; lastW = innerWidth; onResize(); });
     if (wide && wide.addEventListener) { wide.addEventListener('change', onResize); listeners.push([wide, 'change', onResize]); }
     on(document, 'emc:view-shown', onResize);                            /* the home view came back from a chapter */
     on(document, 'emc:theme', redrawCanvas);

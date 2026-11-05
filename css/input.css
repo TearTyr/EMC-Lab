@@ -1262,11 +1262,6 @@
 #introOverlay .gh { width: 24vmin; height: 24vmin; object-fit: contain; transform: translate(-50%, -50%) rotate(var(--r)); transition: opacity .8s; }
 #introOverlay.sb .gh { animation: gh-drift 11s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.7s); }
 #introOverlay.cut .gh { opacity: .16; }
-/* phones (profiled at 4x CPU throttle: the decoration was a third of the slow frames): three faint mascots that hold still, four drifting charges */
-@media (max-aspect-ratio: 4/5) {
-  #introOverlay .gh:nth-child(n+4), #introOverlay .pt:nth-child(n+5) { display: none; }
-  #introOverlay.sb .gh { animation: none; }
-}
 @keyframes gh-drift {
   from { transform: translate(-50%, -50%) translate(-1.2vmin, -1.5vmin) rotate(var(--r)); }
   to { transform: translate(-50%, -50%) translate(1.2vmin, 1.5vmin) rotate(var(--r)); } }
@@ -1274,7 +1269,6 @@
 #introOverlay.chg #px { opacity: 1; }
 #introOverlay .pt { position: absolute; bottom: -6vh; font-weight: 800; opacity: 0; }
 #introOverlay.sb .pt { will-change: transform; animation: pt-rise var(--dur) linear var(--dl) infinite; }
-#introOverlay.lite .pt:nth-child(n+6) { display: none; }
 @keyframes pt-rise { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 12% { opacity: .5; } 88% { opacity: .5; }
   100% { opacity: 0; transform: translateY(-112vh) rotate(420deg); } }
 
@@ -1576,10 +1570,8 @@ html.tc-wait .reveal { transform: translate3d(0, 12px, 0) !important; }
 @keyframes tc-fade-in { to { opacity: 1; } }
 @keyframes tc-fade-out { to { opacity: 0; } }
 @media (max-width: 640px) {
-  .tc-p3, .tc-sl:nth-child(n+7) { display: none; }
   .tc-p2 { --tx: 8vw; --ty: 17vmin; }
   .tc-face { right: -2vmin; top: -9vmin; }
-  .tc-sp:nth-child(n+7) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .tc, html.tc-arrive::before { display: none; } html.tc-wait .reveal, html.tc-wait [data-mx], html.tc-wait [data-mx] > *, html.tc-wait .mx-w { opacity: 1 !important; } }
 html.mx-paused .tc * { animation-play-state: paused; }
