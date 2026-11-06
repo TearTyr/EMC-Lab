@@ -955,7 +955,7 @@ async function motion(h) {
     await ctx.close();
   }
 
-  /* 6: quiz jump — state synchronous, whip decorative + self-cleaning */
+  /* 6: quiz jump — state synchronous, glow decorative + self-cleaning, the card never squashes */
   {
     const { ctx, pg } = await ctxPage();
     await noIntro(pg);
@@ -967,13 +967,13 @@ async function motion(h) {
       const before = (document.querySelector('.qnav-chip.cur') || {}).dataset;
       next.click();
       const chip = document.querySelector('.qnav-chip.cur');
-      const whipped = document.querySelector('.mx-whip');
-      const activeNow = !!chip && !!whipped && chip.dataset.goto === whipped.id.replace('q-', '');
+      const glowing = document.querySelector('.q-glow');
+      const activeNow = !!chip && !!glowing && chip.dataset.goto === glowing.id.replace('q-', '');
       setTimeout(() => {
-        done({ before: before && before.goto, activeNow, whipping: !!whipped, clean: !document.querySelector('.mx-whip') });
-      }, 700);
+        done({ before: before && before.goto, activeNow, glowing: !!glowing, noWhip: !document.querySelector('.mx-whip'), clean: !document.querySelector('.q-glow') });
+      }, 1800);
     }));
-    ok('6 quiz jump commits state synchronously; whip plays and cleans up', !!res.activeNow && res.whipping && res.clean, JSON.stringify(res));
+    ok('6 quiz jump commits state synchronously; the card glows (no squash) and cleans up', !!res.activeNow && res.glowing && res.noWhip && res.clean, JSON.stringify(res));
     await ctx.close();
   }
 

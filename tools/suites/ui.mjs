@@ -176,9 +176,26 @@ async function ui(h) {
     await ctx.close();
 
     const q = await open('/quiz.html');
+    /* the quiz has nowhere to send you: clicking Denki-chan turns her into a floating calculator (k = 8.99e9, e = 1.602e-19) */
     await q.pg.click('#mascotBtn');
-    const qt = await q.pg.evaluate(() => ({ tip: document.querySelector('.mp-tip').textContent, links: [...document.querySelectorAll('.mp-links a')].map(a => a.textContent) }));
-    ok('5 quiz panel gives quiz tips and does not offer a second quiz link', /option|Flag|explanation/i.test(qt.tip) && !qt.links.includes('Take the quiz'), JSON.stringify(qt));
+    await q.pg.waitForTimeout(500);
+    const open1 = await q.pg.evaluate(() => ({ btn: getComputedStyle(document.getElementById('mascotBtn')).visibility, pos: getComputedStyle(document.getElementById('mascotPanel')).position, tip: !!document.querySelector('.mp-tip'), links: !!document.querySelector('.mp-links') }));
+    ok('5 quiz: the header mascot leaves while the floating calculator is open, no tips or jump links', open1.btn === 'hidden' && open1.pos === 'fixed' && !open1.tip && !open1.links, JSON.stringify(open1));
+    await q.pg.fill('.mp-expr', 'k*(2e-6)*(3e-6)/(0.5)^2');
+    const live = await q.pg.textContent('.mp-res');
+    await q.pg.click('.mp-pad [data-k="="]');
+    const eq = await q.pg.inputValue('.mp-expr');
+    await q.pg.click('.mp-pad [data-k="AC"]');
+    for (const k of ['7', '*', '6', '=']) await q.pg.click('.mp-pad [data-k="' + k + '"]');
+    const keys = await q.pg.inputValue('.mp-expr');
+    await q.pg.click('.mp-pad [data-k="AC"]');
+    await q.pg.fill('.mp-expr', 'sin(30)+sqrt(16');
+    const fns = await q.pg.textContent('.mp-res');
+    ok('5 quiz calculator: Coulomb example 0.21576 N, keypad, degrees trig, auto-closed bracket', live === '= 0.21576' && eq === '0.21576' && keys === '42' && fns === '= 4.5', JSON.stringify({ live, eq, keys, fns }));
+    await q.pg.click('.mp-close');
+    await q.pg.waitForFunction(() => document.getElementById('mascotPanel').hidden, null, { timeout: 2000 });
+    await q.pg.waitForTimeout(100);
+    ok('5 quiz: closing flies the calculator back and Denki-chan is in the header again', await q.pg.evaluate(() => getComputedStyle(document.getElementById('mascotBtn')).visibility === 'visible' && document.getElementById('mascotBtn').getAttribute('aria-expanded') === 'false'));
     await q.ctx.close();
   }
 
