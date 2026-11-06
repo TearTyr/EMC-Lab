@@ -235,6 +235,37 @@
   .mp-links ul { list-style: none; margin: .3rem 0 0; padding: 0; display: grid; gap: 2px; }
   .mp-links a { display: block; padding: .4rem .6rem; border-radius: 6px; color: var(--text-dim); text-decoration: none; font-size: .9rem; font-weight: 600; }
   .mp-links a:hover { background: var(--sk-t); color: var(--text); }
+  /* quiz: clicking Denki-chan turns her into a floating calculator (js/mascot.js). A physical object, so it keeps
+     the always-dark plate colours in both themes. */
+  .mascot-panel.mp-float {
+    position: fixed; top: calc(var(--header-h) + 12px); left: .7rem; width: min(330px, calc(100vw - 1.4rem)); gap: .5rem; padding: .7rem;
+    background: var(--ink); color: var(--on-plate); border: 2px solid var(--on-plate-faint); border-radius: 18px;
+  }
+  .mp-float .mp-head b { font-size: .82rem; letter-spacing: .06em; text-transform: uppercase; }
+  .mp-float .mp-head b i { font-style: normal; color: var(--on-plate-faint); }
+  .mp-float .mp-close { width: 28px; height: 28px; background: var(--plate); color: var(--on-plate); border-color: var(--on-plate-faint); }
+  .mp-lcd { display: grid; gap: .1rem; padding: .45rem .65rem; background: var(--mi); border: 2px solid var(--plate); border-radius: 6px; }
+  .mp-lcd:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .mp-expr {
+    width: 100%; box-sizing: border-box; padding: 0; text-align: right; font-size: 1.05rem; font-weight: 700;
+    font-family: theme('fontFamily.ui'); color: var(--on-mi); background: transparent; border: 0; outline: none;
+  }
+  .mp-expr::placeholder { color: var(--on-mi); opacity: .45; }
+  .mp-res { min-height: 1.5em; text-align: right; font-size: 1.25rem; font-weight: 700; color: var(--on-mi); }
+  .mp-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; }
+  .mp-pad button {
+    min-height: 40px; padding: 0; font-family: theme('fontFamily.ui'); font-size: .85rem; font-weight: 700; cursor: pointer;
+    color: var(--ink); background: var(--on-plate-faint); border: 1px solid transparent; border-radius: 10px; touch-action: manipulation;
+    transition: transform .1s ease;
+  }
+  .mp-pad button:hover { outline: 2px solid var(--sk); outline-offset: -2px; }
+  .mp-pad button:active { transform: scale(.92); }
+  .mp-pad .op { background: var(--on-plate-dim); }
+  .mp-pad .fn { color: var(--on-plate); background: var(--plate); border-color: var(--on-plate-faint); }
+  .mp-pad .del { color: var(--on-mi); background: var(--mi); }
+  .mp-pad .eq { color: var(--on-ye); background: var(--ye); }
+  .mp-pad sup { font-size: .6em; line-height: 0; }
+  @media (prefers-reduced-motion: reduce) { .mp-pad button, .mp-pad button:active { transition: none; transform: none; } }
   .mascot-say {
     position: absolute; top: calc(100% + 8px); left: .4rem; z-index: 70; width: max-content; max-width: min(280px, calc(100vw - 1.4rem));
     background: var(--panel); color: var(--text); border: 1.5px solid var(--sk); border-radius: var(--r-mid);
@@ -723,6 +754,11 @@
   .q-card { transition: border-color .15s ease; }
   .q-card:not(.answered-correct):not(.answered-wrong):hover { border-color: var(--edge); }
   .q-card.flagged { border-color: var(--ye-e); }
+  /* a jump from the navigator: a soft sky ring that fades, opacity only (the card never moves) */
+  .q-card.q-glow { position: relative; }
+  .q-card.q-glow::after { content: ""; position: absolute; inset: -5px; pointer-events: none; border: 2px solid var(--sk); border-radius: calc(var(--r-card) + 5px); background: var(--sk-t); animation: q-glow 1.4s ease-out both; }
+  @keyframes q-glow { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .q-card.q-glow::after { animation: none; opacity: 1; } }
 
   /* ---- quiz head: compact row layout ---- */
   .quiz-head { display: flex; align-items: center; gap: .8rem; margin-top: .5rem; }
