@@ -202,7 +202,7 @@
   }
   function tcClear() {
     clearTimeout(tcOutTimer); clearTimeout(tcSafety); clearTimeout(tcHoldTimer); clearTimeout(tcEnterTimer);
-    if (card) { card.remove(); card = null; }
+    if (card) { card.remove(); card = null; document.dispatchEvent(new Event('emc:card-gone')); }
     coverP = null;
     html.classList.remove('tc-arrive', 'tc-wait');
   }

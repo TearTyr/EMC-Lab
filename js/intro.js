@@ -139,12 +139,20 @@
        s = size in cqw] holds tokens [html, start (s), entrance move, strength]. Tokens are
        laid out once by fit() and only toggled/moved afterwards. */
     const FB = '<i class="fb"></i>';
+    /* phone-portrait: each equation is one row (inline "/"), shrunk by fit() to the width, instead of a stacked fraction */
+    const PHONE = innerHeight > innerWidth * 1.25;
     const G = [
       { cam: [-2, -1, -1.2, 1.04], dr: [-1, 2, -1], L: [
         { xf: .5, gf: .6, r: -3, s: 30, toks: [['e', 0, 'slam', 0], ['=', .151, 'whip', .5], ['-1.602x10<sup>-19</sup>', .453, 'rise', .5], ['C', .604, 'drop', .5]] }] },
       { cam: [2.5, 1, 1, 1.02], dr: [-1, -1, -1], L: [
         { xf: .3, gf: .3, r: -5, s: 26, toks: [['LIKE', 0, 'spin', .55], ['REPEL', .302, 'flip', .5]] },
         { xf: .7, gf: .72, r: 5, s: 26, toks: [['UNLIKE', .604, 'type', .5], ['ATTRACT', .906, 'type', .55]] }] },
+      ...(PHONE ? [
+      { cam: [-1.5, -1.5, -1.2, 1.05], dr: [0, 2, 1], L: [
+        { xf: .5, gf: .5, r: -2, s: 16, toks: [['F', 0, 'pop', .5], ['=', .151, 'arc', .5], ['k', .302, 'elastic', .5], ['|q<sub>1</sub>||q<sub>2</sub>|', .453, 'drop', .5], ['/', .604, 'wipe', .4], ['r<sup>2</sup>', .755, 'rise', .5]] }] },
+      { cam: [-2.5, -.8, -1, 1.045], dr: [0, 2, 0], L: [
+        { xf: .5, gf: .5, r: -2, s: 16, toks: [['E', 0, 'slam', 0], ['=', .151, 'arc', .5], ['F', .302, 'elastic', .5], ['/', .453, 'wipe', .4], ['|q<sub>0</sub>|', .604, 'spin', .55], ['N/C', .906, 'rise', .5]] }] },
+      ] : [
       { cam: [-1.5, -1.5, -1.2, 1.05], dr: [0, 2, 1], L: [
         { xf: .22, gf: .5, r: -4, s: 20, toks: [['F', 0, 'pop', .5], ['=', .151, 'arc', .5], ['k', .302, 'elastic', .5]] },
         { xf: .7, gf: .5, r: 2, s: 18, v: 1, gp: .02, toks: [['|q<sub>1</sub>||q<sub>2</sub>|', .453, 'drop', .5], [FB, .604, 'wipe', .4], ['r<sup>2</sup>', .755, 'rise', .5]] }] },
@@ -152,6 +160,7 @@
         { xf: .2, gf: .5, r: -4, s: 26, toks: [['E', 0, 'slam', 0], ['=', .151, 'arc', .5]] },
         { xf: .55, gf: .5, r: 2, s: 22, v: 1, gp: .02, toks: [['F', .302, 'elastic', .5], [FB, .453, 'wipe', .4], ['|q<sub>0</sub>|', .604, 'spin', .55]] },
         { xf: .88, gf: .5, r: -3, s: 16, toks: [['N/C', .906, 'rise', .5]] }] },
+      ]),
       { cam: [0, -1, .8, 1.05], dr: [0, 1, 1], L: [
         { xf: .5, gf: .3, r: -4, s: 22, toks: [['CIRCUIT', 0, 'type', .5], ['BUILDER', .151, 'elastic', .5]] },
         { xf: .5, gf: .64, r: 3, s: 15, toks: [['DRAG', .453, 'rise', .5], ['&', .604, 'spin', .5], ['DROP', .755, 'whip', .5]] }] },
@@ -254,7 +263,7 @@
       Wc = Math.max(100, (innerWidth || stg.offsetWidth) / (stg.offsetWidth || 1) * 100);
       const bs = 1 + Math.min(.35, (Wc - 100) / 220);     /* text may use the full width of a wide screen */
       tall = Hs > 125;
-      const mg = tall ? 16 : 10;                           /* side margin: the camera drifts, so phones keep more of it */
+      const mg = tall ? 8 : 10;                           /* side margin: small on phones so equations stay readable; the camera drift stays inside it */
       /* tall stage: the mascot owns the top; phrases get the zone under it (and above the Skip button) */
       const zt = -.2 * Hs + mkw * .6 + 4, zb = Hs / 2 - 16;
       const yLo = L => tall ? Math.min(zt + L.eh / 2, (zt + zb) / 2) : -Math.max(0, Hs / 2 - 9 - L.eh / 2);
@@ -425,7 +434,7 @@
       flag(overlay, 'chg', t >= 4.3);
       if (inA) {
         const mp = 1 - Math.pow(1 - seg(t, 2.306, .3), 3);   /* the face shapes fly into the mascot's spot instead of flashing away */
-        const pf = (id, s, x = 0, y = 0, r = 0, o) => { const p = AP[id]; put(sh[id], s * (1 - mp), x + (50 - p[0]) * mp, y + (30 - p[1]) * (HSC / 100) * mp, r + mp * 40, o); };
+        const pf = (id, s, x = 0, y = 0, r = 0, o) => { const p = AP[id]; put(sh[id], s * (1 - mp), x + (50 - p[0]) * mp, y + (-.2 * HSC - (p[1] - 50)) * mp, r + mp * 40, o); };
         pf('t1', pop(t, .192, .3)); pf('t2', pop(t, .192, .3));
         pf('d1', pop(t, .343, .3)); pf('d2', pop(t, .343, .3));
         const ep = pop(t, .494, .4), ew = t > .85 ? Math.sin((t - .85) * 15) * 11 * Math.exp(-(t - .85) * 2.6) : 0, eo = t >= .494 ? 1 : 0;

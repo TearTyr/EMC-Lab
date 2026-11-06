@@ -540,7 +540,16 @@
      initKeyboardAndFocus): while a programmatic jump is in flight, the
      observer must not fight it for the active-card targeting. */
   let lastJump = 0;
-  function gotoQuestion(qid, whip) {
+  /* the jumped-to card wears a soft sky ring that fades (opacity only); the card itself never moves or resizes */
+  let glowTimer = 0;
+  function glowCard(card) {
+    document.querySelectorAll('.q-card.q-glow').forEach(c => c.classList.remove('q-glow'));
+    void card.offsetWidth;                   // restart the fade if the same card is jumped to twice
+    card.classList.add('q-glow');
+    clearTimeout(glowTimer);
+    glowTimer = setTimeout(() => card.classList.remove('q-glow'), 1500);
+  }
+  function gotoQuestion(qid, glow) {
     const inView = visible().some(q => q.id === qid);
     if (inView === false) {                  // jumping beats filtering: show it
       S.filter = 'all'; syncFilterButtons(); render();
@@ -549,11 +558,11 @@
     if (target !== null && target !== undefined) {
       lastJump = performance.now();
       EMC.scrollToEl(target);
-      /* phase 8: explicit user jumps (arrows, chips, keyboard) land with the
-         reference's squash-whip; observer retargeting never animates. */
+      /* explicit user jumps (arrows, chips, keyboard) glow the card;
+         observer retargeting never animates. */
       S.activeCard = target;                 // state first, motion never gates it
       updateNavCur(qid);
-      if (whip && window.EMC_MOTION) window.EMC_MOTION.whip(target);
+      if (glow) glowCard(target);
     }
   }
   function navStep(delta) {
