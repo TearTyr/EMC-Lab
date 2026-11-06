@@ -263,7 +263,7 @@
       Wc = Math.max(100, (innerWidth || stg.offsetWidth) / (stg.offsetWidth || 1) * 100);
       const bs = 1 + Math.min(.35, (Wc - 100) / 220);     /* text may use the full width of a wide screen */
       tall = Hs > 125;
-      const mg = tall ? 16 : 10;                           /* side margin: the camera drifts, so phones keep more of it */
+      const mg = tall ? 8 : 10;                           /* side margin: small on phones so equations stay readable; the camera drift stays inside it */
       /* tall stage: the mascot owns the top; phrases get the zone under it (and above the Skip button) */
       const zt = -.2 * Hs + mkw * .6 + 4, zb = Hs / 2 - 16;
       const yLo = L => tall ? Math.min(zt + L.eh / 2, (zt + zb) / 2) : -Math.max(0, Hs / 2 - 9 - L.eh / 2);
@@ -434,7 +434,7 @@
       flag(overlay, 'chg', t >= 4.3);
       if (inA) {
         const mp = 1 - Math.pow(1 - seg(t, 2.306, .3), 3);   /* the face shapes fly into the mascot's spot instead of flashing away */
-        const pf = (id, s, x = 0, y = 0, r = 0, o) => { const p = AP[id]; put(sh[id], s * (1 - mp), x + (50 - p[0]) * mp, y + (30 - p[1]) * (HSC / 100) * mp, r + mp * 40, o); };
+        const pf = (id, s, x = 0, y = 0, r = 0, o) => { const p = AP[id]; put(sh[id], s * (1 - mp), x + (50 - p[0]) * mp, y + (-.2 * HSC - (p[1] - 50)) * mp, r + mp * 40, o); };
         pf('t1', pop(t, .192, .3)); pf('t2', pop(t, .192, .3));
         pf('d1', pop(t, .343, .3)); pf('d2', pop(t, .343, .3));
         const ep = pop(t, .494, .4), ew = t > .85 ? Math.sin((t - .85) * 15) * 11 * Math.exp(-(t - .85) * 2.6) : 0, eo = t >= .494 ? 1 : 0;
